@@ -1,0 +1,123 @@
+[project]
+name = "veluxia"
+version = "0.1.0"
+description = "Multi-modal AI generation pipeline: image, animation, audio, text"
+requires-python = ">=3.12"
+
+dependencies = [
+    "uv==0.11.13",
+    # UI
+    "PySide6>=6.6.0",
+    "markdown-it-py>=3.0.0",
+    "pygments>=2.17.0",
+    "fastapi>=0.110.0",
+    "ace-step==0.28.1",
+
+    # HuggingFace
+    "huggingface-hub>=0.23.0",
+    "transformers>=4.40.0",
+    "accelerate>=0.30.0",
+    "diffusers>=0.27.0",
+
+    # Image
+    "Pillow>=10.0.0",
+    "numpy>=1.26.0",
+    "mediapy>=1.2.0",
+
+    # Text / LLM
+    "sentence-transformers>=3.0.0",
+    "qdrant-client>=1.9.0",
+
+    # Animation
+    "imageio[ffmpeg]>=2.34.0",
+
+    # Audio / Speech
+    "soundfile>=0.12.0",
+
+    # Translation
+    "deep-translator>=1.11.0",
+
+    "torch>=2.8.0",
+    "torchvision",
+    "torchaudio",
+    "torchao",
+
+    "qwen_tts",
+    "ace-step"
+]
+
+[project.optional-dependencies]
+# uv pip install -e ".[cpu]"
+cpu = [
+    "llama-cpp-python",
+    "torch>=2.8.0",
+    "torchvision",
+    "torchaudio",
+]
+
+# uv pip install -e ".[cuda]"
+cuda = [
+    "llama-cpp-python", 
+    "torch",
+    "torchvision",
+    "torchaudio",
+]
+
+# uv pip install -e ".[tf]"
+tf = [
+    "tensorflow>=2.16.0",
+    "tensorflow-hub>=0.16.0",
+]
+
+# uv pip install -e ".[dev]"
+dev = [
+    "ruff>=0.4.0",
+    "pytest>=8.0.0",
+    "ipython>=8.0.0",
+]
+
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+
+[tool.uv.sources]
+llama-cpp-python ={ extra = "cuda", url = "https://github.com/gingercandy1/llama-cpp-whl/releases/download/v0.3.22-cu132/llama_cpp_python-0.3.22-py3-none-win_amd64.whl" }
+torch = [
+    { index = "pytorch-cpu",   extra = "cpu"  },
+    { index = "pytorch-cu128", extra = "cuda" },
+]
+torchvision = [
+    { index = "pytorch-cpu",   extra = "cpu"  },
+    { index = "pytorch-cu128", extra = "cuda" },
+]
+torchaudio = [
+    { index = "pytorch-cpu",   extra = "cpu"  },
+    { index = "pytorch-cu128", extra = "cuda" },
+]
+ace-step = { path = "src/backend/core/speech/ACE_Step", editable = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "core*", "shared*"]

@@ -1,0 +1,45 @@
+name: Build Cross-Platform
+
+on:
+  push:
+    tags:
+      - 'v*'          # 打 tag 时触发，如 v1.0.0
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          pip install -r requirements.txt
+      
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: pyinstaller --onefile --name veluxia-windows src/main.py
+        
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: pyinstaller --onefile --name veluxia-linux src/main.py
+        
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: pyinstaller --onefile --name veluxia-macos src/main.py
+      
+      # 自动上传到 GitHub Release
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*

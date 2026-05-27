@@ -1,0 +1,1 @@
+pyside6-lupdate -recursive -extensions py src -ts app_zh_CN.ts -no-obsolete 

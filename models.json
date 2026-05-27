@@ -1,0 +1,268 @@
+{
+  "text":{
+    "Llama-3.2-1B": {
+        "repo_id":  "bartowski/Llama-3.2-1B-Instruct-GGUF",
+        "filename": "Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+        "tag":      "small",
+        "note":     "超轻量，1B，~0.8GB，适合极低配置"
+    },
+    "Llama-3.2-3B": {
+        "repo_id":  "bartowski/Llama-3.2-3B-Instruct-GGUF",
+        "filename": "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+        "tag":      "small",
+        "note":     "轻量，3B，~2GB，4GB RAM 可运行"
+    },
+    "Llama-3.1-8B": {
+        "repo_id":  "Sporer/Meta-Llama-3.1-8B-Instruct",
+        "filename": "Meta-Llama-3.1-8B-Instruct-Q5_K_M.gguf",
+        "tag":      "medium",
+        "note":     "主力，8B，~5GB，8GB VRAM 推荐"
+    },
+    "Llama-3.3-70B": {
+        "repo_id":  "bartowski/Llama-3.3-70B-Instruct-GGUF",
+        "filename": "Llama-3.3-70B-Instruct-Q4_K_M.gguf",
+        "tag":      "large",
+        "note":     "旗舰，70B，~43GB，需 48GB+ VRAM"
+    },
+    "Qwen2.5-0.5B": {
+        "repo_id":  "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+        "filename": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "tag":      "tiny",
+        "note":     "极轻量，0.5B，~0.4GB，中文支持"
+    },
+    "Qwen2.5-1.5B": {
+        "repo_id":  "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+        "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+        "tag":      "small",
+        "note":     "轻量，1.5B，~1GB，中文优秀"
+    },
+    "Qwen3.5-9B": {
+      "repo_id": "Sporer/Qwen3.5-9B",
+      "filename": "Qwen_Qwen3.5-9B-Q4_K_M.gguf",
+      "tag":      "medium",
+      "note":     "9B，~7GB，中文强",
+      "think":    "true"
+    },
+    "Qwen2.5-3B": {
+        "repo_id":  "Qwen/Qwen2.5-3B-Instruct-GGUF",
+        "filename": "qwen2.5-3b-instruct-q4_k_m.gguf",
+        "tag":      "small",
+        "note":     "3B，~2GB，中文性价比高"
+    },
+    "Qwen2.5-7B": {
+        "repo_id":  "Qwen/Qwen2.5-7B-Instruct-GGUF",
+        "filename": "qwen2.5-7b-instruct-q4_k_m.gguf",
+        "tag":      "medium",
+        "note":     "7B，~5GB，中文最推荐"
+    },
+    "Qwen2.5-14B": {
+        "repo_id":  "Qwen/Qwen2.5-14B-Instruct-GGUF",
+        "filename": "qwen2.5-14b-instruct-q4_k_m.gguf",
+        "tag":      "large",
+        "note":     "14B，~9GB，需 12GB VRAM"
+    },
+    "Qwen2.5-32B": {
+        "repo_id":  "Qwen/Qwen2.5-32B-Instruct-GGUF",
+        "filename": "qwen2.5-32b-instruct-q4_k_m.gguf",
+        "tag":      "large",
+        "note":     "32B，~20GB，需 24GB VRAM"
+    },
+    "Qwen3-8B": {
+        "repo_id":  "Qwen/Qwen3-8B-GGUF",
+        "filename": "qwen3-8b-q4_k_m.gguf",
+        "tag":      "medium",
+        "note":     "Qwen3 最新，8B，支持思考模式"
+    },
+    "Qwen3-14B": {
+        "repo_id":  "Qwen/Qwen3-14B-GGUF",
+        "filename": "qwen3-14b-q4_k_m.gguf",
+        "tag":      "large",
+        "note":     "Qwen3，14B，强推理，需 12GB VRAM"
+    },
+    "Qwen3-32B": {
+        "repo_id":  "Qwen/Qwen3-32B-GGUF",
+        "filename": "qwen3-32b-q4_k_m.gguf",
+        "tag":      "large",
+        "note":     "Qwen3，32B，需 24GB VRAM"
+    },
+    "DeepSeek-R1-1.5B": {
+        "repo_id":  "bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
+        "filename": "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf",
+        "tag":      "small",
+        "note":     "R1 蒸馏，1.5B，~1GB，轻量推理"
+    },
+    "DeepSeek-R1-7B": {
+        "repo_id":  "bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF",
+        "filename": "DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf",
+        "tag":      "medium",
+        "note":     "R1 蒸馏，7B，~5GB，强推理"
+    },
+    "DeepSeek-R1-8B": {
+        "repo_id":  "bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF",
+        "filename": "DeepSeek-R1-Distill-Llama-8B-Q4_K_M.gguf",
+        "tag":      "medium",
+        "note":     "R1 蒸馏 Llama 版，8B，~5GB"
+    },
+    "DeepSeek-R1-14B": {
+        "repo_id":  "bartowski/DeepSeek-R1-Distill-Qwen-14B-GGUF",
+        "filename": "DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf",
+        "tag":      "large",
+        "note":     "R1 蒸馏，14B，~9GB，需 12GB VRAM"
+    },
+    "DeepSeek-R1-32B": {
+        "repo_id":  "bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF",
+        "filename": "DeepSeek-R1-Distill-Qwen-32B-Q4_K_M.gguf",
+        "tag":      "large",
+        "note":     "R1 蒸馏，32B，~20GB，需 24GB VRAM"
+    },
+    "Mistral-7B-v0.3": {
+        "type":     "mistral",
+        "repo_id":  "bartowski/Mistral-7B-Instruct-v0.3-GGUF",
+        "filename": "Mistral-7B-Instruct-v0.3-Q4_K_M.gguf",
+        "tag":      "medium",
+        "note":     "经典，7B，~5GB，英文极佳"
+    },
+    "Mistral-Small-24B": {
+        "type":     "mistral",
+        "repo_id":  "bartowski/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        "filename": "Mistral-Small-3.1-24B-Instruct-2503-Q4_K_M.gguf",
+        "tag":      "large",
+        "note":     "最新 Mistral Small，24B，~15GB"
+    },
+    "Mixtral-8x7B": {
+        "type":     "mistral",
+        "repo_id":  "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF",
+        "filename": "mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf",
+        "tag":      "large",
+        "note":     "MoE 架构，47B 参数，需 32GB"
+    },
+    "Phi-3.5-mini": {
+        "type":     "phi",
+        "repo_id":  "bartowski/Phi-3.5-mini-instruct-GGUF",
+        "filename": "Phi-3.5-mini-instruct-Q4_K_M.gguf",
+        "tag":      "small",
+        "note":     "3.8B，~2.4GB，微软轻量旗舰"
+    },
+    "Phi-4-mini": {
+        "type":     "phi",
+        "repo_id":  "bartowski/phi-4-mini-instruct-GGUF",
+        "filename": "phi-4-mini-instruct-Q4_K_M.gguf",
+        "tag":      "small",
+        "note":     "4B，~2.5GB，Phi-4 最新轻量版"
+    },
+    "Phi-4": {
+        "type":     "phi",
+        "repo_id":  "bartowski/phi-4-GGUF",
+        "filename": "phi-4-Q4_K_M.gguf",
+        "tag":      "large",
+        "note":     "14B，~9GB，Phi-4 完整版"
+    },
+    "Gemma-3-1B": {
+        "type":     "gemma",
+        "repo_id":  "ggml-org/gemma-3-1b-it-GGUF",
+        "filename": "gemma-3-1b-it-Q4_K_M.gguf",
+        "tag":      "tiny",
+        "note":     "极轻量，1B，~0.7GB"
+    },
+    "Gemma-3-4B": {
+        "type":     "gemma",
+        "repo_id":  "ggml-org/gemma-3-4b-it-GGUF",
+        "filename": "gemma-3-4b-it-Q4_K_M.gguf",
+        "tag":      "small",
+        "note":     "4B，~2.5GB，多模态支持"
+    },
+    "Gemma-3-12B": {
+        "type":     "gemma",
+        "repo_id":  "ggml-org/gemma-3-12b-it-GGUF",
+        "filename": "gemma-3-12b-it-Q4_K_M.gguf",
+        "tag":      "large",
+        "note":     "12B，~7.5GB，高质量"
+    },
+    "Gemma-3-27B": {
+        "type":     "gemma",
+        "repo_id":  "ggml-org/gemma-3-27b-it-GGUF",
+        "filename": "gemma-3-27b-it-Q4_K_M.gguf",
+        "tag":      "large",
+        "note":     "27B，~17GB，需 20GB VRAM"
+    },
+    "SmolLM2-135M": {
+        "type":     "smollm",
+        "repo_id":  "bartowski/SmolLM2-135M-Instruct-GGUF",
+        "filename": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+        "tag":      "tiny",
+        "note":     "135M，~90MB，嵌入式/边缘设备"
+    },
+    "SmolLM2-360M": {
+        "type":     "smollm",
+        "repo_id":  "bartowski/SmolLM2-360M-Instruct-GGUF",
+        "filename": "SmolLM2-360M-Instruct-Q4_K_M.gguf",
+        "tag":      "tiny",
+        "note":     "360M，~230MB"
+    },
+    "SmolLM2-1.7B": {
+        "type":     "smollm",
+        "repo_id":  "bartowski/SmolLM2-1.7B-Instruct-GGUF",
+        "filename": "SmolLM2-1.7B-Instruct-Q4_K_M.gguf",
+        "tag":      "small",
+        "note":     "1.7B，~1.1GB，HuggingFace 出品"
+    },
+    "Yi-1.5-9B": {
+        "type":     "yi",
+        "repo_id":  "bartowski/Yi-1.5-9B-Chat-GGUF",
+        "filename": "Yi-1.5-9B-Chat-Q4_K_M.gguf",
+        "tag":      "medium",
+        "note":     "9B，~5.5GB，零一万物，中英双语"
+    }
+  },
+  "image":{
+    "Flux.1-schnell": {
+      "type": "flux",
+      "repo_id": "Sporer/flux2-klein-4b-nvfp4",
+      "tag": "fast"
+    }
+  },
+  "speech": {
+    "Qwen3-TTS-0.6b-custom": {
+      "type": "qwen3",
+      "repo_id": "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice",
+      "mode": "custom",
+      "tag": "custom"
+    },
+    "Qwen3-TTS-0.6b-base": {
+      "type": "qwen3",
+      "repo_id": "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+      "mode": "clone",
+      "tag": "clone"
+    },
+    "Qwen3-TTS-1.7b-custom":  {
+      "type": "qwen3",
+      "repo_id": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+      "mode": "custom",
+      "tag": "custom"
+    },
+    "Qwen3-TTS-1.7b-base": {
+      "type": "qwen3",
+      "repo_id": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+      "mode": "clone",
+      "tag": "clone"
+    },
+    "Qwen3-TTS-1.7b-design": {
+      "type": "qwen3",
+      "repo_id": "Sporer/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+      "mode": "design",
+      "tag": "design"
+    }
+  },
+  "animation": {
+    "LTX-Video": {
+      "type": "ltx",
+      "repo_id": "Sporer/LTX-Video",
+      "tag": "medium"
+    },
+    "Wan2.2-TI2V": {
+      "type": "wan2.2",
+      "repo_id": "Sporer/Wan2.2-TI2V-5B-Diffusers ",
+      "tag": "medium"
+    }
+  }
+}

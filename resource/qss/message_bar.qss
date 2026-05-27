@@ -1,0 +1,135 @@
+
+QLabel#thinking_toggle_btn {
+    color: rgba(160, 160, 200, 0.8);
+    font-size: 12px;
+}
+QLabel#thinking_toggle_btn:hover {
+    color: rgba(200, 200, 255, 1.0);
+}
+
+QFrame#thinking_block {
+    background:    rgba(255, 255, 255, 0.04);
+    border:        1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+}
+QLabel#thinking_status_label {
+    color: rgba(180, 180, 210, 0.9);
+    background: transparent;
+}
+QFrame#thinking_sep {
+    color: rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.07);
+    max-height: 1px;
+}
+
+/* Markdown 顯示區 */
+QTextBrowser#markdown_widget {
+    background: transparent;
+    border: none;
+    color: #DCDCDC;
+    font-size: 14px;
+    selection-background-color: rgba(123, 157, 188, 0.35);
+}
+
+/* 圖片 Widget */
+QLabel#image_widget {
+    border-radius: 20px;
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 視頻播放器 */
+QWidget#video_widget {
+    background: #12151a;
+    border-radius: 8px;
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 文件附件卡片 */
+QWidget#file_widget {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid #6e6e6e;;
+    border-radius: 8px;
+    min-width: 260px;
+    max-width: 400px;
+}
+
+
+
+/* ── 用戶氣泡 ─────────────────────────────────── */
+QFrame#user_bubble_box {
+    background-color: #1e2128;
+    border-radius: 8px;
+    border: none;
+    padding: 10px 14px;
+}
+
+QLabel#user_bubble_text {
+    color: #ffffff;
+    font-size: 14px;
+    background: transparent;
+}
+
+/* ── AI 氣泡 ──────────────────────────────────── */
+QFrame#assistant_bubble_box {
+    background-color: #272732;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: 0.5px solid #509A9DA4;
+}
+
+QLabel#assistant_bubble_text {
+    color: #1a1a1a;
+    font-size: 14px;
+    background: transparent;
+}
+
+/* ── 展開按鈕 ─────────────────────────────────── */
+QFrame#user_bubble QPushButton {
+    color: rgba(255, 255, 255, 0.8);
+    background: transparent;
+    border: none;
+    font-size: 12px;
+}
+
+QFrame#user_bubble QPushButton:hover {
+    color: #ffffff;
+}
+
+QFrame#assistant_bubble QPushButton {
+    color: #7B9DBC;
+    background: transparent;
+    border: none;
+    font-size: 12px;
+}
+
+QFrame#assistant_bubble QPushButton:hover {
+    color: #9AC5EC;
+}
+
+/* ── 時間 / 角色標籤 ──────────────────────────── */
+QFrame#user_bubble QLabel {
+    color: #777777;
+    font-size: 11px;
+    background: transparent;
+}
+
+QFrame#assistant_bubble QLabel {
+    color: #777777;
+    font-size: 11px;
+    background: transparent;
+}
+
+QFrame#thinking_block {
+    background:    rgba(255, 255, 255, 0.04);
+    border:        1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+}
+QLabel#thinking_status_label {
+    color: rgba(180, 180, 210, 0.9);
+    background: transparent;
+}
+QFrame#thinking_sep {
+    color: rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.07);
+    max-height: 1px;
+}
