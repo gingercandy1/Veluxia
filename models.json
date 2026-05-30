@@ -212,6 +212,13 @@
         "filename": "Yi-1.5-9B-Chat-Q4_K_M.gguf",
         "tag":      "medium",
         "note":     "9B，~5.5GB，零一万物，中英双语"
+    },
+    "Hy-MT2-7B": {
+        "type":     "Hy-MT2",
+        "repo_id":  "unsloth/Hy-MT2-7B-GGUF",
+        "filename": "Hy-MT2-7B-Q4_K_M.gguf",
+        "tag":      "translate",
+        "note":     "7B，~4.5GB，零一万物，中英双语"
     }
   },
   "image":{

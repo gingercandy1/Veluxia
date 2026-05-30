@@ -1,8 +1,8 @@
 from enum import Enum, auto
 from PySide6.QtWidgets import QVBoxLayout
 
-from ui.message.text.text_block_widget import TextBlockWidget
-from ui.message.text.code_block_widget import CodeBlockWidget
+from src.app.ui.message.text.text_block_widget import TextBlockWidget
+from src.app.ui.message.text.code_block_widget import CodeBlockWidget
 
 
 class _State(Enum):

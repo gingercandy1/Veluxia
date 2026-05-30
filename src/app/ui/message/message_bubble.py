@@ -11,11 +11,11 @@ from PySide6.QtWidgets import (
     QLabel, QSizePolicy, QGraphicsOpacityEffect, QMessageBox, QApplication, QPushButton, QTextEdit,
 )
 
-from ui.base.action_button import ActionButton
-from ui.base.widget import BaseWidget
-from ui.message.content_factory import ContentLoader, ContentBuilder
-from ui.message.text.streaming_renderer import StreamingRenderer
-from ui.message.think_bubble import ThinkingBlock
+from src.app.ui.base.action_button import ActionButton
+from src.app.ui.base.widget import BaseWidget
+from src.app.ui.message.content_factory import ContentLoader, ContentBuilder
+from src.app.ui.message.text.streaming_renderer import StreamingRenderer
+from src.app.ui.message.think_bubble import ThinkingBlock
 from src.resources import *
 
 

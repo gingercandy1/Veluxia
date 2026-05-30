@@ -2,8 +2,8 @@ from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QScrollArea
 
-from app.ui.message.message_bubble import MessageBubble, create_message_bubble, SpinnerWidget, FadeMask
-from ui.setting.page.log_page import log_info
+from src.app.ui.message.message_bubble import MessageBubble, create_message_bubble, SpinnerWidget, FadeMask
+from src.app.ui.setting.page.log_page import log_info
 
 
 class ChatWidget(QScrollArea):

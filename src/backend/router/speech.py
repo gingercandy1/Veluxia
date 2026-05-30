@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from backend.router_base import BaseRouter
+from src.backend.router_base import BaseRouter
 from src.backend.core.model_base import GeneratorFactory
 from src.shared.schemas import SpeechResponse, BaseRequest
 from src.shared.enum_type import FactoryType

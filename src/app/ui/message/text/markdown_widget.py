@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QWidget, QTextBrowser
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
 
-from ui.message.text.code_block_widget import CodeBlockWidget
+from src.app.ui.message.text.code_block_widget import CodeBlockWidget
 
 
 class RenderMarkDown:

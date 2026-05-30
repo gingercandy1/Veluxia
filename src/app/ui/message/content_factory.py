@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import Optional, List
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 
-from ui.message.message_widgets import ImageWidget, VideoWidget, FileWidget, AudioWidget
-from ui.message.text.markdown_widget import render_markdown
+from src.app.ui.message.message_widgets import ImageWidget, VideoWidget, FileWidget, AudioWidget
+from src.app.ui.message.text.markdown_widget import render_markdown
 
 # 支持的文件扩展名分组
 _IMAGE_EXTS = frozenset({".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"})

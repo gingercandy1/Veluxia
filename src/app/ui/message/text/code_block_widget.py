@@ -8,8 +8,8 @@ from pygments.formatters.html import HtmlFormatter
 from pygments.lexers import get_lexer_by_name, guess_lexer
 from pygments.util import ClassNotFound
 
-from ui.base.action_button import ActionButton
-from ui.base.widget import BaseWidget
+from src.app.ui.base.action_button import ActionButton
+from src.app.ui.base.widget import BaseWidget
 
 
 class CodeBlockWidget(BaseWidget):

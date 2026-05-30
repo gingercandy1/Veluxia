@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QScrollArea
 
-from ui.base.widget import BaseWidget
-from ui.param.panel_base import BaseParamPanel
+from src.app.ui.base.widget import BaseWidget
+from src.app.ui.param.panel_base import BaseParamPanel
 
 
 class ParamDrawer(BaseWidget):

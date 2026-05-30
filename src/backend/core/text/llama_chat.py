@@ -114,6 +114,10 @@ class LlamaGenerator(BaseTextGenerator):
 
             user_message = self.prompt
             params, text_type  = await self._classify_intent(self.prompt)
+            params["temperature"] = self.temperature
+            params["top_p"] = self.top_p
+            params["repeat_penalty"] = self.repeat_penalty
+
             if text_type != "default":
                 user_message = f"{self.prompt}\n\nPlease think step by step before giving your final answer."
 
@@ -124,7 +128,7 @@ class LlamaGenerator(BaseTextGenerator):
 
             output = self.pipe.create_chat_completion(
                 messages=messages,
-                max_tokens=2048,
+                max_tokens=self.max_tokens,
                 stream=False,
                 **params,
             )
@@ -154,10 +158,13 @@ class LlamaGenerator(BaseTextGenerator):
             {"role": "user", "content": user_message},
         ]
         params, _ = await self._classify_intent(self.prompt)
+        params["temperature"] = self.temperature
+        params["top_p"] = self.top_p
+        params["repeat_penalty"] = self.repeat_penalty
 
         stream = self.pipe.create_chat_completion(
             messages=messages,
-            max_tokens=4096,
+            max_tokens=self.max_tokens,
             stream=True,
             **params,
         )
@@ -261,7 +268,7 @@ class LlamaGenerator(BaseTextGenerator):
         self.output_dir = get_temp_dir(raw.get("output_dir", ""))
         self.prompt = raw.get("content", "")
 
-        self.max_tokens = raw.get("max_tokens", "")
+        self.max_tokens = raw.get("max_tokens", 1024)
         self.temperature = raw.get("temperature", 0.0)
         self.top_p = raw.get("top_p", 0.9)
         self.repeat_penalty = raw.get("repeat_penalty", 1.05)

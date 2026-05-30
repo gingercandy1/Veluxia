@@ -2,16 +2,16 @@ import subprocess
 import sys
 
 from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QStackedWidget, QVBoxLayout, QFrame
-from app.work import ApiWorker, BackendStartupWorker
-from app.client import ApiClient
-from app.param import GenerationRequest
-from app.ui.base.action_button import ActionButton
-from app.ui.gen_page import GenerationPage
-from app.ui.setting.setting import SettingPage
-from app.ui.window_data import WindowData
+from src.app.work import ApiWorker, BackendStartupWorker
+from src.app.client import ApiClient
+from src.app.param import GenerationRequest
+from src.app.ui.base.action_button import ActionButton
+from src.app.ui.gen_page import GenerationPage
+from src.app.ui.setting.setting import SettingPage
+from src.app.ui.window_data import WindowData
+from src.app.ui.setting.page.log_page import log_info, log_error
 from src.shared.settings import ConfigManager
 from src.shared.schemas import ImageResponse, AnimationResponse, SpeechResponse
-from ui.setting.page.log_page import log_info, log_error
 
 
 class TopBar(QFrame):
@@ -205,6 +205,8 @@ class MainWindow(QMainWindow):
         if not active_bubble:
             return
         active_bubble.load_attachments(files)
+        # save history item
+        self._gen_page.save_item_from_bubble(active_bubble)
         log_info(f"生成完成:{result.session_id}")
 
     def _on_generate_error(self, msg: str):
@@ -238,9 +240,9 @@ class MainWindow(QMainWindow):
 
         active_bubble.finish()
         self._output_started = False
-        # 非思考模型直接隐藏思考区
-        if not is_think:
-            active_bubble.hide_think_area()
+
+        # save history item
+        self._gen_page.save_item_from_bubble(active_bubble)
 
     def _on_backend_ready(self):
         log_info("✅ Backend 已就緒")

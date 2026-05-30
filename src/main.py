@@ -7,8 +7,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication
 
-from ui.window import MainWindow
-from ui.setting.page.log_page import log_info, log_error
+from src.app.ui.window import MainWindow
+from src.app.ui.setting.page.log_page import log_info, log_error
 
 
 class Application(QApplication):

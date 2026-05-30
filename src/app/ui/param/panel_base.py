@@ -12,8 +12,8 @@ from PySide6.QtWidgets import (
 
 from src.shared.enum_type import FactoryType
 from src.shared.settings import PROJECT_ROOT
-from ui.base.widget import BaseWidget
-from ui.param.param_factory import WidgetFactory
+from src.app.ui.base.widget import BaseWidget
+from src.app.ui.param.param_factory import WidgetFactory
 
 
 class LabeledSlider(QWidget):

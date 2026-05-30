@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QPushButton, QLabel, QSlider, QSizePolicy,
 )
 
-from ui.base.widget import BaseWidget
+from src.app.ui.base.widget import BaseWidget
 
 
 class ImageWidget(QWidget):

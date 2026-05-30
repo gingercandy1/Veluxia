@@ -13,12 +13,12 @@ from PySide6.QtWidgets import (
     QScrollArea, QApplication, QTextEdit
 )
 
-from ui.base.action_button import ActionButton
-from ui.param.param_factory import WidgetFactory
-from ui.base.widget import BaseWidget
-from ui.input.slide_stack import SlideStackWidget, DotIndicatorBar
-from ui.param.param_drawer import ParamDrawer
-from ui.window_data import WindowData
+from src.app.ui.base.action_button import ActionButton
+from src.app.ui.param.param_factory import WidgetFactory
+from src.app.ui.base.widget import BaseWidget
+from src.app.ui.input.slide_stack import SlideStackWidget, DotIndicatorBar
+from src.app.ui.param.param_drawer import ParamDrawer
+from src.app.ui.window_data import WindowData
 from src.shared.enum_type import FactoryType
 from src.resources import *
 
@@ -166,56 +166,23 @@ class InputBar(BaseWidget):
     _MODE_CONFIGS = {
         "text": {
             "label": "🗒️ 文本",
-            "placeholder": "输入内容主题，例如：写一段游戏角色背景故事",
-            "accept_files": True,
+            "placeholder": "Enter a topic, such as: write a background story for a game character.",
             "file_filter": "Text (*.txt *.md *.csv *.json)",
         },
         "image": {
             "label": "📸 图片",
-            "placeholder": "提示词 {cfg=7.5} {steps=30} {seed=42} {width=1024}",
-            "accept_files": True,
+            "placeholder": "image prompt",
             "file_filter": "Images (*.png *.jpg *.jpeg *.webp)",
         },
         "animation": {
             "label": "🎞️ 动画",
             "placeholder": "side view warrior {frames=16} {fps=8} {motion=3.0}",
-            "accept_files": True,
             "file_filter": "Images (*.png *.jpg *.jpeg *.webp)",
         },
         "speech": {
             "label": "🎙️ 语音",
-            "placeholder": "输入要朗读的文本，支持中文和英文...",
-            "accept_files": True,
+            "placeholder": "Enter the text you want to read aloud; Chinese and English are supported...",
             "file_filter": "Text (*.txt *.md)",
-            "options": {
-                "voice_mode": {
-                    "label": "语音模式",
-                    "type": "select",
-                    "default": "design",
-                    "choices": ["design", "tts", "clone"]
-                },
-                "speaker": {
-                    "label": "说话人风格",
-                    "type": "select",
-                    "default": "default",
-                    "choices": ["default", "warm_male", "gentle_female", "deep_narrator", "energetic_youth",
-                                "calm_elder"]
-                },
-                "speed": {
-                    "label": "语速",
-                    "type": "slider",
-                    "default": 1.0,
-                    "min": 0.7,
-                    "max": 1.5,
-                    "step": 0.05
-                },
-                "emotion": {
-                    "label": "情感风格",
-                    "type": "select",
-                    "default": "neutral",
-                    "choices": ["neutral", "happy", "sad", "angry", "excited", "calm", "serious"]
-                }
-            }
         }
     }
 
@@ -258,7 +225,7 @@ class InputBar(BaseWidget):
         self.stack.add_page(self.param_page, "params_page")
         self.dots.set_page_count(self.stack.count())
 
-        # 双向绑定
+        # Two-way binding
         self.stack.current_changed.connect(self.dots.set_current_index)
         self.stack.current_changed.connect(lambda: self._schedule_resize())
         self.stack.drag_progress.connect(self.dots.update_drag)
@@ -273,7 +240,7 @@ class InputBar(BaseWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        # ── 顶部主行 ──
+        # top row
         top_row = QWidget()
         top_layout = QHBoxLayout(top_row)
         top_layout.setContentsMargins(20, 10, -20, -10)
@@ -292,7 +259,7 @@ class InputBar(BaseWidget):
         self.prompt_input.setFixedHeight(44)
         self.prompt_input.setObjectName("prompt_input")
 
-        # 工具栏（上传 + 粘贴）
+        # tool bar
         toolbar = QWidget()
         toolbar.setObjectName("tool_bar")
         tbar_layout = QHBoxLayout(toolbar)
@@ -340,9 +307,6 @@ class InputBar(BaseWidget):
         return btn
 
     def get_textedit_content_height(self) -> int:
-        """
-        计算 QTextEdit 内容实际高度
-        """
         doc = self.prompt_input.document()
         layout = doc.documentLayout()
         # 强制更新布局
@@ -361,7 +325,6 @@ class InputBar(BaseWidget):
         self.upload_btn.clicked.connect(self._pick_files)
         self.paste_btn.clicked.connect(self._paste_clipboard)
 
-    # ══════════════════ 模式切换 ══════════════════
     def _on_mode_changed(self):
         key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")
         cfg = self._MODE_CONFIGS[key]
@@ -410,7 +373,6 @@ class InputBar(BaseWidget):
         if input_height == self.height():
             return
 
-        # 如果動畫正在跑且目標相同，不重複觸發
         if self._geo_anim.state() == QPropertyAnimation.Running:
             if self._geo_anim.endValue() == input_height:
                 return
@@ -426,7 +388,6 @@ class InputBar(BaseWidget):
         self.input_page.setFixedHeight(input_height)
         self.update_height.emit(input_height)
 
-    # ══════════════════ prompt 实时解析 ══════════════════
     def set_model(self, name):
         """切换模型时自动加载对应参数"""
         type_str = self.label_to_key.get(self.mode_combo.currentText(), "")
@@ -434,15 +395,13 @@ class InputBar(BaseWidget):
         widget = WidgetFactory.build_widget(type_enum, name)
         self.param_drawer.load_schema(widget)
 
-    # ══════════════════ 文件选择 ══════════════════
     def _pick_files(self):
         key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")
         flt = self._MODE_CONFIGS[key]["file_filter"]
-        paths, _ = QFileDialog.getOpenFileNames(self, "选择文件", "", flt)
+        paths, _ = QFileDialog.getOpenFileNames(self, "Choose File", "", flt)
         for p in paths:
             self._add_attachment(Path(p))
 
-    # ══════════════════ 粘贴剪贴板 ══════════════════
     def _paste_clipboard(self):
         cb = QApplication.clipboard()
         mime = cb.mimeData()
@@ -470,7 +429,6 @@ class InputBar(BaseWidget):
             new_txt = txt[:position] + mime.text() + txt[position:]
             self.prompt_input.setText(new_txt)
 
-    # ══════════════════ 拖拽 ══════════════════
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls() or event.mimeData().hasImage():
             event.acceptProposedAction()

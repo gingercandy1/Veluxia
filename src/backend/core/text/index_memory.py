@@ -34,15 +34,14 @@ class TopicSegment:
 class EmbedModel:
     _instances = {}  # 简单缓存不同模型
 
-    def __new__(cls, embed_model: str = "google/embeddinggemma-300m", embed_device: str = "cpu"):
+    def __new__(cls, embed_model: str = "Qwen/Qwen3-Embedding-0.6B", embed_device: str = "cpu"):
         key = (embed_model, embed_device)
         if key not in cls._instances:
             cls._instances[key] = super().__new__(cls)
             cls._instances[key].initialized = False
         return cls._instances[key]
 
-    def __init__(self, embed_model: str = "google/embeddinggemma-300m",
-                embed_device: str = "cpu"):
+    def __init__(self, embed_model: str = "Qwen/Qwen3-Embedding-0.6B", embed_device: str = "cpu"):
         if getattr(self, 'initialized', False):
             return
         self.initialized = True

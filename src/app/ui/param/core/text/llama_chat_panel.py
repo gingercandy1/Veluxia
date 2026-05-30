@@ -32,16 +32,10 @@ class LlamaChatPanel(BaseParamPanel):
         self._repeat_penalty = self._labeled_slider(1.0, 1.5, 1.05, decimals=2, step=0.01)
         self._add_row("Repeat Penalty", self._repeat_penalty)
 
-        # 思考模式开关
-        self._thinking = QCheckBox("Thinking Mode (/think)")
-        self._thinking.setChecked(True)
-        self._form.addRow(self._thinking)
-
     def get_params(self) -> dict:
         return {
             "max_tokens":     self._max_tokens.value(),
             "temperature":    self._temperature.value(),
             "top_p":          self._top_p.value(),
             "repeat_penalty": self._repeat_penalty.value(),
-            "thinking_mode":  self._thinking.isChecked(),
         }
