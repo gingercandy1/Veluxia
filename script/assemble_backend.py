@@ -26,6 +26,11 @@ SOURCE_PATHS = [
     "models.json",
 ]
 
+# 体积巨大且独立安装的第三方，不进包（见 backend/pyproject 注释）
+EXCLUDE_PREFIXES = (
+    "src/backend/core/speech/ACE_Step",
+)
+
 
 def build_manifest(root: Path) -> list:
     """返回应打进包的相对路径清单（/ 分隔），供装配与单测共用。"""
@@ -35,7 +40,10 @@ def build_manifest(root: Path) -> list:
         if p.is_dir():
             for f in sorted(p.rglob("*")):
                 if f.is_file() and "__pycache__" not in f.parts:
-                    out.append(f.relative_to(root).as_posix())
+                    posix = f.relative_to(root).as_posix()
+                    if posix.startswith(EXCLUDE_PREFIXES):
+                        continue
+                    out.append(posix)
         elif p.is_file():
             out.append(rel)
     return out

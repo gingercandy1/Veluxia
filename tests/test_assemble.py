@@ -27,6 +27,8 @@ def test_manifest_excludes_dev_only():
     for rel in m:
         assert not rel.startswith("src/app"), "前端不应进后端包"
         assert "__pycache__" not in rel
+    assert not any(r.startswith("src/backend/core/speech/ACE_Step") for r in m), \
+        "ACE_Step 独立安装，不进包"
 
 
 def test_launcher_points_to_embed_python(tmp_path):
