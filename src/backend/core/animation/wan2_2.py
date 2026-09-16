@@ -220,7 +220,7 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
 
     def parse_params(self, raw: dict):
         self.output_dir = get_temp_dir(raw.get("output_dir", ""))
-        self.reference_image_path = raw.get("reference_image_path", "")
+        self.reference_image_path = raw.get("reference_image_path", raw.get("reference_image", ""))
 
         self.num_frames = raw.get("num_frames", 25)
         self.prompt = raw.get("content")

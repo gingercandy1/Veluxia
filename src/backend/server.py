@@ -20,6 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.model_base import GeneratorFactory
 from src.backend.router.image import ImageRouter
+from src.backend.router.image_frame import ImageFrameRouter
 from src.backend.router.speech import SpeechRouter
 from src.backend.router.text import TextRouter
 from src.backend.router.animation import AnimationRouter
@@ -87,6 +88,7 @@ def create_app() -> FastAPI:
     # 注册路由
     _routers = [
         ImageRouter(),
+        ImageFrameRouter(),
         TextRouter(),
         AnimationRouter(),
         SpeechRouter(),

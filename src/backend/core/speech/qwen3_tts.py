@@ -23,8 +23,11 @@ class Qwen3TTSGenerator(BaseSpeechGenerator):
         self.mode = self.model_extra.get("mode", None)
         self.model_dir = os.path.join(PROJECT_ROOT, "models", "speech", "qwen3-tts", self.model_name)
 
+    def _model_missing(self) -> bool:
+        return not os.path.exists(self.model_dir)
+
     def _check_model_file(self):
-        if not os.path.exists(self.model_dir):
+        if not self._model_missing():
             return
 
         from huggingface_hub import snapshot_download

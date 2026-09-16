@@ -221,6 +221,9 @@ class FILMInterpolationGenerator(BaseImageFrameGenerator):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        # Factory 只传 model_name：按注册名选择后端，"Rife" 名否则走 film
+        if getattr(self, "model_name", "") == "Rife":
+            backend = "rife"
         self.backend = backend
         self._film_model_path = film_model_path or self._FILM_MODEL_PATH
         self._fp16            = fp16
@@ -299,3 +302,33 @@ class FILMInterpolationGenerator(BaseImageFrameGenerator):
         self.fps                  = raw.get("fps", 8)
         self.export_video         = raw.get("export_video", True)
         self.model_path           = raw.get("model_path", None)
+
+    def _check_model_file(self):
+        # 权重需手动准备（RIFE 还需 git clone 仓库），缺失直接报错不静默
+        if self.backend == "film":
+            # parse 可能尚未运行，用 getattr 兜底默认路径
+            path = getattr(self, "model_path", None) or self._film_model_path
+            if not Path(path).exists():
+                raise FileNotFoundError(
+                    f"❌ FILM 模型未找到: {path}\n"
+                    "请从 https://github.com/dajes/frame-interpolation-pytorch/releases 下载 .pt 文件"
+                )
+        else:
+            if not Path(self._rife_repo_dir).exists():
+                raise FileNotFoundError(
+                    f"❌ RIFE 仓库未找到: {self._rife_repo_dir}\n"
+                    f"请运行: git clone https://github.com/hzwer/Practical-RIFE {self._rife_repo_dir}"
+                )
+            if not Path(self._rife_model_dir).exists():
+                raise FileNotFoundError(
+                    f"❌ RIFE 模型目录未找到: {self._rife_model_dir}\n"
+                    "请下载模型权重（推荐 v4.22）并放到该目录"
+                )
+
+    async def generate(self) -> List[Path]:
+        n = len(self.image_paths)
+        if n == 2:
+            return await self.interpolate_images()
+        if n > 2:
+            return await self.interpolate_sequence()
+        raise ValueError("至少需要提供 2 张图片（extra.image_paths）")
