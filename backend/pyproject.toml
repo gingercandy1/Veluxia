@@ -1,0 +1,49 @@
+[project]
+name = "veluxia-backend"
+version = "0.1.0"
+description = "Veluxia local inference backend (FastAPI, CUDA only)"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.29.0",
+    "pydantic>=2.0.0",
+    "huggingface-hub>=0.23.0",
+    "transformers>=4.40.0",
+    "accelerate>=0.30.0",
+    "diffusers>=0.27.0",
+    "Pillow>=10.0.0",
+    "numpy>=1.26.0",
+    "mediapy>=1.2.0",
+    "rembg>=2.0.0",
+    "sentence-transformers>=3.0.0",
+    "qdrant-client>=1.9.0",
+    "imageio[ffmpeg]>=2.34.0",
+    "soundfile>=0.12.0",
+    "deep-translator>=1.11.0",
+    "torch",
+    "torchvision",
+    "torchaudio",
+    "torchao",
+    "qwen_tts",
+    "llama-cpp-python",
+]
+# 注：ACE-Step 不走 uv 依赖（版本与 torch 主线互斥），沿用独立安装：
+#   uv pip install -r src/backend/core/speech/ACE_Step/requirements.txt
+# 运行时由 ace_step_music.py 经 sys.path 直接导入。
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+llama-cpp-python = { url = "https://github.com/gingercandy1/llama-cpp-whl/releases/download/v0.3.22-cu132/llama_cpp_python-0.3.22-py3-none-win_amd64.whl" }
+torch = [{ index = "pytorch-cu128" }]
+torchvision = [{ index = "pytorch-cu128" }]
+torchaudio = [{ index = "pytorch-cu128" }]
+
+# 同 app：member 不产 wheel，见上。
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

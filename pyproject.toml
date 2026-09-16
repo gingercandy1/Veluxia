@@ -22,6 +22,7 @@ dependencies = [
     "Pillow>=10.0.0",
     "numpy>=1.26.0",
     "mediapy>=1.2.0",
+    "rembg>=2.0.0",
 
     # Text / LLM
     "sentence-transformers>=3.0.0",
@@ -45,15 +46,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# uv pip install -e ".[cpu]"
-cpu = [
-    "llama-cpp-python",
-    "torch>=2.8.0",
-    "torchvision",
-    "torchaudio",
-]
-
-# uv pip install -e ".[cuda]"
+# uv pip install -e ".[cuda]"（历史用法；workspace 下以后端 cu128 为准）
 cuda = [
     "llama-cpp-python", 
     "torch",
@@ -76,11 +69,6 @@ dev = [
 
 
 [[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[[tool.uv.index]]
 name = "pytorch-cu128"
 url = "https://download.pytorch.org/whl/cu128"
 explicit = true
@@ -89,18 +77,23 @@ explicit = true
 [tool.uv.sources]
 llama-cpp-python ={ extra = "cuda", url = "https://github.com/gingercandy1/llama-cpp-whl/releases/download/v0.3.22-cu132/llama_cpp_python-0.3.22-py3-none-win_amd64.whl" }
 torch = [
-    { index = "pytorch-cpu",   extra = "cpu"  },
     { index = "pytorch-cu128", extra = "cuda" },
 ]
 torchvision = [
-    { index = "pytorch-cpu",   extra = "cpu"  },
     { index = "pytorch-cu128", extra = "cuda" },
 ]
 torchaudio = [
-    { index = "pytorch-cpu",   extra = "cpu"  },
     { index = "pytorch-cu128", extra = "cuda" },
 ]
 ace-step = { path = "src/backend/core/speech/ACE_Step", editable = true }
+
+[tool.uv.workspace]
+members = ["app", "backend"]
+
+# Windows-only 桌面应用：把依赖求解域限死 win32，
+# 否则 ACE-Step 的 linux-aarch64 cu130 钉死版会与 cu128 冲突。
+[tool.uv]
+environments = ["sys_platform == 'win32'"]
 
 [build-system]
 requires = ["hatchling"]
