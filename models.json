@@ -226,6 +226,31 @@
       "type": "flux",
       "repo_id": "Sporer/flux2-klein-4b-nvfp4",
       "tag": "fast"
+    },
+    "SDXL": {
+      "type": "sdxl",
+      "repo_id": "stabilityai/stable-diffusion-xl-base-1.0",
+      "tag": "image"
+    },
+    "SD3.5-Medium": {
+      "type": "sd3",
+      "repo_id": "stabilityai/stable-diffusion-3.5-medium",
+      "tag": "image"
+    },
+    "Z-Image-Turbo": {
+      "type": "zimage",
+      "repo_id": "Tongyi-MAI/Z-Image-Turbo",
+      "tag": "fast"
+    },
+    "Qwen-Image-Lightning": {
+      "type": "qwenimage",
+      "repo_id": "unsloth/Qwen-Image-2512-FP8",
+      "lora_id": "lightx2v/Qwen-Image-Lightning",
+      "tag": "fast"
+    },
+    "rembg-u2net": {
+      "type": "rembg",
+      "tag": "edit"
     }
   },
   "speech": {
