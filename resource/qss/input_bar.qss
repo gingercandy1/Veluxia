@@ -1,0 +1,162 @@
+
+/* ════════════════════════════════════════════════════════════
+   Input_bar
+   ════════════════════════════════════════════════════════════ */
+QWidget#input_bar {
+    background-color: #1e2128;
+    border: 2px solid #282828;
+    border-radius: 10px;
+}
+
+QWidget#input_bar QLineEdit,
+QWidget#input_bar QTextEdit {
+    background-color: transparent;
+    border: none;
+    color: #DCDCDC;
+    selection-background-color: rgba(123, 157, 188, 0.35);
+}
+
+QWidget#input_bar QLineEdit:focus,
+QWidget#input_bar QTextEdit:focus {
+    border: none;
+    outline: none;
+}
+
+QWidget#input_bar QLineEdit:disabled,
+QWidget#input_bar QTextEdit:disabled {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+QWidget#input_bar QWidget#tool_bar {
+    border: none;
+    border-left: 0.5px solid rgba(255, 255, 255, 0.08);
+    background-color: transparent;
+}
+
+QWidget#input_bar QPushButton#upload_btn,
+QWidget#input_bar QPushButton#paste_btn,
+QWidget#input_bar QPushButton#param_btn {
+    border: none;
+    background-color: transparent;
+    border-radius: 6px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.30);
+}
+
+QWidget#input_bar QPushButton#upload_btn:hover,
+QWidget#input_bar QPushButton#paste_btn:hover,
+QWidget#input_bar QPushButton#param_btn:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.70);
+}
+
+QWidget#input_bar QPushButton#upload_btn:pressed,
+QWidget#input_bar QPushButton#paste_btn:pressed,
+QWidget#input_bar QPushButton#param_btn:pressed {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+QWidget#input_bar QPushButton#send_btn {
+    border: none;
+    border-radius: 5px;
+    background-color: #7B9DBC;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+QWidget#input_bar QPushButton#send_btn:hover {
+    background-color: #9AC5EC;
+}
+
+QWidget#input_bar QPushButton#send_btn:pressed {
+    background-color: #5f80a0;
+}
+
+QWidget#input_bar QPushButton#send_btn:disabled {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.25);
+}
+
+QWidget#input_bar QComboBox {
+    background-color: transparent;
+    border: none;
+    color: #DCDCDC;
+}
+
+QScrollArea#attachment_bar {
+    border: none;
+    border-top: 0.5px solid rgba(255, 255, 255, 0.06);
+    background-color: transparent;
+}
+
+QScrollArea#attachment_bar > QWidget > QWidget {
+    background-color: transparent;
+}
+
+QScrollBar:horizontal {
+    height: 4px;
+    background-color: transparent;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 2px;
+    min-width: 30px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: rgba(255, 255, 255, 0.22);
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+QWidget#attachment_chip {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+}
+
+QWidget#attachment_chip QLabel#chipName {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.55);
+    background-color: transparent;
+    border: none;
+}
+
+QWidget#attachment_chip QPushButton#chip_remove {
+    border: none;
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 14px;
+    border-radius: 8px;
+}
+
+QWidget#attachment_chip QPushButton#chip_remove:hover {
+    background-color: rgba(220, 50, 50, 0.20);
+    color: #f87171;
+}
+
+QWidget#input_bar[dragOver="true"] {
+    border: 1px solid #7B9DBC;
+    background-color: rgba(123, 157, 188, 0.08);
+}
+
+
+
+
+
+QWidget#input_bar QPushButton#icon_btn {
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+}
+QWidget#input_bar QPushButton#icon_btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+QWidget#input_bar QPushButton#icon_btn:pressed {
+    background: rgba(0, 0, 0, 0.15);
+}
