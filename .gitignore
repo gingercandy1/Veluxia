@@ -371,3 +371,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Veluxia: python / build artifacts
+.venv/
+venv/
+dist/
+build/
+*.egg-info/

@@ -1,0 +1,22 @@
+[project]
+name = "veluxia-app"
+version = "0.1.0"
+description = "Veluxia desktop frontend (PySide6)"
+requires-python = ">=3.12"
+
+dependencies = [
+    "PySide6>=6.6.0",
+    "httpx>=0.27.0",
+    "psutil>=5.9.0",
+    "pydantic>=2.0.0",
+    "markdown-it-py>=3.0.0",
+    "pygments>=2.17.0",
+    "pyinstaller>=6.0.0",
+]
+
+# members 只做依赖清单 + 统一锁（uv.lock），不产 wheel：
+# 前端走 PyInstaller（app/veluxia.spec），后端走 zip 装配（script/assemble_backend.py）。
+# src/ 保持单源，构建时 shared 各捆一份（ADR 0002）。
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

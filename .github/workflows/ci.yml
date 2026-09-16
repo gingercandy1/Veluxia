@@ -1,0 +1,18 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  contract-tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test-only deps
+        # 契约测试只覆盖注册表/pyproject/装配纯函数，不需要 torch/GPU。
+        run: pip install pillow pydantic pytest httpx psutil
+      - name: Run contract tests
+        run: python -m pytest tests/ -q
