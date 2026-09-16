@@ -24,14 +24,36 @@ class ImageRouter(BaseRouter):
         async def generate(req: BaseRequest) -> ImageResponse:
             return await self._handle_generate(req)
 
+        @self.router.post(
+            "/remove-background",
+            response_model=ImageResponse,
+            summary="去背景（输入图 → 透明底 PNG）",
+        )
+        async def remove_background(req: BaseRequest) -> ImageResponse:
+            generator = self._resolve_generator(req)
+            try:
+                path: Optional[Path] = await generator.generate()
+            except Exception as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+            return ImageResponse(
+                ok=path is not None,
+                session_id=req.session_id,
+                paths=[str(path)] if path else [],
+            )
+
+    def _resolve_generator(self, req: BaseRequest):
+        """两条路由共用：取单例生成器并装载参数。"""
+        generator = GeneratorFactory.build_generator(FactoryType.Image, req.model_name)
+        generator.ensure_model_loaded()
+        generator.parse_params(req.extra)
+        return generator
+
     async def _handle_generate(self, req: BaseRequest) -> ImageResponse:
         extra = req.extra
         number = extra.get("number", 1)
         reference_image = extra.get("reference_image", None)
 
-        generator = GeneratorFactory.build_generator(FactoryType.Image, req.model_name)
-        generator.ensure_model_loaded()
-        generator.parse_params(extra)
+        generator = self._resolve_generator(req)
 
         # ④ 循环生成
         paths: list[str] = []
