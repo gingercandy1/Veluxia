@@ -1,0 +1,334 @@
+/* ============================================================
+   app.qss  —  全局样式表
+   使用方法：在 Application.__init__ 中 self.load_qss("app.qss")
+   ============================================================ */
+
+/* ────────────────────────────────────────────────────────────
+   全局基础
+   ──────────────────────────────────────────────────────────── */
+QWidget {
+    font-family: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", sans-serif;
+    font-size: 13px;
+    color: #DCDCDC;
+    background-color: transparent;
+}
+
+QScrollArea#param_scroll_area,
+QScrollArea#chat_widget {
+    background-color: transparent;
+    border: none;
+}
+
+
+QMainWindow,
+QDialog {
+    background-color: #101215;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   通用 QPushButton
+   ──────────────────────────────────────────────────────────── */
+QPushButton {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 0.5px solid rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
+    padding: 5px 14px;
+    color: #DCDCDC;
+    font-size: 13px;
+}
+
+QPushButton:hover {
+    background-color: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+QPushButton:pressed {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+QPushButton:disabled {
+    color: rgba(255, 255, 255, 0.25);
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ────────────────────────────────────────────────────────────
+   QTabWidget / QTabBar
+   ──────────────────────────────────────────────────────────── */
+QTabWidget::pane {
+    border: none;
+    background-color: #1a1d22;
+}
+
+QTabBar {
+    background-color: transparent;
+}
+
+QTabBar::tab {
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.40);
+    padding: 8px 18px;
+    font-size: 13px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-right: 2px;
+}
+
+QTabBar::tab:hover {
+    color: rgba(255, 255, 255, 0.70);
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+QTabBar::tab:selected {
+    color: #DCDCDC;
+    border-bottom: 2px solid #7B9DBC;
+    font-weight: 600;
+}
+
+/* ────────────────────────────────────────────────────────────
+   QScrollBar 垂直
+   ──────────────────────────────────────────────────────────── */
+QScrollBar:vertical {
+    width: 6px;
+    background-color: transparent;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: rgba(255, 255, 255, 0.22);
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   QListWidget / QListView
+   ──────────────────────────────────────────────────────────── */
+QListWidget,
+QListView {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+QListWidget::item,
+QListView::item {
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: #DCDCDC;
+}
+
+QListWidget::item:hover,
+QListView::item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+QListWidget::item:selected,
+QListView::item:selected {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #DCDCDC;
+}
+
+/* ────────────────────────────────────────────────────────────
+   QGroupBox
+   ──────────────────────────────────────────────────────────── */
+QGroupBox {
+    border: 1px solid rgba(200, 200, 200, 0.1);
+    border-radius: 10px;
+    margin-top: 10px;
+    padding-top: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.40);
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 10px;
+    padding: 0px 4px;
+    background-color: #13161a;
+}
+
+/* ────────────────────────────────────────────────────────────
+   QLineEdit / QTextEdit
+   ──────────────────────────────────────────────────────────── */
+QLineEdit,
+QTextEdit {
+    background-color: #0d1117;
+    border: 0.5px solid rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
+    padding: 5px 10px;
+    color: #DCDCDC;
+    selection-background-color: rgba(123, 157, 188, 0.35);
+}
+
+QLineEdit:focus,
+QTextEdit:focus {
+    border-color: rgba(255, 255, 255, 0.25);
+    outline: none;
+}
+
+QLineEdit:disabled,
+QTextEdit:disabled {
+    background-color: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ────────────────────────────────────────────────────────────
+   QSpinBox / QDoubleSpinBox
+   ──────────────────────────────────────────────────────────── */
+QSpinBox,
+QDoubleSpinBox {
+    background-color: #1e2128;
+    border: 0.5px solid rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: #DCDCDC;
+}
+
+QSpinBox:focus,
+QDoubleSpinBox:focus {
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+QSpinBox::up-button,
+QDoubleSpinBox::up-button,
+QSpinBox::down-button,
+QDoubleSpinBox::down-button {
+    border: none;
+    background-color: transparent;
+    width: 16px;
+}
+
+QSpinBox::up-arrow,
+QDoubleSpinBox::up-arrow {
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-bottom: 4px solid rgba(255, 255, 255, 0.35);
+    width: 0px;
+    height: 0px;
+}
+
+QSpinBox::down-arrow,
+QDoubleSpinBox::down-arrow {
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid rgba(255, 255, 255, 0.35);
+    width: 0px;
+    height: 0px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   QSplitter
+   ──────────────────────────────────────────────────────────── */
+QSplitter::handle {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+QSplitter::handle:horizontal {
+    width: 1px;
+}
+
+QSplitter::handle:vertical {
+    height: 1px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   QMessageBox
+   ──────────────────────────────────────────────────────────── */
+QMessageBox {
+    background-color: #1e2128;
+}
+
+QMessageBox QLabel {
+    color: #DCDCDC;
+    font-size: 13px;
+}
+
+QMessageBox QPushButton {
+    min-width: 72px;
+    padding: 5px 14px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   QComboBox
+   ──────────────────────────────────────────────────────────── */
+QComboBox {
+    background-color: #1e2128;
+    color: #DCDCDC;
+    border: 0.5px solid rgba(255, 255, 255, 0.10);
+    border-radius: 5px;
+    padding: 4px 8px;
+}
+
+QComboBox:hover {
+    border-color: rgba(255, 255, 255, 0.20);
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 20px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #1e2128;
+    border: 0.5px solid rgba(255, 255, 255, 0.10);
+    color: #DCDCDC;
+    selection-background-color: rgba(123, 157, 188, 0.25);
+    outline: none;
+}
+
+
+QFrame#frame_seperator{
+    background-color: rgba(100, 100, 100, 0.25);
+    border: none;
+}
+
+
+QFrame#setting_side_page{
+    border-right: 0.5px solid rgba(100, 100, 100, 0.25)
+
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   CodeBlockWidget
+   ──────────────────────────────────────────────────────────── */
+QWidget#code_block_widget {
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+}
+
+QLabel#lang_label{
+    background:#1a1f2e;
+    color:#8b949e;
+    padding:2px 10px;
+    border-radius:4px;
+    font-size:11px;
+    font-family:'Segoe UI',sans-serif;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   TextBlockWidget
+   ──────────────────────────────────────────────────────────── */
+#streaming_text_widget{
+    background: transparent;
+    border: none;
+    color: #DCDCDC;
+    font-size: 11pt;
+    padding: 0;
+    margin: 0;
+}
+

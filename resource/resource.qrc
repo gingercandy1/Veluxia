@@ -1,0 +1,22 @@
+<RCC version="1.0">
+    <qresource prefix="/">
+        <file>svg/edit.svg</file>
+        <file>svg/paste.svg</file>
+        <file>svg/copy.svg</file>
+        <file>svg/refresh.svg</file>
+        <file>svg/upload.svg</file>
+        <file>svg/export.svg</file>
+        <file>svg/translate.svg</file>
+        <file>svg/setting.svg</file>
+        <file>svg/new_session.svg</file>
+        <file>svg/side.svg</file>
+        <file>svg/up.svg</file>
+        <file>svg/down.svg</file>
+        <file>svg/back.svg</file>
+        <file>svg/clear.svg</file>
+        <file>svg/model.svg</file>
+        <file>svg/log.svg</file>
+        <file>svg/gpu.svg</file>
+        <file>svg/about.svg</file>
+    </qresource>
+</RCC>
