@@ -61,7 +61,7 @@ class EmbedModel:
 
     @property
     def sentence_transformers(self):
-        return preloader.get("sentence_transformers")
+        return preloader.load("sentence_transformers", lambda: __import__("sentence_transformers"))
 
     def encode(self, text: str) -> np.ndarray:
         return np.array(self._embed_model.encode(text, normalize_embeddings=True), dtype=np.float32)
@@ -105,7 +105,7 @@ class SessionStore:
 
     @property
     def qdrant_client(self):
-        return preloader.get("qdrant_client")
+        return preloader.load("qdrant_client", lambda: __import__("qdrant_client"))
 
     def _ensure_collection(self):
         dim = self._embed_model.get_embedding_dimension()

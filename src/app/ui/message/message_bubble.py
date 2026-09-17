@@ -482,6 +482,10 @@ class MessageBubble(QFrame):
         self.bottom_bar.hide_bar()
         super().leaveEvent(e)
 
+    def get_persisted_content(self):
+        """返回用于写入历史记录的内容，默认使用创建时传入的原始内容。"""
+        return self.raw_content
+
 
 class UserMessageBubble(MessageBubble):
     def __init__(self, content, timestamp: str, message_id: str, parent=None):
@@ -804,7 +808,27 @@ class AssistantMessageBubble(MessageBubble):
 
         self._streaming_renderer = StreamingRenderer(self._box_layout)
         self._content_loader     = ContentLoader(self._box_layout)
+
+        if isinstance(content, dict):
+            self._restore_from_history(content)
+
         return _bubble_box
+
+    def _restore_from_history(self, content: dict):
+        """从历史记录恢复静态内容（文本 + 图片/视频/音乐等附件），用于会话切换/重新加载。"""
+        text = content.get("content") or ""
+        attachments = content.get("attachments") or []
+
+        self._content = text
+        self._attachments = attachments
+
+        if text:
+            self._streaming_renderer.append_chunk(text)
+            self._streaming_renderer.finish()
+        if attachments:
+            self._content_loader.load(attachments)
+
+        self.spinner_widget.setVisible(False)
 
     def _build_meta_row(self, timestamp: str) -> QHBoxLayout:
         meta      = QHBoxLayout()
@@ -874,6 +898,14 @@ class AssistantMessageBubble(MessageBubble):
 
     def hide_think_area(self):
         self.thinking_block.hide_think_area()
+
+    def get_persisted_content(self):
+        """助手消息的最终内容是流式累积得到的，需要在保存时重新组装。"""
+        return {
+            "content": self._content,
+            "attachments": self._attachments or [],
+            "extra": {},
+        }
 
 def create_message_bubble(role: str, content, timestamp: str, message_id: str) -> MessageBubble:
     if role == "user":

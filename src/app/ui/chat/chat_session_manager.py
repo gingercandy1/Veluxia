@@ -277,6 +277,7 @@ class ChatSessionManager(QObject):
         return new_id
 
     def switch_session(self, session_id: str):
+        self._current_session_id = session_id
         self._history_mgr.set_current_session(session_id)
         self._load_history(session_id)
         self.session_changed.emit()
