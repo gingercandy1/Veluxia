@@ -2,6 +2,7 @@ from fastapi import HTTPException
 
 from backend.router_base import BaseRouter
 from src.backend.core.model_base import GeneratorFactory
+from src.backend.core.model_utils import to_media_url
 from src.shared.schemas import AnimationResponse, BaseRequest
 from src.shared.enum_type import FactoryType
 
@@ -26,10 +27,13 @@ class AnimationRouter(BaseRouter):
         except Exception as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+        if not video_path:
+            raise HTTPException(status_code=500, detail="动画生成失败，请查看后端日志")
+
         return AnimationResponse(
             ok=True,
             session_id=req.session_id,
-            video_path=str(video_path) if video_path else None,
-            frame_paths=[str(p) for p in frame_paths],
+            video_path=to_media_url(video_path),
+            frame_paths=[to_media_url(p) for p in frame_paths],
         )
 

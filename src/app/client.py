@@ -1,6 +1,7 @@
 import json
 import time
 import httpx
+from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Callable
 
 from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, AnimationResponse, SpeechResponse, \
@@ -175,6 +176,33 @@ class ApiClient:
         else:
             return self._post("/translate/default", payload, TranslateResponse)
 
+
+    def download_media(self, media_url: str, cache_dir: Path) -> Optional[str]:
+        """
+        把后端 /media/... 相对 URL 拉取到本地缓存目录，返回本地文件路径。
+        用于将展示层与后端的实际存储位置解耦——即使以后 backend 独立部署/远程运行，
+        前端也只需要走 HTTP 拿文件，不再假设和 backend 共享文件系统。
+        已缓存过的同名文件直接复用，不重复下载。
+        """
+        if not media_url:
+            return None
+        if not media_url.startswith("/media/"):
+            # 兼容旧响应里直接给本地绝对路径的情况
+            return media_url
+
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        local_path = cache_dir / Path(media_url).name
+        if local_path.exists():
+            return str(local_path)
+
+        try:
+            resp = self._session.get(f"{self.base_url}{media_url}", timeout=self._timeout)
+            resp.raise_for_status()
+            local_path.write_bytes(resp.content)
+            return str(local_path)
+        except Exception as exc:
+            print(f"⚠️ 媒体下载失败 {media_url}: {exc}")
+            return None
 
     def get_model_info(self, factory_type_str):
         _model_info = self._get(f"/{factory_type_str}/models", response_cls=ModelInfoResponse)

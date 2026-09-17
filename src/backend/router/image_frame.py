@@ -5,6 +5,7 @@ from fastapi import HTTPException
 
 from src.backend.router_base import BaseRouter
 from src.backend.core.model_base import GeneratorFactory
+from src.backend.core.model_utils import to_media_url
 from src.shared.schemas import AnimationResponse, BaseRequest
 from src.shared.enum_type import FactoryType
 
@@ -32,7 +33,7 @@ class ImageFrameRouter(BaseRouter):
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
 
             return AnimationResponse(
-                ok=True,
+                ok=bool(frame_paths),
                 session_id=req.session_id,
-                frame_paths=[str(p) for p in frame_paths],
+                frame_paths=[to_media_url(p) for p in frame_paths],
             )

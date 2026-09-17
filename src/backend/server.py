@@ -17,8 +17,10 @@ import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .core.model_base import GeneratorFactory
+from .core.model_utils import get_media_root
 from src.backend.router.image import ImageRouter
 from src.backend.router.image_frame import ImageFrameRouter
 from src.backend.router.speech import SpeechRouter
@@ -96,6 +98,10 @@ def create_app() -> FastAPI:
     ]
     for r in _routers:
         app.include_router(r.router)
+
+    # 生成素材的媒体服务：前端通过 /media/... 相对 URL 拉取文件，
+    # 而不是依赖本地绝对路径（为将来 backend 独立部署/远程运行预留空间）
+    app.mount("/media", StaticFiles(directory=str(get_media_root())), name="media")
 
     # import cProfile
     # import pstats
