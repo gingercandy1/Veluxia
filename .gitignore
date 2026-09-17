@@ -10,6 +10,7 @@ material
 models
 output
 cache
+src/backend/core/speech/ACE_Step
 src/test
 *.zip
 
