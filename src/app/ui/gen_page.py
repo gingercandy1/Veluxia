@@ -475,6 +475,9 @@ class GenerationPage(QWidget):
         if list_session:
             session_ids = [item["session_id"] for item in list_session]
             self._sidebar.update_history(session_ids)
+            self.session_manager.switch_session(session_ids[0])
+        else:
+            self.session_manager.create_new_session()
 
     def add_chat_message(self, role: str, content: str | dict):
         """追加一条完整消息"""
@@ -518,7 +521,7 @@ class GenerationPage(QWidget):
 
     def save_item_from_bubble(self, bubble):
         role = bubble.role
-        content = bubble.raw_content
+        content = bubble.get_persisted_content()
         ts = bubble.timestamp
 
         model_text = self._input_bar.mode_combo.currentText()

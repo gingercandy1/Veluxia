@@ -10,6 +10,7 @@ class BackgroundPreloader:
         self._store: dict[str, Any] = {}
         self._events: dict[str, threading.Event] = {}
         self._errors: dict[str, Exception] = {}
+        self._start_lock = threading.Lock()
 
     def preload(self, name: str, loader: Callable[[], Any]) -> None:
         """注册并立即在后台线程开始加载"""
@@ -42,6 +43,17 @@ class BackgroundPreloader:
     def is_ready(self, name: str) -> bool:
         event = self._events.get(name)
         return event is not None and event.is_set()
+
+    def load(self, name: str, loader: Callable[[], Any]) -> Any:
+        """
+        懒加载：首次调用时才在后台线程启动加载（若尚未启动），随后阻塞等待并返回结果。
+        之后的调用直接复用已启动/已完成的加载，不会重复触发。
+        """
+        if name not in self._events:
+            with self._start_lock:
+                if name not in self._events:
+                    self.preload(name, loader)
+        return self.get(name)
 
 
 

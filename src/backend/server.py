@@ -39,18 +39,7 @@ async def lifespan(app: FastAPI):
         "torch",
         lambda: __import__("torch")
     )
-
-    preloader.preload(
-        "sentence_transformers",
-        lambda: __import__("sentence_transformers")
-    )
-
-    preloader.preload(
-        "qdrant_client",
-        lambda: __import__("qdrant_client")
-    )
-
-
+    
     from src.backend.core.text.llama_chat import LlamaGenerator
     from src.backend.core.image.flux_schnell import FluxSchnellGenerator
     from src.backend.core.image.sdxl import SDXLGenerator
