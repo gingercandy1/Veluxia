@@ -33,6 +33,45 @@ class ZImageGenerator(BaseImageGenerator):
             )
             print("✅ Z-Image-Turbo 下载完成")
 
+    def _fp8_supported(self) -> bool:
+        """FP8 动态量化需要 Ada/Hopper/Blackwell 架构（算力 >= 8.9）才能吃到硬件加速，
+        否则 torchao 只能在计算前反量化回高精度，白白多一道转换开销、没有提速。"""
+        if not self.torch.cuda.is_available():
+            return False
+        major, minor = self.torch.cuda.get_device_capability()
+        return (major, minor) >= (8, 9)
+
+    def _build_quantized_transformer(self):
+        from diffusers import TorchAoConfig, ZImageTransformer2DModel
+        from torchao.quantization import Float8DynamicActivationFloat8WeightConfig
+
+        print("⚡ 检测到 FP8 加速支持，正在以动态激活量化加载 transformer...")
+        quantization_config = TorchAoConfig(quant_type=Float8DynamicActivationFloat8WeightConfig())
+        return ZImageTransformer2DModel.from_pretrained(
+            str(self.base_local),
+            subfolder="transformer",
+            quantization_config=quantization_config,
+            torch_dtype=self.torch.bfloat16,
+            local_files_only=True,
+        )
+
+    def _apply_offload(self, pipe, quantized: bool):
+        """
+        显存卸载策略。
+        `enable_model_cpu_offload()` 内部用 accelerate 的存储指针互换来搬运整模块，
+        这套机制和 torchao 量化后的 tensor 子类（Float8Tensor 等）不兼容，会报
+        "storage of a tensor on device cuda:0 to a storage on different device cpu"。
+        量化场景改用 diffusers 的分组卸载（按参数搬运，非指针互换），专为量化权重设计。
+        """
+        if quantized:
+            pipe.enable_group_offload(
+                onload_device=self.torch.device(self.device),
+                offload_device=self.torch.device("cpu"),
+                offload_type="leaf_level",
+            )
+        else:
+            pipe.enable_model_cpu_offload()
+
     def _load_model(self):
         if self.pipe is not None:
             return
@@ -45,13 +84,21 @@ class ZImageGenerator(BaseImageGenerator):
 
         print("🔧 正在加载 Z-Image-Turbo（首次较慢）...")
         dtype = self.torch.bfloat16
+        quantized = self._fp8_supported()
+        pipe_kwargs = {}
+        if quantized:
+            pipe_kwargs["transformer"] = self._build_quantized_transformer()
+        else:
+            print("ℹ️ 当前 GPU 不支持 FP8 加速（需 Ada/Hopper 及以上架构），使用 bf16 加载")
+
         self.pipe = ZImagePipeline.from_pretrained(
             str(self.base_local),
             torch_dtype=dtype,
             local_files_only=True,
             low_cpu_mem_usage=False,
+            **pipe_kwargs,
         )
-        self.pipe.enable_model_cpu_offload()
+        self._apply_offload(self.pipe, quantized)
         self.pipe.vae.enable_slicing()
         self.pipe.vae.enable_tiling()
         self.torch.cuda.empty_cache()
@@ -65,13 +112,20 @@ class ZImageGenerator(BaseImageGenerator):
             # 单驻留：先卸文生图管道，再载图生图管道
             del self.pipe
             self.pipe = None
+
+        quantized = self._fp8_supported()
+        pipe_kwargs = {}
+        if quantized:
+            pipe_kwargs["transformer"] = self._build_quantized_transformer()
+
         self.pipe_img2img = ZImageImg2ImgPipeline.from_pretrained(
             str(self.base_local),
             torch_dtype=self.torch.bfloat16,
             local_files_only=True,
             low_cpu_mem_usage=False,
+            **pipe_kwargs,
         )
-        self.pipe_img2img.enable_model_cpu_offload()
+        self._apply_offload(self.pipe_img2img, quantized)
 
     def unload_model(self):
         for attr in ("pipe_img2img", "pipe"):
