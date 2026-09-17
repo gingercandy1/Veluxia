@@ -20,6 +20,7 @@ def init_widget():
     from src.app.ui.param.core.image.flux_schnell_panel import FluxSchnellPanel
     from src.app.ui.param.core.image_frame.film_interpolation_panel import FilmInterpolationPanel
     from src.app.ui.param.core.animation.ltx_video_panel import LTXVideoPanel
+    from src.app.ui.param.core.animation.ltx2_video_panel import LTX2VideoPanel
     from src.app.ui.param.core.animation.wan2_video_panel import Wan2VideoPanel
     from src.app.ui.param.core.speech.ace_step_panel import AceStepMusicPanel
     from src.app.ui.param.core.speech.qwen3_tts_panel import Qwen3TTSPanel

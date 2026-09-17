@@ -291,6 +291,18 @@
       "repo_id": "Sporer/LTX-Video",
       "tag": "medium"
     },
+    "LTX-2.3": {
+      "type": "ltx2",
+      "repo_id": "Lightricks/LTX-2.3-Diffusers",
+      "tag": "medium",
+      "note": "LTX-2.3，图生视频，同步生成音频"
+    },
+    "LTX-2.5": {
+      "type": "ltx2",
+      "repo_id": "Lightricks/LTX-2.5-Diffusers",
+      "tag": "medium",
+      "note": "LTX-2.5，图生视频，同步生成音频，支持蒸馏加速与自动时长预测"
+    },
     "Wan2.2-TI2V": {
       "type": "wan2.2",
       "repo_id": "Sporer/Wan2.2-TI2V-5B-Diffusers ",

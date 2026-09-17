@@ -49,6 +49,7 @@ async def lifespan(app: FastAPI):
     from src.backend.core.image.bg_removal import BgRemovalGenerator
     from src.backend.core.image_frame.film_generator import FILMInterpolationGenerator
     from src.backend.core.animation.ltx_video import LTXVideoGenerator
+    from src.backend.core.animation.ltx2_video import LTX2VideoGenerator
     from src.backend.core.animation.wan2_2 import Wan2VideoGenerator
     from src.backend.core.speech.ace_step_music import AceStepMusicGenerator
     from src.backend.core.speech.qwen3_tts import Qwen3TTSGenerator
