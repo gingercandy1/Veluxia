@@ -173,7 +173,7 @@ class MainWindow(QMainWindow):
             prompt=params["params"]["content"],
             model_params=params["params"]["extra"],
             attachments=params["params"]["attachments"],
-            session_id=params["params"]["attachments"],
+            session_id=params["session_id"],
             setting=ConfigManager().get_backend_config(),
         )
 

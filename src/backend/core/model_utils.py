@@ -1,10 +1,11 @@
 import importlib
 import os
-import tempfile
 import threading
+from pathlib import Path
 from typing import Any
 
 from src.backend.core.preloader import preloader
+from src.shared.settings import PROJECT_ROOT
 
 huggingface_token = ""
 
@@ -53,11 +54,27 @@ class LazyModule:
     def is_ready(self) -> bool:
         return self._ready.is_set() and self._error is None
 
+def get_media_root() -> Path:
+    """生成素材的持久化存储根目录（随项目安装位置，不会被系统清理临时文件时删除）。"""
+    root = Path(PROJECT_ROOT) / "output" / project_name
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
 def get_temp_dir(output_dir_name):
-    temp_dir = tempfile.gettempdir()
-    output_dir = os.path.join(temp_dir, project_name, output_dir_name)
-    os.makedirs(output_dir, exist_ok=True)
-    return output_dir
+    output_dir = get_media_root() / output_dir_name if output_dir_name else get_media_root()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return str(output_dir)
+
+def to_media_url(path) -> str:
+    """把生成文件的本地绝对路径转换成前端可通过 /media 静态路由访问的相对 URL。"""
+    p = Path(path).resolve()
+    root = get_media_root().resolve()
+    try:
+        rel = p.relative_to(root)
+    except ValueError:
+        # 不在媒体根目录下（不应发生），退化为原始路径
+        return str(p)
+    return "/media/" + rel.as_posix()
 
 def get_device(device="auto"):
     if device == "auto":

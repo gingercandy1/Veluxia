@@ -8,6 +8,8 @@
 config
 material
 models
+output
+cache
 src/test
 *.zip
 

@@ -2,6 +2,8 @@ import socket
 import subprocess
 import sys
 import time
+from pathlib import Path
+from typing import Optional
 
 import psutil
 from PySide6.QtCore import QThread, Signal
@@ -9,7 +11,12 @@ from PySide6.QtCore import QThread, Signal
 from .param import GenerationRequest
 from src.shared.enum_type import FactoryType
 from src.app.client import ApiClient, ApiGuardClient
-from src.shared.schemas import BaseResponse
+from src.shared.schemas import BaseResponse, ImageResponse, AnimationResponse, SpeechResponse
+from src.shared.settings import PROJECT_ROOT
+
+# 前端本地媒体缓存：把后端 /media/... URL 下载到这里再展示，
+# 放在项目目录下而非系统临时目录，保证聊天记录里的历史附件不会被系统清理掉。
+MEDIA_CACHE_DIR = Path(PROJECT_ROOT) / "cache" / "media"
 
 
 class ApiWorker(QThread):
@@ -40,10 +47,27 @@ class ApiWorker(QThread):
                 result = self._run_stream()
             else:
                 result = self._run_stream()
+            result = self._resolve_media(result)
             self._emit_result(result)
 
         except Exception as e:
             self.error.emit(str(e))
+
+    def _download(self, media_url: Optional[str]) -> Optional[str]:
+        if not media_url:
+            return media_url
+        return self._client.download_media(media_url, MEDIA_CACHE_DIR) or media_url
+
+    def _resolve_media(self, result: BaseResponse) -> BaseResponse:
+        """把响应里的 /media/... URL 换成本地缓存文件路径，展示层无需关心来源。"""
+        if isinstance(result, ImageResponse):
+            result.paths = [p for p in (self._download(p) for p in result.paths) if p]
+        elif isinstance(result, AnimationResponse):
+            result.video_path = self._download(result.video_path)
+            result.frame_paths = [p for p in (self._download(p) for p in result.frame_paths) if p]
+        elif isinstance(result, SpeechResponse):
+            result.audio_path = self._download(result.audio_path)
+        return result
 
     def _run_stream(self):
         for event in self._client.stream_text(self._request):
