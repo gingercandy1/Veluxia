@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
 from src.app.ui.base.action_button import ActionButton
 from src.app.ui.param.param_factory import WidgetFactory
 from src.app.ui.base.widget import BaseWidget
-from src.app.ui.input.slide_stack import SlideStackWidget, DotIndicatorBar
 from src.app.ui.param.param_drawer import ParamDrawer
 from src.app.ui.window_data import WindowData
 from src.shared.enum_type import FactoryType
@@ -131,13 +130,14 @@ class AttachmentChip(BaseWidget):
 
 class AttachmentBar(QScrollArea):
     """横向滚动的 Chip 容器，附件为空时隐藏。"""
+    BAR_HEIGHT = 52
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedHeight(52)
+        self.setFixedHeight(self.BAR_HEIGHT)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setWidgetResizable(True)
+        # self.setWidgetResizable(True)
         self.setFrameShape(QScrollArea.NoFrame)
         self.setVisible(False)
 
@@ -157,6 +157,43 @@ class AttachmentBar(QScrollArea):
         chip.deleteLater()
         if self._layout.count() <= 1:   # 只剩 stretch
             self.setVisible(False)
+
+
+class ParamPopover(QWidget):
+    """快捷参数悬浮卡：临时借用 ParamDrawer 当前的参数面板，关闭时归还。"""
+
+    closed = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent, Qt.Popup)
+        self.setObjectName("param_popover")
+        self.setAttribute(Qt.WA_TranslucentBackground)
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(1, 1, 1, 1)
+        outer.setSpacing(0)
+
+        self._scroll = QScrollArea()
+        self._scroll.setObjectName("param_popover_scroll")
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setFrameShape(QScrollArea.NoFrame)
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        outer.addWidget(self._scroll)
+
+        self.setFixedWidth(320)
+        self.setMaximumHeight(360)
+
+    def show_widget(self, widget: QWidget):
+        widget.setParent(self._scroll)
+        self._scroll.setWidget(widget)
+        widget.show()
+
+    def take_widget(self) -> Optional[QWidget]:
+        return self._scroll.takeWidget()
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self.closed.emit()
 
 
 _STOP_ICON_SVG = (
@@ -219,6 +256,7 @@ class InputBar(BaseWidget):
         self._geo_anim.setEasingCurve(QEasingCurve.Type.InCubic)
 
         self._initial_geometry_set = False
+        self._param_popover: Optional[ParamPopover] = None
 
     def _get_animated_height(self) -> int:
         return self.height()
@@ -233,24 +271,12 @@ class InputBar(BaseWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        self.stack = SlideStackWidget()
-        self.dots = DotIndicatorBar()
-
         self.input_page = self.build_input_page()
         self.param_page = self.build_param_page()
+        self.param_page.setParent(self)
+        self.param_page.setVisible(False)
 
-        self.stack.add_page(self.input_page, "input_page")
-        self.stack.add_page(self.param_page, "params_page")
-        self.dots.set_page_count(self.stack.count())
-
-        # Two-way binding
-        self.stack.current_changed.connect(self.dots.set_current_index)
-        self.stack.current_changed.connect(lambda: self._schedule_resize())
-        self.stack.drag_progress.connect(self.dots.update_drag)
-        self.dots.switch_to.connect(self.stack.set_current_index)
-
-        root.addWidget(self.dots)
-        root.addWidget(self.stack)
+        root.addWidget(self.input_page)
 
     def build_input_page(self):
         input_widget = QWidget()
@@ -286,11 +312,11 @@ class InputBar(BaseWidget):
 
         self.upload_btn = self._icon_button(":svg/upload.svg", self.tr("upload files / pic"))
         self.upload_btn.setObjectName("upload_btn")
-        self.paste_btn  = self._icon_button(":svg/paste.svg", self.tr("paste"))
-        self.paste_btn.setObjectName("paste_btn")
-
         tbar_layout.addWidget(self.upload_btn)
-        tbar_layout.addWidget(self.paste_btn)
+
+        self.param_quick_btn = self._icon_button(":svg/setting.svg", self.tr("quick params"))
+        self.param_quick_btn.setObjectName("param_btn")
+        tbar_layout.addWidget(self.param_quick_btn)
 
         self.send_btn = ActionButton(":svg/up.svg", self.tr("send"), width=40, height=40)
         self.send_btn.set_color(QColor(120, 106, 75, 30), QColor(200, 106, 75, 255))
@@ -343,7 +369,7 @@ class InputBar(BaseWidget):
         self.prompt_input.installEventFilter(self)
         self.send_btn.clicked.connect(self._on_send_clicked)
         self.upload_btn.clicked.connect(self._pick_files)
-        self.paste_btn.clicked.connect(self._paste_clipboard)
+        self.param_quick_btn.clicked.connect(self._toggle_param_popover)
 
     def eventFilter(self, obj, event):
         if obj is self.prompt_input and event.type() == QEvent.Type.KeyPress:
@@ -372,7 +398,9 @@ class InputBar(BaseWidget):
         height_margin = 25
 
         text_content_height = self.get_textedit_content_height()
-        attachment_height = self.attach_bar.height()
+        # attach_bar 隐藏时 Qt 尚未对其做过布局，height() 可能还是旧值/0，
+        # 用是否有附件来判断而不是读取实时控件高度，避免刚显示时高度算少。
+        attachment_height = AttachmentBar.BAR_HEIGHT if self._chips else 0
         input_bar_width = width - width_margin * 2 - WindowData.SettingWidth
         input_bar_height = min(WindowData.InputBarMaxHeight,
                                attachment_height + text_content_height)
@@ -389,18 +417,8 @@ class InputBar(BaseWidget):
                               input_bar_height)
         return input_geometry.height()
 
-    def calc_param_height(self):
-        widget = self.param_page.param_widget
-        if widget:
-            height = widget.height() + 40
-            return min(height, WindowData.InputBarMaxHeight)
-        return self.calc_input_height()
-
     def on_input_bar_height_changed(self):
-        if self.stack.current_index() == 0:
-            input_height = self.calc_input_height()
-        else:
-            input_height = self.calc_param_height()
+        input_height = self.calc_input_height()
         if input_height == self.height():
             return
 
@@ -414,17 +432,50 @@ class InputBar(BaseWidget):
         self._geo_anim.start()
         self.raise_()
 
-        self.param_drawer.setFixedHeight(input_height)
-        self.stack.adjust_page_sizes(input_height)
         self.input_page.setFixedHeight(input_height)
         self.update_height.emit(input_height)
 
     def set_model(self, name):
         """切换模型时自动加载对应参数"""
+        # 切模型前如果快捷参数卡还开着，先把旧控件收回 drawer，
+        # 否则 load_schema 清空 drawer 时找不到它，旧面板会悬空。
+        if self._param_popover is not None and self._param_popover.isVisible():
+            self._param_popover.hide()
+
         type_str = self.label_to_key.get(self.mode_combo.currentText(), "")
         type_enum = FactoryType.convert_by_text(type_str)
         widget = WidgetFactory.build_widget(type_enum, name)
         self.param_drawer.load_schema(widget)
+
+    def _toggle_param_popover(self):
+        if self._param_popover is not None and self._param_popover.isVisible():
+            self._param_popover.hide()
+            return
+
+        widget = self.param_drawer.param_widget
+        if widget is None:
+            return
+
+        if self._param_popover is None:
+            self._param_popover = ParamPopover(self)
+            self._param_popover.closed.connect(self._on_param_popover_closed)
+
+        self._param_popover.show_widget(widget)
+        self._param_popover.adjustSize()
+
+        # 卡片右边缘贴着按钮右边缘，底边贴在按钮上方（向上弹出），
+        # 输入栏本来就在窗口底部，向下弹会被截断。
+        gap = 8
+        anchor = self.param_quick_btn.mapToGlobal(self.param_quick_btn.rect().topRight())
+        x = anchor.x() - self._param_popover.width()
+        y = anchor.y() - self._param_popover.height() - gap
+        self._param_popover.move(x, y)
+        self._param_popover.show()
+
+    def _on_param_popover_closed(self):
+        widget = self._param_popover.take_widget()
+        if widget is not None:
+            self.param_drawer.load_schema(widget)
 
     def _pick_files(self):
         key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")
@@ -515,6 +566,7 @@ class InputBar(BaseWidget):
         chip.remove_requested.connect(self._remove_chip)
         self._chips.append(chip)
         self.attach_bar.add_chip(chip)
+        self._schedule_resize()
 
     def _remove_chip(self, chip: AttachmentChip):
         if chip.attachment in self._attachments:
@@ -522,6 +574,7 @@ class InputBar(BaseWidget):
         if chip in self._chips:
             self._chips.remove(chip)
         self.attach_bar.remove_chip(chip)
+        self._schedule_resize()
 
     def _on_send_clicked(self):
         if self._generating:
@@ -553,7 +606,6 @@ class InputBar(BaseWidget):
         self.prompt_input.setEnabled(not busy)
         self.mode_combo.setEnabled(not busy)
         self.upload_btn.setEnabled(not busy)
-        self.paste_btn.setEnabled(not busy)
         self.set_generating(busy)
 
     def submit(self):
@@ -593,6 +645,7 @@ class InputBar(BaseWidget):
                 self.attach_bar.remove_chip(chip)
             self._chips.clear()
             self._attachments.clear()
+            self._schedule_resize()
         else:
             super().keyPressEvent(event)
 
@@ -609,5 +662,4 @@ class InputBar(BaseWidget):
     def resizeEvent(self, event):
         width = event.size().width()
         self.input_page.setFixedWidth(width)
-        self.param_page.setFixedWidth(width)
         super().resizeEvent(event)

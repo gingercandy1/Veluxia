@@ -4,7 +4,7 @@ from PySide6.QtCore import Signal, Qt, QAbstractListModel, QModelIndex, QSize, Q
 from PySide6.QtGui import QIcon, QBrush, QPainter, QPen, QColor
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QFrame, QScrollBar, QListView, QStyledItemDelegate, QAbstractItemView, QMenu, QStyle,
-                               QSplitter)
+                               QSplitter, QMessageBox, QPushButton)
 
 from src.app.client import ApiClient
 from src.app.ui.input.input_bar import InputBar, InputPayload
@@ -398,7 +398,7 @@ class GenerationPage(QWidget):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(0)
 
-        # Top bar
+        # Top bar：平时显示 Clear，进入多选模式后整条替换成选择计数 + 取消/删除
         topbar = QFrame()
         topbar.setObjectName("generation_top_bar")
         topbar.setFixedHeight(52)
@@ -406,26 +406,61 @@ class GenerationPage(QWidget):
         tb_layout = QHBoxLayout(topbar)
         tb_layout.setContentsMargins(16, 0, 16, 0)
 
+        self._clear_btn = ActionButton(text=self.tr("Clear"), svg_str=":svg/clear.svg", width=80, height=40)
+
+        self._normal_bar = QWidget()
+        normal_layout = QHBoxLayout(self._normal_bar)
+        normal_layout.setContentsMargins(0, 0, 0, 0)
+        normal_layout.addWidget(self._clear_btn)
+
+        self._selection_count_label = QLabel()
+        self._selection_count_label.setObjectName("selection_count_label")
+        self._cancel_selection_btn = QPushButton(self.tr("取消"))
+        self._cancel_selection_btn.setObjectName("selection_cancel_btn")
+        self._delete_selected_btn = QPushButton(self.tr("删除"))
+        self._delete_selected_btn.setObjectName("selection_delete_btn")
+
+        self._selection_bar = QWidget()
+        self._selection_bar.setVisible(False)
+        sel_layout = QHBoxLayout(self._selection_bar)
+        sel_layout.setContentsMargins(0, 0, 0, 0)
+        sel_layout.setSpacing(10)
+        sel_layout.addWidget(self._selection_count_label)
+        sel_layout.addStretch()
+        sel_layout.addWidget(self._cancel_selection_btn)
+        sel_layout.addWidget(self._delete_selected_btn)
+
+        tb_layout.addStretch()
+        tb_layout.addWidget(self._normal_bar)
+        tb_layout.addWidget(self._selection_bar)
+
+        self._chat = ChatWidget()
+        self._input_bar = InputBar(self)
+
+        # Model 选择器从顶栏挪到输入框下方，右侧对齐，左侧用提示文案填充，避免右重左轻
         self.model_combobox = ModelComboBox()
         self.model_combobox.setObjectName("model_combobox")
         self.model_combobox.setFixedWidth(180)
 
-        self._clear_btn = ActionButton(text=self.tr("Clear"), svg_str=":svg/clear.svg", width=80, height=40)
+        bottom_info_bar = QWidget()
+        bottom_info_bar.setObjectName("bottom_info_bar")
+        bi_layout = QHBoxLayout(bottom_info_bar)
+        bi_layout.setContentsMargins(6, 6, 6, 0)
 
-        tb_layout.addStretch()
-        tb_layout.addWidget(QLabel(self.tr("Model：")))
-        tb_layout.addWidget(self.model_combobox)
-        tb_layout.addSpacing(12)
-        tb_layout.addWidget(self._clear_btn)
+        self._disclaimer_label = QLabel(self.tr("AI 生成内容可能存在错误，请自行核实重要信息。"))
+        self._disclaimer_label.setObjectName("disclaimer_label")
 
-        self._chat = ChatWidget()
-        self._input_bar = InputBar(self)
+        bi_layout.addWidget(self._disclaimer_label)
+        bi_layout.addStretch()
+        bi_layout.addWidget(QLabel(self.tr("Model：")))
+        bi_layout.addWidget(self.model_combobox)
 
         input_panel = QWidget()
         input_layout = QVBoxLayout(input_panel)
         input_layout.setContentsMargins(100, 0, 100, 0)
         input_layout.setSpacing(0)
         input_layout.addWidget(self._input_bar)
+        input_layout.addWidget(bottom_info_bar)
 
         content_layout.addWidget(topbar)
         content_layout.addWidget(self._chat, 1)
@@ -448,6 +483,10 @@ class GenerationPage(QWidget):
 
     def connection(self):
         self._clear_btn.clicked.connect(self.clear_chat)
+        self._cancel_selection_btn.clicked.connect(lambda: self._chat.set_selection_mode(False))
+        self._delete_selected_btn.clicked.connect(self._delete_selected_messages)
+        self._chat.selection_mode_changed.connect(self._on_selection_mode_changed)
+        self._chat.selection_changed.connect(self._on_chat_selection_changed)
         self._chat.retry_requested.connect(self._on_retry_requested)
         self._chat.edit_requested.connect(self._on_edit_requested)
 
@@ -511,6 +550,31 @@ class GenerationPage(QWidget):
         ApiClient.instance().clear_memory(
             session_id=self.session_manager.get_current_session_id()
         )
+
+    def _on_selection_mode_changed(self, enabled: bool):
+        self._normal_bar.setVisible(not enabled)
+        self._selection_bar.setVisible(enabled)
+
+    def _on_chat_selection_changed(self, count: int):
+        self._selection_count_label.setText(self.tr(f"已选择 {count} 条"))
+
+    def _delete_selected_messages(self):
+        ids = self._chat.selected_ids()
+        if not ids:
+            return
+
+        reply = QMessageBox.question(
+            self,
+            self.tr("删除消息"),
+            self.tr(f"确定删除选中的 {len(ids)} 条消息吗？此操作无法撤销。"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        deleted_ids = self._chat.delete_selected()
+        self.session_manager.delete_messages(deleted_ids)
 
     def disable_ui(self):
         # 输入区其它控件锁住，但 send_btn 保持可点——切换成"停止"状态，

@@ -5,7 +5,7 @@ from typing import List
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QFontDatabase
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QStyleFactory
 
 from src.app.ui.window import MainWindow
 from src.app.ui.mark import build_app_icon
@@ -31,6 +31,11 @@ class Application(QApplication):
         self.setApplicationName(self.tr("Material Generation"))
         self.setOrganizationName("YourOrg")
         self.setApplicationVersion("1.0.0")
+
+        # Windows 原生（windowsvista）风格会用系统主题绘制部分控件（如 QSpinBox 的上下箭头），
+        # 忽略我们 QSS 里自定义的 ::up-arrow/::down-arrow，在暗色主题下就变成了实心方块。
+        # 换成 Fusion 后所有控件都完全按 QSS 绘制，样式表才能生效。
+        self.setStyle(QStyleFactory.create("Fusion"))
 
         self._setup_font()
         self._load_qss()

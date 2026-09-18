@@ -54,6 +54,33 @@ QPushButton:disabled {
 }
 
 /* ────────────────────────────────────────────────────────────
+   顶栏多选上下文条 / 输入框下方信息条
+   ──────────────────────────────────────────────────────────── */
+QLabel#selection_count_label {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 13px;
+}
+
+QPushButton#selection_cancel_btn {
+    color: rgba(255, 255, 255, 0.60);
+}
+
+QPushButton#selection_delete_btn {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.35);
+}
+
+QPushButton#selection_delete_btn:hover {
+    background-color: rgba(248, 113, 113, 0.12);
+    border-color: rgba(248, 113, 113, 0.55);
+}
+
+QLabel#disclaimer_label {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 11px;
+}
+
+/* ────────────────────────────────────────────────────────────
    QTabWidget / QTabBar
    ──────────────────────────────────────────────────────────── */
 QTabWidget::pane {
@@ -269,6 +296,11 @@ QComboBox {
     border: 0.5px solid rgba(255, 255, 255, 0.10);
     border-radius: 5px;
     padding: 4px 8px;
+    /* 关掉 Qt 原生"菜单式"弹出层：默认弹出层在列表比弹窗高时，
+       会在上下两端画滚动箭头条（QComboBoxPrivateScroller）代替滚动条，
+       样式跟应用其它地方都不一致。设成 0 后改用纯 QAbstractItemView 弹出，
+       走我们自己 view 的滚动条/滚轮逻辑。 */
+    combobox-popup: 0;
 }
 
 QComboBox:hover {
