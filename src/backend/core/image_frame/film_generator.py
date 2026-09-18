@@ -202,11 +202,6 @@ class FILMInterpolationGenerator(BaseImageFrameGenerator):
         backend="film"  精度高，适合小动作
         backend="rife"  幻影少，适合大动作（推荐角色运动场景）
     """
-    names = {
-                "FILM":{ "tag":"image_frame"},
-                "Rife":{ "tag":"image_frame"},
-            }
-
     _FILM_MODEL_PATH = str(Path(PROJECT_ROOT) / "models" / "image_frame" / "film_net" / "Style" / "film_torchscript.pt")
     _RIFE_MODEL_DIR = str(Path(PROJECT_ROOT) / "models" / "image_frame" / "rife" / "train_log")
     _RIFE_REPO_DIR = str(Path(PROJECT_ROOT) / "models" / "image_frame" / "vendors" / "Practical-RIFE")

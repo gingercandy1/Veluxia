@@ -13,7 +13,6 @@ from src.shared.settings import PROJECT_ROOT
 
 class SDXLGenerator(BaseImageGenerator):
     """SDXL-base 图片生成器（Stability Community License，可商用）"""
-    names = {"SDXL": {"tag": "image"}}
     model_dir = "sdxl-base-1.0"
 
     def __init__(self, **kwargs):

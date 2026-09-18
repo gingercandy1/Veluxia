@@ -14,8 +14,6 @@ from src.shared.settings import PROJECT_ROOT
 
 class FluxSchnellGenerator(BaseImageGenerator):
     """Flux.1-schnell 图片生成器"""
-    names = { "Flux.1-schnell":{ "tag":"image"}}
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if not self.model_id:

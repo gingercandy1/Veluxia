@@ -1,9 +1,12 @@
 import enum
+import functools
 import gc
+import importlib
 import json
 import os.path
 import threading
 from abc import ABC, abstractmethod, ABCMeta
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
@@ -11,6 +14,17 @@ from src.backend.core.exceptions import GenerationCancelled
 from src.backend.core.model_utils import get_device
 from src.shared.enum_type import FactoryType
 from src.shared.settings import PROJECT_ROOT
+
+
+@functools.lru_cache(maxsize=1)
+def load_models_config() -> dict:
+    """读取 models.json（模型清单的唯一来源），进程内只读一次。"""
+    try:
+        with open(os.path.join(PROJECT_ROOT, "models.json"), "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print("Models read error:", e)
+        return {}
 
 
 class SingletonMeta(ABCMeta):
@@ -25,44 +39,7 @@ class SingletonMeta(ABCMeta):
 
 
 class BaseGenerator(ABC, metaclass=SingletonMeta):
-    names: Dict[str, Dict] = {}
-    dynamic: bool = False
     type: enum.Enum = None
-    config: Dict[str, Any] = {}
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        try:
-            if not cls.config:
-                config_path = os.path.join(PROJECT_ROOT, "models.json")
-                with open(config_path, "r") as f:
-                    config = json.load(f)
-                cls._config = config
-        except Exception as e:
-            print("Models read error:", e)
-            return
-        cls.register_to_factory(cls._config)
-
-    @classmethod
-    def register_to_factory(cls, config: dict):
-        """
-        静态 names 或动态从 config 读取，统一注册到工厂。
-        """
-        if cls.dynamic and cls.type is not None:
-            type_id = FactoryType.convert_to_text(cls.type)
-            type_dict = config.get(type_id, {})
-            for name, info in type_dict.items():
-                GeneratorFactory.register_generator(cls.type, name, cls)
-                tag = str(info.get("tag", ""))
-                GeneratorFactory.register_model_info(cls.type, tag, name)
-            cls._config = config   # 存下来供 __init__ 用
-            cls.names = type_dict
-
-        elif cls.names and not cls.dynamic:
-            for name, info in cls.names.items():
-                GeneratorFactory.register_generator(cls.type, name, cls)
-                tag = str(info.get("tag", ""))
-                GeneratorFactory.register_model_info(cls.type, tag, name)
 
     def __init__(self, model_name: str, device: str):
         self.pipe = None
@@ -71,8 +48,10 @@ class BaseGenerator(ABC, metaclass=SingletonMeta):
         self.cancel_event: Optional[threading.Event] = None
 
         type_id = FactoryType.convert_to_text(self.type)
-        model_info = self._config.get(type_id, {}).get(self.model_name, None)
+        model_info = load_models_config().get(type_id, {}).get(self.model_name, None)
         if isinstance(model_info, dict):
+            model_info = dict(model_info)
+            model_info.pop("generator", None)
             self.model_id = model_info.pop("repo_id", None)
             self.model_filename = model_info.pop("filename", None)
             self.model_extra = model_info
@@ -176,25 +155,38 @@ class BaseSpeechGenerator(BaseGenerator):
         pass
 
 
+@dataclass(frozen=True)
+class GeneratorSpec:
+    """生成器的延迟加载描述：只记录位置，真正用到时才 import（避免启动时加载 torch 等重型依赖）。"""
+    module: str
+    cls: str
+
+    @classmethod
+    def parse(cls, path: str) -> "GeneratorSpec":
+        """解析 models.json 里的 "generator" 值：'包.模块:类名'，模块路径相对 src.backend.core。"""
+        module, _, name = path.partition(":")
+        return cls(f"src.backend.core.{module}", name)
+
+    def load(self) -> type:
+        return getattr(importlib.import_module(self.module), self.cls)
+
+
 class GeneratorFactory:
     """生成器工厂，方便后续扩展模型"""
     _generators: Dict[FactoryType, Dict[str, type]] = {t: {} for t in FactoryType}
     _model: Dict[FactoryType, Dict[str, list]] = {t: {} for t in FactoryType}
     _device: str = "cpu"
     _ready_event: threading.Event = threading.Event()
+    _resolve_lock: threading.Lock = threading.Lock()
 
     @classmethod
     def mark_ready(cls):
-        """所有生成器模块导入完成、注册表已填充后调用，解除 build_generator 的等待。"""
+        """注册表已填充后调用，供 /ready 探针使用。"""
         cls._ready_event.set()
 
     @classmethod
     def is_ready(cls) -> bool:
         return cls._ready_event.is_set()
-
-    @classmethod
-    def wait_ready(cls, timeout: float = 300.0) -> bool:
-        return cls._ready_event.wait(timeout)
 
     @classmethod
     def apply_setting(cls, setting: dict):
@@ -213,20 +205,22 @@ class GeneratorFactory:
 
     @classmethod
     def register_model_info(cls, ty, tag: str, name: str):
-        if cls._model[ty].get(tag):
-            cls._model[ty][tag].append(name)
-        else:
-            cls._model[ty][tag] = [name]
+        names = cls._model[ty].setdefault(tag, [])
+        if name not in names:
+            names.append(name)
 
     @classmethod
     def build_generator(cls, ty, name: str):
-        if not cls._ready_event.is_set():
-            print("⏳ 模型注册尚未完成，等待中...")
-            if not cls.wait_ready():
-                raise RuntimeError("后端模型加载超时，请检查日志")
-        if name not in cls._generators.get(ty):
+        entry = cls._generators.get(ty, {}).get(name)
+        if entry is None:
             raise ValueError(f"未知的生成器: {name}")
-        return cls._generators[ty][name](model_name=name, device=cls._device)
+        if isinstance(entry, GeneratorSpec):
+            with cls._resolve_lock:
+                entry = cls._generators[ty].get(name)
+                if isinstance(entry, GeneratorSpec):
+                    entry = entry.load()
+                    cls._generators[ty][name] = entry
+        return entry(model_name=name, device=cls._device)
 
     @classmethod
     def get_generator_names(cls, ty) -> list:

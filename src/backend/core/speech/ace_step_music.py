@@ -7,8 +7,6 @@ from src.backend.core.model_utils import print_vram_usage, get_temp_dir
 from src.shared.settings import PROJECT_ROOT
 
 class AceStepMusicGenerator(BaseSpeechGenerator):
-    names = { "Ace-Step1.5":{ "tag":"music"} }
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

@@ -6,7 +6,7 @@ from PySide6.QtCore import (
     Signal, Qt, QEvent, QRect, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property
 )
 from PySide6.QtGui import (
-    QDragEnterEvent, QDropEvent, QKeyEvent, QPixmap,
+    QDragEnterEvent, QDropEvent, QKeyEvent, QPen, QPixmap,
     QPainter, QPainterPath, QIcon, QColor
 )
 from PySide6.QtWidgets import (
@@ -137,7 +137,7 @@ class AttachmentBar(QScrollArea):
         self.setFixedHeight(self.BAR_HEIGHT)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.setWidgetResizable(True)
+        self.setWidgetResizable(True)
         self.setFrameShape(QScrollArea.NoFrame)
         self.setVisible(False)
 
@@ -165,7 +165,7 @@ class ParamPopover(QWidget):
     closed = Signal()
 
     def __init__(self, parent=None):
-        super().__init__(parent, Qt.Popup)
+        super().__init__(parent, Qt.Popup | Qt.FramelessWindowHint | Qt.NoDropShadowWindowHint)
         self.setObjectName("param_popover")
         self.setAttribute(Qt.WA_TranslucentBackground)
 
@@ -195,6 +195,17 @@ class ParamPopover(QWidget):
         super().hideEvent(event)
         self.closed.emit()
 
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        # 繪製一個邊框
+        painter.setPen(QPen(QColor("#404048"), 1))
+        painter.setBrush(QColor("#21242c"))
+
+        rect = self.rect()
+        path = QPainterPath()
+        path.addRoundedRect(rect.adjusted(1, 1, -1, -1), 8, 8)
+        painter.drawPath(path)
 
 _STOP_ICON_SVG = (
     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">'

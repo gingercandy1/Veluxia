@@ -14,7 +14,6 @@ class Qwen3TTSGenerator(BaseSpeechGenerator):
     """
     基于 Qwen3-TTS 的文字转语音生成器。
     """
-    dynamic = True
     # 内置预设音色
     PRESET_VOICES = ["Chelsie", "Ethan", "Serena", "Dylan", "Ana", "Vivian", "Ryan", "Aria", "Marco"]
 

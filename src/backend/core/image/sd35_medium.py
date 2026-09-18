@@ -13,7 +13,6 @@ from src.shared.settings import PROJECT_ROOT
 
 class SD35MediumGenerator(BaseImageGenerator):
     """Stable Diffusion 3.5-Medium 图片生成器（Stability Community License，可商用）"""
-    names = {"SD3.5-Medium": {"tag": "image"}}
     model_dir = "sd3.5-medium"
 
     def __init__(self, **kwargs):

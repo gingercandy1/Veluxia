@@ -117,6 +117,7 @@ QScrollArea#attachment_bar {
     background-color: transparent;
 }
 
+QScrollArea#attachment_bar > QWidget,
 QScrollArea#attachment_bar > QWidget > QWidget {
     background-color: transparent;
 }
@@ -168,14 +169,20 @@ QWidget#attachment_chip QPushButton#chip_remove:hover {
 }
 
 QWidget#param_popover {
-    background-color: #21242c;
-    border: 0.5px solid rgba(255, 255, 255, 0.12);
+    background-color: transparent;
+    border: none;
     border-radius: 10px;
 }
 
 QScrollArea#param_popover_scroll {
     background-color: transparent;
     border: none;
+}
+
+QScrollArea#param_popover_scroll > QWidget,
+QScrollArea#param_popover_scroll > QWidget > QWidget,
+QWidget#base_param_panel {
+    background-color: transparent;
 }
 
 QWidget#input_bar[dragOver="true"] {

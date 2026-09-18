@@ -19,7 +19,6 @@ class QwenImageLightningGenerator(BaseImageGenerator):
     注意：LoRA 按 8 月底座训练，与 2512 底座的兼容性以本机实测为准；
     若翻车，回退底座为 Qwen/Qwen-Image 即可。图生图走官方 Qwen-Image-Edit，为二期链路。
     """
-    names = {"Qwen-Image-Lightning": {"tag": "fast"}}
     model_dir = "qwen-image-2512-fp8"
     lora_id = "lightx2v/Qwen-Image-Lightning"
     lora_weight = "Qwen-Image-Lightning-8steps-V1.0.safetensors"
