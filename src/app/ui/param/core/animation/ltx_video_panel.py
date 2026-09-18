@@ -5,7 +5,7 @@ from src.app.ui.param.panel_base import BaseParamPanel
 
 
 class LTXVideoPanel(BaseParamPanel):
-    name = ["LTX-Video"]
+    names = ["LTX-Video"]
     type = FactoryType.Animation
 
     _RESOLUTIONS = ["low (512×320)", "medium (608×384)", "high (704×480)"]

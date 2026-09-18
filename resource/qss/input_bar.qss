@@ -158,14 +158,13 @@ QWidget#attachment_chip QLabel#chip_name {
 QWidget#attachment_chip QPushButton#chip_remove {
     border: none;
     background-color: transparent;
-    color: rgba(255, 255, 255, 0.25);
-    font-size: 14px;
     border-radius: 8px;
+    image: url(:svg/close.svg);
 }
 
 QWidget#attachment_chip QPushButton#chip_remove:hover {
-    background-color: rgba(220, 50, 50, 0.20);
-    color: #f87171;
+    background-color: rgba(255, 255, 255, 0.08);
+    image: url(:svg/close_hover.svg);
 }
 
 QWidget#param_popover {

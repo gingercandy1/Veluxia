@@ -20,5 +20,7 @@
         <file>svg/log.svg</file>
         <file>svg/gpu.svg</file>
         <file>svg/about.svg</file>
+        <file>svg/close.svg</file>
+        <file>svg/close_hover.svg</file>
     </qresource>
 </RCC>
