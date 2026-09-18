@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from PySide6.QtCore import Signal, Qt, QAbstractListModel, QModelIndex, QSize, QPoint, QRect, QObject, QTimer
+from PySide6.QtCore import Signal, Qt, QAbstractListModel, QModelIndex, QSize, QPoint, QRect, QObject, QTimer, QVariantAnimation, QEasingCurve
 from PySide6.QtGui import QIcon, QBrush, QPainter, QPen, QColor
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QFrame, QScrollBar, QListView, QStyledItemDelegate, QAbstractItemView, QMenu, QStyle,
-                               QSplitter, QMessageBox, QPushButton)
+                               QSplitter, QMessageBox, QPushButton, QSizePolicy)
 
 from src.app.client import ApiClient
 from src.app.ui.input.input_bar import InputBar, InputPayload
@@ -293,7 +293,13 @@ class SettingSidePage(QFrame):
             height=WindowData.SettingButtonHeight,
             is_circle=is_circle,
         )
-        self.layout.addWidget(btn, Qt.AlignmentFlag.AlignHCenter)
+        # 和下方历史会话列表的行一致：撑满整行，配色也对齐列表项的 hover/按下效果。
+        btn.setMinimumWidth(0)
+        btn.setMaximumWidth(16777215)
+        btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        btn.set_color(QColor(255, 255, 255, 0), QColor(255, 255, 255, 14))
+        btn._press_bg = QColor(255, 255, 255, 24)
+        self.layout.addWidget(btn)
         return btn
 
     def add_circle_button(self, svg_path, text, tooltip, is_circle=False):
@@ -379,6 +385,7 @@ class GenerationPage(QWidget):
         outer.setSpacing(0)
 
         main_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._splitter = main_splitter
         main_splitter.setContentsMargins(0, 0, 0, 0)
         main_splitter.setHandleWidth(6)  # 拖拽柄的宽度，可调
         main_splitter.setStyleSheet("""
@@ -458,6 +465,8 @@ class GenerationPage(QWidget):
         input_panel = QWidget()
         input_layout = QVBoxLayout(input_panel)
         input_layout.setContentsMargins(100, 0, 100, 0)
+        # 输入栏最小宽度会把 content 的最小宽度撑得很大，导致侧边栏无法拖宽，这里让 splitter 忽略它。
+        input_panel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         input_layout.setSpacing(0)
         input_layout.addWidget(self._input_bar)
         input_layout.addWidget(bottom_info_bar)
@@ -479,7 +488,47 @@ class GenerationPage(QWidget):
 
         main_splitter.setStretchFactor(0, 1)
         main_splitter.setStretchFactor(1, 3)
+        main_splitter.setSizes([260, 940])
+
+        self._sidebar_width = 260
+        self._sidebar_anim = QVariantAnimation(self)
+        self._sidebar_anim.setDuration(220)
+        self._sidebar_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._sidebar_anim.valueChanged.connect(self._apply_sidebar_width)
+        self._sidebar_anim.finished.connect(self._on_sidebar_anim_finished)
+        self._sidebar_open = True
         outer.addWidget(main_splitter)
+
+    def is_sidebar_open(self) -> bool:
+        return self._sidebar_open
+
+    def toggle_sidebar(self):
+        self._sidebar_anim.stop()
+        if self._sidebar_open:
+            current = self._sidebar.width()
+            if current > 0:
+                self._sidebar_width = current
+            self._sidebar_open = False
+            self._sidebar_anim.setStartValue(current)
+            self._sidebar_anim.setEndValue(0)
+        else:
+            self._sidebar_open = True
+            self._sidebar_anim.setStartValue(self._sidebar.width())
+            self._sidebar_anim.setEndValue(self._sidebar_width)
+        self._sidebar_anim.start()
+
+    def _apply_sidebar_width(self, w):
+        w = int(w)
+        # 动画期间靠 maximumWidth 压过侧边栏自身的最小宽度，结束后再还原。
+        self._sidebar.setMaximumWidth(w)
+        total = sum(self._splitter.sizes())
+        self._splitter.setSizes([w, max(0, total - w)])
+
+    def _on_sidebar_anim_finished(self):
+        if self._sidebar_open:
+            self._sidebar.setMaximumWidth(16777215)
+            total = sum(self._splitter.sizes())
+            self._splitter.setSizes([self._sidebar_width, max(0, total - self._sidebar_width)])
 
     def connection(self):
         self._clear_btn.clicked.connect(self.clear_chat)
@@ -598,7 +647,8 @@ class GenerationPage(QWidget):
         model_name = self.model_combobox.currentText()
 
         history_item = {
-            "session_id": self.session_manager.get_current_session_id(),
+            "session_id": getattr(bubble, "generation_session_id", None)
+                          or self.session_manager.get_current_session_id(),
             "role": role,
             "content": content,
             "time": ts,
@@ -607,6 +657,7 @@ class GenerationPage(QWidget):
             "model_name": model_name,
         }
         self.save_message.emit(history_item)
+        self.finish_generation()
 
     def _on_go_to_setting(self):
         self.setting_requested.emit()
@@ -614,9 +665,29 @@ class GenerationPage(QWidget):
     def create_new_session(self):
         self.session_manager.create_new_session()
 
+    def _mark_generating(self, bubble):
+        bubble.generation_session_id = self.session_manager.get_current_session_id()
+        bubble.generation_active = True
+
+    def finish_generation(self):
+        """生成结束（完成/取消/失败）：气泡不再需要跨会话保活。"""
+        bubble = self.active_bubble
+        if bubble is None:
+            return
+        bubble.generation_active = False
+
     def _on_session_changed(self):
+        # 生成中的气泡还没写入历史，clear() 会把它销毁；先摘下来，回到原会话时再挂回去。
+        pending = self.active_bubble
+        if pending is not None and getattr(pending, "generation_active", False):
+            self._chat.detach_message(pending.message_id)
+        else:
+            pending = None
+
         self._chat.clear()
         self._chat.load_history(self.session_manager.get_history())
+        if pending is not None and pending.generation_session_id == self.session_manager.get_current_session_id():
+            self._chat.attach_bubble(pending)
         self._refresh_sidebar_history()
 
     def _refresh_sidebar_history(self):
@@ -661,6 +732,7 @@ class GenerationPage(QWidget):
         }
         bubble, item = self.add_chat_message("user", user_content)
         self.active_bubble, _ = self.add_chat_message("assistant", "")
+        self._mark_generating(self.active_bubble)
         # 存历史是磁盘 IO（首条消息还会触发标题重命名 + 重新查询会话列表），
         # 挪到下一轮事件循环，先让两个新气泡画出来，发送感觉才是"立刻"的。
         QTimer.singleShot(0, lambda: self.save_message.emit(item))
@@ -683,6 +755,7 @@ class GenerationPage(QWidget):
 
         self._chat.clear_from_index(len(self.session_manager.get_history()))
         self.active_bubble, _ = self.add_chat_message("assistant", "")
+        self._mark_generating(self.active_bubble)
 
         # 禁用输入，显示进度条
         self.disable_ui()
