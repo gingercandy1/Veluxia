@@ -274,10 +274,8 @@ class SettingSidePage(QFrame):
             self._on_selected_requested
         )
 
-    def _on_selected_requested(self):
-        index = self.history_list.currentIndex()
+    def _on_selected_requested(self, index: QModelIndex):
         session = self.history_model.get(index.row())
-        print("Selected session: ", session)
         self.switch_session.emit(session)
 
     def _on_delete_requested(self, index: QModelIndex):

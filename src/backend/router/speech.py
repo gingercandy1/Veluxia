@@ -12,9 +12,7 @@ class SpeechRouter(BaseRouter):
     factory_type = FactoryType.Speech
 
     def _register_routes(self) -> None:
-        @self.router.post("/generate", response_model=SpeechResponse, summary="文本转语音/音乐")
-        async def generate(req: BaseRequest) -> SpeechResponse:
-            return await self.handle_generate(req)
+        self._register_async_generate_routes(self.handle_generate, BaseRequest)
 
     async def handle_generate(self, req: BaseRequest) -> SpeechResponse:
         generator = GeneratorFactory.build_generator(FactoryType.Speech, req.model_name)

@@ -7,6 +7,7 @@ from src.app.client import ApiClient
 from src.app.param import GenerationRequest
 from src.app.ui.base.action_button import ActionButton
 from src.app.ui.gen_page import GenerationPage
+from src.app.ui.loading_page import LoadingPage
 from src.app.ui.setting.setting import SettingPage
 from src.app.ui.window_data import WindowData
 from src.app.ui.setting.page.log_page import log_info, log_error
@@ -82,14 +83,22 @@ class MainWindow(QMainWindow):
         self._startup = BackendStartupWorker()
         self._startup.ready.connect(self._on_backend_ready)
         self._startup.timeout.connect(self._on_backend_timeout)
+        self._startup.log.connect(self._on_backend_log)
         self._startup.log.connect(lambda msg: log_info(msg))
         self._startup.start()
 
         self._client = ApiClient()
 
+        self._outer_stack = QStackedWidget()
+        self.setCentralWidget(self._outer_stack)
+
+        self._loading_page = LoadingPage()
+        self._outer_stack.addWidget(self._loading_page)  # index 0
+
         root  = QWidget()
         root .setContentsMargins(0, 0, 0, 0)
-        self.setCentralWidget(root)
+        self._outer_stack.addWidget(root)  # index 1
+        self._outer_stack.setCurrentWidget(self._loading_page)
 
         root_layout = QVBoxLayout(root)
         root_layout.setContentsMargins(0, 0, 0, 0)
@@ -211,6 +220,10 @@ class MainWindow(QMainWindow):
 
     def _on_generate_error(self, msg: str):
         self._gen_page.enable_ui()
+        active_bubble = self._gen_page.active_bubble
+        if active_bubble:
+            active_bubble.append_output(f"⚠ 生成失败：{msg}")
+            active_bubble.finish()
         log_error(f"生成出错:{msg}", )
 
     def _on_think_chunk(self, text: str):
@@ -244,12 +257,17 @@ class MainWindow(QMainWindow):
         # save history item
         self._gen_page.save_item_from_bubble(active_bubble)
 
+    def _on_backend_log(self, msg: str):
+        self._loading_page.set_status(msg)
+
     def _on_backend_ready(self):
         log_info("✅ Backend 已就緒")
         self._gen_page.setEnabled(True)
+        self._outer_stack.setCurrentIndex(1)
 
     def _on_backend_timeout(self):
         log_error("⚠️ Backend 啟動超時")
+        self._loading_page.set_error(self.tr("启动超时，请检查日志后重启应用"))
 
     def closeEvent(self, event):
         self._gen_page.closeEvent(event)

@@ -127,13 +127,24 @@ class ApiProcess(BaseProcess):
         return proc
 
     @staticmethod
-    def wait_for_backend(retries: int = 20, interval: float = 0.5) -> bool:
+    def wait_for_backend(retries: int = 30, interval: float = 0.5) -> bool:
         for _ in range(retries):
             if ApiClient.instance().health():
                 print("✅ Backend 已就绪")
                 return True
             time.sleep(interval)
         print("⚠️  Backend 启动超时，继续运行（可能部分功能不可用）")
+        return False
+
+    @staticmethod
+    def wait_for_models(retries: int = 240, interval: float = 1.0) -> bool:
+        """/health 只代表进程活着，模型注册在后台线程异步进行，这里单独等 /ready。"""
+        for _ in range(retries):
+            if ApiClient.instance().ready():
+                print("✅ 模型已注册完成")
+                return True
+            time.sleep(interval)
+        print("⚠️  模型注册超时，继续运行（模型列表可能不完整）")
         return False
 
     @staticmethod
@@ -162,7 +173,7 @@ class ApiGuardProcess(BaseProcess):
         return proc
 
     @staticmethod
-    def wait_for_backend(retries: int = 20, interval: float = 0.5) -> bool:
+    def wait_for_backend(retries: int = 30, interval: float = 0.5) -> bool:
         for _ in range(retries):
             if ApiGuardClient.instance().health():
                 print("✅ Backend 已就绪")
@@ -218,6 +229,9 @@ class BackendStartupWorker(QThread):
         if not guard_result:
             self.timeout.emit()
             return
+
+        self.log.emit("⏳ 正在加载模型列表...")
+        ApiProcess.wait_for_models()
 
         self.ready.emit()
 

@@ -332,3 +332,34 @@ QLabel#lang_label{
     margin: 0;
 }
 
+
+/* ────────────────────────────────────────────────────────────
+   LoadingPage（启动加载页）
+   ──────────────────────────────────────────────────────────── */
+QWidget#loading_page {
+    background-color: #101215;
+}
+
+QLabel#loading_title {
+    color: #DCDCDC;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+QLabel#loading_status {
+    color: #8b949e;
+    font-size: 12px;
+}
+
+QProgressBar#loading_progress {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 0.5px solid rgba(255, 255, 255, 0.10);
+    border-radius: 3px;
+    height: 6px;
+}
+
+QProgressBar#loading_progress::chunk {
+    background-color: #7B9DBC;
+    border-radius: 3px;
+}
+
