@@ -30,12 +30,16 @@ class ApiWorker(QThread):
     text_chunk     = Signal(str)
     stream_done    = Signal(bool)
 
+    # 多图批量生成时，每完成一张（已下载到本地）就发一次，用于提前展示
+    partial_ready  = Signal(str)
+
     def __init__(self, client: ApiClient, request: GenerationRequest, model_type: str):
         super().__init__()
         self._client = client
         self._model_type = model_type
         self._request = request
         self._stop_event = threading.Event()
+        self._downloaded: dict[str, str] = {}
 
     def stop(self):
         """用户点了"停止"：通知后端取消任务（图片/动画/语音），
@@ -50,7 +54,8 @@ class ApiWorker(QThread):
             self._translate()
             model_type = self._model_type
             if model_type == FactoryType.Image:
-                result = self._client.generate_image(self._request, stop_event=self._stop_event)
+                result = self._client.generate_image(
+                    self._request, stop_event=self._stop_event, on_partial=self._on_partial)
             elif model_type == FactoryType.Animation:
                 result = self._client.generate_animation(self._request, stop_event=self._stop_event)
             elif model_type == FactoryType.Speech:
@@ -86,7 +91,16 @@ class ApiWorker(QThread):
     def _download(self, media_url: Optional[str]) -> Optional[str]:
         if not media_url:
             return media_url
-        return self._client.download_media(media_url, MEDIA_CACHE_DIR) or media_url
+        # 提前展示的中间结果已经下载过，最终结果里复用同一个本地路径（界面靠路径去重）。
+        if media_url not in self._downloaded:
+            self._downloaded[media_url] = self._client.download_media(media_url, MEDIA_CACHE_DIR) or media_url
+        return self._downloaded[media_url]
+
+    def _on_partial(self, urls: list[str]):
+        for url in urls:
+            local = self._download(url)
+            if local and not self._stop_event.is_set():
+                self.partial_ready.emit(str(local))
 
     def _resolve_media(self, result: BaseResponse) -> BaseResponse:
         """把响应里的 /media/... URL 换成本地缓存文件路径，展示层无需关心来源。"""

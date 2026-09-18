@@ -118,9 +118,12 @@ class ApiClient:
             pass
         return False
 
-    def generate_image(self, req, stop_event: Optional[threading.Event] = None):
+    def generate_image(self, req, stop_event: Optional[threading.Event] = None, on_partial=None):
         payload = req.to_api_payload()
-        return self._submit_and_poll("/image/generate", payload, ImageResponse, stop_event=stop_event)
+        return self._submit_and_poll(
+            "/image/generate", payload, ImageResponse, stop_event=stop_event,
+            on_partial=on_partial, poll_interval=1.0 if on_partial else 2.0,
+        )
 
     def generate_text(self, req):
         payload = req.to_api_payload()
@@ -159,6 +162,7 @@ class ApiClient:
         max_consecutive_connect_failures: int = 5,
         max_total_wait_seconds: float = 2 * 3600,
         stop_event: Optional[threading.Event] = None,
+        on_partial=None,
     ) -> BaseResponse:
         """
         图片/动画/语音生成耗时不固定（从几秒到几十分钟不等），不能再用一次性
@@ -188,6 +192,7 @@ class ApiClient:
             return response_cls.from_error(str(exc))
 
         connect_failures = 0
+        seen_partial = 0
         start = time.monotonic()
         while True:
             self._interruptible_sleep(poll_interval, stop_event)
@@ -215,6 +220,10 @@ class ApiClient:
 
             connect_failures = 0
             status = status_json.get("status")
+            partial = status_json.get("partial") or []
+            if on_partial is not None and len(partial) > seen_partial:
+                new_items, seen_partial = partial[seen_partial:], len(partial)
+                on_partial(new_items)
             if status == "done":
                 return response_cls.model_validate(status_json.get("result") or {})
             if status == "error":

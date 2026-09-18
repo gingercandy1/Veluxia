@@ -572,10 +572,10 @@ class GenerationPage(QWidget):
         else:
             self.session_manager.create_new_session()
 
-    def add_chat_message(self, role: str, content: str | dict):
+    def add_chat_message(self, role: str, content: str | dict, model_type: str = "text", item_count: int = 1):
         """追加一条完整消息"""
         ts = datetime.now().strftime("%H:%M")
-        bubble = self._chat.add_message(role, content, ts)
+        bubble = self._chat.add_message(role, content, ts, model_type=model_type, item_count=item_count)
 
         # 构造完整的历史记录
         model_text = self._input_bar.mode_combo.currentText()
@@ -634,8 +634,7 @@ class GenerationPage(QWidget):
 
     def enable_ui(self):
         self._input_bar.set_busy(False)
-        if self.active_bubble.spinner_widget.isVisible():
-            self.active_bubble.spinner_widget.setVisible(False)
+        self.active_bubble.hide_loading()
 
     def save_item_from_bubble(self, bubble):
         role = bubble.role
@@ -723,6 +722,19 @@ class GenerationPage(QWidget):
         else:
             self._input_bar.send_btn.setEnabled(False)
 
+    @staticmethod
+    def _item_count(model_type, params: dict) -> int:
+        """本次请求预期产出几个结果，用于决定加载占位显示几个槽。"""
+        if model_type == FactoryType.Image:
+            return params.get("number", 1)
+        if model_type == FactoryType.Speech:
+            return params.get("batch_size", 1)
+        return 1
+
+    def on_partial_attachment(self, path: str):
+        if self.active_bubble is not None:
+            self.active_bubble.add_partial_attachment(path)
+
     def _on_user_submit(self, payload: "InputPayload"):
         user_content = {
             "model_name": self.model_combobox.currentText(),
@@ -731,7 +743,11 @@ class GenerationPage(QWidget):
             "extra": {**payload.params}
         }
         bubble, item = self.add_chat_message("user", user_content)
-        self.active_bubble, _ = self.add_chat_message("assistant", "")
+        model_type = FactoryType.convert_by_text(payload.mode)
+        item_count = self._item_count(model_type, payload.params)
+        self.active_bubble, _ = self.add_chat_message(
+            "assistant", "", model_type=payload.mode, item_count=item_count
+        )
         self._mark_generating(self.active_bubble)
         # 存历史是磁盘 IO（首条消息还会触发标题重命名 + 重新查询会话列表），
         # 挪到下一轮事件循环，先让两个新气泡画出来，发送感觉才是"立刻"的。
@@ -754,15 +770,20 @@ class GenerationPage(QWidget):
             return
 
         self._chat.clear_from_index(len(self.session_manager.get_history()))
-        self.active_bubble, _ = self.add_chat_message("assistant", "")
+        model_text = self._input_bar.mode_combo.currentText()
+        model_type = self._input_bar.label_to_key.get(model_text)
+        model_enum = FactoryType.convert_by_text(model_type)
+        retry_params = (user_msg.get("content") or {}).get("extra", {})
+        item_count = self._item_count(model_enum, retry_params)
+        self.active_bubble, _ = self.add_chat_message(
+            "assistant", "", model_type=model_type, item_count=item_count
+        )
         self._mark_generating(self.active_bubble)
 
         # 禁用输入，显示进度条
         self.disable_ui()
 
         user_content = user_msg.get("content", "")
-        model_text = self._input_bar.mode_combo.currentText()
-        model_type = self._input_bar.label_to_key.get(model_text)
 
         # 发出重试请求
         self.generate_requested.emit({

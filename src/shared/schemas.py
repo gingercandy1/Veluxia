@@ -62,3 +62,4 @@ class JobStatusResponse(BaseModel):
     status: str  # pending / running / done / error
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+    partial: List[str] = Field(default_factory=list, description="已产出的中间结果（媒体 URL）")

@@ -89,6 +89,7 @@ class BaseRouter(ABC):
                 status=job.status.value,
                 result=result_dict,
                 error=job.error,
+                partial=list(job.partial),
             )
 
         @self.router.post(f"{path}/cancel/{{job_id}}", response_model=BaseResponse, summary="取消正在进行的生成任务")
