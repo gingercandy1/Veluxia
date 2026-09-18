@@ -8,6 +8,7 @@ from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication
 
 from src.app.ui.window import MainWindow
+from src.app.ui.mark import build_app_icon
 from src.app.ui.setting.page.log_page import log_info, log_error
 
 
@@ -108,6 +109,10 @@ if __name__ == "__main__":
     os.environ["CUDA_PATH"] = "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.8"
 
     app = Application(sys.argv)
+    app_icon = build_app_icon()
+    app.setWindowIcon(app_icon)
+
     window = MainWindow()
+    window.setWindowIcon(app_icon)
     window.show()
     sys.exit(app.exec())

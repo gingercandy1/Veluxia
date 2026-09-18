@@ -10,10 +10,11 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.ui.base.widget import BaseWidget
+from src.app.ui.message.image_preview import ImagePreviewOverlay
 
 
 class ImageWidget(QWidget):
-    """圆角图片，QPainter 绘制，带投影和悬停高光。"""
+    """圆角图片，QPainter 绘制，带投影和悬停高光；点击可放大预览。"""
     MAX_WIDTH = 280
     MAX_HEIGHT = 180
     RADIUS = 10
@@ -22,6 +23,7 @@ class ImageWidget(QWidget):
     def __init__(self, path: str, parent=None):
         super().__init__(parent)
         self.setObjectName("image_widget")
+        self._path = path
         self._pixmap = None
         self._error = ""
         self._load(path)
@@ -78,10 +80,17 @@ class ImageWidget(QWidget):
         p.end()
 
     def enterEvent(self, e):
+        if not self._error:
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.update(); super().enterEvent(e)
 
     def leaveEvent(self, e):
         self.update(); super().leaveEvent(e)
+
+    def mousePressEvent(self, e):
+        if not self._error and self._pixmap is not None and e.button() == Qt.MouseButton.LeftButton:
+            ImagePreviewOverlay(self._path, self.window())
+        super().mousePressEvent(e)
 
 
 class VideoWidget(QWidget):

@@ -36,6 +36,7 @@ class ApiWorker(QThread):
 
     def run(self):
         try:
+            self._translate()
             model_type = self._model_type
             if model_type == FactoryType.Image:
                 result = self._client.generate_image(self._request)
@@ -52,6 +53,16 @@ class ApiWorker(QThread):
 
         except Exception as e:
             self.error.emit(str(e))
+
+    def _translate(self):
+        """翻译提示词也是一次网络请求，放在这个后台线程里做（曾经在主线程里做，
+        新气泡要等它跑完才能画出来，看起来像卡住了）。翻译失败不阻断生成，
+        直接退回用户原始输入。"""
+        try:
+            response = self._client.translate(self._request, is_default=True)
+            self._request.translated = response.translate_result or ""
+        except Exception as e:
+            print(f"⚠️ 翻译失败，使用原始提示词：{e}")
 
     def _download(self, media_url: Optional[str]) -> Optional[str]:
         if not media_url:

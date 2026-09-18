@@ -8,7 +8,6 @@ from PIL import Image
 from PIL.Image import Resampling
 from huggingface_hub import snapshot_download
 
-from src.backend.core.preloader import preloader
 from src.shared.settings import PROJECT_ROOT
 from src.backend.core.model_base import BaseAnimationGenerator
 from src.backend.core.model_utils import huggingface_token, print_vram_usage, get_temp_dir
@@ -65,7 +64,7 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
         print(f"🔄 正在加载 Wan2.2-TI2V...")
         print(f"   ② 组装 Pipeline（VAE / T5 / CLIP）...")
         from diffusers import WanImageToVideoPipeline
-        torch = preloader.get("torch")
+        import torch  # 后台注册线程早已 import 过，这里只是拿缓存，不会重新触发加载
         self.pipe = WanImageToVideoPipeline.from_pretrained(
             str(self.model_dir),
             torch_dtype=torch.bfloat16,

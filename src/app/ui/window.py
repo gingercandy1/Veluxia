@@ -174,8 +174,6 @@ class MainWindow(QMainWindow):
         self._top_bar.set_index(1)
 
     def on_generate_requested(self, params: dict):
-        # self._gen_page.show_chat_progress()
-        # 翻译提示词
         req = GenerationRequest.build(
             model_type=params["model_type"],
             model_name=params["model_name"],
@@ -186,11 +184,8 @@ class MainWindow(QMainWindow):
             setting=ConfigManager().get_backend_config(),
         )
 
-        _client = ApiClient().instance()
-        response = self._client.translate(req, is_default=True)
-        GenerationRequest.open_translate(response.translate_result)
-
-        # 创建 Worker 并启动
+        # 翻译提示词也是一次网络请求，挪进 Worker 线程里做，
+        # 避免它卡在主线程上，导致新气泡显示不出来。
         self._worker = ApiWorker(self._client, req, params["model_type"])
         self._worker.finished_ok.connect(self.on_generate_finished)
         self._worker.error.connect(self._on_generate_error)
