@@ -104,9 +104,12 @@ class AttachmentChip(BaseWidget):
         name_lbl.setToolTip(str(self.attachment.path))
 
         # 删除按钮
-        rm_btn = QPushButton("×")
+        rm_btn = QPushButton()
         rm_btn.setFixedSize(16, 16)
         rm_btn.setObjectName("chip_remove")
+        rm_btn.setIcon(QIcon(":svg/close.svg"))
+        rm_btn.setIconSize(QSize(12, 12))
+        rm_btn.setToolTip(self.tr("remove attachment"))
         rm_btn.clicked.connect(lambda: self.remove_requested.emit(self))
 
         layout.addWidget(thumb_lbl)
@@ -234,7 +237,7 @@ class InputBar(BaseWidget):
         },
         "animation": {
             "label": "🎞️ 动画",
-            "placeholder": "side view warrior {frames=16} {fps=8} {motion=3.0}",
+            "placeholder": "side view warrior",
             "file_filter": "Images (*.png *.jpg *.jpeg *.webp)",
         },
         "speech": {

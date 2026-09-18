@@ -5,7 +5,7 @@ from src.app.ui.param.panel_base import BaseParamPanel, LabeledSlider
 
 
 class Wan2VideoPanel(BaseParamPanel):
-    name = ["Wan2.2-TI2V"]
+    names = ["Wan2.2-TI2V"]
     type = FactoryType.Animation
 
     # 合法帧数：4N+1
