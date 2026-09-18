@@ -155,6 +155,7 @@ class LTX2VideoGenerator(BaseAnimationGenerator):
                 generator=self.generator,
                 output_type="np",
                 return_dict=False,
+                callback_on_step_end=self.make_cancel_callback(),
             )
 
         frames: List[Image.Image] = []

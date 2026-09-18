@@ -1,4 +1,5 @@
 import json
+import threading
 import time
 import httpx
 from pathlib import Path
@@ -117,21 +118,36 @@ class ApiClient:
             pass
         return False
 
-    def generate_image(self, req):
+    def generate_image(self, req, stop_event: Optional[threading.Event] = None):
         payload = req.to_api_payload()
-        return self._submit_and_poll("/image/generate", payload, ImageResponse)
+        return self._submit_and_poll("/image/generate", payload, ImageResponse, stop_event=stop_event)
 
     def generate_text(self, req):
         payload = req.to_api_payload()
         return self._post("/text/generate", payload, TextResponse)
 
-    def generate_animation(self, req):
+    def generate_animation(self, req, stop_event: Optional[threading.Event] = None):
         payload = req.to_api_payload()
-        return self._submit_and_poll("/animation/generate", payload, AnimationResponse)
+        return self._submit_and_poll("/animation/generate", payload, AnimationResponse, stop_event=stop_event)
 
-    def generate_speech(self, req):
+    def generate_speech(self, req, stop_event: Optional[threading.Event] = None):
         payload = req.to_api_payload()
-        return self._submit_and_poll("/speech/generate", payload, SpeechResponse)
+        return self._submit_and_poll("/speech/generate", payload, SpeechResponse, stop_event=stop_event)
+
+    def cancel_job(self, path_prefix: str, job_id: str) -> None:
+        """通知后端取消一个已提交的任务；这是尽力而为，不等待/不关心结果——
+        前端反正马上就要放弃这次结果了，等待取消确认只会拖慢"点停止就立刻停"的观感。"""
+        try:
+            self._session.post(f"{self.base_url}{path_prefix}/cancel/{job_id}", timeout=10)
+        except Exception:
+            pass
+
+    @staticmethod
+    def _interruptible_sleep(seconds: float, stop_event: Optional[threading.Event]):
+        if stop_event is None:
+            time.sleep(seconds)
+            return
+        stop_event.wait(timeout=seconds)
 
     def _submit_and_poll(
         self,
@@ -142,6 +158,7 @@ class ApiClient:
         poll_timeout: float = 60.0,
         max_consecutive_connect_failures: int = 5,
         max_total_wait_seconds: float = 2 * 3600,
+        stop_event: Optional[threading.Event] = None,
     ) -> BaseResponse:
         """
         图片/动画/语音生成耗时不固定（从几秒到几十分钟不等），不能再用一次性
@@ -173,7 +190,10 @@ class ApiClient:
         connect_failures = 0
         start = time.monotonic()
         while True:
-            time.sleep(poll_interval)
+            self._interruptible_sleep(poll_interval, stop_event)
+            if stop_event is not None and stop_event.is_set():
+                self.cancel_job(path_prefix, job_id)
+                return response_cls.from_error("已停止生成")
             if time.monotonic() - start > max_total_wait_seconds:
                 return response_cls.from_error("生成任務等待超時，請檢查後端日誌")
 
@@ -201,7 +221,7 @@ class ApiClient:
                 return response_cls.from_error(status_json.get("error") or "生成失敗")
             # pending / running：继续等待
 
-    def stream_text(self, req) -> Generator[Dict[str, Any], None, None]:
+    def stream_text(self, req, stop_event: Optional[threading.Event] = None) -> Generator[Dict[str, Any], None, None]:
         max_retries = 3
         payload = req.to_api_payload()
 
@@ -215,6 +235,11 @@ class ApiClient:
                 ) as resp:
                     resp.raise_for_status()
                     for raw in resp.iter_lines():
+                        if stop_event is not None and stop_event.is_set():
+                            # 文本流没有 job_id 可取消，前端能做的只是主动断开连接——
+                            # 退出 with 块会关闭这次 HTTP 流，后端那次请求随之中止。
+                            yield {"type": "cancelled"}
+                            return
                         if not raw:
                             continue
                         if not raw.startswith("data: "):

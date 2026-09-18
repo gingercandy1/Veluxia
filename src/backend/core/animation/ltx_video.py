@@ -255,6 +255,7 @@ class LTXVideoGenerator(BaseAnimationGenerator):
                 decode_timestep=self.decode_timestep,
                 decode_noise_scale=self.decode_noise_scale,
                 generator=self.generator,
+                callback_on_step_end=self.make_cancel_callback(),
             )
 
         frames: List[Image.Image] = output.frames[0]

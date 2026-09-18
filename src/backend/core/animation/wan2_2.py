@@ -175,6 +175,7 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
                 num_inference_steps=self.num_inference_steps,
                 guidance_scale=self.guidance_scale,
                 generator=self.generator,
+                callback_on_step_end=self.make_cancel_callback(),
             )
 
         frames: List[Image.Image] = []

@@ -4,6 +4,8 @@ from typing import Optional
 from fastapi import HTTPException
 
 from src.backend.router_base import BaseRouter
+from src.backend.core.exceptions import GenerationCancelled
+from src.backend.core.job_manager import Job
 from src.backend.core.model_base import GeneratorFactory
 from src.backend.core.model_utils import to_media_url
 from src.shared.schemas import BaseRequest, ImageResponse
@@ -42,12 +44,13 @@ class ImageRouter(BaseRouter):
         generator.ensure_model_loaded()
         return generator
 
-    async def _handle_generate(self, req: BaseRequest) -> ImageResponse:
+    async def _handle_generate(self, req: BaseRequest, job: Job) -> ImageResponse:
         extra = req.extra
         number = extra.get("number", 1)
         reference_image = extra.get("reference_image", None)
 
         generator = self._resolve_generator(req)
+        generator.cancel_event = job.cancel_event
 
         # ④ 循环生成
         # parse_params() 每次都要重新调用：它会生成新的 save_path（带 uuid）和新的随机种子，
@@ -55,12 +58,15 @@ class ImageRouter(BaseRouter):
         # 结果就是"生成的文件互相覆盖、内容还一模一样"。
         paths: list[str] = []
         for _ in range(number):
+            generator.check_cancelled()  # 多图批量生成时，每张之间也给一次取消机会
             generator.parse_params(req.extra)
             try:
                 if reference_image:
                     path: Optional[Path] = await generator.generate_by_image()
                 else:
                     path: Optional[Path] = await generator.generate()
+            except GenerationCancelled:
+                raise
             except Exception as exc:
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
 

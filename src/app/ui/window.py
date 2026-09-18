@@ -1,5 +1,6 @@
 import subprocess
 import sys
+from typing import Optional
 
 from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QStackedWidget, QVBoxLayout, QFrame
 from src.app.work import ApiWorker, BackendStartupWorker
@@ -112,6 +113,7 @@ class MainWindow(QMainWindow):
         # Page 0
         self._gen_page = GenerationPage(self)
         self._gen_page.generate_requested.connect(self.on_generate_requested)
+        self._gen_page.stop_requested.connect(self.on_stop_requested)
         self._stack.addWidget(self._gen_page)
 
         # Page 1
@@ -122,6 +124,7 @@ class MainWindow(QMainWindow):
         self.debug_paint_areas()
 
         self._output_started = False
+        self._worker: Optional[ApiWorker] = None
 
     def debug_paint_areas(self):
         """ 调试方法：为主要区域和控件注入不同背景色，便于观察布局边界 """
@@ -189,11 +192,27 @@ class MainWindow(QMainWindow):
         self._worker = ApiWorker(self._client, req, params["model_type"])
         self._worker.finished_ok.connect(self.on_generate_finished)
         self._worker.error.connect(self._on_generate_error)
+        self._worker.cancelled.connect(self._on_generate_cancelled)
 
         self._worker.thinking_chunk.connect(self._on_think_chunk)
         self._worker.text_chunk.connect(self._on_text_chunk)
         self._worker.stream_done.connect(self._on_stream_done)
         self._worker.start()
+
+    def on_stop_requested(self):
+        """用户点了"停止"（同一个按钮，生成中变成停止态）：通知当前 worker 中断。"""
+        if self._worker is not None and self._worker.isRunning():
+            self._worker.stop()
+
+    def _on_generate_cancelled(self):
+        self._gen_page.enable_ui()
+        active_bubble = self._gen_page.active_bubble
+        if active_bubble:
+            # 用引用块渲染，跟随已有的 blockquote 样式（灰色小字+左侧竖线），
+            # 不再把提示文字当成正文段落直接糊在气泡里。
+            active_bubble.append_output("\n\n> 已停止生成\n")
+            active_bubble.finish()
+        log_info("生成已被用户取消")
 
     def on_generate_finished(self, result):
         self._gen_page.enable_ui()
