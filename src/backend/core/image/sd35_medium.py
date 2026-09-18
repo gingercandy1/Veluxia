@@ -5,6 +5,7 @@ from typing import Optional
 
 from PIL import Image
 
+from src.backend.core.exceptions import GenerationCancelled
 from src.backend.core.model_base import BaseImageGenerator
 from src.backend.core.model_utils import huggingface_token, get_temp_dir
 from src.shared.settings import PROJECT_ROOT
@@ -78,10 +79,15 @@ class SD35MediumGenerator(BaseImageGenerator):
                                   prompt=self.prompt,
                                   num_inference_steps=self.num_inference_steps,
                                   guidance_scale=self.guidance_scale,
-                                  generator=self.generator).images[0]
+                                  generator=self.generator,
+                                  callback_on_step_end=self.make_cancel_callback(),
+                                  ).images[0]
                 image.save(self.save_path)
                 print(f"✅ 生成完成: {self.save_path.name}")
                 return self.save_path
+            except GenerationCancelled:
+                print("🛑 生成已被用户取消")
+                raise
             except Exception as e:
                 print(f"❌ 生成失败: {e}")
             finally:
@@ -101,10 +107,15 @@ class SD35MediumGenerator(BaseImageGenerator):
                                           strength=self.strength,
                                           num_inference_steps=self.num_inference_steps,
                                           guidance_scale=self.guidance_scale,
-                                          generator=self.generator).images[0]
+                                          generator=self.generator,
+                                          callback_on_step_end=self.make_cancel_callback(),
+                                          ).images[0]
                 image.save(self.save_path)
                 print(f"✅ 生成完成: {self.save_path.name}")
                 return self.save_path
+            except GenerationCancelled:
+                print("🛑 生成已被用户取消")
+                raise
             except Exception as e:
                 print(f"❌ 生成失败: {e}")
             finally:

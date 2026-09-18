@@ -1,6 +1,7 @@
 import socket
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 from typing import Optional
@@ -22,6 +23,7 @@ MEDIA_CACHE_DIR = Path(PROJECT_ROOT) / "cache" / "media"
 class ApiWorker(QThread):
     finished_ok = Signal(object)
     error       = Signal(str)
+    cancelled   = Signal()
 
     # 流式文本專用信號
     thinking_chunk = Signal(str)
@@ -33,26 +35,43 @@ class ApiWorker(QThread):
         self._client = client
         self._model_type = model_type
         self._request = request
+        self._stop_event = threading.Event()
+
+    def stop(self):
+        """用户点了"停止"：通知后端取消任务（图片/动画/语音），
+        文本流则直接断开连接。真正的中断发生在各自的取消点上，这里只是发信号。"""
+        self._stop_event.set()
 
     def run(self):
         try:
+            if self._stop_event.is_set():
+                self.cancelled.emit()
+                return
             self._translate()
             model_type = self._model_type
             if model_type == FactoryType.Image:
-                result = self._client.generate_image(self._request)
+                result = self._client.generate_image(self._request, stop_event=self._stop_event)
             elif model_type == FactoryType.Animation:
-                result = self._client.generate_animation(self._request)
+                result = self._client.generate_animation(self._request, stop_event=self._stop_event)
             elif model_type == FactoryType.Speech:
-                result = self._client.generate_speech(self._request)
+                result = self._client.generate_speech(self._request, stop_event=self._stop_event)
             elif model_type == FactoryType.Text:
                 result = self._run_stream()
             else:
                 result = self._run_stream()
+
+            if self._stop_event.is_set():
+                self.cancelled.emit()
+                return
+
             result = self._resolve_media(result)
             self._emit_result(result)
 
         except Exception as e:
-            self.error.emit(str(e))
+            if self._stop_event.is_set():
+                self.cancelled.emit()
+            else:
+                self.error.emit(str(e))
 
     def _translate(self):
         """翻译提示词也是一次网络请求，放在这个后台线程里做（曾经在主线程里做，
@@ -81,12 +100,14 @@ class ApiWorker(QThread):
         return result
 
     def _run_stream(self):
-        for event in self._client.stream_text(self._request):
+        for event in self._client.stream_text(self._request, stop_event=self._stop_event):
             t = event.get("type")
             if t == "thinking":
                 self.thinking_chunk.emit(event["text"])
             elif t == "text":
                 self.text_chunk.emit(event["text"])
+            elif t == "cancelled":
+                return BaseResponse(ok=False)
             elif t == "error":
                 self.error.emit(event["text"])
                 return BaseResponse(ok=False)

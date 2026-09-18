@@ -82,7 +82,10 @@ class ActionButton(QPushButton):
     bgColor = Property(QColor, _get_bg, _set_bg)
 
     def _svg_to_icon(self, svg_path: str, size: int = 64) -> QIcon:
-        renderer = QSvgRenderer(svg_path)
+        # QSvgRenderer(str) 只认文件名/资源路径，原始 SVG 标记字符串必须转成
+        # bytes 走内容构造函数，否则 isValid()==False，图标会悄无声息地变空白。
+        source = svg_path.encode("utf-8") if svg_path.lstrip().startswith("<") else svg_path
+        renderer = QSvgRenderer(source)
         pixmap = QPixmap(size, size)
         pixmap.fill(Qt.GlobalColor.transparent)
 
@@ -97,6 +100,11 @@ class ActionButton(QPushButton):
         self._normal_bg = background_color
         self._hover_bg = hover_color
         self._current_bg = background_color
+        self.update()
+
+    def set_icon(self, svg_str: str):
+        self._svg_str = svg_str
+        self._icon = self._svg_to_icon(svg_str)
         self.update()
 
     def paintEvent(self, event):

@@ -5,8 +5,9 @@ import os.path
 import threading
 from abc import ABC, abstractmethod, ABCMeta
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
+from src.backend.core.exceptions import GenerationCancelled
 from src.backend.core.model_utils import get_device
 from src.shared.enum_type import FactoryType
 from src.shared.settings import PROJECT_ROOT
@@ -66,6 +67,8 @@ class BaseGenerator(ABC, metaclass=SingletonMeta):
     def __init__(self, model_name: str, device: str):
         self.pipe = None
         self.model_name = model_name
+        # 由 Router 在拿到 Job 后注入；None 表示这次调用不支持/不需要取消。
+        self.cancel_event: Optional[threading.Event] = None
 
         type_id = FactoryType.convert_to_text(self.type)
         model_info = self._config.get(type_id, {}).get(self.model_name, None)
@@ -113,6 +116,21 @@ class BaseGenerator(ABC, metaclass=SingletonMeta):
     def torch(self):
         import torch  # 后台注册线程早已 import 过，这里只是拿缓存，不会重新触发加载
         return torch
+
+    def check_cancelled(self):
+        """在生成循环的可中断点调用：用户点了停止就在这里抛出，中断当前推理。"""
+        if self.cancel_event is not None and self.cancel_event.is_set():
+            raise GenerationCancelled()
+
+    def make_cancel_callback(self):
+        """
+        返回一个 diffusers `callback_on_step_end` 兼容的回调：
+        每个去噪步结束时检查一次取消标记，命中则抛出异常提前结束 pipe() 调用。
+        """
+        def _callback(pipe, step, timestep, callback_kwargs):
+            self.check_cancelled()
+            return callback_kwargs
+        return _callback
 
 class BaseTextGenerator(BaseGenerator):
     """所有图片生成模型的基类（文本 → 图像）"""

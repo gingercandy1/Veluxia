@@ -75,7 +75,7 @@ class BaseRouter(ABC):
 
         @self.router.post(f"{path}/submit", response_model=JobSubmitResponse, summary="提交生成任务，立即返回任务 ID")
         async def submit(req: request_cls) -> JobSubmitResponse:
-            job = JobManager.submit(lambda: handler(req))
+            job = JobManager.submit(lambda job: handler(req, job))
             return JobSubmitResponse(job_id=job.id, status=job.status.value)
 
         @self.router.get(f"{path}/status/{{job_id}}", response_model=JobStatusResponse, summary="查询生成任务状态")
@@ -90,3 +90,13 @@ class BaseRouter(ABC):
                 result=result_dict,
                 error=job.error,
             )
+
+        @self.router.post(f"{path}/cancel/{{job_id}}", response_model=BaseResponse, summary="取消正在进行的生成任务")
+        async def cancel(job_id: str) -> BaseResponse:
+            ok = JobManager.cancel(job_id)
+            if not ok:
+                job = JobManager.get(job_id)
+                if job is None:
+                    raise HTTPException(status_code=404, detail="任务不存在或已过期")
+                return BaseResponse(ok=False, error=f"任务已处于 {job.status.value} 状态，无法取消")
+            return BaseResponse(ok=True)

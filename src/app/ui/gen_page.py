@@ -338,6 +338,7 @@ class SettingSidePage(QFrame):
 
 class GenerationPage(QWidget):
     generate_requested = Signal(object)
+    stop_requested = Signal()
     retry_requested = Signal(str)
     session_changed = Signal(str)
     update_resized = Signal()
@@ -451,6 +452,7 @@ class GenerationPage(QWidget):
         self._chat.edit_requested.connect(self._on_edit_requested)
 
         self._input_bar.submitted.connect(self._on_user_submit)
+        self._input_bar.stop_requested.connect(self.stop_requested)
         self._input_bar.mode_combo.currentTextChanged.connect(self.on_changed_model_type)
         self._input_bar.prompt_input.textChanged.connect(self._on_text_changed)
 
@@ -511,14 +513,14 @@ class GenerationPage(QWidget):
         )
 
     def disable_ui(self):
-        if self._input_bar.isEnabled():
-            self._input_bar.setEnabled(False)
+        # 输入区其它控件锁住，但 send_btn 保持可点——切换成"停止"状态，
+        # 这样生成过程中用户还能随时打断它。
+        self._input_bar.set_busy(True)
         if not self.active_bubble.spinner_widget.isVisible():
             self.active_bubble.spinner_widget.setVisible(True)
 
     def enable_ui(self):
-        if not self._input_bar.isEnabled():
-            self._input_bar.setEnabled(True)
+        self._input_bar.set_busy(False)
         if self.active_bubble.spinner_widget.isVisible():
             self.active_bubble.spinner_widget.setVisible(False)
 
@@ -579,6 +581,8 @@ class GenerationPage(QWidget):
         self._input_bar.set_model(name)
 
     def _on_text_changed(self):
+        if self._input_bar.is_generating:
+            return
         if self._input_bar.prompt_input.toPlainText():
             self._input_bar.send_btn.setEnabled(True)
         else:
@@ -617,7 +621,7 @@ class GenerationPage(QWidget):
         self.active_bubble, _ = self.add_chat_message("assistant", "")
 
         # 禁用输入，显示进度条
-        self._input_bar.setEnabled(False)
+        self.disable_ui()
 
         user_content = user_msg.get("content", "")
         model_text = self._input_bar.mode_combo.currentText()

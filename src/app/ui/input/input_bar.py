@@ -159,9 +159,17 @@ class AttachmentBar(QScrollArea):
             self.setVisible(False)
 
 
+_STOP_ICON_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">'
+    '<rect x="6" y="6" width="12" height="12" rx="2.5" fill="#b0b0b8"/>'
+    '</svg>'
+)
+
+
 class InputBar(BaseWidget):
     """ 统一输入栏 """
     submitted = Signal(object)   # InputPayload
+    stop_requested = Signal()
     update_height = Signal(object)
     update_model = Signal(object)
 
@@ -288,6 +296,7 @@ class InputBar(BaseWidget):
         self.send_btn.set_color(QColor(120, 106, 75, 30), QColor(200, 106, 75, 255))
         self.send_btn.setObjectName("send_btn")
         self.send_btn.setEnabled(False)
+        self._generating = False
 
         top_layout.addWidget(self.mode_combo)
         top_layout.addWidget(self.prompt_input, 1)
@@ -332,7 +341,7 @@ class InputBar(BaseWidget):
         self.mode_combo.currentTextChanged.connect(self._on_mode_changed)
         self.prompt_input.document().contentsChanged.connect(self._schedule_resize)
         self.prompt_input.installEventFilter(self)
-        self.send_btn.clicked.connect(self.submit)
+        self.send_btn.clicked.connect(self._on_send_clicked)
         self.upload_btn.clicked.connect(self._pick_files)
         self.paste_btn.clicked.connect(self._paste_clipboard)
 
@@ -342,7 +351,7 @@ class InputBar(BaseWidget):
                 if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
                     # QTextEdit 默认不处理 Ctrl+Enter（不会自动换行），手动插入换行符
                     self.prompt_input.insertPlainText("\n")
-                else:
+                elif not self._generating:
                     self.submit()
                 return True
         return super().eventFilter(obj, event)
@@ -514,7 +523,42 @@ class InputBar(BaseWidget):
             self._chips.remove(chip)
         self.attach_bar.remove_chip(chip)
 
+    def _on_send_clicked(self):
+        if self._generating:
+            self.stop_requested.emit()
+        else:
+            self.submit()
+
+    def set_generating(self, generating: bool):
+        """生成进行中时，同一个按钮切换成"停止"，再点一次就中断当前生成。"""
+        if generating == self._generating:
+            return
+        self._generating = generating
+        if generating:
+            self.send_btn.set_icon(_STOP_ICON_SVG)
+            self.send_btn.setToolTip(self.tr("stop"))
+            self.send_btn.setEnabled(True)
+        else:
+            self.send_btn.set_icon(":svg/up.svg")
+            self.send_btn.setToolTip(self.tr("send"))
+            self.send_btn.setEnabled(bool(self.prompt_input.toPlainText().strip()))
+
+    @property
+    def is_generating(self) -> bool:
+        return self._generating
+
+    def set_busy(self, busy: bool):
+        """生成期间锁住除 send_btn 之外的输入控件（上传/粘贴/模式切换/文本框），
+        send_btn 本身不禁用，而是切换成"停止"外观，交给 set_generating 处理。"""
+        self.prompt_input.setEnabled(not busy)
+        self.mode_combo.setEnabled(not busy)
+        self.upload_btn.setEnabled(not busy)
+        self.paste_btn.setEnabled(not busy)
+        self.set_generating(busy)
+
     def submit(self):
+        if self._generating:
+            return
         prompt = self.prompt_input.toPlainText().strip()
         if not prompt:
             return
