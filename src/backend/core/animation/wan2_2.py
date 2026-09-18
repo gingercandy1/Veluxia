@@ -13,10 +13,6 @@ from src.backend.core.model_base import BaseAnimationGenerator
 from src.backend.core.model_utils import huggingface_token, print_vram_usage, get_temp_dir
 
 class Wan2VideoGenerator(BaseAnimationGenerator):
-    names = {
-                "Wan2.2-TI2V":{ "tag":"video"}
-            }
-
     _BASE_REPO_ID = "Wan-AI/Wan2.2-TI2V-5B-Diffusers"
 
     # Wan2.x 帧数要求：4N+1（17, 25, 33, 49, 65, 81）

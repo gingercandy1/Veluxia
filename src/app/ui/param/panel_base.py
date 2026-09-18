@@ -37,6 +37,7 @@ class LabeledSlider(QWidget):
         layout.setSpacing(6)
 
         self._slider = QSlider(Qt.Horizontal)
+        self._slider.setObjectName("labeled_slider")
         self._slider.setMinimum(int(minimum * self._factor))
         self._slider.setMaximum(int(maximum * self._factor))
         self._slider.setSingleStep(int(step * self._factor))
@@ -54,6 +55,7 @@ class LabeledSlider(QWidget):
             self._spin.setSingleStep(step)
             self._spin.setDecimals(decimals)
             self._spin.setFixedWidth(68)
+        self._spin.setObjectName("labeled_slider_spin")
 
         self.setValue(default)
 

@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QComboBox, QCheckBox
 
 from src.shared.enum_type import FactoryType
-from src.app.ui.param.panel_base import BaseParamPanel, LabeledSlider
+from src.app.ui.param.panel_base import BaseParamPanel
 
 
 

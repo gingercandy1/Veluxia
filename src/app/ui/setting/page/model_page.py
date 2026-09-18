@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 
@@ -110,18 +111,13 @@ class _ModelTableModel(QAbstractTableModel):
         return True
 
     def to_dict(self) -> dict:
-        result: dict = {}
+        """在原始数据上回写表格列，保留 generator / mode / think 等表格之外的字段。"""
+        result = copy.deepcopy(self._raw)
         for row in self._rows:
-            cat  = row["_category"]
-            name = row["name"]
-            if cat not in result:
-                result[cat] = {}
-            result[cat][name] = {
-                "repo_id":  row["repo_id"],
-                "filename": row["filename"],
-                "tag":      row["tag"],
-                "note":     row["note"],
-            }
+            entry = result.setdefault(row["_category"], {}).setdefault(row["name"], {})
+            for key in ("repo_id", "filename", "tag", "note"):
+                if row[key] or key in entry:
+                    entry[key] = row[key]
         return result
 
     @property

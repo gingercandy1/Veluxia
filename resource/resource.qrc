@@ -12,6 +12,8 @@
         <file>svg/side.svg</file>
         <file>svg/up.svg</file>
         <file>svg/down.svg</file>
+        <file>svg/spin_up.svg</file>
+        <file>svg/spin_down.svg</file>
         <file>svg/back.svg</file>
         <file>svg/clear.svg</file>
         <file>svg/model.svg</file>

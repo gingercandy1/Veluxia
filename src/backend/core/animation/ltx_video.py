@@ -18,8 +18,6 @@ class LTXVideoGenerator(BaseAnimationGenerator):
     基于 LTX-Video 的图像驱动动画生成器。
     """
 
-    names = { "LTX-Video":{ "tag":"video"} }
-
     _DEFAULT_MODEL_ID = "Lightricks/LTX-Video-0.9.7-distilled"
     MODEL_NAME = "ltxv-2b-0.9.8-distilled-fp8.safetensors"
 

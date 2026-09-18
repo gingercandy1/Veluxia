@@ -19,11 +19,6 @@ class LTX2VideoGenerator(BaseAnimationGenerator):
     并同步生成视频与音轨，输出为带音频的 mp4。
     """
 
-    names = {
-        "LTX-2.3": {"tag": "video"},
-        "LTX-2.5": {"tag": "video"},
-    }
-
     _REPO_IDS = {
         "LTX-2.3": "Lightricks/LTX-2.3-Diffusers",
         "LTX-2.5": "Lightricks/LTX-2.5-Diffusers",

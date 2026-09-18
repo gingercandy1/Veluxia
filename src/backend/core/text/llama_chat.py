@@ -9,7 +9,6 @@ from src.shared.settings import PROJECT_ROOT
 
 
 class LlamaGenerator(BaseTextGenerator):
-    dynamic = True
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

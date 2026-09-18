@@ -19,6 +19,11 @@ QScrollArea#chat_widget {
     border: none;
 }
 
+QScrollArea#param_scroll_area > QWidget,
+QScrollArea#chat_widget > QWidget {
+    background-color: transparent;
+}
+
 
 QMainWindow,
 QDialog {
@@ -217,7 +222,7 @@ QTextEdit:disabled {
 QSpinBox,
 QDoubleSpinBox {
     background-color: #1e2128;
-    border: 0.5px solid rgba(255, 255, 255, 0.10);
+    border: none;
     border-radius: 6px;
     padding: 4px 8px;
     color: #DCDCDC;
@@ -232,28 +237,71 @@ QSpinBox::up-button,
 QDoubleSpinBox::up-button,
 QSpinBox::down-button,
 QDoubleSpinBox::down-button {
+    subcontrol-origin: border;
     border: none;
     background-color: transparent;
-    width: 16px;
+    width: 18px;
+}
+
+QSpinBox::up-button,
+QDoubleSpinBox::up-button {
+    subcontrol-position: top right;
+}
+
+QSpinBox::down-button,
+QDoubleSpinBox::down-button {
+    subcontrol-position: bottom right;
+}
+
+QSpinBox::up-button:hover,
+QDoubleSpinBox::up-button:hover,
+QSpinBox::down-button:hover,
+QDoubleSpinBox::down-button:hover {
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 QSpinBox::up-arrow,
 QDoubleSpinBox::up-arrow {
-    border-left: 3px solid transparent;
-    border-right: 3px solid transparent;
-    border-bottom: 4px solid rgba(255, 255, 255, 0.35);
-    width: 0px;
-    height: 0px;
+    image: url(:/svg/spin_up.svg);
+    width: 10px;
+    height: 10px;
 }
 
 QSpinBox::down-arrow,
 QDoubleSpinBox::down-arrow {
-    border-left: 3px solid transparent;
-    border-right: 3px solid transparent;
-    border-top: 4px solid rgba(255, 255, 255, 0.35);
-    width: 0px;
-    height: 0px;
+    image: url(:/svg/spin_down.svg);
+    width: 10px;
+    height: 10px;
 }
+
+/* ────────────────────────────────────────────────────────────
+   QSlider (LabeledSlider)
+   ──────────────────────────────────────────────────────────── */
+QSlider#labeled_slider {
+    background-color: transparent;
+    min-height: 20px;
+}
+
+QSlider#labeled_slider::handle:horizontal {
+    width: 14px;
+    height: 14px;
+    margin: -5px 0;
+    background-color: #DCDCDC;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    border-radius: 7px;
+}
+
+QSlider#labeled_slider::handle:horizontal:hover {
+    background-color: #ffffff;
+    border: 1px solid #7B9DBC;
+}
+
+QSlider#labeled_slider::handle:horizontal:pressed {
+    background-color: #9AC5EC;
+    border: 1px solid #9AC5EC;
+}
+
+
 
 /* ────────────────────────────────────────────────────────────
    QSplitter

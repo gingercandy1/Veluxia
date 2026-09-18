@@ -10,8 +10,6 @@ from src.backend.core.model_utils import get_temp_dir
 
 class BgRemovalGenerator(BaseImageGenerator):
     """去背景：rembg + u2net（MIT，可商用），输入图 → 透明底 PNG"""
-    names = {"rembg-u2net": {"tag": "edit"}}
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.session = None

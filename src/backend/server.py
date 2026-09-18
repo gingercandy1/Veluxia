@@ -18,6 +18,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from .core import generator_registry
 from .core.model_base import GeneratorFactory
 from .core.model_utils import get_media_root
 from src.backend.router.image import ImageRouter
@@ -33,41 +34,21 @@ BACKEND_NAME = "Asset Generator Backend"
 DESCRIPTION = "图像 / 动画 / 语音 / 文本生成 API"
 
 
-def _register_generators():
-    """
-    导入所有生成器模块（torch/diffusers/transformers 等重型依赖）并注册到工厂。
-    放在后台线程跑，避免阻塞 uvicorn 的 lifespan 启动，让 /health 等路由立刻可用；
-    真正调用生成时 GeneratorFactory.build_generator 会等待这里完成。
-    """
+def _warmup_generators():
+    """后台预热重型依赖，不阻塞启动；名称列表已在 lifespan 中同步注册完毕。"""
     try:
-        import torch  # noqa: F401  确保 CUDA/驱动初始化也在这个后台线程里完成
-
-        from src.backend.core.text.llama_chat import LlamaGenerator
-        from src.backend.core.image.flux_schnell import FluxSchnellGenerator
-        from src.backend.core.image.sdxl import SDXLGenerator
-        from src.backend.core.image.sd35_medium import SD35MediumGenerator
-        from src.backend.core.image.z_image import ZImageGenerator
-        from src.backend.core.image.qwen_image import QwenImageLightningGenerator
-        from src.backend.core.image.bg_removal import BgRemovalGenerator
-        from src.backend.core.image_frame.film_generator import FILMInterpolationGenerator
-        from src.backend.core.animation.ltx_video import LTXVideoGenerator
-        from src.backend.core.animation.ltx2_video import LTX2VideoGenerator
-        from src.backend.core.animation.wan2_2 import Wan2VideoGenerator
-        from src.backend.core.speech.ace_step_music import AceStepMusicGenerator
-        from src.backend.core.speech.qwen3_tts import Qwen3TTSGenerator
-
-        setting = ConfigManager().get_backend_config()
-        GeneratorFactory.apply_setting(setting=setting)
-        print("✅ 所有模型已注册，设备:", GeneratorFactory._device)
+        generator_registry.warmup()
+        print("✅ 生成器预热完成，设备:", GeneratorFactory._device)
     except Exception as e:
-        print(f"❌ 模型注册失败: {e}")
-    finally:
-        GeneratorFactory.mark_ready()
+        print(f"⚠️ 生成器预热失败: {e}")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    threading.Thread(target=_register_generators, daemon=True, name="register-generators").start()
+    generator_registry.register_all()
+    GeneratorFactory.apply_setting(setting=ConfigManager().get_backend_config())
+    GeneratorFactory.mark_ready()
+    threading.Thread(target=_warmup_generators, daemon=True, name="warmup-generators").start()
     yield
 
 
@@ -127,7 +108,7 @@ def create_app() -> FastAPI:
     async def health() -> dict:
         return {"status": "ok"}
 
-    # 就绪检查：模型是否已在后台注册完成，UI 拉取 /models 前应先确认这个
+    # 就绪检查：模型清单是否已注册，UI 拉取 /models 前应先确认这个
     @app.get("/ready", tags=["System"])
     async def ready() -> dict:
         return {"ready": GeneratorFactory.is_ready()}

@@ -13,7 +13,6 @@ from src.shared.settings import PROJECT_ROOT
 
 class ZImageGenerator(BaseImageGenerator):
     """Z-Image-Turbo 图片生成器（Apache-2.0，可商用；diffusers 原生 ZImagePipeline）"""
-    names = {"Z-Image-Turbo": {"tag": "fast"}}
     model_dir = "z-image-turbo"
 
     def __init__(self, **kwargs):
