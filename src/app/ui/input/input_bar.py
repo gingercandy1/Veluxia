@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from PySide6.QtCore import (
-    Signal, Qt, QRect, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property
+    Signal, Qt, QEvent, QRect, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property
 )
 from PySide6.QtGui import (
     QDragEnterEvent, QDropEvent, QKeyEvent, QPixmap,
@@ -331,9 +331,21 @@ class InputBar(BaseWidget):
     def _connect(self):
         self.mode_combo.currentTextChanged.connect(self._on_mode_changed)
         self.prompt_input.document().contentsChanged.connect(self._schedule_resize)
+        self.prompt_input.installEventFilter(self)
         self.send_btn.clicked.connect(self.submit)
         self.upload_btn.clicked.connect(self._pick_files)
         self.paste_btn.clicked.connect(self._paste_clipboard)
+
+    def eventFilter(self, obj, event):
+        if obj is self.prompt_input and event.type() == QEvent.Type.KeyPress:
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                    # QTextEdit 默认不处理 Ctrl+Enter（不会自动换行），手动插入换行符
+                    self.prompt_input.insertPlainText("\n")
+                else:
+                    self.submit()
+                return True
+        return super().eventFilter(obj, event)
 
     def _on_mode_changed(self):
         key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")

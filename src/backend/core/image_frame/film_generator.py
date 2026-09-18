@@ -5,7 +5,6 @@ from typing import List, Optional
 import numpy as np
 from PIL import Image
 
-from src.backend.core.preloader import preloader
 from src.shared.settings import PROJECT_ROOT
 from src.backend.core.model_base import BaseImageFrameGenerator
 from src.backend.core.model_utils import get_temp_dir
@@ -19,7 +18,7 @@ def _load_frame_np(path: str, width: int, height: int) -> np.ndarray:
 
 def _np_to_tensor(arr: np.ndarray, device: "torch.device", dtype: "torch.dtype") -> "torch.Tensor":
     """numpy (H, W, 3) [0,1] → Tensor (1, 3, H, W)"""
-    torch = preloader.get("torch")
+    import torch  # 后台注册线程早已 import 过，这里只是拿缓存，不会重新触发加载
     return (
         torch.from_numpy(arr)
         .permute(2, 0, 1)
@@ -87,7 +86,8 @@ class _FilmInterpolator:
         self.device = device
         self.dtype  = dtype
 
-        self.torch = preloader.get("torch")
+        import torch  # 后台注册线程早已 import 过，这里只是拿缓存，不会重新触发加载
+        self.torch = torch
         self._model = self.torch.jit.load(model_path, map_location="cpu")
         self._model.eval().to(device=device, dtype=dtype)
 
@@ -136,7 +136,8 @@ class _RifeInterpolator:
     ):
         self.device = device
         self.scale  = scale
-        self.torch = preloader.get("torch")
+        import torch  # 后台注册线程早已 import 过，这里只是拿缓存，不会重新触发加载
+        self.torch = torch
 
         if not Path(repo_dir).exists():
             raise FileNotFoundError(

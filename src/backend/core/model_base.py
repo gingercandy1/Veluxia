@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod, ABCMeta
 from pathlib import Path
 from typing import List, Dict, Any
 
-from src.backend.core.preloader import preloader
 from src.backend.core.model_utils import get_device
 from src.shared.enum_type import FactoryType
 from src.shared.settings import PROJECT_ROOT
@@ -112,7 +111,8 @@ class BaseGenerator(ABC, metaclass=SingletonMeta):
 
     @property
     def torch(self):
-        return preloader.get("torch")
+        import torch  # 后台注册线程早已 import 过，这里只是拿缓存，不会重新触发加载
+        return torch
 
 class BaseTextGenerator(BaseGenerator):
     """所有图片生成模型的基类（文本 → 图像）"""

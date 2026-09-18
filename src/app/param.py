@@ -93,15 +93,6 @@ class GenerationRequest:
             req.session_id = session_id
         return req
 
-    @classmethod
-    def open_translate(cls, translated):
-        print(f"翻译的内容：{translated}")
-        if translated:
-            cls.translated = translated
-        else:
-            cls.translated = ""
-
-
     @staticmethod
     def _sanitize_str(value: Any, max_len: int = 10000) -> str:
         """確保是字符串，去除首尾空白，限制長度"""

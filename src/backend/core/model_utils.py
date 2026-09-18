@@ -4,7 +4,6 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from src.backend.core.preloader import preloader
 from src.shared.settings import PROJECT_ROOT
 
 huggingface_token = ""
@@ -78,7 +77,7 @@ def to_media_url(path) -> str:
 
 def get_device(device="auto"):
     if device == "auto":
-        torch = preloader.get("torch")
+        import torch  # 后台注册线程早已 import 过，这里只是拿缓存，不会重新触发加载
         device = "cuda" if torch.cuda.is_available() else "cpu"
         if device == "cpu":
             print("⚠️  未检测到 CUDA，将使用 CPU 推理（非常慢）")
@@ -87,7 +86,7 @@ def get_device(device="auto"):
         return device
 
 def print_vram_usage():
-    torch = preloader.get("torch")
+    import torch
     if torch.cuda.is_available():
         used = torch.cuda.memory_allocated() / 1024 ** 3
         total = torch.cuda.get_device_properties(0).total_memory / 1024 ** 3

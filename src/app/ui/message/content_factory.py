@@ -17,7 +17,10 @@ class ContentLoader:
         self._layout = layout
 
     def _add_widgets_in_pairs(self, widgets: list):
-        """将 widgets 两两一行添加到 layout"""
+        """将 widgets 两两一行添加到 layout。
+        两张图都是固定尺寸、都不参与拉伸时，QHBoxLayout 会把多余宽度平摊在
+        前面/中间/后面，图片之间反而比设定的 4px 松得多；末尾补一个 stretch
+        把多余空间统一吸收到右侧，图片才会紧贴在一起。"""
         for i in range(0, len(widgets), 2):
             row = QHBoxLayout()
             row.setContentsMargins(0, 0, 0, 0)
@@ -25,8 +28,7 @@ class ContentLoader:
             row.addWidget(widgets[i])
             if i + 1 < len(widgets):
                 row.addWidget(widgets[i + 1])
-            else:
-                row.addStretch()  # 奇数时末尾补空
+            row.addStretch()
             self._layout.addLayout(row)
 
     def load(self, attachments: Optional[List[Path]| List[str]] = None):

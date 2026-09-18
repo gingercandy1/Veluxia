@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from PySide6.QtCore import Signal, Qt, QAbstractListModel, QModelIndex, QSize, QPoint, QRect, QObject
+from PySide6.QtCore import Signal, Qt, QAbstractListModel, QModelIndex, QSize, QPoint, QRect, QObject, QTimer
 from PySide6.QtGui import QIcon, QBrush, QPainter, QPen, QColor
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QFrame, QScrollBar, QListView, QStyledItemDelegate, QAbstractItemView, QMenu, QStyle,
@@ -28,6 +28,9 @@ init_widget()
 
 
 class HistoryModel(QAbstractListModel):
+    """每行是一个 session 字典（session_id / title / created_at / ...），
+    显示用 title，但删除/切换等操作都靠 session_id 定位。"""
+
     def __init__(self, sessions=None, parent=None):
         super().__init__(parent)
         self._data: list = sessions or []
@@ -38,19 +41,17 @@ class HistoryModel(QAbstractListModel):
     def data(self, index: QModelIndex, role=Qt.DisplayRole):
         if not index.isValid():
             return None
-        if role == Qt.DisplayRole or role == Qt.UserRole:
-            return self._data[index.row()]
+        item = self._data[index.row()]
+        if role == Qt.DisplayRole:
+            return item.get("title") or item.get("session_id", "")
+        if role == Qt.UserRole:
+            return item
         return None
 
-    def append(self, session: str):
+    def append(self, session: dict):
         row = len(self._data)
         self.beginInsertRows(QModelIndex(), row, row)
         self._data.append(session)
-        self.endInsertRows()
-
-    def insert(self, row: int, session: str):
-        self.beginInsertRows(QModelIndex(), row, row)
-        self._data.insert(row, session)
         self.endInsertRows()
 
     def remove(self, row: int):
@@ -60,25 +61,22 @@ class HistoryModel(QAbstractListModel):
         self._data.pop(row)
         self.endRemoveRows()
 
-    def update(self, row: int, session: str):
+    def update_title(self, row: int, title: str):
         if not (0 <= row < len(self._data)):
             return
-        self._data[row] = session
+        self._data[row]["title"] = title
         idx = self.index(row)
-        self.dataChanged.emit(idx, idx, [Qt.DisplayRole, Qt.UserRole])
+        self.dataChanged.emit(idx, idx, [Qt.DisplayRole])
 
-    def get(self, row: int) -> str:
+    def get(self, row: int) -> dict:
         return self._data[row]
 
-    def find(self, session: str) -> int:
-        """返回第一个匹配的行号，未找到返回 -1"""
-        try:
-            return self._data.index(session)
-        except ValueError:
-            return -1
-
-    def all(self) -> list:
-        return list(self._data)
+    def find(self, session_id: str) -> int:
+        """按 session_id 返回第一个匹配的行号，未找到返回 -1"""
+        for row, item in enumerate(self._data):
+            if item.get("session_id") == session_id:
+                return row
+        return -1
 
     def reset_all(self, sessions: list):
         self.beginResetModel()
@@ -95,8 +93,9 @@ class HistoryDelegate(QStyledItemDelegate):
     BTN_SIZE   = 24
     BTN_MARGIN = 12
     BTN_HOVER_COLOR = QColor(70, 70, 70, 100)
-    HOVER_COLOR = QColor(50, 50, 50, 100)
-    NORMAL_COLOR = QColor(10, 10, 10, 255)
+    HOVER_COLOR = QColor(255, 255, 255, 14)
+    SELECTED_COLOR = QColor(123, 157, 188, 40)   # 与全局强调色 #7B9DBC 呼应
+    SELECTED_BAR_COLOR = QColor(123, 157, 188, 220)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -118,9 +117,11 @@ class HistoryDelegate(QStyledItemDelegate):
 
         palette = option.palette
         bg_rect = option.rect
-        if option.state & QStyle.StateFlag.State_Selected:
-            painter.fillRect(bg_rect, self.NORMAL_COLOR)
-            text_color = palette.highlightedText().color()
+        is_selected = bool(option.state & QStyle.StateFlag.State_Selected)
+        if is_selected:
+            painter.fillRect(bg_rect, self.SELECTED_COLOR)
+            painter.fillRect(QRect(bg_rect.left(), bg_rect.top(), 3, bg_rect.height()), self.SELECTED_BAR_COLOR)
+            text_color = palette.text().color()
         elif index == self._hovered_index:
             painter.fillRect(bg_rect, self.HOVER_COLOR)
             text_color = palette.text().color()
@@ -275,13 +276,13 @@ class SettingSidePage(QFrame):
         )
 
     def _on_selected_requested(self, index: QModelIndex):
-        session = self.history_model.get(index.row())
-        self.switch_session.emit(session)
+        session_id = self.history_model.get(index.row())["session_id"]
+        self.switch_session.emit(session_id)
 
     def _on_delete_requested(self, index: QModelIndex):
-        session = self.history_model.get(index.row())
-        self.remove_session(session)
-        self.delete_session.emit(session)
+        session_id = self.history_model.get(index.row())["session_id"]
+        self.remove_session(session_id)
+        self.delete_session.emit(session_id)
 
     def add_button(self, svg_path, text, tooltip, is_circle=False):
         btn = ActionButton(
@@ -317,18 +318,23 @@ class SettingSidePage(QFrame):
     def update_history(self, list_session: list):
         self.history_model.reset_all(list_session)
 
-    def add_session(self, session: str):
-        self.history_model.append(session)
-
-    def remove_session(self, session: str):
-        row = self.history_model.find(session)
+    def remove_session(self, session_id: str):
+        row = self.history_model.find(session_id)
         if row != -1:
             self.history_model.remove(row)
 
-    def rename_session(self, old: str, new: str):
-        row = self.history_model.find(old)
+    def rename_session(self, session_id: str, new_title: str):
+        row = self.history_model.find(session_id)
         if row != -1:
-            self.history_model.update(row, new)
+            self.history_model.update_title(row, new_title)
+
+    def select_current(self, session_id: str):
+        """让侧栏高亮和当前打开的会话保持一致（点击切换/程序切换都会调用）。"""
+        row = self.history_model.find(session_id)
+        if row == -1:
+            self.history_list.clearSelection()
+            return
+        self.history_list.setCurrentIndex(self.history_model.index(row))
 
 class GenerationPage(QWidget):
     generate_requested = Signal(object)
@@ -461,6 +467,7 @@ class GenerationPage(QWidget):
         self._sidebar.switch_session.connect(self.session_manager.switch_session)
 
         self.session_manager.session_changed.connect(self._on_session_changed)
+        self.session_manager.session_list_changed.connect(self._refresh_sidebar_history)
 
         self.save_message.connect(self._on_save_message)
 
@@ -470,11 +477,8 @@ class GenerationPage(QWidget):
 
     def _load_initial_session(self):
         list_session = self.session_manager.list_sessions()
-        print("list_session:", list_session)
         if list_session:
-            session_ids = [item["session_id"] for item in list_session]
-            self._sidebar.update_history(session_ids)
-            self.session_manager.switch_session(session_ids[0])
+            self.session_manager.switch_session(list_session[0]["session_id"])
         else:
             self.session_manager.create_new_session()
 
@@ -547,11 +551,11 @@ class GenerationPage(QWidget):
     def _on_session_changed(self):
         self._chat.clear()
         self._chat.load_history(self.session_manager.get_history())
+        self._refresh_sidebar_history()
 
-        list_session = self.session_manager.list_sessions()
-        if list_session:
-            session_ids = [item["session_id"] for item in list_session]
-            self._sidebar.update_history(session_ids)
+    def _refresh_sidebar_history(self):
+        self._sidebar.update_history(self.session_manager.list_sessions())
+        self._sidebar.select_current(self.session_manager.get_current_session_id())
 
     def _on_changed_model(self, text):
         self._input_bar.set_model(text)
@@ -589,7 +593,9 @@ class GenerationPage(QWidget):
         }
         bubble, item = self.add_chat_message("user", user_content)
         self.active_bubble, _ = self.add_chat_message("assistant", "")
-        self.save_message.emit(item)
+        # 存历史是磁盘 IO（首条消息还会触发标题重命名 + 重新查询会话列表），
+        # 挪到下一轮事件循环，先让两个新气泡画出来，发送感觉才是"立刻"的。
+        QTimer.singleShot(0, lambda: self.save_message.emit(item))
 
         # 禁用输入，显示进度条
         self.disable_ui()

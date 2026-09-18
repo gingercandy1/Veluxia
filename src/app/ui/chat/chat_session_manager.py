@@ -300,9 +300,26 @@ class ChatSessionManager(QObject):
 
     # 历史数据操作
     def add_message(self, message: dict):
+        is_first_message = not self._history
         self._history.append(message)
         self._history_mgr.append_message(self._current_session_id, message)
+
+        if is_first_message and message.get("role") == "user":
+            title = self._derive_title(message)
+            if title:
+                self.rename_session(self._current_session_id, title)
+
         self.history_updated.emit()
+
+    @staticmethod
+    def _derive_title(message: dict, max_len: int = 24) -> str:
+        """用首条用户消息生成会话标题，比 "session_1758xxxxxx" 这种原始 id 更易辨认。"""
+        content = message.get("content", "")
+        text = content.get("content", "") if isinstance(content, dict) else content
+        text = " ".join(str(text or "").split())
+        if not text:
+            return ""
+        return text if len(text) <= max_len else text[:max_len] + "…"
 
     def update_message_content(self, message_id: str, new_content: str):
         self._history_mgr.update(self._current_session_id, message_id, new_content)

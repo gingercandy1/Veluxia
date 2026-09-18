@@ -11,6 +11,9 @@ from pygments.util import ClassNotFound
 from src.app.ui.base.action_button import ActionButton
 from src.app.ui.base.widget import BaseWidget
 
+# monokai 主题的 formatter 不含状态，流式期间每次换行都要用，复用一个实例。
+_FORMATTER = HtmlFormatter(style="monokai", noclasses=True, nowrap=True)
+
 
 class CodeBlockWidget(BaseWidget):
     """带语言标签、语法高亮、悬停复制按钮的代码块。"""
@@ -21,6 +24,7 @@ class CodeBlockWidget(BaseWidget):
         self.code = code
         self.lang = lang.strip() or "text"
         self._is_streaming = True
+        self._lexer = None  # 流式期间语言不变，猜一次language/lexer后缓存复用
 
         self._build_ui()
         if code:
@@ -80,9 +84,7 @@ class CodeBlockWidget(BaseWidget):
     _LINE_HEIGHT = "1.3"
 
     def _apply_highlight(self):
-        lexer = self._resolve_lexer()
-        formatter = HtmlFormatter(style="monokai", noclasses=True, nowrap=True)
-        highlighted = highlight(self.code, lexer, formatter)
+        highlighted = highlight(self.code, self._resolve_lexer(), _FORMATTER)
         self._editor.setHtml(f"""
             <pre style="
                 margin: 0;
@@ -127,12 +129,18 @@ class CodeBlockWidget(BaseWidget):
         return total_height
 
     def _resolve_lexer(self):
+        if self._lexer is not None:
+            return self._lexer
         try:
             if self.lang and self.lang != "text":
-                return get_lexer_by_name(self.lang, stripnl=False)
-            return guess_lexer(self.code)
+                self._lexer = get_lexer_by_name(self.lang, stripnl=False)
+            else:
+                # guess_lexer 是启发式全文扫描，流式期间每次全量高亮都调用会很贵，
+                # 猜一次就缓存住；代码没写完猜错了也没关系，finish() 时还会再高亮一次。
+                self._lexer = guess_lexer(self.code)
         except ClassNotFound:
-            return get_lexer_by_name("text")
+            self._lexer = get_lexer_by_name("text")
+        return self._lexer
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

@@ -1,3 +1,4 @@
+from markdown_it import MarkdownIt
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QTextCursor
 from PySide6.QtWidgets import QTextBrowser, QFrame
@@ -96,12 +97,15 @@ def _raw_to_html(text: str) -> str:
         return _wrap_html(_md_to_html(text))
 
 
+# 流式渲染每 80ms 就要重新解析一次累积文本，解析器本身有初始化开销，
+# 所以复用同一个实例而不是每次都新建。
+_MD = MarkdownIt("commonmark", {"breaks": True, "html": True})
+_MD.enable(["table"])
+
+
 def _md_to_html(text: str) -> str:
     """用 markdown-it 把文本转成 HTML 片段（不含 <html>/<body>）。"""
-    from markdown_it import MarkdownIt
-    md = MarkdownIt("commonmark", {"breaks": True, "html": True})
-    md.enable(["table"])
-    return md.render(text)
+    return _MD.render(text)
 
 
 class TextBlockWidget(QTextBrowser):
@@ -172,5 +176,4 @@ class TextBlockWidget(QTextBrowser):
         doc = self.document()
         doc.setTextWidth(self.viewport().width() or 600)
         h = int(doc.size().height()) + 15
-        print("height:", h)
         self.setFixedHeight(h)
