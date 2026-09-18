@@ -26,6 +26,8 @@ class Job:
         self.updated_at = time.time()
         # 生成器在自己的推理循环里轮询这个 event 来响应取消请求。
         self.cancel_event = threading.Event()
+        # 已经产出的中间结果（如多图批量生成时先完成的那几张），前端轮询时可提前展示。
+        self.partial: list[str] = []
 
 
 class JobManager:

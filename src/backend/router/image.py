@@ -71,7 +71,9 @@ class ImageRouter(BaseRouter):
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
 
             if path:
-                paths.append(to_media_url(path))
+                url = to_media_url(path)
+                paths.append(url)
+                job.partial.append(url)  # 先完成的图片让前端提前显示
 
         if number > 0 and not paths:
             # generator.generate() 内部吞掉了异常，只返回 None；不能再把这种失败

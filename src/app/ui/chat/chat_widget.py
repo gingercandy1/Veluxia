@@ -138,8 +138,11 @@ class ChatWidget(QScrollArea):
         self.fade_mask.set_reverse(False)
         self.fade_mask.setVisible(True)
 
-    def add_message(self, role, content, timestamp, message_id=None):
-        bubble = create_message_bubble(role=role, content=content, timestamp=timestamp, message_id=message_id)
+    def add_message(self, role, content, timestamp, message_id=None, model_type="text", item_count=1):
+        bubble = create_message_bubble(
+            role=role, content=content, timestamp=timestamp, message_id=message_id,
+            model_type=model_type, item_count=item_count,
+        )
         bubble.retry_requested.connect(self._on_retry_requested)
         bubble.content_edited.connect(self.on_message_edited)
         bubble.selection_clicked.connect(self._column.toggle)

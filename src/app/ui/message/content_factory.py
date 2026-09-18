@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional, List
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
+from PySide6.QtCore import QPropertyAnimation, QEasingCurve
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGraphicsOpacityEffect
 
 from src.app.ui.message.message_widgets import ImageWidget, VideoWidget, FileWidget, AudioWidget
 from src.app.ui.message.text.markdown_widget import render_markdown
@@ -11,10 +12,50 @@ _VIDEO_EXTS = frozenset({".mp4", ".mov", ".avi", ".webm", ".gif"})
 _AUDIO_EXTS = frozenset({'.mp3', '.wav', '.flac', '.ogg', '.m4a'})
 
 
+def fade_in(widget: QWidget, duration: int = 300):
+    """淡入；结束后移除透明度特效（特效会让控件走离屏渲染，常驻很吃性能）。"""
+    effect = QGraphicsOpacityEffect(widget)
+    effect.setOpacity(0.0)
+    widget.setGraphicsEffect(effect)
+    anim = QPropertyAnimation(effect, b"opacity", widget)
+    anim.setDuration(duration)
+    anim.setStartValue(0.0)
+    anim.setEndValue(1.0)
+    anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+    anim.finished.connect(lambda: widget.setGraphicsEffect(None))
+    anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+
+
 class ContentLoader:
 
     def __init__(self, layout: QVBoxLayout):
         self._layout = layout
+        self._open_row: Optional[QHBoxLayout] = None   # append() 正在填的、只放了一张图的那一行
+
+    def append(self, path, animate: bool = True) -> Optional[QWidget]:
+        """增量追加一个附件（图片按两张一行接着上一行排），用于生成过程中逐张显示。"""
+        widget = ContentLoader._make_file_widget(Path(path))
+        if not widget:
+            return None
+        if isinstance(widget, ImageWidget):
+            if self._open_row is not None:
+                self._open_row.insertWidget(self._open_row.count() - 1, widget)
+                self._open_row = None
+            else:
+                row = QHBoxLayout()
+                row.setContentsMargins(0, 0, 0, 0)
+                row.setSpacing(4)
+                row.addWidget(widget)
+                row.addStretch()
+                self._layout.addLayout(row)
+                self._open_row = row
+        else:
+            self._open_row = None
+            self._layout.addWidget(widget)
+        # QVideoWidget 套透明度特效会渲染异常，视频不做淡入。
+        if animate and not isinstance(widget, VideoWidget):
+            fade_in(widget)
+        return widget
 
     def _add_widgets_in_pairs(self, widgets: list):
         """将 widgets 两两一行添加到 layout。

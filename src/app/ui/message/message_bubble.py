@@ -1,9 +1,10 @@
+import math
 import os.path
 from pathlib import Path
 from typing import Optional, Union
 
 from PySide6.QtCore import (
-    Qt, QPropertyAnimation, QEasingCurve, Signal, QUrl, QTimer, Property, QRectF, QPointF, )
+    Qt, QPropertyAnimation, QEasingCurve, Signal, QUrl, QTimer, Property, QRectF, QPointF, QElapsedTimer, )
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QLinearGradient, QClipboard, QFont, QDesktopServices, QPen, \
     QConicalGradient
 from PySide6.QtWidgets import (
@@ -13,7 +14,7 @@ from PySide6.QtWidgets import (
 
 from src.app.ui.base.action_button import ActionButton
 from src.app.ui.base.widget import BaseWidget
-from src.app.ui.message.content_factory import ContentLoader, ContentBuilder
+from src.app.ui.message.content_factory import ContentLoader, ContentBuilder, fade_in
 from src.app.ui.message.text.streaming_renderer import StreamingRenderer
 from src.app.ui.message.think_bubble import ThinkingBlock
 from src.resources import *
@@ -884,11 +885,130 @@ class SpinnerWidget(QWidget):
         painter.end()
 
 
+class MediaLoadingPlaceholder(QWidget):
+    """媒体生成期间占据最终内容位置的轻量占位控件。
+
+    动画由单调时钟驱动（而不是每帧累加固定步长），定时器抖动时也不会一顿一顿；
+    只在可见时才跑定时器。
+    """
+    GAP = 6
+    SLOT_H = 150
+
+    def __init__(self, media_type: str, item_count: int = 1, parent=None):
+        super().__init__(parent)
+        self.media_type = media_type
+        self.item_count = max(1, min(item_count, 4))
+        self._clock = QElapsedTimer()
+        self._timer = QTimer(self)
+        self._timer.setTimerType(Qt.TimerType.PreciseTimer)
+        self._timer.setInterval(33)
+        self._timer.timeout.connect(self.update)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self._apply_size()
+
+    def _apply_size(self):
+        if self.media_type == "image":
+            self.setFixedWidth(360 if self.item_count == 1 else 420)
+            rows = 1 if self.item_count == 1 else (self.item_count + 1) // 2
+            self.setFixedHeight(rows * self.SLOT_H + (rows - 1) * self.GAP)
+        elif self.media_type == "animation":
+            self.setFixedSize(320, 190)
+        else:
+            self.setFixedSize(320, 76)
+
+    def set_remaining(self, remaining: int):
+        """已有图片先显示出来后，占位只保留还没出的那几个槽。"""
+        self.item_count = max(1, min(remaining, 4))
+        self._apply_size()
+        self.update()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._clock.restart()
+        self._timer.start()
+
+    def hideEvent(self, event):
+        self._timer.stop()
+        super().hideEvent(event)
+
+    def _t(self) -> float:
+        return self._clock.elapsed() / 1000.0
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        if self.media_type == "image":
+            self._paint_images(painter)
+        elif self.media_type == "animation":
+            self._paint_video(painter)
+        else:
+            self._paint_audio(painter)
+        painter.end()
+
+    def _slot_rect(self, index: int) -> QRectF:
+        columns = 2 if self.item_count > 1 else 1
+        width = (self.width() - self.GAP * (columns - 1)) / columns
+        row, column = divmod(index, columns)
+        return QRectF(column * (width + self.GAP), row * (self.SLOT_H + self.GAP), width, self.SLOT_H)
+
+    def _paint_slot(self, painter, rect: QRectF):
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor("#252a31"))
+        painter.drawRoundedRect(rect, 8, 8)
+
+        # 扫光：一条斜向高光带从左扫到右，带宽 35%，每 1.6 秒一轮。
+        band = rect.width() * 0.35
+        progress = (self._t() / 1.6) % 1.0
+        center = rect.left() - band + (rect.width() + 2 * band) * progress
+        shimmer = QLinearGradient(center - band / 2, 0, center + band / 2, 0)
+        shimmer.setColorAt(0.0, QColor(255, 255, 255, 0))
+        shimmer.setColorAt(0.5, QColor(255, 255, 255, 26))
+        shimmer.setColorAt(1.0, QColor(255, 255, 255, 0))
+        painter.setBrush(shimmer)
+        painter.drawRoundedRect(rect, 8, 8)
+
+    def _paint_images(self, painter):
+        for index in range(self.item_count):
+            self._paint_slot(painter, self._slot_rect(index))
+
+    def _paint_video(self, painter):
+        rect = QRectF(0, (self.height() - 180) / 2, self.width(), 180)
+        self._paint_slot(painter, rect)
+        painter.setBrush(QColor(255, 255, 255, 170))
+        painter.setPen(Qt.PenStyle.NoPen)
+        center = rect.center()
+        painter.drawPolygon([center + QPointF(-10, -14), center + QPointF(-10, 14), center + QPointF(14, 0)])
+
+    def _paint_audio(self, painter):
+        t = self._t()
+        center_y = self.height() / 2
+        bar_count = 28
+        gap = 4
+        bar_width = max(2.0, (self.width() - gap * (bar_count - 1)) / bar_count)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(142, 164, 181, 150))
+        for index in range(bar_count):
+            wave = 0.6 * math.sin(t * 4.0 + index * 0.55) + 0.4 * math.sin(t * 2.3 + index * 1.1)
+            height = 20 + wave * 14
+            painter.drawRoundedRect(
+                QRectF(index * (bar_width + gap), center_y - height / 2, bar_width, height), 2, 2)
+
+
 class AssistantMessageBubble(MessageBubble):
     # 气泡左缘距 InputBar 左缘：输入面板边距 100 - 气泡外边距 20，使正文与输入框左侧对齐。
     BODY_INDENT = 80
+    _MEDIA_TYPES = {"image", "animation", "speech"}
 
-    def __init__(self, content, timestamp: str, message_id: str, parent=None):
+    _partial_paths: list = []
+    _loading_hiding = False
+    _attachments_rendered = False
+
+    def __init__(self, content, timestamp: str, message_id: str, model_type: str = "text",
+                 item_count: int = 1, parent=None):
+        self.model_type = model_type
+        self.item_count = item_count
+        self._partial_paths = []
+        self._placeholder = None
         super().__init__("assistant", content, timestamp, message_id, parent)
         self.setObjectName("assistant_bubble")
         self._bubble_box.setObjectName("assistant_bubble_box")
@@ -900,7 +1020,7 @@ class AssistantMessageBubble(MessageBubble):
         self.thinking_block.setVisible(False)
         layout.addWidget(self.thinking_block)
 
-        self.spinner_widget = self.build_spinner()
+        self.spinner_widget = self.build_spinner(self.model_type, self.item_count)
         layout.addWidget(self.spinner_widget)
 
     def _build_action_bar(self) -> QWidget:
@@ -956,7 +1076,17 @@ class AssistantMessageBubble(MessageBubble):
         meta.addStretch()
         return meta
 
-    def build_spinner(self):
+    def build_spinner(self, model_type: str = "text", item_count: int = 1):
+        if model_type in self._MEDIA_TYPES:
+            self._placeholder = MediaLoadingPlaceholder(model_type, item_count)
+            container = QWidget()
+            layout = QHBoxLayout(container)
+            layout.setContentsMargins(20, 10, 20, 10)
+            layout.addStretch()
+            layout.addWidget(self._placeholder)
+            layout.addStretch()
+            return container
+
         spinner_container = QWidget()
         spinner_container_layout = QHBoxLayout(spinner_container)
         spinner_container_layout.setContentsMargins(20, 0, 20, 0)
@@ -994,17 +1124,59 @@ class AssistantMessageBubble(MessageBubble):
         self._content += chunk
         self._streaming_renderer.append_chunk(chunk)
 
+    def hide_loading(self):
+        """收起加载占位：媒体占位淡出，文本转圈直接隐藏。可重复调用。"""
+        widget = self.spinner_widget
+        if not widget.isVisible() or self._loading_hiding:
+            return
+        if self._placeholder is None:
+            widget.setVisible(False)
+            return
+        self._loading_hiding = True
+        effect = QGraphicsOpacityEffect(widget)
+        widget.setGraphicsEffect(effect)
+        anim = QPropertyAnimation(effect, b"opacity", widget)
+        anim.setDuration(200)
+        anim.setStartValue(1.0)
+        anim.setEndValue(0.0)
+        anim.finished.connect(lambda: (widget.setVisible(False), widget.setGraphicsEffect(None)))
+        anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+
+    def add_partial_attachment(self, path: str) -> None:
+        """多图批量生成时，先完成的图片提前显示，占位只保留还没出的槽。"""
+        if path in self._partial_paths:
+            return
+        if not self._partial_paths and self._placeholder is not None:
+            # 图片出现在占位上方；占位挪到内容下方，并改为左对齐，接在图片后面。
+            layout = self.spinner_widget.parentWidget().layout()
+            layout.removeWidget(self.spinner_widget)
+            layout.insertWidget(layout.indexOf(self._collapse_wrap) + 1, self.spinner_widget)
+            self.spinner_widget.layout().takeAt(0)
+        self._partial_paths.append(path)
+        self._content_loader.append(path)
+
+        remaining = self.item_count - len(self._partial_paths)
+        if self._placeholder is not None:
+            if remaining > 0:
+                self._placeholder.set_remaining(remaining)
+            else:
+                self.hide_loading()
+
     def load_attachments(self, attachments: list[str]) -> None:
-        """静态媒体通道入口，收到附件数据时调用。"""
+        """静态媒体通道入口，收到附件数据时调用。已经提前显示过的不再重复加载。"""
         self._attachments = attachments
-        self._content_loader.load(attachments)
+        self._attachments_rendered = True
+        for path in attachments:
+            if path not in self._partial_paths:
+                self._content_loader.append(path)
 
     def finish(self, elapsed_ms: int = 0) -> None:
         """ 完成文本、媒体渲染 """
         self.thinking_block.finish(elapsed_ms)
         self._streaming_renderer.finish()
         # 再追加媒体
-        if self._attachments:
+        if self._attachments and not self._attachments_rendered:
+            self._attachments_rendered = True
             self._content_loader.load(self._attachments)
 
     def hide_think_area(self):
@@ -1019,8 +1191,9 @@ class AssistantMessageBubble(MessageBubble):
         }
 
 
-def create_message_bubble(role: str, content, timestamp: str, message_id: str) -> MessageBubble:
+def create_message_bubble(role: str, content, timestamp: str, message_id: str,
+                          model_type: str = "text", item_count: int = 1) -> MessageBubble:
     if role == "user":
         return UserMessageBubble(content, timestamp, message_id)
     else:
-        return AssistantMessageBubble(content, timestamp, message_id)
+        return AssistantMessageBubble(content, timestamp, message_id, model_type, item_count)

@@ -204,6 +204,7 @@ class MainWindow(QMainWindow):
         self._worker.thinking_chunk.connect(self._on_think_chunk)
         self._worker.text_chunk.connect(self._on_text_chunk)
         self._worker.stream_done.connect(self._on_stream_done)
+        self._worker.partial_ready.connect(self._gen_page.on_partial_attachment)
         self._worker.start()
 
     def on_stop_requested(self):
