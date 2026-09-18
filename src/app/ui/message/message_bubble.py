@@ -438,10 +438,11 @@ class MessageBubble(QFrame):
     BUBBLE_MAX_WIDTH = 800
     BUBBLE_MIN_WIDTH = 500
     COLLAPSE_MAX_H   = 400
+    BODY_INDENT      = 0   # 正文相对标题行的左缩进
 
     retry_requested = Signal(str)
     content_edited = Signal(str, str)
-    selection_toggled = Signal(str, bool)   # message_id, checked
+    selection_clicked = Signal(str) 
 
     def __init__(
             self,
@@ -496,41 +497,22 @@ class MessageBubble(QFrame):
     def _build_ui(self, role: str, content, timestamp: str):
         self._bubble_wrap = self._create_bubble_wrap(role, content, timestamp)
 
-        # 没有单独的"进入多选"按钮：平时悬停在消息上才露出这个圆点，
-        # 点一下就顺带通知 ChatWidget 自动进入多选模式（见 ChatWidget._on_bubble_selection_toggled）。
-        self.select_indicator = SelectionDot()
-        self.select_indicator.setVisible(False)
-        self.select_indicator.toggled.connect(
-            lambda checked: self.selection_toggled.emit(self.message_id, checked)
-        )
-
         outer = QHBoxLayout(self)
         outer.setContentsMargins(20, 0, -20, 0)
         outer.setSpacing(8)
-        outer.addWidget(self.select_indicator, 0, Qt.AlignmentFlag.AlignVCenter)
         if self.is_user:
             outer.addStretch()
             outer.addWidget(self._bubble_wrap)
         else:
-            outer.addWidget(self._bubble_wrap, Qt.AlignmentFlag.AlignHCenter)
+            outer.addWidget(self._bubble_wrap)
+            outer.addStretch()
 
     def set_selection_mode(self, enabled: bool):
         self._selection_mode = enabled
-        if enabled:
-            self.select_indicator.setVisible(True)
-        else:
-            self.select_indicator.setChecked(False, animate=False, emit=False)
-            self.select_indicator.setVisible(False)
-
-    def is_selected(self) -> bool:
-        return self.select_indicator.isChecked()
-
-    def set_selected(self, checked: bool):
-        self.select_indicator.setChecked(checked)
 
     def mousePressEvent(self, event):
         if self._selection_mode and event.button() == Qt.MouseButton.LeftButton:
-            self.select_indicator.toggle()
+            self.selection_clicked.emit(self.message_id)
             event.accept()
             return
         super().mousePressEvent(event)
@@ -539,8 +521,8 @@ class MessageBubble(QFrame):
         wrap = QFrame()
         wrap.setObjectName("bubble_wrap")
         wrap.setContentsMargins(0, 0, 0, 0)
-        wrap.setMinimumWidth(self.BUBBLE_MIN_WIDTH)
-        wrap.setMaximumWidth(self.BUBBLE_MAX_WIDTH)
+        wrap.setMinimumWidth(self.BUBBLE_MIN_WIDTH + self.BODY_INDENT)
+        wrap.setMaximumWidth(self.BUBBLE_MAX_WIDTH + self.BODY_INDENT)
         wrap.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         layout = QVBoxLayout(wrap)
@@ -550,14 +532,20 @@ class MessageBubble(QFrame):
         self.bubble_meta = self._build_meta_row(timestamp)
         layout.addLayout(self.bubble_meta)
 
-        self._pre_content_hook(layout)
+        body = QWidget()
+        body_layout = QVBoxLayout(body)
+        body_layout.setContentsMargins(self.BODY_INDENT, 0, 0, 0)
+        body_layout.setSpacing(10)
+        layout.addWidget(body)
+
+        self._pre_content_hook(body_layout)
 
         self._bubble_box = self._build_bubble_box(content)
         self._collapse_wrap = CollapseContainer(self._bubble_box)
-        layout.addWidget(self._collapse_wrap)
+        body_layout.addWidget(self._collapse_wrap)
 
         self.bottom_bar = self._build_action_bar()
-        layout.addWidget(self.bottom_bar)
+        body_layout.addWidget(self.bottom_bar)
         return wrap
 
     def calc_bubble_box_height(self):
@@ -596,14 +584,10 @@ class MessageBubble(QFrame):
 
     def enterEvent(self, e):
         self.bottom_bar.show_bar()
-        if not self._selection_mode:
-            self.select_indicator.setVisible(True)
         super().enterEvent(e)
 
     def leaveEvent(self, e):
         self.bottom_bar.hide_bar()
-        if not self._selection_mode and not self.select_indicator.isChecked():
-            self.select_indicator.setVisible(False)
         super().leaveEvent(e)
 
     def get_persisted_content(self):
@@ -769,7 +753,6 @@ class UserMessageBubble(MessageBubble):
         self.builder.build(self._content, self._attachments)
 
 
-
 class SpinnerWidget(QWidget):
     """ Claude 风格旋转加载动画组件。"""
     def __init__(
@@ -900,7 +883,11 @@ class SpinnerWidget(QWidget):
 
         painter.end()
 
+
 class AssistantMessageBubble(MessageBubble):
+    # 气泡左缘距 InputBar 左缘：输入面板边距 100 - 气泡外边距 20，使正文与输入框左侧对齐。
+    BODY_INDENT = 80
+
     def __init__(self, content, timestamp: str, message_id: str, parent=None):
         super().__init__("assistant", content, timestamp, message_id, parent)
         self.setObjectName("assistant_bubble")
@@ -956,7 +943,7 @@ class AssistantMessageBubble(MessageBubble):
 
     def _build_meta_row(self, timestamp: str) -> QHBoxLayout:
         meta      = QHBoxLayout()
-        meta.setContentsMargins(2, 0, 2, 0)
+        meta.setContentsMargins(50, 0, 2, 0)
 
         role_label = QLabel("AI Assistant")
         role_label.setObjectName("bubble_role_label")
@@ -1030,6 +1017,7 @@ class AssistantMessageBubble(MessageBubble):
             "attachments": self._attachments or [],
             "extra": {},
         }
+
 
 def create_message_bubble(role: str, content, timestamp: str, message_id: str) -> MessageBubble:
     if role == "user":

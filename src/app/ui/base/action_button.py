@@ -62,7 +62,7 @@ class ActionButton(QPushButton):
                 self._icon_size.width(),
                 self._icon_size.height()
             )
-            self.text_rect = self.rect().adjusted(self._icon_size.width() + icon_x + 9, 0, -8, 0)  # 留出图标空间
+            self._text_left = self._icon_size.width() + icon_x + 9  # 留出图标空间
         else:
             icon_x = (self.width() - self._icon_size.width()) // 2
             icon_y = (self.height() - self._icon_size.height()) // 2
@@ -141,7 +141,8 @@ class ActionButton(QPushButton):
             font = painter.font()
             font.setPointSize(11)
             painter.setFont(font)
-            painter.drawText(self.text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, self._text)
+            text_rect = self.rect().adjusted(self._text_left, 0, -8, 0)
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, self._text)
 
     def enterEvent(self, event):
         self._animate_bg(self._hover_bg, 160)

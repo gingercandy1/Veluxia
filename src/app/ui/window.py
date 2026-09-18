@@ -170,6 +170,7 @@ class MainWindow(QMainWindow):
 
     def _connect(self):
         self._top_bar.back_btn.clicked.connect(self._on_back_btn_clicked)
+        self._top_bar.side_btn.clicked.connect(self._gen_page.toggle_sidebar)
         self._gen_page.setting_requested.connect(self._go_to_setting)
         self._startup.ready.connect(self._gen_page.activate_model_type)
         self._setting_page.install_requested.connect(lambda: self._startup.close())
@@ -218,6 +219,7 @@ class MainWindow(QMainWindow):
             # 不再把提示文字当成正文段落直接糊在气泡里。
             active_bubble.append_output("\n\n> 已停止生成\n")
             active_bubble.finish()
+            self._gen_page.finish_generation()
         log_info("生成已被用户取消")
 
     def on_generate_finished(self, result):
@@ -244,6 +246,7 @@ class MainWindow(QMainWindow):
         if active_bubble:
             active_bubble.append_output(f"⚠ 生成失败：{msg}")
             active_bubble.finish()
+            self._gen_page.finish_generation()
         log_error(f"生成出错:{msg}", )
 
     def _on_think_chunk(self, text: str):

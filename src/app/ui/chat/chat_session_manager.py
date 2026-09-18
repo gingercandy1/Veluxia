@@ -312,6 +312,13 @@ class ChatSessionManager(QObject):
 
     # 历史数据操作
     def add_message(self, message: dict):
+        target_id = message.get("session_id") or self._current_session_id
+        if target_id != self._current_session_id:
+            # 生成期间用户切到了别的会话：结果写回它所属的会话，不污染当前会话。
+            self._history_mgr.append_message(target_id, message)
+            self.session_list_changed.emit()
+            return
+
         is_first_message = not self._history
         self._history.append(message)
         self._history_mgr.append_message(self._current_session_id, message)
