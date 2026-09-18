@@ -13,6 +13,8 @@ class ChatWidget(QScrollArea):
     """
     retry_requested = Signal(str)
     edit_requested = Signal(str, str)
+    selection_mode_changed = Signal(bool)
+    selection_changed = Signal(int)   # 当前选中条数
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -31,6 +33,8 @@ class ChatWidget(QScrollArea):
 
         self.setWidget(self._container)
         self._bubbles: dict[str, MessageBubble] = {}
+        self._selection_mode = False
+        self._selected_ids: set[str] = set()
 
         fade_mask_color = QColor("#101215")
         fade_mask_color.setAlpha(255)
@@ -42,6 +46,8 @@ class ChatWidget(QScrollArea):
         bubble = create_message_bubble(role=role, content=content, timestamp=timestamp, message_id=message_id)
         bubble.retry_requested.connect(self._on_retry_requested)
         bubble.content_edited.connect(self.on_message_edited)
+        bubble.selection_toggled.connect(self._on_bubble_selection_toggled)
+        bubble.set_selection_mode(self._selection_mode)
 
         self._bubbles[bubble.message_id] = bubble
         self._layout.insertWidget(self._layout.count() - 2, bubble)
@@ -50,6 +56,50 @@ class ChatWidget(QScrollArea):
     def remove_message(self, message_id):
         self._bubbles[message_id].deleteLater()
         del self._bubbles[message_id]
+        self._selected_ids.discard(message_id)
+
+    # ==================== 多选删除 ====================
+    def is_selection_mode(self) -> bool:
+        return self._selection_mode
+
+    def set_selection_mode(self, enabled: bool):
+        if enabled == self._selection_mode:
+            return
+        self._selection_mode = enabled
+        for bubble in self._bubbles.values():
+            bubble.set_selection_mode(enabled)
+        if not enabled:
+            self._selected_ids.clear()
+            self.selection_changed.emit(0)
+        self.selection_mode_changed.emit(enabled)
+
+    def selected_ids(self) -> list[str]:
+        return list(self._selected_ids)
+
+    def delete_selected(self) -> list[str]:
+        """删除当前选中的消息气泡，返回被删除的 message_id 列表（供上层同步持久化存储）。"""
+        ids = list(self._selected_ids)
+        for message_id in ids:
+            if message_id in self._bubbles:
+                self.remove_message(message_id)
+        self._selected_ids.clear()
+        self.set_selection_mode(False)
+        return ids
+
+    def _on_bubble_selection_toggled(self, message_id: str, checked: bool):
+        # 没有专门的"选择"入口按钮了：勾选任意一条消息就自动进入多选模式，
+        # 取消到一条都不剩时自动退出、顶栏还原。
+        if checked and not self._selection_mode:
+            self.set_selection_mode(True)
+
+        if checked:
+            self._selected_ids.add(message_id)
+        else:
+            self._selected_ids.discard(message_id)
+        self.selection_changed.emit(len(self._selected_ids))
+
+        if not self._selected_ids and self._selection_mode:
+            self.set_selection_mode(False)
 
     def clear_from_index(self, start_index: int):
         if start_index < 0:
@@ -68,6 +118,11 @@ class ChatWidget(QScrollArea):
         for b in self._bubbles.values():
             b.deleteLater()
         self._bubbles.clear()
+        self._selected_ids.clear()
+        if self._selection_mode:
+            self._selection_mode = False
+            self.selection_changed.emit(0)
+            self.selection_mode_changed.emit(False)
 
     def load_history(self, messages: list[dict]):
         """从历史记录列表恢复聊天"""

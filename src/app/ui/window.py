@@ -79,6 +79,12 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle(self.tr("Veluxia"))
         self.resize(WindowData.MainSize)
+        # 不显式设置的话，Qt 会把子控件里所有 setFixedWidth/setMinimumWidth 的总和
+        # 当成窗口能缩小的下限（比如气泡最小宽度 500、model combobox 最小宽度 240 等
+        # 层层叠加），导致窗口缩放限制大得离谱。这里显式给一个很小的下限覆盖掉自动推
+        # 算值，交给操作系统自己的窗口最小尺寸兜底，内容超出部分交给各处已有的
+        # QScrollArea/QSplitter 处理。
+        self.setMinimumSize(1, 1)
         self._sidebar_visible = True
 
         self._startup = BackendStartupWorker()

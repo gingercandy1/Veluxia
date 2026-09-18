@@ -83,6 +83,7 @@ QLabel#assistant_bubble_text {
     background: transparent;
 }
 
+
 /* ── 展開按鈕 ─────────────────────────────────── */
 QFrame#user_bubble QPushButton {
     color: rgba(255, 255, 255, 0.8);

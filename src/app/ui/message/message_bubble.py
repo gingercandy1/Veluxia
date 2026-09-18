@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from PySide6.QtCore import (
-    Qt, QPropertyAnimation, QEasingCurve, Signal, QUrl, QTimer, )
+    Qt, QPropertyAnimation, QEasingCurve, Signal, QUrl, QTimer, Property, QRectF, QPointF, )
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QLinearGradient, QClipboard, QFont, QDesktopServices, QPen, \
     QConicalGradient
 from PySide6.QtWidgets import (
@@ -347,6 +347,92 @@ class AssistantBottomActionBar(BottomActionBar):
         pass
 
 
+class SelectionDot(QWidget):
+    """仿 DotIndicatorBar 的圆形多选指示器：空心圆环 ↔ 填充圆 + 对勾，点击切换并带动画。"""
+    toggled = Signal(bool)
+
+    _RING_COLOR = QColor(255, 255, 255, 90)
+    _FILL_COLOR = QColor(123, 157, 188, 255)   # #7B9DBC，呼应全局强调色
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._checked = False
+        self._fill_scale = 0.0
+
+        self.setFixedSize(20, 20)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        self._anim = QPropertyAnimation(self, b"fillScale")
+        self._anim.setDuration(160)
+        self._anim.setEasingCurve(QEasingCurve.Type.OutBack)
+
+    def _get_fill_scale(self) -> float:
+        return self._fill_scale
+
+    def _set_fill_scale(self, v: float):
+        self._fill_scale = v
+        self.update()
+
+    fillScale = Property(float, _get_fill_scale, _set_fill_scale)
+
+    def isChecked(self) -> bool:
+        return self._checked
+
+    def setChecked(self, checked: bool, animate: bool = True, emit: bool = True):
+        if checked == self._checked:
+            return
+        self._checked = checked
+        self._anim.stop()
+        if animate:
+            self._anim.setStartValue(self._fill_scale)
+            self._anim.setEndValue(1.0 if checked else 0.0)
+            self._anim.start()
+        else:
+            self._set_fill_scale(1.0 if checked else 0.0)
+        if emit:
+            self.toggled.emit(checked)
+
+    def toggle(self):
+        self.setChecked(not self._checked)
+
+    def paintEvent(self, _event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        side = min(self.width(), self.height())
+        margin = 1.5
+        d = side - margin * 2
+
+        p.setPen(QPen(self._RING_COLOR, 1.5))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawEllipse(QRectF(margin, margin, d, d))
+
+        if self._fill_scale > 0:
+            fill_d = d * self._fill_scale
+            offset = (side - fill_d) / 2.0
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(self._FILL_COLOR)
+            p.drawEllipse(QRectF(offset, offset, fill_d, fill_d))
+
+            if self._fill_scale > 0.6:
+                alpha = int(255 * min(1.0, (self._fill_scale - 0.6) / 0.4))
+                check_pen = QPen(QColor(255, 255, 255, alpha), 1.6,
+                                  Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
+                p.setPen(check_pen)
+                cx, cy = side / 2.0, side / 2.0
+                p.drawLine(QPointF(cx - 4.0, cy), QPointF(cx - 1.2, cy + 3.2))
+                p.drawLine(QPointF(cx - 1.2, cy + 3.2), QPointF(cx + 4.3, cy - 3.6))
+
+        p.end()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.toggle()
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+
 class MessageBubble(QFrame):
     """通用消息气泡，包含 meta 行、气泡框与折叠控制。"""
     BUBBLE_MAX_WIDTH = 800
@@ -355,6 +441,7 @@ class MessageBubble(QFrame):
 
     retry_requested = Signal(str)
     content_edited = Signal(str, str)
+    selection_toggled = Signal(str, bool)   # message_id, checked
 
     def __init__(
             self,
@@ -383,6 +470,8 @@ class MessageBubble(QFrame):
         self._edit_widget = None
         self._is_editing = False
 
+        self._selection_mode = False
+
         self.setMouseTracking(True)
         self._build_ui(role, content, timestamp)
 
@@ -406,14 +495,45 @@ class MessageBubble(QFrame):
 
     def _build_ui(self, role: str, content, timestamp: str):
         self._bubble_wrap = self._create_bubble_wrap(role, content, timestamp)
+
+        # 没有单独的"进入多选"按钮：平时悬停在消息上才露出这个圆点，
+        # 点一下就顺带通知 ChatWidget 自动进入多选模式（见 ChatWidget._on_bubble_selection_toggled）。
+        self.select_indicator = SelectionDot()
+        self.select_indicator.setVisible(False)
+        self.select_indicator.toggled.connect(
+            lambda checked: self.selection_toggled.emit(self.message_id, checked)
+        )
+
         outer = QHBoxLayout(self)
         outer.setContentsMargins(20, 0, -20, 0)
-        outer.setSpacing(0)
+        outer.setSpacing(8)
+        outer.addWidget(self.select_indicator, 0, Qt.AlignmentFlag.AlignVCenter)
         if self.is_user:
             outer.addStretch()
             outer.addWidget(self._bubble_wrap)
         else:
             outer.addWidget(self._bubble_wrap, Qt.AlignmentFlag.AlignHCenter)
+
+    def set_selection_mode(self, enabled: bool):
+        self._selection_mode = enabled
+        if enabled:
+            self.select_indicator.setVisible(True)
+        else:
+            self.select_indicator.setChecked(False, animate=False, emit=False)
+            self.select_indicator.setVisible(False)
+
+    def is_selected(self) -> bool:
+        return self.select_indicator.isChecked()
+
+    def set_selected(self, checked: bool):
+        self.select_indicator.setChecked(checked)
+
+    def mousePressEvent(self, event):
+        if self._selection_mode and event.button() == Qt.MouseButton.LeftButton:
+            self.select_indicator.toggle()
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
     def _create_bubble_wrap(self, role: str, content, timestamp: str) -> QFrame:
         wrap = QFrame()
@@ -476,10 +596,14 @@ class MessageBubble(QFrame):
 
     def enterEvent(self, e):
         self.bottom_bar.show_bar()
+        if not self._selection_mode:
+            self.select_indicator.setVisible(True)
         super().enterEvent(e)
 
     def leaveEvent(self, e):
         self.bottom_bar.hide_bar()
+        if not self._selection_mode and not self.select_indicator.isChecked():
+            self.select_indicator.setVisible(False)
         super().leaveEvent(e)
 
     def get_persisted_content(self):

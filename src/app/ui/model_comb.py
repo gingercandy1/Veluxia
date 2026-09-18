@@ -279,7 +279,6 @@ class ModelComboBox(QComboBox):
             opt = QStyleOptionComboBox()
             self.initStyleOption(opt)
 
-            # 获取 ComboBox 下拉框应该出现的位置（下方）
             rect = self.style().subControlRect(
                 QStyle.CC_ComboBox,
                 opt,
@@ -287,10 +286,22 @@ class ModelComboBox(QComboBox):
                 self
             )
 
-            global_pos = self.mapToGlobal(rect.bottomLeft())
-            popup.move(global_pos.x(), global_pos.y() + 10)
             popup.setFixedWidth(self.width())
             popup.setMaximumHeight(MAX_POPUP_H + 8)
+
+            gap = 10
+            below_pos = self.mapToGlobal(rect.bottomLeft())
+            popup_h = popup.height()
+
+            # 这个下拉框现在贴在窗口底部（输入框下方的信息条），向下弹经常没地方放，
+            # 没有足够空间时改成向上弹出，避免弹出内容被截断选不到。
+            screen = self.screen() if hasattr(self, "screen") else None
+            screen_geo = screen.availableGeometry() if screen else None
+            if screen_geo and below_pos.y() + popup_h + gap > screen_geo.bottom():
+                above_pos = self.mapToGlobal(rect.topLeft())
+                popup.move(above_pos.x(), above_pos.y() - popup_h - gap)
+            else:
+                popup.move(below_pos.x(), below_pos.y() + gap)
 
             # ← 让 popup 容器的滚轮也转发给 _view
             popup.wheelEvent = lambda e: self._view.wheelEvent(e)

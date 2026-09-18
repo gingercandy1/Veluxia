@@ -107,6 +107,10 @@ class ActionButton(QPushButton):
         self._icon = self._svg_to_icon(svg_str)
         self.update()
 
+    def set_text(self, text: str):
+        self._text = text
+        self.update()
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)

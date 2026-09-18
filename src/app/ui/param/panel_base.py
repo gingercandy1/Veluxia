@@ -46,14 +46,14 @@ class LabeledSlider(QWidget):
             self._spin.setMinimum(int(minimum))
             self._spin.setMaximum(int(maximum))
             self._spin.setSingleStep(int(step))
-            self._spin.setFixedWidth(90)
+            self._spin.setFixedWidth(68)
         else:
             self._spin = QDoubleSpinBox()
             self._spin.setMinimum(minimum)
             self._spin.setMaximum(maximum)
             self._spin.setSingleStep(step)
             self._spin.setDecimals(decimals)
-            self._spin.setFixedWidth(90)
+            self._spin.setFixedWidth(68)
 
         self.setValue(default)
 
@@ -135,13 +135,18 @@ class BaseParamPanel(BaseWidget):
         self._title = title
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self._form = QFormLayout(self)
-        self._form.setContentsMargins(20, 0, 20, 0)
+        self._form.setContentsMargins(14, 8, 14, 8)
         self._form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self._form.setSpacing(15)
+        self._form.setSpacing(10)
         self._build_widgets()
 
+    LABEL_MAX_WIDTH = 92
+
     def _add_row(self, label: str, widget: QWidget):
-        self._form.addRow(QLabel(label), widget)
+        lbl = QLabel(label)
+        lbl.setWordWrap(True)
+        lbl.setMaximumWidth(self.LABEL_MAX_WIDTH)
+        self._form.addRow(lbl, widget)
 
     def _labeled_slider(self, mn, mx, default, decimals=0, step=1) -> LabeledSlider:
         return LabeledSlider(mn, mx, default, decimals, step)

@@ -150,6 +150,18 @@ class HistoryManager:
             )
             self._touch_session(conn, session_id)
 
+    def delete_messages(self, session_id: str, message_ids: list[str]):
+        """按 message_id 批量删除指定消息（用于多选删除）。"""
+        if not message_ids:
+            return
+        placeholders = ",".join("?" * len(message_ids))
+        with self._connect() as conn:
+            conn.execute(
+                f"DELETE FROM messages WHERE session_id = ? AND message_id IN ({placeholders})",
+                [session_id] + message_ids,
+            )
+            self._touch_session(conn, session_id)
+
     def delete_messages_after(self, session_id: str, keep_ids: list[str]):
         """
         保留 keep_ids 中的消息，删除该 session 内其余消息。
@@ -335,6 +347,15 @@ class ChatSessionManager(QObject):
 
     def get_history(self) -> list[dict]:
         return self._history.copy()
+
+    def delete_messages(self, message_ids: list[str]):
+        """按 message_id 批量删除消息，同步内存与持久化存储。"""
+        if not message_ids:
+            return
+        ids = set(message_ids)
+        self._history = [m for m in self._history if m.get("message_id") not in ids]
+        self._history_mgr.delete_messages(self._current_session_id, message_ids)
+        self.history_updated.emit()
 
     def clear_current_session(self):
         self._history.clear()
