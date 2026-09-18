@@ -16,14 +16,7 @@ class ImageRouter(BaseRouter):
     factory_type = FactoryType.Image
 
     def _register_routes(self) -> None:
-
-        @self.router.post(
-            "/generate",
-            response_model=ImageResponse,
-            summary="文生图 / 图生图",
-        )
-        async def generate(req: BaseRequest) -> ImageResponse:
-            return await self._handle_generate(req)
+        self._register_async_generate_routes(self._handle_generate, BaseRequest)
 
         @self.router.post(
             "/remove-background",

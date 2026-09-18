@@ -13,9 +13,7 @@ class AnimationRouter(BaseRouter):
     factory_type = FactoryType.Animation
 
     def _register_routes(self) -> None:
-        @self.router.post("/generate", response_model=AnimationResponse, summary="图像转动画")
-        async def generate(req: BaseRequest) -> AnimationResponse:
-            return await self.handle_generate(req)
+        self._register_async_generate_routes(self.handle_generate, BaseRequest)
 
     async def handle_generate(self, req: BaseRequest) -> AnimationResponse:
         generator = GeneratorFactory.build_generator(FactoryType.Animation, req.model_name)

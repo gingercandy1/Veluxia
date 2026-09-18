@@ -108,9 +108,18 @@ class ApiClient:
                 pass
         return False
 
+    def ready(self) -> bool:
+        try:
+            resp = self._session.get(f"{self.base_url}/ready", timeout=5)
+            if resp.is_success:
+                return bool(resp.json().get("ready"))
+        except Exception:
+            pass
+        return False
+
     def generate_image(self, req):
         payload = req.to_api_payload()
-        return self._post("/image/generate", payload, ImageResponse)
+        return self._submit_and_poll("/image/generate", payload, ImageResponse)
 
     def generate_text(self, req):
         payload = req.to_api_payload()
@@ -118,11 +127,79 @@ class ApiClient:
 
     def generate_animation(self, req):
         payload = req.to_api_payload()
-        return self._post("/animation/generate", payload, AnimationResponse)
+        return self._submit_and_poll("/animation/generate", payload, AnimationResponse)
 
     def generate_speech(self, req):
         payload = req.to_api_payload()
-        return self._post("/speech/generate", payload, SpeechResponse)
+        return self._submit_and_poll("/speech/generate", payload, SpeechResponse)
+
+    def _submit_and_poll(
+        self,
+        path_prefix: str,
+        payload: Dict[str, Any],
+        response_cls,
+        poll_interval: float = 2.0,
+        poll_timeout: float = 60.0,
+        max_consecutive_connect_failures: int = 5,
+        max_total_wait_seconds: float = 2 * 3600,
+    ) -> BaseResponse:
+        """
+        图片/动画/语音生成耗时不固定（从几秒到几十分钟不等），不能再用一次性
+        阻塞 HTTP 请求 + 固定超时的模式（超时不代表生成失败，只是客户端等不及了，
+        但那样会导致 loading 状态被过早收起，而后端其实还在继续跑）。
+
+        改为：先提交任务拿 job_id（这一步很快，用短超时即可），然后轮询任务状态，
+        不管后端实际跑多久，前端只在拿到真正的 done/error 时才结束等待。
+
+        注意：加载模型/推理这类同步 CPU 密集操作是在后端线程池里跑的，Python 的
+        GIL 会导致它偶尔把 FastAPI 主事件循环饿一下，使某次轮询请求读超时——这不
+        代表任务失败或后端挂了。只有真正的 ConnectError（连接不上，说明后端进程
+        可能已经崩溃/退出）才计入失败次数；其它异常（读超时等）无限重试，只用一个
+        很宽松的总等待时长兜底，防止真出问题时无限等下去。
+        """
+        try:
+            resp = self._session.post(
+                f"{self.base_url}{path_prefix}/submit",
+                json=payload,
+                timeout=30,
+            )
+            resp.raise_for_status()
+            job_id = resp.json()["job_id"]
+        except httpx.ConnectError:
+            return response_cls.from_error("無法連接後端，請確認服務是否啟動")
+        except Exception as exc:
+            return response_cls.from_error(str(exc))
+
+        connect_failures = 0
+        start = time.monotonic()
+        while True:
+            time.sleep(poll_interval)
+            if time.monotonic() - start > max_total_wait_seconds:
+                return response_cls.from_error("生成任務等待超時，請檢查後端日誌")
+
+            try:
+                resp = self._session.get(
+                    f"{self.base_url}{path_prefix}/status/{job_id}",
+                    timeout=poll_timeout,
+                )
+                resp.raise_for_status()
+                status_json = resp.json()
+            except httpx.ConnectError:
+                connect_failures += 1
+                if connect_failures >= max_consecutive_connect_failures:
+                    return response_cls.from_error("與後端失去連接，無法確認生成結果")
+                continue
+            except Exception:
+                # 读超时/临时解析失败等：后端大概率还活着，只是这次响应慢，继续等。
+                continue
+
+            connect_failures = 0
+            status = status_json.get("status")
+            if status == "done":
+                return response_cls.model_validate(status_json.get("result") or {})
+            if status == "error":
+                return response_cls.from_error(status_json.get("error") or "生成失敗")
+            # pending / running：继续等待
 
     def stream_text(self, req) -> Generator[Dict[str, Any], None, None]:
         max_retries = 3

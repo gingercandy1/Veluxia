@@ -2,6 +2,7 @@ import enum
 import gc
 import json
 import os.path
+import threading
 from abc import ABC, abstractmethod, ABCMeta
 from pathlib import Path
 from typing import List, Dict, Any
@@ -162,6 +163,20 @@ class GeneratorFactory:
     _generators: Dict[FactoryType, Dict[str, type]] = {t: {} for t in FactoryType}
     _model: Dict[FactoryType, Dict[str, list]] = {t: {} for t in FactoryType}
     _device: str = "cpu"
+    _ready_event: threading.Event = threading.Event()
+
+    @classmethod
+    def mark_ready(cls):
+        """所有生成器模块导入完成、注册表已填充后调用，解除 build_generator 的等待。"""
+        cls._ready_event.set()
+
+    @classmethod
+    def is_ready(cls) -> bool:
+        return cls._ready_event.is_set()
+
+    @classmethod
+    def wait_ready(cls, timeout: float = 300.0) -> bool:
+        return cls._ready_event.wait(timeout)
 
     @classmethod
     def apply_setting(cls, setting: dict):
@@ -187,6 +202,10 @@ class GeneratorFactory:
 
     @classmethod
     def build_generator(cls, ty, name: str):
+        if not cls._ready_event.is_set():
+            print("⏳ 模型注册尚未完成，等待中...")
+            if not cls.wait_ready():
+                raise RuntimeError("后端模型加载超时，请检查日志")
         if name not in cls._generators.get(ty):
             raise ValueError(f"未知的生成器: {name}")
         return cls._generators[ty][name](model_name=name, device=cls._device)

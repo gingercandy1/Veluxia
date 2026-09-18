@@ -49,3 +49,16 @@ class ModelInfoResponse(BaseResponse):
 
 class TranslateResponse(BaseResponse):
     translate_result: str = ""
+
+
+# 异步生成任务（图片 / 动画 / 语音耗时不固定，提交后轮询状态）
+class JobSubmitResponse(BaseModel):
+    job_id: str
+    status: str = "pending"
+
+
+class JobStatusResponse(BaseModel):
+    job_id: str
+    status: str  # pending / running / done / error
+    result: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None

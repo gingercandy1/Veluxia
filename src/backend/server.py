@@ -1,8 +1,6 @@
 import sys
 import os
 
-from .core.preloader import preloader
-
 _BACKEND = os.path.dirname(os.path.abspath(__file__))   # src/backend
 _SRC = os.path.dirname(_BACKEND)
 sys.path.insert(0, os.path.join(_BACKEND, 'router'))
@@ -13,6 +11,7 @@ sys.path.insert(0, _SRC)
 
 
 import argparse
+import threading
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -33,31 +32,42 @@ VERSION = "1.0.0"
 BACKEND_NAME = "Asset Generator Backend"
 DESCRIPTION = "图像 / 动画 / 语音 / 文本生成 API"
 
+
+def _register_generators():
+    """
+    导入所有生成器模块（torch/diffusers/transformers 等重型依赖）并注册到工厂。
+    放在后台线程跑，避免阻塞 uvicorn 的 lifespan 启动，让 /health 等路由立刻可用；
+    真正调用生成时 GeneratorFactory.build_generator 会等待这里完成。
+    """
+    try:
+        import torch  # noqa: F401  确保 CUDA/驱动初始化也在这个后台线程里完成
+
+        from src.backend.core.text.llama_chat import LlamaGenerator
+        from src.backend.core.image.flux_schnell import FluxSchnellGenerator
+        from src.backend.core.image.sdxl import SDXLGenerator
+        from src.backend.core.image.sd35_medium import SD35MediumGenerator
+        from src.backend.core.image.z_image import ZImageGenerator
+        from src.backend.core.image.qwen_image import QwenImageLightningGenerator
+        from src.backend.core.image.bg_removal import BgRemovalGenerator
+        from src.backend.core.image_frame.film_generator import FILMInterpolationGenerator
+        from src.backend.core.animation.ltx_video import LTXVideoGenerator
+        from src.backend.core.animation.ltx2_video import LTX2VideoGenerator
+        from src.backend.core.animation.wan2_2 import Wan2VideoGenerator
+        from src.backend.core.speech.ace_step_music import AceStepMusicGenerator
+        from src.backend.core.speech.qwen3_tts import Qwen3TTSGenerator
+
+        setting = ConfigManager().get_backend_config()
+        GeneratorFactory.apply_setting(setting=setting)
+        print("✅ 所有模型已注册，设备:", GeneratorFactory._device)
+    except Exception as e:
+        print(f"❌ 模型注册失败: {e}")
+    finally:
+        GeneratorFactory.mark_ready()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    preloader.preload(
-        "torch",
-        lambda: __import__("torch")
-    )
-    
-    from src.backend.core.text.llama_chat import LlamaGenerator
-    from src.backend.core.image.flux_schnell import FluxSchnellGenerator
-    from src.backend.core.image.sdxl import SDXLGenerator
-    from src.backend.core.image.sd35_medium import SD35MediumGenerator
-    from src.backend.core.image.z_image import ZImageGenerator
-    from src.backend.core.image.qwen_image import QwenImageLightningGenerator
-    from src.backend.core.image.bg_removal import BgRemovalGenerator
-    from src.backend.core.image_frame.film_generator import FILMInterpolationGenerator
-    from src.backend.core.animation.ltx_video import LTXVideoGenerator
-    from src.backend.core.animation.ltx2_video import LTX2VideoGenerator
-    from src.backend.core.animation.wan2_2 import Wan2VideoGenerator
-    from src.backend.core.speech.ace_step_music import AceStepMusicGenerator
-    from src.backend.core.speech.qwen3_tts import Qwen3TTSGenerator
-
-    # startup
-    setting = ConfigManager().get_backend_config()
-    GeneratorFactory.apply_setting(setting=setting)
-    print("✅ 所有模型已注册，设备:", GeneratorFactory._device)
+    threading.Thread(target=_register_generators, daemon=True, name="register-generators").start()
     yield
 
 
@@ -112,10 +122,15 @@ def create_app() -> FastAPI:
     # ps.print_stats(40)
     # print(s.getvalue())
 
-    # 健康检查
+    # 健康检查：进程是否存活（uvicorn 起来就返回 ok，不等模型注册）
     @app.get("/health", tags=["System"])
     async def health() -> dict:
         return {"status": "ok"}
+
+    # 就绪检查：模型是否已在后台注册完成，UI 拉取 /models 前应先确认这个
+    @app.get("/ready", tags=["System"])
+    async def ready() -> dict:
+        return {"ready": GeneratorFactory.is_ready()}
     return app
 
 app = create_app()
