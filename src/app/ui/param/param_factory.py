@@ -19,5 +19,8 @@ class WidgetFactory:
     def build_widget(cls, ty, name: str) :
         if name not in cls._widget.get(ty):
             raise ValueError(f"未知的界面: {name}")
-        return cls._widget[ty][name]()
+        widget = cls._widget[ty][name]()
+        widget._model_name = name
+        widget.restore_saved_params(name)
+        return widget
 

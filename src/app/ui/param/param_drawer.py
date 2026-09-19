@@ -46,4 +46,10 @@ class ParamDrawer(BaseWidget):
         else:
             return {}
 
+    def save_params(self):
+        if isinstance(self.param_widget, BaseParamPanel):
+            model_name = getattr(self.param_widget, "_model_name", "")
+            if model_name:
+                self.param_widget.save_params(model_name)
+
 
