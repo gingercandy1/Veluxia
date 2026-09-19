@@ -490,6 +490,7 @@ class InputBar(BaseWidget):
         widget = self._param_popover.take_widget()
         if widget is not None:
             self.param_drawer.load_schema(widget)
+        self.param_drawer.save_params()
 
     def _pick_files(self):
         key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")
@@ -630,6 +631,7 @@ class InputBar(BaseWidget):
             return
 
         key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")
+        self.param_drawer.save_params()
         params = self.param_drawer.get_params()
 
         payload = InputPayload(

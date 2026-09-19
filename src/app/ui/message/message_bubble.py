@@ -557,9 +557,13 @@ class MessageBubble(QFrame):
         self.calc_bubble_box_height()
         self._check_collapse()
 
+    _collapse_wired = False
+
     def _check_collapse(self):
-        if self._bubble_box.sizeHint().height() <= self.COLLAPSE_MAX_H:
+        # showEvent 每次显示都会进来；信号只能连一次，否则展开/收起会被触发多次互相抵消。
+        if self._collapse_wired or self._bubble_box.sizeHint().height() <= self.COLLAPSE_MAX_H:
             return
+        self._collapse_wired = True
 
         self._collapse_wrap.setMaximumHeight(self.COLLAPSE_MAX_H)
         self._collapse_wrap.show_mask(True)
@@ -1081,8 +1085,8 @@ class AssistantMessageBubble(MessageBubble):
             self._placeholder = MediaLoadingPlaceholder(model_type, item_count)
             container = QWidget()
             layout = QHBoxLayout(container)
-            layout.setContentsMargins(20, 10, 20, 10)
-            layout.addStretch()
+            # 左边距与底部操作栏（BottomActionBar）的左边距一致，占位与第一个按钮左缘对齐。
+            layout.setContentsMargins(12, 10, 20, 10)
             layout.addWidget(self._placeholder)
             layout.addStretch()
             return container
@@ -1147,11 +1151,10 @@ class AssistantMessageBubble(MessageBubble):
         if path in self._partial_paths:
             return
         if not self._partial_paths and self._placeholder is not None:
-            # 图片出现在占位上方；占位挪到内容下方，并改为左对齐，接在图片后面。
+            # 图片出现在占位上方；占位挪到内容下方，接在图片后面。
             layout = self.spinner_widget.parentWidget().layout()
             layout.removeWidget(self.spinner_widget)
             layout.insertWidget(layout.indexOf(self._collapse_wrap) + 1, self.spinner_widget)
-            self.spinner_widget.layout().takeAt(0)
         self._partial_paths.append(path)
         self._content_loader.append(path)
 

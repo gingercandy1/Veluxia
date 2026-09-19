@@ -124,7 +124,7 @@ class TextBlockWidget(QTextBrowser):
         self._flush_timer = QTimer(self)
         self._flush_timer.setInterval(self._THROTTLE_MS)
         self._flush_timer.timeout.connect(self._flush_to_ui)
-        self._flush_timer.start()
+        # 定时器只在有新内容时才跑，空闲就停（历史消息里的文本块不再各自空转唤醒主线程）。
 
     def _setup_style(self):
         self.setObjectName("streaming_text_widget")
@@ -151,6 +151,8 @@ class TextBlockWidget(QTextBrowser):
     def append_chunk(self, text: str) -> None:
         self._raw_text += text
         self._dirty = True
+        if not self._flush_timer.isActive():
+            self._flush_timer.start()
 
     def finish(self) -> None:
         pass
@@ -161,6 +163,7 @@ class TextBlockWidget(QTextBrowser):
     def _flush_to_ui(self) -> None:
         """定时器回调：若有新内容则重新渲染 HTML 并刷新显示。"""
         if not self._dirty:
+            self._flush_timer.stop()
             return
         self._dirty = False
         html = _raw_to_html(self._raw_text)
@@ -171,6 +174,8 @@ class TextBlockWidget(QTextBrowser):
         self.document().setDocumentMargin(0)
         self._relax_height()
         self.setUpdatesEnabled(True)
+        # 每次都要整段重新渲染，文本越长越贵：随长度拉长刷新间隔（80ms → 最多 300ms）。
+        self._flush_timer.setInterval(min(300, self._THROTTLE_MS + len(self._raw_text) // 40))
 
     def _relax_height(self) -> None:
         doc = self.document()

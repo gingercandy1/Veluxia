@@ -34,6 +34,8 @@ class SelectionColumn(QWidget):
     colWidth = Property(int, _get_col_width, _set_col_width)
 
     def add_dot(self, message_id: str) -> SelectionDot:
+        if message_id in self._dots:
+            return self._dots[message_id]
         dot = SelectionDot(self)
         dot.move((self.WIDTH - dot.width()) // 2, 0)
         dot.toggled.connect(lambda checked, mid=message_id: self.dot_toggled.emit(mid, checked))
@@ -150,17 +152,24 @@ class ChatWidget(QScrollArea):
         bubble.installEventFilter(self)
 
         self._bubbles[bubble.message_id] = bubble
-        self._column.add_dot(bubble.message_id)
         self._layout.insertWidget(self._layout.count() - 2, bubble)
-        self._sync_timer.start()
+        self._request_sync(bubble.message_id)
         return bubble
+
+    def _request_sync(self, add_dot_for: str | None = None):
+        """圆点只在多选模式下才存在、才需要跟随气泡位置；平时完全不做事。"""
+        if not self._selection_mode:
+            return
+        if add_dot_for is not None:
+            self._column.add_dot(add_dot_for)
+        self._sync_timer.start()
 
     def remove_message(self, message_id):
         self._bubbles[message_id].deleteLater()
         del self._bubbles[message_id]
         self._column.remove_dot(message_id)
         self._selected_ids.discard(message_id)
-        self._sync_timer.start()
+        self._request_sync()
 
     def has_message(self, message_id) -> bool:
         return message_id in self._bubbles
@@ -174,17 +183,16 @@ class ChatWidget(QScrollArea):
         bubble.hide()
         self._column.remove_dot(message_id)
         self._selected_ids.discard(message_id)
-        self._sync_timer.start()
+        self._request_sync()
         return bubble
 
     def attach_bubble(self, bubble: MessageBubble):
         """把 detach_message 摘下的气泡重新追加到列表末尾。"""
         bubble.set_selection_mode(self._selection_mode)
         self._bubbles[bubble.message_id] = bubble
-        self._column.add_dot(bubble.message_id)
         self._layout.insertWidget(self._layout.count() - 2, bubble)
         bubble.show()
-        self._sync_timer.start()
+        self._request_sync(bubble.message_id)
 
     # ==================== 多选删除 ====================
     def is_selection_mode(self) -> bool:
@@ -196,11 +204,17 @@ class ChatWidget(QScrollArea):
         self._selection_mode = enabled
         for bubble in self._bubbles.values():
             bubble.set_selection_mode(enabled)
+        if enabled:
+            for message_id in self._bubbles:
+                self._column.add_dot(message_id)
+            self._sync_column()
         self._column.set_open(enabled)
         if not enabled:
             self._selected_ids.clear()
             self._column.uncheck_all()
             self.selection_changed.emit(0)
+            # 收起动画结束后销毁圆点，平时不留任何多选相关的控件。
+            QTimer.singleShot(300, self._drop_dots_if_idle)
         self.selection_mode_changed.emit(enabled)
 
     def selected_ids(self) -> list[str]:
@@ -226,6 +240,10 @@ class ChatWidget(QScrollArea):
         # 取消到一条都不剩时自动退出多选模式。
         if not self._selected_ids and self._selection_mode:
             self.set_selection_mode(False)
+
+    def _drop_dots_if_idle(self):
+        if not self._selection_mode:
+            self._column.clear_dots()
 
     def _sync_column(self):
         for message_id, bubble in self._bubbles.items():
@@ -281,7 +299,8 @@ class ChatWidget(QScrollArea):
             return super().eventFilter(obj, event)
         t = event.type()
         if t in (QEvent.Type.Resize, QEvent.Type.Move, QEvent.Type.LayoutRequest):
-            self._sync_timer.start()
+            if self._selection_mode:
+                self._sync_timer.start()
             return False
 
         if t == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
@@ -325,12 +344,17 @@ class ChatWidget(QScrollArea):
 
     def load_history(self, messages: list[dict]):
         """从历史记录列表恢复聊天"""
-        for msg in messages:
-            try:
-                content =dict(msg["content"])
-                self.add_message(msg["role"], content, msg["time"], msg["message_id"])
-            except Exception as e:
-                self.add_message(msg["role"], msg["content"], msg["time"], msg["message_id"])
+        # 批量添加时暂停重绘，避免每加一条气泡就整体重排重绘一次。
+        self._container.setUpdatesEnabled(False)
+        try:
+            for msg in messages:
+                try:
+                    content = dict(msg["content"])
+                    self.add_message(msg["role"], content, msg["time"], msg["message_id"])
+                except Exception as e:
+                    self.add_message(msg["role"], msg["content"], msg["time"], msg["message_id"])
+        finally:
+            self._container.setUpdatesEnabled(True)
 
     def _on_retry_requested(self, message_id: str):
         if message_id not in self._bubbles:

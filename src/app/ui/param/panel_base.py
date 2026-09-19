@@ -8,10 +8,11 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QLabel,
     QSlider, QSpinBox, QDoubleSpinBox, QFormLayout, QSizePolicy,
+    QComboBox, QCheckBox,
 )
 
 from src.shared.enum_type import FactoryType
-from src.shared.settings import PROJECT_ROOT
+from src.shared.settings import PROJECT_ROOT, ConfigManager
 from src.app.ui.base.widget import BaseWidget
 from src.app.ui.param.param_factory import WidgetFactory
 
@@ -91,6 +92,9 @@ class LabeledSlider(QWidget):
         self._spin.blockSignals(False)
 
 
+_PARAM_WIDGETS = (LabeledSlider, QComboBox, QCheckBox)
+
+
 class BaseParamPanel(BaseWidget):
     """
     参数面板基类。
@@ -100,6 +104,12 @@ class BaseParamPanel(BaseWidget):
     type: enum.Enum = None
     dynamic: bool = False
     config: Dict[str, Any] = {}
+    _PARAM_ALIASES = {
+        "guidance_scale": "guidance",
+        "num_inference_steps": "steps",
+        "decode_noise_scale": "decode_noise",
+        "times_to_interpolate": "times",
+    }
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -141,6 +151,64 @@ class BaseParamPanel(BaseWidget):
         self._form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self._form.setSpacing(10)
         self._build_widgets()
+
+    def load_saved_params(self, params: Dict[str, Any]):
+        """Restore values saved for this model without emitting user changes."""
+        for name, value in params.items():
+            widget = self._find_param_widget(name)
+            if isinstance(widget, LabeledSlider):
+                widget.setValue(value)
+            elif isinstance(widget, QCheckBox):
+                widget.setChecked(bool(value))
+            elif isinstance(widget, QComboBox):
+                index = widget.findText(str(value))
+                if index < 0:
+                    index = next(
+                        (i for i in range(widget.count())
+                         if str(value) in widget.itemText(i)), -1
+                    )
+                if index >= 0:
+                    widget.setCurrentIndex(index)
+
+    def save_params(self, model_name: str):
+        config = ConfigManager()
+        model_type = FactoryType.convert_to_text(self.type)
+        saved = config.get("model_params", model_type, {})
+        if not isinstance(saved, dict):
+            saved = {}
+        saved = dict(saved)
+        saved[model_name] = self.get_params()
+        config.set("model_params", model_type, saved)
+        config.save()
+
+    def _find_param_widget(self, name: str):
+        target = f"_{self._PARAM_ALIASES.get(name, name)}"
+
+        def find(value):
+            if isinstance(value, _PARAM_WIDGETS):
+                return value
+            if isinstance(value, QWidget):
+                for child in value.__dict__.values():
+                    found = find(child)
+                    if found is not None:
+                        return found
+            return None
+
+        value = self.__dict__.get(target)
+        if isinstance(value, _PARAM_WIDGETS):
+            return value
+        for candidate in self.__dict__.values():
+            if isinstance(candidate, QWidget):
+                found = find(candidate)
+                if found is not None and candidate.__dict__.get(target) is found:
+                    return found
+        return None
+
+    def restore_saved_params(self, model_name: str):
+        model_type = FactoryType.convert_to_text(self.type)
+        params = ConfigManager().get("model_params", model_type, {})
+        if isinstance(params, dict):
+            self.load_saved_params(params.get(model_name, {}))
 
     LABEL_MAX_WIDTH = 92
 
