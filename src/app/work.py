@@ -73,6 +73,8 @@ class ApiWorker(QThread):
                 return
 
             result = self._resolve_media(result)
+            if isinstance(result, AnimationResponse) and self._request.model_params.get("export_sprites"):
+                self._export_sprites(result)
             self._emit_result(result)
 
         except Exception as e:
@@ -110,6 +112,21 @@ class ApiWorker(QThread):
             self._request.translated = response.translate_result or ""
         except Exception as e:
             print(f"⚠️ 翻译失败，使用原始提示词：{e}")
+
+    def _export_sprites(self, result: AnimationResponse):
+        """精灵图导出失败不应让已经生成好的动画作废，错误写进响应交给界面提示。
+        帧文件此时已下载到本地缓存，后端与前端同机，可直接按本地路径导出。"""
+        if not result.frame_paths:
+            result.error = "没有可导出的序列帧"
+            return
+        try:
+            export = self._client.export_sprites(
+                result.frame_paths, name="anim",
+                fps=int(self._request.model_params.get("frame_rate", 12)), trim=True)
+        except Exception as e:
+            result.error = f"精灵图导出失败：{e}"
+            return
+        result.export_paths = [p for p in (self._download(export.sheet_path), self._download(export.atlas_path)) if p]
 
     def _download(self, media_url: Optional[str]) -> Optional[str]:
         if not media_url:
