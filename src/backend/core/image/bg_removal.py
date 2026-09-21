@@ -13,6 +13,8 @@ class BgRemovalGenerator(BaseImageGenerator):
     # rembg 的会话（模型）名。单例按类区分，所以换模型要另写子类而不是靠 models.json 里的名字。
     session_name = "u2net"
 
+    _model_attrs = ("session",)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.session = None
@@ -27,12 +29,6 @@ class BgRemovalGenerator(BaseImageGenerator):
         from rembg import new_session
         print(f"🔧 正在加载 rembg-{self.session_name}（首次会自动下载 onnx 权重）...")
         self.session = new_session(self.session_name)
-
-    def unload_model(self):
-        self.session = None
-        import gc
-        gc.collect()
-        print("✅ rembg-u2net 会话已释放")
 
     async def generate(self) -> Optional[Path | None]:
         self.ensure_model_loaded()

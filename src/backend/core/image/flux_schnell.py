@@ -14,6 +14,8 @@ from src.shared.settings import PROJECT_ROOT
 
 class FluxSchnellGenerator(BaseImageGenerator):
     """Flux.1-schnell 图片生成器"""
+    _model_attrs = ("pipe",)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if not self.model_id:
@@ -79,15 +81,6 @@ class FluxSchnellGenerator(BaseImageGenerator):
         self.pipe.vae.enable_slicing()
         self.pipe.vae.enable_tiling()
         self.torch.cuda.empty_cache()
-
-    def unload_model(self):
-        if self.pipe is not None:
-            del self.pipe
-            self.pipe = None
-            self.torch.cuda.empty_cache()
-            import gc
-            gc.collect()
-            print("✅ 模型已卸载，显存已释放")
 
     @staticmethod
     def _prepare_ref_image(

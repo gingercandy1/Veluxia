@@ -15,6 +15,8 @@ class SDXLGenerator(BaseImageGenerator):
     """SDXL-base 图片生成器（Stability Community License，可商用）"""
     model_dir = "sdxl-base-1.0"
 
+    _model_attrs = ("pipe_img2img", "pipe")
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.pipe_img2img = None
@@ -57,16 +59,6 @@ class SDXLGenerator(BaseImageGenerator):
         from diffusers import StableDiffusionXLImg2ImgPipeline
         self.ensure_model_loaded()
         self.pipe_img2img = StableDiffusionXLImg2ImgPipeline.from_pipe(self.pipe)
-
-    def unload_model(self):
-        for attr in ("pipe_img2img", "pipe"):
-            if getattr(self, attr) is not None:
-                delattr(self, attr)
-                setattr(self, attr, None)
-        self.torch.cuda.empty_cache()
-        import gc
-        gc.collect()
-        print("✅ SDXL 已卸载，显存已释放")
 
     async def generate(self) -> Optional[Path | None]:
         self.ensure_model_loaded()

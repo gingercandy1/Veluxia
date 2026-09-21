@@ -15,6 +15,8 @@ class SD35MediumGenerator(BaseImageGenerator):
     """Stable Diffusion 3.5-Medium 图片生成器（Stability Community License，可商用）"""
     model_dir = "sd3.5-medium"
 
+    _model_attrs = ("pipe_img2img", "pipe")
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.pipe_img2img = None
@@ -57,16 +59,6 @@ class SD35MediumGenerator(BaseImageGenerator):
         from diffusers import StableDiffusion3Img2ImgPipeline
         self.ensure_model_loaded()
         self.pipe_img2img = StableDiffusion3Img2ImgPipeline.from_pipe(self.pipe)
-
-    def unload_model(self):
-        for attr in ("pipe_img2img", "pipe"):
-            if getattr(self, attr) is not None:
-                delattr(self, attr)
-                setattr(self, attr, None)
-        self.torch.cuda.empty_cache()
-        import gc
-        gc.collect()
-        print("✅ SD3.5-Medium 已卸载，显存已释放")
 
     async def generate(self) -> Optional[Path | None]:
         self.ensure_model_loaded()
