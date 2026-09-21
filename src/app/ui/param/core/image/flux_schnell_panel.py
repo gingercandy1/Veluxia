@@ -13,8 +13,8 @@ class FluxSchnellPanel(BaseParamPanel):
         super().__init__(title="Flux.1-schnell 参数", parent=parent)
 
     def _build_widgets(self):
-        # 宽度
-        self._number = self._labeled_slider(0, 10, 2, step=64)
+        # 出图张数：占位槽数和后端循环次数都取这个值，默认 1 张，下限 1 避免 0 张
+        self._number = self._labeled_slider(1, 10, 1)
         self._add_row(self.tr("number"), self._number)
 
         # 宽度
