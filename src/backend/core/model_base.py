@@ -5,12 +5,13 @@ import importlib
 import json
 import os.path
 import threading
+from contextlib import contextmanager
 from abc import ABC, abstractmethod, ABCMeta
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from src.backend.core.exceptions import GenerationCancelled
+from src.backend.core.exceptions import GenerationCancelled, GeneratorBusyError
 from src.backend.core.model_utils import get_device
 from src.shared.enum_type import FactoryType
 from src.shared.settings import PROJECT_ROOT
@@ -208,6 +209,8 @@ class GeneratorFactory:
     _device: str = "cpu"
     _ready_event: threading.Event = threading.Event()
     _resolve_lock: threading.Lock = threading.Lock()
+    # 当前持有租约的使用者名称；None 表示空闲。见 acquire() / exclusive()
+    _holder: Optional[str] = None
 
     @classmethod
     def mark_ready(cls):
@@ -251,6 +254,53 @@ class GeneratorFactory:
                     entry = entry.load()
                     cls._generators[ty][name] = entry
         return entry(model_name=name, device=cls._device)
+
+    @classmethod
+    def _require_idle(cls):
+        if cls._holder is not None:
+            raise GeneratorBusyError(
+                f"正在运行 {cls._holder}，请等它完成后再试（刚点了停止的话，模型仍在收尾）")
+
+    @classmethod
+    def _unload_residents(cls, keep=None):
+        for instance in list(SingletonMeta._instances.values()):
+            if instance is not keep:
+                instance.unload()
+
+    @classmethod
+    @contextmanager
+    def acquire(cls, ty, name: str):
+        """
+        生成期间独占生成器的租约：8GB 显存只够驻留一个模型（ADR 0001），所以
+        - 有任务在跑时，任何取用（包括同一个模型）都被拒绝：切换会卸载正在使用的权重，
+          同一个实例并发使用又会互相覆盖 parse_params 写入的状态；
+        - 空闲时才允许取用，并先卸载其他所有驻留的生成器。
+        整个生成过程（含 ensure_model_loaded）必须放在 with 块里。
+        """
+        with SingletonMeta._lock:
+            cls._require_idle()
+            generator = cls.build_generator(ty, name)
+            cls._unload_residents(keep=generator)
+            cls._holder = name
+        try:
+            yield generator
+        finally:
+            with SingletonMeta._lock:
+                cls._holder = None
+
+    @classmethod
+    @contextmanager
+    def exclusive(cls, holder: str = "提示词优化"):
+        """给不是生成器、但同样占显存的模型（如提示词优化器）用：占用期间没有生成器驻留。"""
+        with SingletonMeta._lock:
+            cls._require_idle()
+            cls._unload_residents()
+            cls._holder = holder
+        try:
+            yield
+        finally:
+            with SingletonMeta._lock:
+                cls._holder = None
 
     @classmethod
     def get_generator_names(cls, ty) -> list:

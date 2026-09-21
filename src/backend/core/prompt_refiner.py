@@ -1,9 +1,9 @@
 import functools
 import gc
 import json
-import threading
 from pathlib import Path
 
+from src.backend.core.model_base import GeneratorFactory
 from src.shared.settings import PROJECT_ROOT
 
 _MODEL_DIR = Path(PROJECT_ROOT) / "models" / "prompt_refiner" / "Qwen2.5-1.5B-Instruct"
@@ -83,8 +83,6 @@ class PromptRefiner:
     让位给后面的生成模型。
     """
 
-    _lock = threading.Lock()
-
     @staticmethod
     def supported_modes() -> tuple[str, ...]:
         return tuple(_SYSTEM_PROMPTS)
@@ -97,8 +95,9 @@ class PromptRefiner:
         if not _MODEL_DIR.exists():
             raise FileNotFoundError(f"提示词优化模型不存在: {_MODEL_DIR}")
 
-        # 串行化：同时来两个请求会各自加载一份模型，显存直接翻倍
-        with self._lock:
+        # 优化器占约 3GB 显存，和驻留的生图模型放不到一起：exclusive() 会先卸载它们，
+        # 并在优化期间挡住新的生成请求；同时也串行化了并发的优化请求
+        with GeneratorFactory.exclusive():
             return self._run(text.strip(), mode)
 
     def _run(self, text: str, mode: str) -> str:

@@ -1,10 +1,11 @@
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
 from fastapi import HTTPException
 
 from src.backend.router_base import BaseRouter
-from src.backend.core.exceptions import GenerationCancelled
+from src.backend.core.exceptions import GenerationCancelled, GeneratorBusyError
 from src.backend.core.job_manager import Job
 from src.backend.core.model_base import GeneratorFactory
 from src.backend.core.model_utils import to_media_url
@@ -26,10 +27,12 @@ class ImageRouter(BaseRouter):
             summary="去背景（输入图 → 透明底 PNG）",
         )
         async def remove_background(req: BaseRequest) -> ImageResponse:
-            generator = self._resolve_generator(req)
-            generator.parse_params(req.extra)
             try:
-                path: Optional[Path] = await generator.generate()
+                with self._lease_generator(req) as generator:
+                    generator.parse_params(req.extra)
+                    path: Optional[Path] = await generator.generate()
+            except GeneratorBusyError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
             except Exception as exc:
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
             return ImageResponse(
@@ -38,19 +41,22 @@ class ImageRouter(BaseRouter):
                 paths=[to_media_url(path)] if path else [],
             )
 
-    def _resolve_generator(self, req: BaseRequest):
-        """两条路由共用：取单例生成器（不加载参数，由调用方按需装载）。"""
-        generator = GeneratorFactory.build_generator(FactoryType.Image, req.model_name)
-        generator.ensure_model_loaded()
-        return generator
+    @contextmanager
+    def _lease_generator(self, req: BaseRequest):
+        """两条路由共用：租下单例生成器并确保模型已加载（参数由调用方按需装载）。"""
+        with GeneratorFactory.acquire(FactoryType.Image, req.model_name) as generator:
+            generator.ensure_model_loaded()
+            yield generator
 
     async def _handle_generate(self, req: BaseRequest, job: Job) -> ImageResponse:
+        with self._lease_generator(req) as generator:
+            generator.cancel_event = job.cancel_event
+            return await self._generate_images(req, job, generator)
+
+    async def _generate_images(self, req: BaseRequest, job: Job, generator) -> ImageResponse:
         extra = req.extra
         number = extra.get("number", 1)
         reference_image = extra.get("reference_image", None)
-
-        generator = self._resolve_generator(req)
-        generator.cancel_event = job.cancel_event
 
         # ④ 循环生成
         # parse_params() 每次都要重新调用：它会生成新的 save_path（带 uuid）和新的随机种子，
