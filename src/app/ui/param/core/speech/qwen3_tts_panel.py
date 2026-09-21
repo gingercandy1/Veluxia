@@ -2,6 +2,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QComboBox, QStackedWidget, QWidget, QFormLayout, QLabel
 
 from src.app.ui.param.panel_base import BaseParamPanel
+from src.shared.enum_type import FactoryType
 
 
 class _CustomVoiceWidget(QWidget):
@@ -85,6 +86,10 @@ class _CloneVoiceWidget(QWidget):
 
 
 class Qwen3TTSPanel(BaseParamPanel):
+    # 不用 dynamic：它会把 speech 下所有模型（含 Ace-Step1.5）都注册成本面板
+    names = ["Qwen3-TTS-0.6b-custom", "Qwen3-TTS-0.6b-base", "Qwen3-TTS-1.7b-custom",
+             "Qwen3-TTS-1.7b-base", "Qwen3-TTS-1.7b-design"]
+    type = FactoryType.Speech
     _MODES = ["custom", "design", "clone"]
     _LANGUAGES = ["Chinese", "English", "Japanese", "Korean", "French", "German", "Spanish"]
 

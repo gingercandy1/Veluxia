@@ -18,6 +18,9 @@ from src.shared.enum_type import FactoryType
 def init_widget():
     from src.app.ui.param.core.text.llama_chat_panel import LlamaChatPanel
     from src.app.ui.param.core.image.flux_schnell_panel import FluxSchnellPanel
+    from src.app.ui.param.core.image.sdxl_panel import SDXLPanel
+    from src.app.ui.param.core.image.text2image_panels import (
+        SD35MediumPanel, ZImageTurboPanel, QwenImageLightningPanel)
     from src.app.ui.param.core.image.image_edit_panel import BgRemovalPanel, UpscalePanel
     from src.app.ui.param.core.image_frame.film_interpolation_panel import FilmInterpolationPanel
     from src.app.ui.param.core.animation.ltx_video_panel import LTXVideoPanel
