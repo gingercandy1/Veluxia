@@ -150,7 +150,9 @@ class ModelComboBox(QComboBox):
         self._view.setItemDelegate(GroupedDelegate())
         self._view.setModel(self._std_model)
         self._view.setMouseTracking(True)
-        self._view.clicked.connect(self._on_item_clicked)
+        # 不能连 view.clicked：QComboBox 的弹出容器会吞掉鼠标释放事件，真实点击不会触发 clicked，
+        # 只有 activated 会发出
+        self.activated.connect(self._on_activated)
 
         self.setModel(self._std_model)
         self.setView(self._view)
@@ -258,7 +260,8 @@ class ModelComboBox(QComboBox):
                 self._confirmed_row = row
                 return
 
-    def _on_item_clicked(self, index: QModelIndex) -> None:
+    def _on_activated(self, row: int) -> None:
+        index = self._std_model.index(row, 0)
         if index.data(ROLE_IS_GROUP):
             return
 
