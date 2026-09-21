@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QFrame, QScrollBar, QListView, QStyledItemDelegate, QAbstractItemView, QMenu, QStyle,
                                QSplitter, QMessageBox, QPushButton, QSizePolicy)
 
-from src.app.client import ApiClient
+from src.app.work import ClearMemoryWorker, ModelListWorker
 from src.app.ui.input.input_bar import InputBar, InputPayload
 from src.app.ui.model_comb import ModelComboBox
 from src.app.ui.base.action_button import ActionButton
@@ -373,6 +373,7 @@ class GenerationPage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.active_bubble = None
+        self._background_workers = set()  # 持有运行中的线程，防止被 GC 提前销毁
         self.session_manager = ChatSessionManager()
 
         self.setup_ui()
@@ -597,9 +598,10 @@ class GenerationPage(QWidget):
         self._chat.clear()
         self.session_manager.clear_current_session()
 
-        ApiClient.instance().clear_memory(
-            session_id=self.session_manager.get_current_session_id()
-        )
+        worker = ClearMemoryWorker(self.session_manager.get_current_session_id())
+        worker.finished.connect(lambda w=worker: self._background_workers.discard(w))
+        self._background_workers.add(worker)
+        worker.start()
 
     def _on_selection_mode_changed(self, enabled: bool):
         self._normal_bar.setVisible(not enabled)
@@ -704,8 +706,19 @@ class GenerationPage(QWidget):
         type_str = self._input_bar.label_to_key.get(text)
         self.model_combobox.clear_models()
 
-        items = ApiClient.instance().get_model_info(type_str)
-        if not items.ok: return
+        # 请求走线程，避免后端忙（预加载/模型加载）时同步 HTTP 卡住主线程。
+        worker = ModelListWorker(type_str)
+        worker.loaded.connect(self._on_model_list_loaded)
+        worker.finished.connect(lambda w=worker: self._background_workers.discard(w))
+        self._background_workers.add(worker)
+        worker.start()
+
+    def _on_model_list_loaded(self, type_str, items):
+        # 连续快速切换时，只采用与当前模式一致的最新结果，丢弃过期响应。
+        current_type = self._input_bar.label_to_key.get(self._input_bar.mode_combo.currentText())
+        if type_str != current_type or not items.ok:
+            return
+        self.model_combobox.clear_models()
 
         tags = items.tags
         for tag in tags.keys():
