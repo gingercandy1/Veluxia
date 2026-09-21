@@ -12,7 +12,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout,
     QComboBox, QPushButton, QLabel, QFileDialog,
-    QScrollArea, QApplication, QTextEdit
+    QScrollArea, QApplication, QTextEdit, QCheckBox
 )
 
 from src.app.ui.base.action_button import ActionButton
@@ -248,6 +248,7 @@ class InputBar(BaseWidget):
     }
 
     _LABEL_TO_KEY = {str(v["label"]): k for k, v in _MODE_CONFIGS.items()}
+    _REFINABLE_MODES = ("image", "animation")
 
 
     def __init__(self, parent=None):
@@ -332,6 +333,12 @@ class InputBar(BaseWidget):
         self.param_quick_btn.setObjectName("param_btn")
         tbar_layout.addWidget(self.param_quick_btn)
 
+        # 只对生图 / 动画有意义（文本、语音没有"提示词"可优化）
+        self.refine_check = QCheckBox(self.tr("optimize prompt"))
+        self.refine_check.setObjectName("refine_check")
+        self.refine_check.setToolTip(self.tr("Rewrite the prompt with a local model for better results"))
+        tbar_layout.addWidget(self.refine_check)
+
         self.send_btn = ActionButton(":svg/up.svg", self.tr("send"), width=40, height=40)
         self.send_btn.set_color(QColor(120, 106, 75, 30), QColor(200, 106, 75, 255))
         self.send_btn.setObjectName("send_btn")
@@ -400,6 +407,7 @@ class InputBar(BaseWidget):
         key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")
         cfg = self._MODE_CONFIGS[key]
         self.prompt_input.setPlaceholderText(cfg["placeholder"])
+        self.refine_check.setVisible(key in self._REFINABLE_MODES)
 
     def _schedule_resize(self):
         self._resize_timer.start()
@@ -633,6 +641,8 @@ class InputBar(BaseWidget):
         key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")
         self.param_drawer.save_params()
         params = self.param_drawer.get_params()
+        if key in self._REFINABLE_MODES:
+            params["refine_prompt"] = self.refine_check.isChecked()
 
         payload = InputPayload(
             mode=key,

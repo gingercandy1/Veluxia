@@ -1,6 +1,7 @@
 import importlib
 import os
 import threading
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -52,6 +53,60 @@ class LazyModule:
     @property
     def is_ready(self) -> bool:
         return self._ready.is_set() and self._error is None
+
+class _ProgressProxy:
+    """
+    代替 huggingface_hub 那条 tqdm 交给下载代码，下载代码只会调用 update()。
+
+    自己累计字节数，不读 tqdm 的 n：进度条在非终端环境（我们这种子进程）里是
+    禁用状态，禁用的 tqdm update() 直接返回、根本不累加，读它永远是 0。
+    """
+
+    def __init__(self, bar, total: int, callback):
+        self._bar = bar
+        self._total = total
+        self._callback = callback
+        self.n = getattr(bar, "n", 0) or 0
+
+    def update(self, n=1):
+        self.n += int(n or 0)
+        try:
+            self._callback(self.n, self._total)
+        except Exception:
+            pass  # 进度只是展示用，回调出错不能影响下载本身
+        return self._bar.update(n)
+
+    def __getattr__(self, name):
+        return getattr(self._bar, name)
+
+
+@contextmanager
+def hf_download_progress(callback):
+    """
+    让 hf_hub_download / snapshot_download 的下载进度可以被前端看到。
+
+    huggingface_hub 没有提供进度回调，只有内部那条 tqdm 进度条；这里临时接管它的
+    创建过程，把拿到的进度条对象的 update 包一层，每次更新顺带回调一次
+    (已下载字节, 总字节)。退出时一定还原，免得影响其它地方的进度条。
+    """
+    from huggingface_hub import file_download
+
+    original = getattr(file_download, "_get_progress_bar_context", None)
+    if original is None:  # 版本不匹配：没有进度就没有，别把下载本身搞挂
+        yield
+        return
+
+    @contextmanager
+    def _reporting_context(**kwargs):
+        with original(**kwargs) as bar:
+            yield _ProgressProxy(bar, kwargs.get("total") or 0, callback)
+
+    file_download._get_progress_bar_context = _reporting_context
+    try:
+        yield
+    finally:
+        file_download._get_progress_bar_context = original
+
 
 def get_media_root() -> Path:
     """生成素材的持久化存储根目录（随项目安装位置，不会被系统清理临时文件时删除）。"""

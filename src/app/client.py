@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Callable
 
 from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, AnimationResponse, SpeechResponse, \
-    ModelInfoResponse, TranslateResponse
+    ModelInfoResponse, TranslateResponse, RefineResponse
 
 _DEFAULT_LIMITS = httpx.Limits(
     max_connections=10,
@@ -287,6 +287,11 @@ class ApiClient:
         else:
             return self._post("/translate/default", payload, TranslateResponse)
 
+    def refine_prompt(self, req, mode: str) -> RefineResponse:
+        payload = req.to_api_payload()
+        payload["extra"]["content"] = req.prompt
+        payload["extra"]["mode"] = mode
+        return self._post("/prompt/refine", payload, RefineResponse)
 
     def download_media(self, media_url: str, cache_dir: Path) -> Optional[str]:
         """

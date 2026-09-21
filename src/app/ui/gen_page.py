@@ -18,6 +18,7 @@ from src.shared.enum_type import FactoryType
 def init_widget():
     from src.app.ui.param.core.text.llama_chat_panel import LlamaChatPanel
     from src.app.ui.param.core.image.flux_schnell_panel import FluxSchnellPanel
+    from src.app.ui.param.core.image.image_edit_panel import BgRemovalPanel, UpscalePanel
     from src.app.ui.param.core.image_frame.film_interpolation_panel import FilmInterpolationPanel
     from src.app.ui.param.core.animation.ltx_video_panel import LTXVideoPanel
     from src.app.ui.param.core.animation.ltx2_video_panel import LTX2VideoPanel
@@ -454,7 +455,7 @@ class GenerationPage(QWidget):
         bi_layout = QHBoxLayout(bottom_info_bar)
         bi_layout.setContentsMargins(6, 6, 6, 0)
 
-        self._disclaimer_label = QLabel(self.tr("AI 生成内容可能存在错误，请自行核实重要信息。"))
+        self._disclaimer_label = QLabel(self.tr("v1.0.1 © 2026 All rights reserved."))
         self._disclaimer_label.setObjectName("disclaimer_label")
 
         bi_layout.addWidget(self._disclaimer_label)
@@ -730,6 +731,16 @@ class GenerationPage(QWidget):
         if model_type == FactoryType.Speech:
             return params.get("batch_size", 1)
         return 1
+
+    def on_load_stage(self, payload: dict):
+        """后端推来的模型加载阶段（下载/加载），显示在当前气泡的占位行上。"""
+        if self.active_bubble is None:
+            return
+        self.active_bubble.set_load_stage(
+            payload.get("stage", ""),
+            payload.get("progress") or 0.0,
+            payload.get("detail", ""),
+        )
 
     def on_partial_attachment(self, path: str):
         if self.active_bubble is not None:

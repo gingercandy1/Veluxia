@@ -16,6 +16,7 @@ dependencies = [
     "numpy>=1.26.0",
     "mediapy>=1.2.0",
     "rembg>=2.0.0",
+    "spandrel>=0.4.0",
     "sentence-transformers>=3.0.0",
     "qdrant-client>=1.9.0",
     "imageio[ffmpeg]>=2.34.0",

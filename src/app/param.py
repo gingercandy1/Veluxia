@@ -17,6 +17,7 @@ class GenerationRequest:
     prompt:       str                        # 用户原始输入
 
     translated:   Optional[str] = None      # 翻译后的提示词，None 表示未翻译
+    refined:      Optional[str] = None      # 优化后的提示词（已是英文），None 表示未优化
 
     attachments:  list[str] = field(default_factory=list)  # 文件路径列表
 
@@ -37,6 +38,15 @@ class GenerationRequest:
         type_text = FactoryType.convert_to_text(self.model_type)
         return f"output_{type_text}/{self.model_name}"
 
+    _IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
+
+    def _reference_image(self) -> dict:
+        """后端只认 extra.reference_image；不转换的话，UI 上传的图对图生图 / 去背景 / 超分都不生效。"""
+        for path in self.attachments:
+            if Path(path).suffix.lower() in self._IMAGE_SUFFIXES:
+                return {"reference_image": path}
+        return {}
+
     def to_api_payload(self) -> dict:
         return {
             "request_id":  self.request_id,
@@ -44,9 +54,10 @@ class GenerationRequest:
             "model_type":  FactoryType.convert_to_text(self.model_type),
             "model_name":  self.model_name,
             "extra": {
-                "content":    self.translated or self.prompt ,
+                "content":    self.refined or self.translated or self.prompt,
                 "original":   self.prompt,
                 "output_dir": self.auto_output_dir(),
+                **self._reference_image(),
                 **self.model_params,        # 展开模型细节参数
             },
             "attachments": self.attachments,
@@ -59,6 +70,7 @@ class GenerationRequest:
             "session_id": self.session_id,
             "prompt":     self.prompt,
             "translated": self.translated,
+            "refined":    self.refined,
             "model_type": FactoryType.convert_to_text(self.model_type),
             "model_name": self.model_name,
             "attachments": self.attachments,

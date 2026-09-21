@@ -889,6 +889,84 @@ class SpinnerWidget(QWidget):
         painter.end()
 
 
+class ModelStageIndicator(QWidget):
+    """模型就绪前的阶段提示：下载阶段显示百分比进度，加载阶段显示流动的不确定进度条。
+
+    动画与 MediaLoadingPlaceholder 一样由单调时钟驱动，只在可见时才跑定时器。
+    """
+    WIDTH = 260
+    BAR_H = 4
+    TEXT_H = 18
+
+    _STAGE_TEXTS = {
+        "checking": "检查模型文件…",
+        "download": "下载模型",
+        "loading":  "加载模型中…",
+    }
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._text = ""
+        self._progress = 0.0
+        self._determinate = False
+        self._clock = QElapsedTimer()
+        self._timer = QTimer(self)
+        self._timer.setTimerType(Qt.TimerType.PreciseTimer)
+        self._timer.setInterval(33)
+        self._timer.timeout.connect(self.update)
+        self.setFixedSize(self.WIDTH, self.TEXT_H + 10 + self.BAR_H)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
+    def set_stage(self, stage: str, progress: float = 0.0, detail: str = ""):
+        label = self._STAGE_TEXTS.get(stage, stage or "")
+        # 下载能拿到字节数，显示真实百分比；其余阶段无从估算，用流动条表示"在动"。
+        self._determinate = stage == "download" and progress > 0
+        self._progress = max(0.0, min(1.0, progress))
+        self._text = f"{label} {self._progress * 100:.0f}%" if self._determinate else label
+        self.update()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._clock.restart()
+        self._timer.start()
+
+    def hideEvent(self, event):
+        self._timer.stop()
+        super().hideEvent(event)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        painter.setPen(QColor("#8ea4b5"))
+        font = painter.font()
+        font.setPointSize(9)
+        painter.setFont(font)
+        painter.drawText(
+            QRectF(0, 0, self.width(), self.TEXT_H),
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            self._text,
+        )
+
+        track = QRectF(0, self.TEXT_H + 6, self.width(), self.BAR_H)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor("#252a31"))
+        painter.drawRoundedRect(track, 2, 2)
+
+        painter.setBrush(QColor("#3d8cff"))
+        if self._determinate:
+            painter.drawRoundedRect(
+                QRectF(track.left(), track.top(), track.width() * self._progress, self.BAR_H), 2, 2)
+        else:
+            # 一段 30% 宽的亮条每 1.4 秒扫过一轮，超出轨道的部分裁掉。
+            band = track.width() * 0.3
+            offset = -band + (track.width() + band) * ((self._clock.elapsed() / 1400.0) % 1.0)
+            left = max(0.0, offset)
+            width = min(band + min(0.0, offset), track.width() - left)
+            if width > 0:
+                painter.drawRoundedRect(QRectF(left, track.top(), width, self.BAR_H), 2, 2)
+
+
 class MediaLoadingPlaceholder(QWidget):
     """媒体生成期间占据最终内容位置的轻量占位控件。
 
@@ -1006,6 +1084,7 @@ class AssistantMessageBubble(MessageBubble):
     _partial_paths: list = []
     _loading_hiding = False
     _attachments_rendered = False
+    _stage_indicator = None
 
     def __init__(self, content, timestamp: str, message_id: str, model_type: str = "text",
                  item_count: int = 1, parent=None):
@@ -1106,6 +1185,14 @@ class AssistantMessageBubble(MessageBubble):
         )
         spinner.show_spinner()
         spinner_container_layout.addWidget(spinner)
+
+        # 模型没就绪时，转圈右边补一行"下载 x% / 加载模型中"；就绪后自己收起，
+        # 转圈继续转到第一个 token 到达为止。
+        self._stage_indicator = ModelStageIndicator()
+        self._stage_indicator.setVisible(False)
+        spinner_container_layout.addSpacing(8)
+        spinner_container_layout.addWidget(self._stage_indicator)
+
         spinner_container_layout.addStretch()
         spinner_container.setFixedHeight(42)
         return spinner_container
@@ -1145,6 +1232,18 @@ class AssistantMessageBubble(MessageBubble):
         anim.setEndValue(0.0)
         anim.finished.connect(lambda: (widget.setVisible(False), widget.setGraphicsEffect(None)))
         anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+
+    def set_load_stage(self, stage: str, progress: float = 0.0, detail: str = "") -> None:
+        """模型就绪前的阶段提示。ready/idle 表示不用再提示了，交给正文流式输出。"""
+        if self._stage_indicator is None:
+            return
+        if stage in ("ready", "idle", ""):
+            self._stage_indicator.setVisible(False)
+            return
+        if not self.spinner_widget.isVisible():
+            self.spinner_widget.setVisible(True)
+        self._stage_indicator.set_stage(stage, progress, detail)
+        self._stage_indicator.setVisible(True)
 
     def add_partial_attachment(self, path: str) -> None:
         """多图批量生成时，先完成的图片提前显示，占位只保留还没出的槽。"""

@@ -50,6 +50,9 @@ class ModelInfoResponse(BaseResponse):
 class TranslateResponse(BaseResponse):
     translate_result: str = ""
 
+class RefineResponse(BaseResponse):
+    refined: str = ""
+
 
 # 异步生成任务（图片 / 动画 / 语音耗时不固定，提交后轮询状态）
 class JobSubmitResponse(BaseModel):

@@ -46,6 +46,9 @@ class BaseGenerator(ABC, metaclass=SingletonMeta):
         self.model_name = model_name
         # 由 Router 在拿到 Job 后注入；None 表示这次调用不支持/不需要取消。
         self.cancel_event: Optional[threading.Event] = None
+        # 模型就绪前的分阶段进度，前端据此显示"下载 42%"/"加载模型中"。
+        # 加载跑在线程池里，路由那边靠读这个字典来推送进度。
+        self.load_stage: Dict[str, Any] = {"stage": "idle", "progress": 0.0, "detail": ""}
 
         type_id = FactoryType.convert_to_text(self.type)
         model_info = load_models_config().get(type_id, {}).get(self.model_name, None)
@@ -73,11 +76,22 @@ class BaseGenerator(ABC, metaclass=SingletonMeta):
     def _load_model(self):
         pass
 
+    def report_load_stage(self, stage: str, progress: float = 0.0, detail: str = ""):
+        """更新加载进度。字典整个替换（而不是逐键改），读的那一侧就不用加锁。"""
+        self.load_stage = {"stage": stage, "progress": progress, "detail": detail}
+
     def ensure_model_loaded(self):
         """确保模型已加载（供外部调用）"""
         if self.pipe is None:
-            self._check_model_file()
-            self._load_model()
+            try:
+                self.report_load_stage("checking", detail=self.model_name)
+                self._check_model_file()
+                self.report_load_stage("loading", detail=self.model_name)
+                self._load_model()
+            except BaseException:
+                self.report_load_stage("idle")
+                raise
+        self.report_load_stage("ready", 1.0)
 
     @abstractmethod
     def parse_params(self, raw: dict):
