@@ -12,6 +12,7 @@ dependencies = [
     "transformers>=4.40.0",
     "accelerate>=0.30.0",
     "diffusers>=0.40.0",  # LTX-2 系列（LTX2Pipeline / LTX2ImageToVideoPipeline）需要
+    "gguf>=0.10.0",  # Z-Image-Turbo GGUF 量化（GGUFQuantizationConfig）需要
     "Pillow>=10.0.0",
     "numpy>=1.26.0",
     "mediapy>=1.2.0",
