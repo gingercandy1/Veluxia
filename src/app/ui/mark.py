@@ -85,7 +85,7 @@ _FRONT_DURATION_MS = 1050
 # 四角星：延迟出现，缩放+轻微旋转显露
 _STAR_DELAY_MS = 350
 _STAR_DURATION_MS = 1600
-_STAR_SCALE_FROM = 0.86
+_STAR_SCALE_FROM = 0.66
 _STAR_ROTATION_TO = 360.0  # 转一整圈回到正位：动画有旋转的动感，定格图标又是端正对称的
 
 TOTAL_DURATION_MS = _STAR_DELAY_MS + _STAR_DURATION_MS  # 1950ms，覆盖所有分轨
@@ -171,7 +171,7 @@ def paint_mark(painter: QPainter, size: float, color: QColor, elapsed_ms: float,
     e = _track_progress(elapsed_ms, _STAR_DELAY_MS, _STAR_DURATION_MS)
     if elapsed_ms >= _STAR_DELAY_MS or e > 0:
         star_opacity = _lerp(0.0, 1.0, e)
-        star_scale = _lerp(_STAR_SCALE_FROM, 1.0, e)
+        star_scale = _lerp(_STAR_SCALE_FROM, 0.7, e)
         star_rotation = _lerp(0.0, _STAR_ROTATION_TO, e)
         painter.save()
         painter.setOpacity(star_opacity)
