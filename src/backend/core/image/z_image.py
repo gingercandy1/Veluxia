@@ -15,6 +15,8 @@ class ZImageGenerator(BaseImageGenerator):
     """Z-Image-Turbo 图片生成器（Apache-2.0，可商用；diffusers 原生 ZImagePipeline）"""
     model_dir = "z-image-turbo"
 
+    _model_attrs = ("pipe_img2img", "pipe")
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.pipe_img2img = None
@@ -126,16 +128,6 @@ class ZImageGenerator(BaseImageGenerator):
             **pipe_kwargs,
         )
         self._apply_offload(self.pipe_img2img, quantized)
-
-    def unload_model(self):
-        for attr in ("pipe_img2img", "pipe"):
-            if getattr(self, attr) is not None:
-                delattr(self, attr)
-                setattr(self, attr, None)
-        self.torch.cuda.empty_cache()
-        import gc
-        gc.collect()
-        print("✅ Z-Image-Turbo 已卸载，显存已释放")
 
     async def generate(self) -> Optional[Path | None]:
         self.ensure_model_loaded()

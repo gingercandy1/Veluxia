@@ -28,18 +28,31 @@ def load_models_config() -> dict:
 
 
 class SingletonMeta(ABCMeta):
-    """實現單例的元類（支援抽象基類）"""
+    """單例元類（支援抽象基類）：同一個類只有一個實例，也就只占一份顯存。
+
+    多個模型名可以共用同一個生成器類（如 LTX-2.3 / LTX-2.5），所以再次取實例時
+    如果模型名變了，要先卸載舊權重再按新名字重新初始化；否則會拿到上一個模型的實例。
+    """
     _instances: Dict[type, Any] = {}
+    _lock = threading.RLock()
 
     def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            instance = super().__call__(*args, **kwargs)
-            cls._instances[cls] = instance
-        return cls._instances[cls]
+        with SingletonMeta._lock:
+            instance = cls._instances.get(cls)
+            if instance is None:
+                instance = super().__call__(*args, **kwargs)
+                cls._instances[cls] = instance
+            elif kwargs.get("model_name", instance.model_name) != instance.model_name:
+                instance.unload()
+                instance.__init__(*args, **kwargs)
+            return instance
 
 
 class BaseGenerator(ABC, metaclass=SingletonMeta):
     type: enum.Enum = None
+    # 持有已加载模型的属性名，unload() 会逐个释放。
+    # 子类在 pipe 之外还持有模型对象（img2img 管线、rembg 会话等）时覆盖此项。
+    _model_attrs: tuple[str, ...] = ("pipe",)
 
     def __init__(self, model_name: str, device: str):
         self.pipe = None
@@ -98,12 +111,15 @@ class BaseGenerator(ABC, metaclass=SingletonMeta):
         pass
 
     def unload(self):
-        if self.pipe is not None:
-            del self.pipe
-            self.pipe = None
-            self.torch.cuda.empty_cache()
-            gc.collect()
-            print("✅ ACE-Step1.5 已卸载")
+        """释放已加载的模型并复位到未加载状态；显存必须先 gc 再 empty_cache 才会真正归还。"""
+        loaded = [attr for attr in self._model_attrs if getattr(self, attr, None) is not None]
+        if not loaded:
+            return
+        for attr in loaded:
+            setattr(self, attr, None)
+        gc.collect()
+        self.torch.cuda.empty_cache()
+        print(f"✅ {self.model_name} 已卸载，显存已释放")
 
     @property
     def torch(self):

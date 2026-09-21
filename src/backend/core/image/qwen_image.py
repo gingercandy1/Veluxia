@@ -24,6 +24,8 @@ class QwenImageLightningGenerator(BaseImageGenerator):
     lora_weight = "Qwen-Image-Lightning-8steps-V1.0.safetensors"
     edit_model_id = "Qwen/Qwen-Image-Edit"
 
+    _model_attrs = ("pipe_edit", "pipe")
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.pipe_edit = None
@@ -111,16 +113,6 @@ class QwenImageLightningGenerator(BaseImageGenerator):
             local_files_only=True,
         )
         self.pipe_edit.enable_model_cpu_offload()
-
-    def unload_model(self):
-        for attr in ("pipe_edit", "pipe"):
-            if getattr(self, attr) is not None:
-                delattr(self, attr)
-                setattr(self, attr, None)
-        self.torch.cuda.empty_cache()
-        import gc
-        gc.collect()
-        print("✅ Qwen-Image-Lightning 已卸载，显存已释放")
 
     async def generate(self) -> Optional[Path | None]:
         self.ensure_model_loaded()
