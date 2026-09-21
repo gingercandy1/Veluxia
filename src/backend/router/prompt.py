@@ -2,6 +2,7 @@ import asyncio
 
 from fastapi import HTTPException
 
+from src.backend.core.exceptions import GeneratorBusyError
 from src.backend.core.prompt_refiner import PromptRefiner
 from src.backend.router_base import BaseRouter
 from src.shared.schemas import BaseRequest, RefineResponse
@@ -25,6 +26,8 @@ class PromptRouter(BaseRouter):
             refined = await asyncio.to_thread(PromptRefiner().refine, text, mode)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except GeneratorBusyError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         except Exception as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         return RefineResponse(ok=True, session_id=req.session_id, refined=refined)

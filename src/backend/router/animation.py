@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 
 from src.backend.router_base import BaseRouter
-from src.backend.core.exceptions import GenerationCancelled
+from src.backend.core.exceptions import GenerationCancelled, GeneratorBusyError
 from src.backend.core.job_manager import Job
 from src.backend.core.model_base import GeneratorFactory
 from src.backend.core.model_utils import to_media_url
@@ -18,14 +18,13 @@ class AnimationRouter(BaseRouter):
         self._register_async_generate_routes(self.handle_generate, BaseRequest)
 
     async def handle_generate(self, req: BaseRequest, job: Job) -> AnimationResponse:
-        generator = GeneratorFactory.build_generator(FactoryType.Animation, req.model_name)
-        generator.ensure_model_loaded()
-        generator.cancel_event = job.cancel_event
-        generator.parse_params(req.extra)
-
         try:
-            frame_paths, video_path = await generator.generate_animation()
-        except GenerationCancelled:
+            with GeneratorFactory.acquire(FactoryType.Animation, req.model_name) as generator:
+                generator.ensure_model_loaded()
+                generator.cancel_event = job.cancel_event
+                generator.parse_params(req.extra)
+                frame_paths, video_path = await generator.generate_animation()
+        except (GenerationCancelled, GeneratorBusyError):
             raise
         except Exception as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
