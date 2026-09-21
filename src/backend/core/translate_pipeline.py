@@ -102,6 +102,23 @@ class TranslationPipeline:
             )
         return self._translator_cache[key]
 
+    # MyMemory 出错时不会抛异常，而是把错误说明当成"译文"原样返回
+    # （例如 "'AUTO' IS AN INVALID SOURCE LANGUAGE ..."）。这种字符串一旦被
+    # 当成提示词送进生图模型，画面里就会出现一堆随机英文字。
+    _MYMEMORY_ERROR_MARKERS = (
+        "IS AN INVALID",
+        "INVALID SOURCE LANGUAGE",
+        "INVALID TARGET LANGUAGE",
+        "QUERY LENGTH LIMIT EXCEEDED",
+        "MYMEMORY WARNING",
+        "NO TARGET LANGUAGE",
+    )
+
+    @classmethod
+    def _is_engine_error(cls, result: str) -> bool:
+        upper = result.upper()
+        return any(marker in upper for marker in cls._MYMEMORY_ERROR_MARKERS)
+
     def _is_chinese(self, text: str) -> bool:
         zh = len(re.findall(r'[\u4e00-\u9fff]', text))
         return zh / max(len(text), 1) > 0.15
@@ -121,7 +138,9 @@ class TranslationPipeline:
             return "ko"
         if ar / total > 0.15:
             return "ar"
-        return "auto"
+        # 没有命中任何非拉丁文字，按英文处理：MyMemory 不接受 "auto"，
+        # 传过去只会换回一条错误说明。
+        return "en"
 
     def translate(
             self,
@@ -148,6 +167,12 @@ class TranslationPipeline:
                 f"支持的语言: {self.get_supported_languages()}"
             )
 
+        detected_source = source if source != "auto" else self._detect_source(text)
+        if detected_source == target:
+            # 本来就是目标语言（最常见的是用户直接写英文提示词），
+            # 没必要往外发请求，也就不会撞上各家引擎的限流。
+            return text
+
         # 主引擎
         try:
             translator = self._get_google_translator(source, target)
@@ -160,10 +185,11 @@ class TranslationPipeline:
 
         # 备选引擎
         try:
-            detected_source = source if source != "auto" else self._detect_source(text)
             fallback = self._get_mymemory_translator(detected_source, target)
             result = fallback.translate(text)
-            if result:
+            if result and self._is_engine_error(result):
+                print(f"⚠️ MyMemory 返回错误说明而非译文，退回原文: {result[:60]}")
+            elif result:
                 print(f"🔤 MyMemory [{detected_source}→{target}]: {result[:20]}...")
                 return result
         except Exception as e:

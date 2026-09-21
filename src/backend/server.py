@@ -27,6 +27,7 @@ from src.backend.router.speech import SpeechRouter
 from src.backend.router.text import TextRouter
 from src.backend.router.animation import AnimationRouter
 from src.backend.router.translate import TranslateRouter
+from src.backend.router.prompt import PromptRouter
 from src.shared.settings import ConfigManager
 
 VERSION = "1.0.0"
@@ -75,7 +76,8 @@ def create_app() -> FastAPI:
         TextRouter(),
         AnimationRouter(),
         SpeechRouter(),
-        TranslateRouter()
+        TranslateRouter(),
+        PromptRouter(),
     ]
     for r in _routers:
         app.include_router(r.router)

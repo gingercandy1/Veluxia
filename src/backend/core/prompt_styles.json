@@ -1,0 +1,37 @@
+{
+  "_说明": "参考风格词表：keys 命中提示词时，description 会注入优化器。可自行增删条目；keys 不区分大小写。",
+  "styles": [
+    {
+      "keys": ["奥日", "ori and the", "ori:", "blind forest", "will of the wisps"],
+      "description": "Ori series: lush hand-painted 2D art, glowing bioluminescent flora, soft volumetric light rays, deep teal and indigo forest shadows with luminous cyan and warm gold accents, layered parallax depth, delicate organic silhouettes, ethereal and emotional mood"
+    },
+    {
+      "keys": ["空洞骑士", "hollow knight"],
+      "description": "Hollow Knight: hand-drawn 2D ink style, monochrome pale and black palette with sparse glowing accents, thin clean outlines, gothic insect-like silhouettes, misty dark caverns, melancholic atmosphere"
+    },
+    {
+      "keys": ["星露谷", "stardew valley"],
+      "description": "Stardew Valley: 16-bit pixel art, bright warm farm-life palette, soft rounded shapes, simple readable sprites, cozy top-down countryside"
+    },
+    {
+      "keys": ["哈迪斯", "hades"],
+      "description": "Hades: bold stylized 2D illustration, thick dark outlines, saturated crimson and gold palette, dramatic rim lighting, dynamic mythological character design"
+    },
+    {
+      "keys": ["蔚蓝", "celeste"],
+      "description": "Celeste: crisp low-resolution pixel art, limited vivid palette with pink, teal and purple, clean readable shapes, dreamy mountain scenery"
+    },
+    {
+      "keys": ["饥荒", "don't starve", "dont starve"],
+      "description": "Don't Starve: quirky Tim Burton-like gothic cartoon style, scratchy ink outlines, muted earthy palette, spindly exaggerated proportions, paper-cutout look"
+    },
+    {
+      "keys": ["吉卜力", "ghibli"],
+      "description": "Studio Ghibli: soft watercolor-like hand-painted backgrounds, warm natural light, lush green nature, gentle rounded character design, nostalgic serene mood"
+    },
+    {
+      "keys": ["塞尔达", "zelda", "旷野之息"],
+      "description": "Breath of the Wild: soft cel-shaded watercolor look, airy pastel palette, clean simple outlines, bright natural lighting, expansive open landscapes"
+    }
+  ]
+}

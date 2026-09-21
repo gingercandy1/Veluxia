@@ -10,6 +10,9 @@ from src.backend.core.model_utils import get_temp_dir
 
 class BgRemovalGenerator(BaseImageGenerator):
     """去背景：rembg + u2net（MIT，可商用），输入图 → 透明底 PNG"""
+    # rembg 的会话（模型）名。单例按类区分，所以换模型要另写子类而不是靠 models.json 里的名字。
+    session_name = "u2net"
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.session = None
@@ -22,8 +25,8 @@ class BgRemovalGenerator(BaseImageGenerator):
         if self.session is not None:
             return
         from rembg import new_session
-        print("🔧 正在加载 rembg-u2net（首次会自动下载 onnx 权重）...")
-        self.session = new_session("u2net")
+        print(f"🔧 正在加载 rembg-{self.session_name}（首次会自动下载 onnx 权重）...")
+        self.session = new_session(self.session_name)
 
     def unload_model(self):
         self.session = None
@@ -60,3 +63,8 @@ class BgRemovalGenerator(BaseImageGenerator):
 
     def get_output_dir(self, output_dir):
         return Path(output_dir) / f"nobg_{str(uuid.uuid4())}.png"
+
+
+class BiRefNetGenerator(BgRemovalGenerator):
+    """去背景升级版：BiRefNet（MIT，可商用），发丝、半透明边缘比 u2net 干净得多，代价是更慢更大。"""
+    session_name = "birefnet-general"

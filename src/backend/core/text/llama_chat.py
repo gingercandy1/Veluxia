@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from src.backend.core.model_base import BaseTextGenerator
-from src.backend.core.model_utils import huggingface_token, get_temp_dir
+from src.backend.core.model_utils import huggingface_token, get_temp_dir, hf_download_progress
 from src.backend.core.text.index_memory import ConversationMemory
 from src.shared.settings import PROJECT_ROOT
 
@@ -38,13 +38,23 @@ class LlamaGenerator(BaseTextGenerator):
         if not self.llama_local.exists() or not self.llama_path.exists():
             print("⏬ 正在下载 权重...")
             from huggingface_hub import hf_hub_download
-            hf_hub_download(
-                repo_id=str(self.model_id),
-                local_dir=str(self.llama_local),
-                filename=str(self.model_filename),
-                token=huggingface_token
-            )
-            print("✅ NVFP4 transformer 下载完成")
+
+            def on_progress(done: int, total: int):
+                self.report_load_stage(
+                    "download",
+                    progress=done / total if total else 0.0,
+                    detail=self.model_filename or self.model_name,
+                )
+
+            self.report_load_stage("download", detail=self.model_filename or self.model_name)
+            with hf_download_progress(on_progress):
+                hf_hub_download(
+                    repo_id=str(self.model_id),
+                    local_dir=str(self.llama_local),
+                    filename=str(self.model_filename),
+                    token=huggingface_token
+                )
+            print("✅ 权重下载完成")
 
     def _load_model(self):
         if self.pipe is not None:

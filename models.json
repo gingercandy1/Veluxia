@@ -252,6 +252,18 @@
     "rembg-u2net": {
       "generator": "image.bg_removal:BgRemovalGenerator",
       "tag": "edit"
+    },
+    "rembg-birefnet": {
+      "generator": "image.bg_removal:BiRefNetGenerator",
+      "tag": "edit"
+    },
+    "RealESRGAN-anime-6B": {
+      "generator": "image.upscale:RealEsrganAnimeGenerator",
+      "tag": "edit"
+    },
+    "RealESRGAN-x4plus": {
+      "generator": "image.upscale:RealEsrganX4PlusGenerator",
+      "tag": "edit"
     }
   },
   "speech": {

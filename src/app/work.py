@@ -33,6 +33,9 @@ class ApiWorker(QThread):
     # 多图批量生成时，每完成一张（已下载到本地）就发一次，用于提前展示
     partial_ready  = Signal(str)
 
+    # 模型就绪前的阶段（下载中 / 加载中），带进度，用于气泡里的占位提示
+    stage_changed  = Signal(dict)
+
     def __init__(self, client: ApiClient, request: GenerationRequest, model_type: str):
         super().__init__()
         self._client = client
@@ -51,7 +54,7 @@ class ApiWorker(QThread):
             if self._stop_event.is_set():
                 self.cancelled.emit()
                 return
-            self._translate()
+            self._prepare_prompt()
             model_type = self._model_type
             if model_type == FactoryType.Image:
                 result = self._client.generate_image(
@@ -77,6 +80,26 @@ class ApiWorker(QThread):
                 self.cancelled.emit()
             else:
                 self.error.emit(str(e))
+
+    def _prepare_prompt(self):
+        """勾选了"优化提示词"时由优化模型直接产出英文提示词，不再走翻译；
+        优化失败则退回普通翻译流程，不阻断生成。"""
+        if self._request.model_params.get("refine_prompt") and self._refine():
+            return
+        self._translate()
+
+    def _refine(self) -> bool:
+        mode = FactoryType.convert_to_text(self._model_type)
+        try:
+            response = self._client.refine_prompt(self._request, mode)
+            if response.ok and response.refined:
+                self._request.refined = response.refined
+                print(f"✨ 提示词已优化: {response.refined}")
+                return True
+            print(f"⚠️ 提示词优化失败，使用原始提示词：{response.error}")
+        except Exception as e:
+            print(f"⚠️ 提示词优化失败，使用原始提示词：{e}")
+        return False
 
     def _translate(self):
         """翻译提示词也是一次网络请求，放在这个后台线程里做（曾经在主线程里做，
@@ -116,7 +139,9 @@ class ApiWorker(QThread):
     def _run_stream(self):
         for event in self._client.stream_text(self._request, stop_event=self._stop_event):
             t = event.get("type")
-            if t == "thinking":
+            if t == "stage":
+                self.stage_changed.emit(event)
+            elif t == "thinking":
                 self.thinking_chunk.emit(event["text"])
             elif t == "text":
                 self.text_chunk.emit(event["text"])
