@@ -84,7 +84,7 @@ QWidget#input_bar QComboBox {
     color: #DCDCDC;
 }
 
-QWidget#input_bar QComboBox#mode_combo {
+QWidget#input_bar QPushButton#mode_btn {
     background-color: rgba(255, 255, 255, 0.06);
     border: none;
     border-radius: 8px;
@@ -92,23 +92,8 @@ QWidget#input_bar QComboBox#mode_combo {
     font-size: 12px;
 }
 
-QWidget#input_bar QComboBox#mode_combo:hover {
+QWidget#input_bar QPushButton#mode_btn:hover {
     background-color: rgba(255, 255, 255, 0.10);
-    border-color: rgba(255, 255, 255, 0.18);
-}
-
-QWidget#input_bar QComboBox#mode_combo::drop-down {
-    border: none;
-    width: 16px;
-}
-
-QWidget#input_bar QComboBox#mode_combo QAbstractItemView {
-    background-color: #24272f;
-    border: none;
-    border-radius: 6px;
-    color: #DCDCDC;
-    selection-background-color: rgba(123, 157, 188, 0.25);
-    outline: none;
 }
 
 QScrollArea#attachment_bar {

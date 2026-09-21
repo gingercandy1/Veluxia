@@ -230,13 +230,15 @@ class MainWindow(QMainWindow):
         if isinstance(result, ImageResponse):
             files = result.paths
         elif isinstance(result, AnimationResponse):
-            files =  [result.video_path]
+            files = [result.video_path, *result.export_paths]
         elif isinstance(result, SpeechResponse):
             files = [result.audio_path]
 
         active_bubble = self._gen_page.active_bubble
         if not active_bubble:
             return
+        if result.error:
+            active_bubble.append_output(f"⚠ {result.error}")
         active_bubble.load_attachments(files)
         # save history item
         self._gen_page.save_item_from_bubble(active_bubble)

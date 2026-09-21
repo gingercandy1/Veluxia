@@ -34,6 +34,17 @@ class ImageResponse(BaseResponse):
 class AnimationResponse(BaseResponse):
     video_path: Optional[str] = None
     frame_paths: List[str] = Field(default_factory=list)
+    export_paths: List[str] = Field(default_factory=list, description="精灵图 / atlas 等附加导出文件")
+
+
+# 序列帧导出（精灵图 + atlas + 编号 PNG）
+class SpriteSheetResponse(BaseResponse):
+    sheet_path: Optional[str] = None
+    atlas_path: Optional[str] = None
+    frame_paths: List[str] = Field(default_factory=list, description="编号 PNG 序列")
+    columns: int = 0
+    rows: int = 0
+
 
 # Speech（文本 → 语音 / 音乐）
 class SpeechResponse(BaseResponse):

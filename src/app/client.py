@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Callable
 
 from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, AnimationResponse, SpeechResponse, \
-    ModelInfoResponse, TranslateResponse, RefineResponse
+    ModelInfoResponse, TranslateResponse, RefineResponse, SpriteSheetResponse
 
 _DEFAULT_LIMITS = httpx.Limits(
     max_connections=10,
@@ -292,6 +292,14 @@ class ApiClient:
         payload["extra"]["content"] = req.prompt
         payload["extra"]["mode"] = mode
         return self._post("/prompt/refine", payload, RefineResponse)
+
+    def export_sprites(self, frame_paths: list[str], name: str, **options) -> SpriteSheetResponse:
+        """把序列帧导出为精灵图 + atlas + 编号 PNG；纯 CPU 操作，后端不占显存。"""
+        payload = {
+            "model_name": "SpriteSheet",
+            "extra": {"frame_paths": frame_paths, "name": name, **options},
+        }
+        return self._post("/image_frame/export", payload, SpriteSheetResponse)
 
     def download_media(self, media_url: str, cache_dir: Path) -> Optional[str]:
         """

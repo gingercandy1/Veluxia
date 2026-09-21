@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from PySide6.QtCore import (
-    Signal, Qt, QEvent, QRect, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property
+    Signal, Qt, QEvent, QRect, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property, QPoint
 )
 from PySide6.QtGui import (
     QDragEnterEvent, QDropEvent, QKeyEvent, QPen, QPixmap,
@@ -11,8 +11,8 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout,
-    QComboBox, QPushButton, QLabel, QFileDialog,
-    QScrollArea, QApplication, QTextEdit, QCheckBox
+    QPushButton, QLabel, QFileDialog,
+    QScrollArea, QApplication, QTextEdit
 )
 
 from src.app.ui.base.action_button import ActionButton
@@ -51,6 +51,179 @@ class InputPayload:
     prompt: str
     params: dict[str, Any]
     attachments: list[Attachment]
+
+
+_POPOVER_BORDER = QColor("#404048")
+_POPOVER_FILL = QColor("#21242c")
+_ACCENT = QColor("#7B9DBC")
+
+
+def _paint_popover_frame(widget: QWidget):
+    """和参数悬浮卡同款的圆角描边底板，让两种弹层观感一致。"""
+    painter = QPainter(widget)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setPen(QPen(_POPOVER_BORDER, 1))
+    painter.setBrush(_POPOVER_FILL)
+    path = QPainterPath()
+    path.addRoundedRect(widget.rect().adjusted(1, 1, -1, -1), 8, 8)
+    painter.drawPath(path)
+
+
+class _PopoverRow(QWidget):
+    """弹层里的一行。radio=True 是模式项（选中画对勾），否则是带复选框的开关项。"""
+
+    clicked = Signal()
+    _HEIGHT = 30
+
+    def __init__(self, text: str, radio: bool, parent=None):
+        super().__init__(parent)
+        self._text = text
+        self._radio = radio
+        self._checked = False
+        self._hover = False
+        self.setFixedHeight(self._HEIGHT)
+        self.setCursor(Qt.PointingHandCursor)
+
+    def isChecked(self) -> bool:
+        return self._checked
+
+    def setChecked(self, checked: bool):
+        self._checked = checked
+        self.update()
+
+    def enterEvent(self, event):
+        self._hover = True
+        self.update()
+
+    def leaveEvent(self, event):
+        self._hover = False
+        self.update()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton and self.rect().contains(event.position().toPoint()):
+            self.clicked.emit()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        if self._hover:
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(123, 157, 188, 40))
+            painter.drawRoundedRect(self.rect().adjusted(4, 1, -4, -1), 5, 5)
+
+        mark = QRect(14, (self.height() - 14) // 2, 14, 14)
+        tick = QPainterPath()
+        tick.moveTo(mark.left() + 3.5, mark.center().y() + 0.5)
+        tick.lineTo(mark.left() + 6, mark.bottom() - 3.5)
+        tick.lineTo(mark.right() - 3, mark.top() + 4)
+        if self._radio:
+            if self._checked:
+                painter.setPen(QPen(_ACCENT, 1.8, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+                painter.setBrush(Qt.NoBrush)
+                painter.drawPath(tick)
+        else:
+            box = mark.adjusted(0, 0, -1, -1)
+            painter.setPen(QPen(_ACCENT if self._checked else QColor("#6a6d78"), 1.2))
+            painter.setBrush(_ACCENT if self._checked else Qt.NoBrush)
+            painter.drawRoundedRect(box, 3.5, 3.5)
+            if self._checked:
+                painter.setPen(QPen(_POPOVER_FILL, 1.8, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+                painter.setBrush(Qt.NoBrush)
+                painter.drawPath(tick)
+
+        painter.setPen(QColor("#DCDCDC"))
+        painter.drawText(self.rect().adjusted(38, 0, -14, 0), Qt.AlignVCenter | Qt.AlignLeft, self._text)
+
+    def sizeHint(self) -> QSize:
+        width = self.fontMetrics().horizontalAdvance(self._text) + 38 + 14
+        return QSize(max(width, 140), self._HEIGHT)
+
+
+class _PopoverSeparator(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedHeight(9)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setPen(QPen(QColor(255, 255, 255, 25), 1))
+        painter.drawLine(12, 4, self.width() - 12, 4)
+
+
+class _ModePopover(QWidget):
+    """向上弹出的模式菜单：外观沿用 ParamPopover，而不是系统 QMenu 的硬边框和粗对勾。"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent, Qt.Popup | Qt.FramelessWindowHint | Qt.NoDropShadowWindowHint)
+        self.setObjectName("mode_popover")
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.body = QVBoxLayout(self)
+        self.body.setContentsMargins(5, 6, 5, 6)
+        self.body.setSpacing(0)
+
+    def paintEvent(self, event):
+        _paint_popover_frame(self)
+
+
+class ModeMenuButton(QPushButton):
+    """模式选择按钮：点击在按钮上方弹出菜单，菜单里是互斥的模式项，
+    其后可再追加带分隔线的可勾选选项（如"优化提示词"）。
+    对外保持和 QComboBox 一致的 currentText / setCurrentText / currentTextChanged，
+    这样生成页里按模式文字联动模型列表的代码不用改。"""
+
+    currentTextChanged = Signal(str)
+
+    def __init__(self, labels: list[str], parent=None):
+        super().__init__(parent)
+        self._text = labels[0]
+        self._popover = _ModePopover(self)
+        self._rows: dict[str, _PopoverRow] = {}
+        for label in labels:
+            row = _PopoverRow(label, radio=True)
+            row.clicked.connect(lambda text=label: self._on_mode_clicked(text))
+            self._popover.body.addWidget(row)
+            self._rows[label] = row
+        self._rows[self._text].setChecked(True)
+        self._refresh_caption()
+        self.clicked.connect(self._popup_above)
+
+    def add_separator(self) -> QWidget:
+        separator = _PopoverSeparator()
+        self._popover.body.addWidget(separator)
+        return separator
+
+    def add_option(self, text: str, tooltip: str) -> _PopoverRow:
+        row = _PopoverRow(text, radio=False)
+        row.setToolTip(tooltip)
+        # 开关项点一下只翻转勾选，不收起菜单，方便连着勾几个
+        row.clicked.connect(lambda: row.setChecked(not row.isChecked()))
+        self._popover.body.addWidget(row)
+        return row
+
+    def currentText(self) -> str:
+        return self._text
+
+    def setCurrentText(self, text: str):
+        if text not in self._rows or text == self._text:
+            return
+        self._rows[self._text].setChecked(False)
+        self._text = text
+        self._rows[text].setChecked(True)
+        self._refresh_caption()
+        self.currentTextChanged.emit(text)
+
+    def _on_mode_clicked(self, text: str):
+        self._popover.hide()
+        self.setCurrentText(text)
+
+    def _refresh_caption(self):
+        self.setText(f"{self._text} ▴")
+
+    def _popup_above(self):
+        # 输入栏贴着窗口底部，菜单向上弹才不会被屏幕边缘挤压
+        self._popover.adjustSize()
+        self._popover.move(self.mapToGlobal(QPoint(0, -self._popover.height() - 6)))
+        self._popover.show()
 
 
 class AttachmentChip(BaseWidget):
@@ -305,13 +478,20 @@ class InputBar(BaseWidget):
         top_layout.setContentsMargins(20, 10, -20, -10)
         top_layout.setSpacing(10)
 
-        self.mode_combo = QComboBox()
-        self.mode_combo.setObjectName("mode_combo")
+        # 属性名沿用 mode_combo：生成页按它取当前模式
+        self.mode_combo = ModeMenuButton([cfg["label"] for cfg in self._MODE_CONFIGS.values()])
+        self.mode_combo.setObjectName("mode_btn")
         self.mode_combo.setFixedHeight(44)
         self.mode_combo.setFixedWidth(100)
 
-        for cfg in self._MODE_CONFIGS.values():
-            self.mode_combo.addItem(cfg["label"])
+        # 模式之外的附加选项收进同一个菜单，不占输入栏空间；只对适用的模式显示
+        self._option_separator = self.mode_combo.add_separator()
+        self.refine_action = self.mode_combo.add_option(
+            self.tr("optimize prompt"),
+            self.tr("Rewrite the prompt with a local model for better results"))
+        self.sprite_action = self.mode_combo.add_option(
+            self.tr("export sprite sheet"),
+            self.tr("Also export the frames as a sprite sheet with atlas JSON"))
 
         self.prompt_input = QTextEdit()
         self.prompt_input.setAcceptRichText(False)
@@ -332,12 +512,6 @@ class InputBar(BaseWidget):
         self.param_quick_btn = self._icon_button(":svg/setting.svg", self.tr("quick params"))
         self.param_quick_btn.setObjectName("param_btn")
         tbar_layout.addWidget(self.param_quick_btn)
-
-        # 只对生图 / 动画有意义（文本、语音没有"提示词"可优化）
-        self.refine_check = QCheckBox(self.tr("optimize prompt"))
-        self.refine_check.setObjectName("refine_check")
-        self.refine_check.setToolTip(self.tr("Rewrite the prompt with a local model for better results"))
-        tbar_layout.addWidget(self.refine_check)
 
         self.send_btn = ActionButton(":svg/up.svg", self.tr("send"), width=40, height=40)
         self.send_btn.set_color(QColor(120, 106, 75, 30), QColor(200, 106, 75, 255))
@@ -407,7 +581,9 @@ class InputBar(BaseWidget):
         key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")
         cfg = self._MODE_CONFIGS[key]
         self.prompt_input.setPlaceholderText(cfg["placeholder"])
-        self.refine_check.setVisible(key in self._REFINABLE_MODES)
+        self.refine_action.setVisible(key in self._REFINABLE_MODES)
+        self.sprite_action.setVisible(key == "animation")
+        self._option_separator.setVisible(key in self._REFINABLE_MODES)
 
     def _schedule_resize(self):
         self._resize_timer.start()
@@ -642,7 +818,9 @@ class InputBar(BaseWidget):
         self.param_drawer.save_params()
         params = self.param_drawer.get_params()
         if key in self._REFINABLE_MODES:
-            params["refine_prompt"] = self.refine_check.isChecked()
+            params["refine_prompt"] = self.refine_action.isChecked()
+        if key == "animation":
+            params["export_sprites"] = self.sprite_action.isChecked()
 
         payload = InputPayload(
             mode=key,
