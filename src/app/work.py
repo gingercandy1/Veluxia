@@ -180,6 +180,31 @@ class ApiWorker(QThread):
 
 
 
+class ModelListWorker(QThread):
+    """在线程里拉取某类型的模型列表，避免切换模式时同步 HTTP 卡住主线程。"""
+    loaded = Signal(str, object)  # (type_str, ModelInfoResponse)
+
+    def __init__(self, type_str: str):
+        super().__init__()
+        self._type_str = type_str
+
+    def run(self):
+        self.loaded.emit(self._type_str, ApiClient.instance().get_model_info(self._type_str))
+
+
+class ClearMemoryWorker(QThread):
+    """在线程里清除后端会话记忆，避免清空聊天时同步 HTTP 卡住主线程。"""
+
+    def __init__(self, session_id: str):
+        super().__init__()
+        self._session_id = session_id
+
+    def run(self):
+        resp = ApiClient.instance().clear_memory(session_id=self._session_id)
+        if not resp.ok:
+            print(f"⚠️ 清除会话记忆失败: {resp.error}")
+
+
 class BaseProcess:
     @staticmethod
     def is_port_in_use(port: int) -> bool:
