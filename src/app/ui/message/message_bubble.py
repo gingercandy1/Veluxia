@@ -207,18 +207,15 @@ class CollapseContainer(QFrame):
 
 
 class BottomActionBar(QWidget):
+    """常驻显示的操作栏（复制/编辑/重试等按钮）。"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.opacity_effect = QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity_effect)
-        self.opacity_effect.setOpacity(0)
-
         self.layout = QHBoxLayout(self)
-        self.layout.setContentsMargins(12, 6, 12, 8)
+        self.layout.setContentsMargins(12, 0, 12, 8)
         self.layout.setSpacing(8)
 
-        self.setFixedHeight(35)
+        self.setFixedHeight(29)
 
     def add_button(self, svg_path, tooltip):
         btn = ActionButton(
@@ -227,12 +224,6 @@ class BottomActionBar(QWidget):
         )
         self.layout.addWidget(btn)
         return btn
-
-    def show_bar(self):
-        self.opacity_effect.setOpacity(1)
-
-    def hide_bar(self):
-        self.opacity_effect.setOpacity(0)
 
     def _find_parent_bubble(self) -> Optional['MessageBubble']:
         """向上查找父级的 MessageBubble"""
@@ -304,14 +295,20 @@ class AssistantBottomActionBar(BottomActionBar):
     copy_clicked = Signal()
     export_clicked = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, model_name: str = "", parent=None):
         super().__init__(parent)
         self.setObjectName('assistant_bottom_action_bar')
         # 使用新的 ActionButton 类
         self._copy_btn = self.add_button(":/svg/copy.svg","复制消息")
         self._export_btn = self.add_button(":/svg/export.svg", "导出")
         self._translate_btn = self.add_button(":/svg/translate.svg", "翻译")
+
         self.layout.addStretch()
+
+        self._model_label = QLabel(model_name)
+        self._model_label.setObjectName("bubble_model_label")
+        self._model_label.setStyleSheet("color: rgba(255, 255, 255, 110); font-size: 12px;")
+        self.layout.addWidget(self._model_label)
 
         self._copy_btn.clicked.connect(self._on_copy)
         self._export_btn.clicked.connect(self._on_export)
@@ -346,6 +343,9 @@ class AssistantBottomActionBar(BottomActionBar):
 
     def _on_translate(self):
         pass
+
+    def set_model_name(self, model_name: str):
+        self._model_label.setText(model_name)
 
 
 class SelectionDot(QWidget):
@@ -536,7 +536,7 @@ class MessageBubble(QFrame):
         body = QWidget()
         body_layout = QVBoxLayout(body)
         body_layout.setContentsMargins(self.BODY_INDENT, 0, 0, 0)
-        body_layout.setSpacing(10)
+        body_layout.setSpacing(4)
         layout.addWidget(body)
 
         self._pre_content_hook(body_layout)
@@ -586,14 +586,6 @@ class MessageBubble(QFrame):
             self._collapse_wrap.show_mask(True)
             self._collapse_wrap._mask.set_expanded(False)
             self._expanded = False
-
-    def enterEvent(self, e):
-        self.bottom_bar.show_bar()
-        super().enterEvent(e)
-
-    def leaveEvent(self, e):
-        self.bottom_bar.hide_bar()
-        super().leaveEvent(e)
 
     def get_persisted_content(self):
         """返回用于写入历史记录的内容，默认使用创建时传入的原始内容。"""
@@ -1087,9 +1079,10 @@ class AssistantMessageBubble(MessageBubble):
     _stage_indicator = None
 
     def __init__(self, content, timestamp: str, message_id: str, model_type: str = "text",
-                 item_count: int = 1, parent=None):
+                 item_count: int = 1, model_name: str = "", parent=None):
         self.model_type = model_type
         self.item_count = item_count
+        self.model_name = model_name
         self._partial_paths = []
         self._placeholder = None
         super().__init__("assistant", content, timestamp, message_id, parent)
@@ -1107,7 +1100,7 @@ class AssistantMessageBubble(MessageBubble):
         layout.addWidget(self.spinner_widget)
 
     def _build_action_bar(self) -> QWidget:
-        bar = AssistantBottomActionBar(self)
+        bar = AssistantBottomActionBar(model_name=self.model_name, parent=self)
         bar.export_clicked.connect(self.on_export_clicked)
         return bar
 
@@ -1294,8 +1287,9 @@ class AssistantMessageBubble(MessageBubble):
 
 
 def create_message_bubble(role: str, content, timestamp: str, message_id: str,
-                          model_type: str = "text", item_count: int = 1) -> MessageBubble:
+                          model_type: str = "text", item_count: int = 1,
+                          model_name: str = "") -> MessageBubble:
     if role == "user":
         return UserMessageBubble(content, timestamp, message_id)
     else:
-        return AssistantMessageBubble(content, timestamp, message_id, model_type, item_count)
+        return AssistantMessageBubble(content, timestamp, message_id, model_type, item_count, model_name)

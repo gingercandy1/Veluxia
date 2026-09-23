@@ -581,12 +581,13 @@ class GenerationPage(QWidget):
     def add_chat_message(self, role: str, content: str | dict, model_type: str = "text", item_count: int = 1):
         """追加一条完整消息"""
         ts = datetime.now().strftime("%H:%M")
-        bubble = self._chat.add_message(role, content, ts, model_type=model_type, item_count=item_count)
+        model_name = self.model_combobox.currentText()
+        bubble = self._chat.add_message(role, content, ts, model_type=model_type, item_count=item_count,
+                                         model_name=model_name)
 
         # 构造完整的历史记录
         model_text = self._input_bar.mode_combo.currentText()
         model_type = self._input_bar.label_to_key.get(model_text)
-        model_name = self.model_combobox.currentText()
         history_item = {
             "session_id": self.session_manager.get_current_session_id(),
             "role": role,
