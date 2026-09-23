@@ -2,6 +2,7 @@ from PySide6.QtCore import Signal, Qt, QEvent, QTimer, QRect, QPoint, QPropertyA
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QFrame
 
+from src.app.ui.base.action_button import ActionButton
 from src.app.ui.message.message_bubble import (
     MessageBubble, create_message_bubble, SpinnerWidget, FadeMask, SelectionDot,
 )
@@ -140,10 +141,41 @@ class ChatWidget(QScrollArea):
         self.fade_mask.set_reverse(False)
         self.fade_mask.setVisible(True)
 
-    def add_message(self, role, content, timestamp, message_id=None, model_type="text", item_count=1):
+        # 一键滚到底部：只在离底部有一定距离时才出现
+        self._scroll_bottom_btn = ActionButton(
+            svg_str=":/svg/down.svg", tooltip="滚动到底部",
+            width=38, height=38, icon_size_width=16, icon_size_height=16,
+            is_circle=True, parent=self,
+        )
+        self._scroll_bottom_btn.set_color(QColor(32, 34, 40, 235), QColor(48, 51, 60, 255))
+        self._scroll_bottom_btn.clicked.connect(self._scroll_to_bottom)
+        self._scroll_bottom_btn.hide()
+        self._scroll_anim = QPropertyAnimation(self.verticalScrollBar(), b"value", self)
+        self._scroll_anim.setDuration(220)
+        self._scroll_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        self.verticalScrollBar().valueChanged.connect(self._update_scroll_bottom_btn)
+        self.verticalScrollBar().rangeChanged.connect(self._update_scroll_bottom_btn)
+
+    _SCROLL_BOTTOM_THRESHOLD = 120
+
+    def _update_scroll_bottom_btn(self, *_):
+        bar = self.verticalScrollBar()
+        near_bottom = bar.maximum() - bar.value() <= self._SCROLL_BOTTOM_THRESHOLD
+        self._scroll_bottom_btn.setVisible(bar.maximum() > 0 and not near_bottom)
+
+    def _scroll_to_bottom(self):
+        bar = self.verticalScrollBar()
+        self._scroll_anim.stop()
+        self._scroll_anim.setStartValue(bar.value())
+        self._scroll_anim.setEndValue(bar.maximum())
+        self._scroll_anim.start()
+
+    def add_message(self, role, content, timestamp, message_id=None, model_type="text", item_count=1,
+                     model_name=""):
         bubble = create_message_bubble(
             role=role, content=content, timestamp=timestamp, message_id=message_id,
-            model_type=model_type, item_count=item_count,
+            model_type=model_type, item_count=item_count, model_name=model_name,
         )
         bubble.retry_requested.connect(self._on_retry_requested)
         bubble.content_edited.connect(self.on_message_edited)
@@ -348,11 +380,14 @@ class ChatWidget(QScrollArea):
         self._container.setUpdatesEnabled(False)
         try:
             for msg in messages:
+                model_name = msg.get("model_name", "") or ""
                 try:
                     content = dict(msg["content"])
-                    self.add_message(msg["role"], content, msg["time"], msg["message_id"])
+                    self.add_message(msg["role"], content, msg["time"], msg["message_id"],
+                                      model_name=model_name)
                 except Exception as e:
-                    self.add_message(msg["role"], msg["content"], msg["time"], msg["message_id"])
+                    self.add_message(msg["role"], msg["content"], msg["time"], msg["message_id"],
+                                      model_name=model_name)
         finally:
             self._container.setUpdatesEnabled(True)
 
@@ -368,6 +403,12 @@ class ChatWidget(QScrollArea):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.fade_mask.setGeometry(-1, -10, self.width()+2, 60)
+        margin = 16
+        self._scroll_bottom_btn.move(
+            self.width() - self._scroll_bottom_btn.width() - margin,
+            self.height() - self._scroll_bottom_btn.height() - margin,
+        )
+        self._scroll_bottom_btn.raise_()
 
 
 
