@@ -7,7 +7,9 @@ from typing import Any
 
 from src.shared.settings import PROJECT_ROOT
 
-huggingface_token = ""
+# 不在源码里存 token：留空/None 时 huggingface_hub 会自动读 HF_TOKEN 环境变量，
+# 或 `huggingface-cli login` 缓存的登录态，gated 仓库照样能下。
+huggingface_token = os.environ.get("HF_TOKEN")
 
 project_name = "material_generation"
 

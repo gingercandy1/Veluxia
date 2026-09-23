@@ -299,6 +299,12 @@
     "Ace-Step1.5": {
       "generator": "speech.ace_step_music:AceStepMusicGenerator",
       "tag": "music"
+    },
+    "Stable-Audio-Open-1.0": {
+      "generator": "speech.stable_audio_open:StableAudioOpenGenerator",
+      "repo_id": "stabilityai/stable-audio-open-1.0",
+      "tag": "sfx",
+      "note": "Stability AI Community License，年营收<=100万美元可商用；small 版无 diffusers 格式权重，无法接入，故只保留 1.0"
     }
   },
   "animation": {

@@ -1,6 +1,6 @@
 from PySide6.QtCore import QEvent, Qt
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel, QPushButton, QWidget
+from PySide6.QtGui import QGuiApplication, QPixmap
+from PySide6.QtWidgets import QLabel, QMenu, QPushButton, QWidget
 
 
 class ImagePreviewOverlay(QWidget):
@@ -36,6 +36,7 @@ class ImagePreviewOverlay(QWidget):
         self._close_btn.clicked.connect(self.close)
 
         self._host = host
+        self._path = path
         self._load_pixmap(path)
 
         host.installEventFilter(self)
@@ -84,7 +85,20 @@ class ImagePreviewOverlay(QWidget):
         return super().eventFilter(obj, event)
 
     def mousePressEvent(self, event):
-        self.close()
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.close()
+
+    def contextMenuEvent(self, event):
+        if self._source_pixmap is None:
+            return
+        menu = QMenu(self)
+        copy_action = menu.addAction("复制图片")
+        copy_action.triggered.connect(self._copy_to_clipboard)
+        menu.exec(event.globalPos())
+
+    def _copy_to_clipboard(self):
+        if self._source_pixmap is not None:
+            QGuiApplication.clipboard().setPixmap(self._source_pixmap)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
