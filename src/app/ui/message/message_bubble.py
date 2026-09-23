@@ -212,10 +212,10 @@ class BottomActionBar(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.layout = QHBoxLayout(self)
-        self.layout.setContentsMargins(12, 0, 12, 8)
+        self.layout.setContentsMargins(12, 2, 12, 2)
         self.layout.setSpacing(4)
 
-        self.setFixedHeight(24)
+        self.setFixedHeight(26)
 
     def add_button(self, svg_path, tooltip):
         btn = ActionButton(
@@ -224,7 +224,7 @@ class BottomActionBar(QWidget):
             width=22, height=22,
             icon_size_width=14, icon_size_height=14,
         )
-        self.layout.addWidget(btn)
+        self.layout.addWidget(btn, 0, Qt.AlignmentFlag.AlignVCenter)
         return btn
 
     def _find_parent_bubble(self) -> Optional['MessageBubble']:
@@ -309,7 +309,7 @@ class AssistantBottomActionBar(BottomActionBar):
         self._model_label = QLabel(model_name)
         self._model_label.setObjectName("bubble_model_label")
         self._model_label.setStyleSheet("color: rgba(255, 255, 255, 60); font-size: 11px;")
-        self.layout.addWidget(self._model_label)
+        self.layout.addWidget(self._model_label, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self.layout.addStretch()
 
