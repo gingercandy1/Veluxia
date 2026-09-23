@@ -21,6 +21,7 @@ class Application(QApplication):
     - 运行时热重载 QSS（开发模式）
     """
     QSS_DIR_PATH = Path(__file__).parent.parent / "resource" / "qss"
+    ROBOTO_FONT_PATH = Path(__file__).parent.parent / "resource" / "fonts" / "Roboto.ttf"
 
     def __init__(self, argv: list[str]):
         QApplication.setHighDpiScaleFactorRoundingPolicy(
@@ -42,24 +43,43 @@ class Application(QApplication):
 
     def _setup_font(self):
         """
-        按平台优先级设置 UI 字体。
-        Windows → Segue UI / Microsoft YaHei UI
-        macOS   → PingFang SC / SF Pro
+        英文/数字走随包的 Roboto Regular（resource/fonts/，OFL 协议可商用），
+        中文走系统自带字体。用 setFamilies 声明完整回退链，而不是只选一个
+        家族——单选家族时，中文字符会退回 Qt/系统挑的默认字体（往往是宋体），
+        跟主字体风格不搭。
+        Windows → Microsoft YaHei UI
+        macOS   → PingFang SC
         Linux   → Noto Sans
         """
-        candidates = [
-            "Segoe UI",
+        roboto_family = self._load_bundled_roboto()
+
+        system_candidates = [
             "Microsoft YaHei UI",
             "PingFang SC",
             "Noto Sans",
             "sans-serif",
         ]
         available = QFontDatabase.families()
-        chosen = next((f for f in candidates if f in available), "sans-serif")
+        chain = ([roboto_family] if roboto_family else []) + \
+                [f for f in system_candidates if f in available]
+        if not chain:
+            chain = ["sans-serif"]
 
-        font = QFont(chosen, 13)
+        font = QFont(chain[0], 13)
+        font.setFamilies(chain)
+        font.setWeight(QFont.Weight.Normal)
         font.setHintingPreference(QFont.HintingPreference.PreferDefaultHinting)
         self.setFont(font)
+
+    def _load_bundled_roboto(self) -> str | None:
+        if not self.ROBOTO_FONT_PATH.exists():
+            return None
+        font_id = QFontDatabase.addApplicationFont(str(self.ROBOTO_FONT_PATH))
+        if font_id == -1:
+            log_error(f"[Application] 字体加载失败：{self.ROBOTO_FONT_PATH}")
+            return None
+        families = QFontDatabase.applicationFontFamilies(font_id)
+        return families[0] if families else None
 
     def _load_qss(self, path: Path | List[Path] | None = None) -> bool:
         """
