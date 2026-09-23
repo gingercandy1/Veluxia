@@ -28,6 +28,7 @@ def init_widget():
     from src.app.ui.param.core.animation.wan2_video_panel import Wan2VideoPanel
     from src.app.ui.param.core.speech.ace_step_panel import AceStepMusicPanel
     from src.app.ui.param.core.speech.qwen3_tts_panel import Qwen3TTSPanel
+    from src.app.ui.param.core.speech.stable_audio_open_panel import StableAudioOpenPanel
 init_widget()
 
 

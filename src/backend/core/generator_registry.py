@@ -1,16 +1,4 @@
-"""
-生成器注册：models.json 是模型清单的唯一来源。
-
-新增 / 删除模型只改 models.json：
-- 每个模型项写 "generator": "包.模块:类名"（模块路径相对 src.backend.core），tag 决定 UI 分组；
-- 同一类别下多数模型共用一个生成器时，可在类别里写 "_generator" 作为默认值，模型项可用 "generator" 覆盖；
-- 同一个生成器类可对应多个模型名（如 LTX-2.3 / LTX-2.5）。
-只有新增“生成器类”（新的 .py 实现）时才需要新写代码，且仍不用改这里。
-
-启动时只读 json，不 import 生成器；类在首次生成时才加载，warmup() 可在后台提前加载。
-"""
 from typing import Dict
-
 from src.backend.core.model_base import GeneratorFactory, GeneratorSpec, load_models_config
 from src.shared.enum_type import FactoryType
 

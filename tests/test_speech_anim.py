@@ -41,3 +41,30 @@ def test_animation_accepts_reference_image_key():
     assert g.reference_image_path == "a.png"
     g.parse_params({"content": "x", "reference_image_path": "b.png"})
     assert g.reference_image_path == "b.png"
+
+
+def test_stable_audio_open_parse_params_defaults(tmp_path):
+    pytest.importorskip("torch", reason="parse_params 需 torch（本机无，随后端环境跑）")
+    from src.backend.core.speech.stable_audio_open import StableAudioOpenGenerator
+    g = StableAudioOpenGenerator.__new__(StableAudioOpenGenerator)
+    g.parse_params({"content": "footsteps on gravel", "output_dir": str(tmp_path)})
+    assert g.prompt == "footsteps on gravel"
+    assert g.negative_prompt is None
+    assert g.duration == 5.0
+    assert g.num_inference_steps == 8
+    assert g.save_path.parent == tmp_path
+
+
+def test_stable_audio_open_registered_and_resolvable():
+    from src.backend.core.generator_registry import register_all
+    from src.backend.core.model_base import GeneratorFactory
+    from src.shared.enum_type import FactoryType
+    from src.shared.settings import PROJECT_ROOT
+    import json
+
+    register_all()
+    with open(f"{PROJECT_ROOT}/models.json", "r", encoding="utf-8") as f:
+        speech_models = json.load(f)["speech"]
+    names = GeneratorFactory.get_generator_names(FactoryType.Speech)
+    for name in ("Stable-Audio-Open-1.0",):
+        assert name in speech_models and name in names

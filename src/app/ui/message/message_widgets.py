@@ -1,12 +1,12 @@
 from pathlib import Path
 
 from PySide6.QtCore import QUrl, Qt
-from PySide6.QtGui import QPixmap, QDesktopServices, QPainterPath, QColor, QPainter
+from PySide6.QtGui import QPixmap, QDesktopServices, QPainterPath, QColor, QPainter, QGuiApplication
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QSlider, QSizePolicy,
+    QPushButton, QLabel, QSlider, QSizePolicy, QMenu,
 )
 
 from src.app.ui.base.widget import BaseWidget
@@ -91,6 +91,19 @@ class ImageWidget(QWidget):
         if not self._error and self._pixmap is not None and e.button() == Qt.MouseButton.LeftButton:
             ImagePreviewOverlay(self._path, self.window())
         super().mousePressEvent(e)
+
+    def contextMenuEvent(self, e):
+        if self._error or self._pixmap is None:
+            return
+        menu = QMenu(self)
+        copy_action = menu.addAction("复制图片")
+        copy_action.triggered.connect(self._copy_to_clipboard)
+        menu.exec(e.globalPos())
+
+    def _copy_to_clipboard(self):
+        pix = QPixmap(self._path)
+        if not pix.isNull():
+            QGuiApplication.clipboard().setPixmap(pix)
 
 
 class VideoWidget(QWidget):
