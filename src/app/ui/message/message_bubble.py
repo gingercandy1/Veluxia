@@ -213,14 +213,16 @@ class BottomActionBar(QWidget):
         super().__init__(parent)
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(12, 0, 12, 8)
-        self.layout.setSpacing(8)
+        self.layout.setSpacing(4)
 
-        self.setFixedHeight(29)
+        self.setFixedHeight(24)
 
     def add_button(self, svg_path, tooltip):
         btn = ActionButton(
             svg_str=svg_path,
-            tooltip=tooltip
+            tooltip=tooltip,
+            width=22, height=22,
+            icon_size_width=14, icon_size_height=14,
         )
         self.layout.addWidget(btn)
         return btn
@@ -303,12 +305,13 @@ class AssistantBottomActionBar(BottomActionBar):
         self._export_btn = self.add_button(":/svg/export.svg", "导出")
         self._translate_btn = self.add_button(":/svg/translate.svg", "翻译")
 
-        self.layout.addStretch()
-
+        self.layout.addSpacing(6)
         self._model_label = QLabel(model_name)
         self._model_label.setObjectName("bubble_model_label")
-        self._model_label.setStyleSheet("color: rgba(255, 255, 255, 110); font-size: 12px;")
+        self._model_label.setStyleSheet("color: rgba(255, 255, 255, 60); font-size: 11px;")
         self.layout.addWidget(self._model_label)
+
+        self.layout.addStretch()
 
         self._copy_btn.clicked.connect(self._on_copy)
         self._export_btn.clicked.connect(self._on_export)
