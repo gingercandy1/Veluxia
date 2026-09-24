@@ -48,6 +48,11 @@ class GpuPage(QWidget):
         self._config = ConfigManager()
         self._worker = None
         self._build_ui()
+        self.load()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._refresh_status()
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
