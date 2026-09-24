@@ -22,12 +22,12 @@ class TranslationPage(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # 标题
-        title = QLabel("翻译设置")
+        title = QLabel(self.tr("Translation Settings"))
         title.setObjectName("page_title")
         layout.addWidget(title)
 
         # 语言设置分组
-        group = QGroupBox("语言配置")
+        group = QGroupBox(self.tr("Languages"))
         group.setObjectName("setting_group")
         form = QFormLayout(group)
         form.setSpacing(12)
@@ -38,27 +38,27 @@ class TranslationPage(QWidget):
 
         # 源语言
         self._source_combo = QComboBox()
-        self._source_combo.addItem("自动检测", "auto")
+        self._source_combo.addItem(self.tr("Auto detect"), "auto")
         for code, name in lang_items:
             self._source_combo.addItem(f"{name}（{code}）", code)
-        form.addRow("源语言：", self._source_combo)
+        form.addRow(self.tr("Source language:"), self._source_combo)
 
         # 目标语言
         self._target_combo = QComboBox()
         for code, name in lang_items:
             self._target_combo.addItem(f"{name}（{code}）", code)
-        form.addRow("目标语言：", self._target_combo)
+        form.addRow(self.tr("Target language:"), self._target_combo)
 
         layout.addWidget(group)
 
         # 引擎说明
-        engine_group = QGroupBox("翻译引擎")
+        engine_group = QGroupBox(self.tr("Translation engine"))
         engine_group.setObjectName("setting_group")
         engine_layout = QVBoxLayout(engine_group)
 
         engine_info = QLabel(
-            "主引擎：Google Translate（质量最佳）\n"
-            "备用引擎：MyMemory（Google 不可用时自动切换）"
+            self.tr("Primary engine: Google Translate (best quality)") + "\n"
+            + self.tr("Fallback engine: MyMemory (used automatically when Google is unavailable)")
         )
         engine_info.setObjectName("engine_info")
         engine_info.setWordWrap(True)

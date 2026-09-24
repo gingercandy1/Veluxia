@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 from PySide6.QtCore import (
-    Signal, Qt, QEvent, QRect, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property, QPoint
+    Signal, Qt, QEvent, QRect, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property, QPoint,
+    QT_TRANSLATE_NOOP,
 )
 from PySide6.QtGui import (
     QDragEnterEvent, QDropEvent, QKeyEvent, QPen, QPixmap,
@@ -399,28 +400,35 @@ class InputBar(BaseWidget):
 
     _MODE_CONFIGS = {
         "text": {
-            "label": "🗒️ 文本",
-            "placeholder": "Enter a topic, such as: write a background story for a game character.",
+            "icon": "🗒️",
+            "label": QT_TRANSLATE_NOOP("InputBar", "Text"),
+            "placeholder": QT_TRANSLATE_NOOP(
+                "InputBar",
+                "Enter a topic, such as: write a background story for a game character."),
             "file_filter": "Text (*.txt *.md *.csv *.json)",
         },
         "image": {
-            "label": "📸 图片",
-            "placeholder": "image prompt",
+            "icon": "📸",
+            "label": QT_TRANSLATE_NOOP("InputBar", "Image"),
+            "placeholder": QT_TRANSLATE_NOOP("InputBar", "image prompt"),
             "file_filter": "Images (*.png *.jpg *.jpeg *.webp)",
         },
         "animation": {
-            "label": "🎞️ 动画",
-            "placeholder": "side view warrior",
+            "icon": "🎞️",
+            "label": QT_TRANSLATE_NOOP("InputBar", "Animation"),
+            "placeholder": QT_TRANSLATE_NOOP("InputBar", "side view warrior"),
             "file_filter": "Images (*.png *.jpg *.jpeg *.webp)",
         },
         "speech": {
-            "label": "🎙️ 语音",
-            "placeholder": "Enter the text you want to read aloud; Chinese and English are supported...",
+            "icon": "🎙️",
+            "label": QT_TRANSLATE_NOOP("InputBar", "Speech"),
+            "placeholder": QT_TRANSLATE_NOOP(
+                "InputBar",
+                "Enter the text you want to read aloud; Chinese and English are supported..."),
             "file_filter": "Text (*.txt *.md)",
         }
     }
 
-    _LABEL_TO_KEY = {str(v["label"]): k for k, v in _MODE_CONFIGS.items()}
     _REFINABLE_MODES = ("image", "animation")
 
 
@@ -430,6 +438,13 @@ class InputBar(BaseWidget):
         self.setAcceptDrops(True)
         self._attachments: list[Attachment] = []
         self._chips: list[AttachmentChip] = []
+        # 模式标签既是显示文字又是反查模式的键，而类属性在翻译器装好之前就求值了，
+        # 所以按实例翻译后再建表。
+        self._mode_labels = {
+            key: f"{cfg['icon']} {self.tr(cfg['label'])}"
+            for key, cfg in self._MODE_CONFIGS.items()
+        }
+        self._label_to_key = {label: key for key, label in self._mode_labels.items()}
         self._build_ui()
         self._connect()
         self._on_mode_changed()
@@ -465,6 +480,16 @@ class InputBar(BaseWidget):
         self.param_page.setVisible(False)
 
         root.addWidget(self.input_page)
+        self._fit_mode_button_width()
+
+    def _fit_mode_button_width(self):
+        """各语言的模式名长短差很多（如俄语"Изображение"），按最长的一项定宽：
+        既不截字，切换模式时输入框也不会跟着左右跳。
+        QSS 里的字号挂在 #input_bar 祖先选择器上，所以要等按钮挂进输入栏后再 polish 取字宽。"""
+        self.mode_combo.ensurePolished()
+        metrics = self.mode_combo.fontMetrics()
+        widest = max(metrics.horizontalAdvance(f"{label} ▴") for label in self._mode_labels.values())
+        self.mode_combo.setFixedWidth(max(100, widest + 24))
 
     def build_input_page(self):
         input_widget = QWidget()
@@ -479,10 +504,9 @@ class InputBar(BaseWidget):
         top_layout.setSpacing(10)
 
         # 属性名沿用 mode_combo：生成页按它取当前模式
-        self.mode_combo = ModeMenuButton([cfg["label"] for cfg in self._MODE_CONFIGS.values()])
+        self.mode_combo = ModeMenuButton(list(self._mode_labels.values()))
         self.mode_combo.setObjectName("mode_btn")
         self.mode_combo.setFixedHeight(44)
-        self.mode_combo.setFixedWidth(100)
 
         # 模式之外的附加选项收进同一个菜单，不占输入栏空间；只对适用的模式显示
         self._option_separator = self.mode_combo.add_separator()
@@ -578,9 +602,9 @@ class InputBar(BaseWidget):
         return super().eventFilter(obj, event)
 
     def _on_mode_changed(self):
-        key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")
+        key = self._label_to_key.get(self.mode_combo.currentText(), "text")
         cfg = self._MODE_CONFIGS[key]
-        self.prompt_input.setPlaceholderText(cfg["placeholder"])
+        self.prompt_input.setPlaceholderText(self.tr(cfg["placeholder"]))
         self.refine_action.setVisible(key in self._REFINABLE_MODES)
         self.sprite_action.setVisible(key == "animation")
         self._option_separator.setVisible(key in self._REFINABLE_MODES)
@@ -677,7 +701,7 @@ class InputBar(BaseWidget):
         self.param_drawer.save_params()
 
     def _pick_files(self):
-        key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")
+        key = self._label_to_key.get(self.mode_combo.currentText(), "text")
         flt = self._MODE_CONFIGS[key]["file_filter"]
         paths, _ = QFileDialog.getOpenFileNames(self, "Choose File", "", flt)
         for p in paths:
@@ -814,7 +838,7 @@ class InputBar(BaseWidget):
         if not prompt:
             return
 
-        key = self._LABEL_TO_KEY.get(self.mode_combo.currentText(), "text")
+        key = self._label_to_key.get(self.mode_combo.currentText(), "text")
         self.param_drawer.save_params()
         params = self.param_drawer.get_params()
         if key in self._REFINABLE_MODES:
@@ -855,7 +879,7 @@ class InputBar(BaseWidget):
 
     @property
     def label_to_key(self):
-        return self._LABEL_TO_KEY
+        return self._label_to_key
 
     def showEvent(self, event):
         super().showEvent(event)

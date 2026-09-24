@@ -54,6 +54,9 @@ class BaseGenerator(ABC, metaclass=SingletonMeta):
     # 持有已加载模型的属性名，unload() 会逐个释放。
     # 子类在 pipe 之外还持有模型对象（img2img 管线、rembg 会话等）时覆盖此项。
     _model_attrs: tuple[str, ...] = ("pipe",)
+    # 纯 CPU 推理的生成器（如 sherpa-onnx 语音识别）设为 False：不参与显存租约的排他与卸载，
+    # 同类请求由各自的锁串行（ADR 0003）。
+    uses_vram: bool = True
 
     def __init__(self, model_name: str, device: str):
         self.pipe = None
@@ -186,6 +189,16 @@ class BaseSpeechGenerator(BaseGenerator):
         pass
 
 
+class BaseTranscriptionGenerator(BaseGenerator):
+    """语音识别的基类（音频 → 文本 + 带时间戳的分段）"""
+    type = FactoryType.Transcription
+
+    @abstractmethod
+    async def transcribe(self) -> dict:
+        """返回 {"text", "language", "segments": [{"start", "end", "text"}], "srt_path"}"""
+        pass
+
+
 @dataclass(frozen=True)
 class GeneratorSpec:
     """生成器的延迟加载描述：只记录位置，真正用到时才 import（避免启动时加载 torch 等重型依赖）。"""
@@ -211,6 +224,8 @@ class GeneratorFactory:
     _resolve_lock: threading.Lock = threading.Lock()
     # 当前持有租约的使用者名称；None 表示空闲。见 acquire() / exclusive()
     _holder: Optional[str] = None
+    # 不占显存的生成器按类各一把锁（ADR 0003）
+    _cpu_locks: Dict[type, threading.Lock] = {}
 
     @classmethod
     def mark_ready(cls):
@@ -243,7 +258,7 @@ class GeneratorFactory:
             names.append(name)
 
     @classmethod
-    def build_generator(cls, ty, name: str):
+    def _resolve_class(cls, ty, name: str) -> type:
         entry = cls._generators.get(ty, {}).get(name)
         if entry is None:
             raise ValueError(f"未知的生成器: {name}")
@@ -253,7 +268,11 @@ class GeneratorFactory:
                 if isinstance(entry, GeneratorSpec):
                     entry = entry.load()
                     cls._generators[ty][name] = entry
-        return entry(model_name=name, device=cls._device)
+        return entry
+
+    @classmethod
+    def build_generator(cls, ty, name: str):
+        return cls._resolve_class(ty, name)(model_name=name, device=cls._device)
 
     @classmethod
     def _require_idle(cls):
@@ -264,7 +283,7 @@ class GeneratorFactory:
     @classmethod
     def _unload_residents(cls, keep=None):
         for instance in list(SingletonMeta._instances.values()):
-            if instance is not keep:
+            if instance is not keep and instance.uses_vram:
                 instance.unload()
 
     @classmethod
@@ -276,7 +295,16 @@ class GeneratorFactory:
           同一个实例并发使用又会互相覆盖 parse_params 写入的状态；
         - 空闲时才允许取用，并先卸载其他所有驻留的生成器。
         整个生成过程（含 ensure_model_loaded）必须放在 with 块里。
+        不占显存的生成器（uses_vram=False）只按类串行，不影响上面这套排他（ADR 0003）。
         """
+        generator_cls = cls._resolve_class(ty, name)
+        if not generator_cls.uses_vram:
+            with SingletonMeta._lock:
+                lock = cls._cpu_locks.setdefault(generator_cls, threading.Lock())
+            with lock:
+                yield cls.build_generator(ty, name)
+            return
+
         with SingletonMeta._lock:
             cls._require_idle()
             generator = cls.build_generator(ty, name)

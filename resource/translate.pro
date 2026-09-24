@@ -8,4 +8,5 @@ TRANSLATIONS += \
     translations/app_en_US.ts \
     translations/app_ja_JP.ts \
     translations/app_ko_KR.ts \
-    translations/app_ru_RU.ts
+    translations/app_ru_RU.ts \
+    translations/app_es_ES.ts

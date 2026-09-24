@@ -38,7 +38,7 @@ class FilmInterpolationPanel(BaseParamPanel):
         self._add_row(self.tr("RIFE Scale"), self._rife_scale)
 
         # 是否导出视频
-        self._export_video = QCheckBox("export MP4")
+        self._export_video = QCheckBox(self.tr("export MP4"))
         self._export_video.setChecked(True)
         self._add_row(self.tr("export_video"), self._export_video)
 

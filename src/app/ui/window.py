@@ -219,9 +219,10 @@ class MainWindow(QMainWindow):
         if active_bubble:
             # 用引用块渲染，跟随已有的 blockquote 样式（灰色小字+左侧竖线），
             # 不再把提示文字当成正文段落直接糊在气泡里。
-            active_bubble.append_output("\n\n> 已停止生成\n")
+            active_bubble.append_output("\n\n> " + self.tr("Generation stopped") + "\n")
             active_bubble.finish()
-            self._gen_page.finish_generation()
+            # 停止前已输出的文字和已展示的图片也要进历史，否则重启后只剩一条没有回复的提问
+            self._gen_page.save_item_from_bubble(active_bubble)
         log_info("生成已被用户取消")
 
     def on_generate_finished(self, result):
@@ -248,9 +249,9 @@ class MainWindow(QMainWindow):
         self._gen_page.enable_ui()
         active_bubble = self._gen_page.active_bubble
         if active_bubble:
-            active_bubble.append_output(f"⚠ 生成失败：{msg}")
+            active_bubble.append_output("⚠ " + self.tr("Generation failed: {0}").format(msg))
             active_bubble.finish()
-            self._gen_page.finish_generation()
+            self._gen_page.save_item_from_bubble(active_bubble)
         log_error(f"生成出错:{msg}", )
 
     def _on_think_chunk(self, text: str):
@@ -284,6 +285,19 @@ class MainWindow(QMainWindow):
         # save history item
         self._gen_page.save_item_from_bubble(active_bubble)
 
+    def _save_running_generation(self):
+        """生成途中关窗口：当作一次停止，把已产出的部分存进历史。
+        先断开 worker 的信号，免得它稍后再发 cancelled 时重复追加"已停止"并再存一次。"""
+        worker = self._worker
+        if worker is None or not worker.isRunning():
+            return
+        worker.stop()
+        for signal in (worker.finished_ok, worker.error, worker.cancelled, worker.thinking_chunk,
+                       worker.text_chunk, worker.stream_done, worker.partial_ready,
+                       worker.stage_changed):
+            signal.disconnect()
+        self._on_generate_cancelled()
+
     def _on_backend_log(self, msg: str):
         self._loading_page.set_status(msg)
 
@@ -294,9 +308,10 @@ class MainWindow(QMainWindow):
 
     def _on_backend_timeout(self):
         log_error("⚠️ Backend 啟動超時")
-        self._loading_page.set_error(self.tr("启动超时，请检查日志后重启应用"))
+        self._loading_page.set_error(self.tr("Startup timed out. Please check the log and restart the app."))
 
     def closeEvent(self, event):
+        self._save_running_generation()
         self._gen_page.closeEvent(event)
         self._client.close()
         if self._startup:

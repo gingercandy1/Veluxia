@@ -32,7 +32,7 @@ class ImageWidget(QWidget):
     def _load(self, path: str):
         pix = QPixmap(path)
         if pix.isNull():
-            self._error = f"⚠️ 图片载入失败：{Path(path).name}"
+            self._error = "⚠️ " + self.tr("Failed to load image: {0}").format(Path(path).name)
             self.setFixedSize(240, 48)
             return
         scaled = pix.scaled(
@@ -96,7 +96,7 @@ class ImageWidget(QWidget):
         if self._error or self._pixmap is None:
             return
         menu = QMenu(self)
-        copy_action = menu.addAction("复制图片")
+        copy_action = menu.addAction(self.tr("Copy image"))
         copy_action.triggered.connect(self._copy_to_clipboard)
         menu.exec(e.globalPos())
 
@@ -224,7 +224,7 @@ class VideoWidget(QWidget):
 
     def _on_error(self, error, error_string):
         print(f"Video Error: {error} - {error_string}")
-        self._time_lbl.setText("播放错误")
+        self._time_lbl.setText(self.tr("Playback error"))
 
     def play(self):
         self._player.play()
@@ -366,7 +366,7 @@ class AudioWidget(QWidget):
 
     def _on_error(self, error, error_string):
         print(f"Audio Error: {error} - {error_string}")
-        self._time_lbl.setText("播放错误")
+        self._time_lbl.setText(self.tr("Playback error"))
 
     def play(self):
         self._player.play()
@@ -433,7 +433,7 @@ class FileWidget(BaseWidget):
         return info
 
     def _build_open_btn(self) -> QPushButton:
-        btn = QPushButton("打开")
+        btn = QPushButton(self.tr("Open"))
         btn.setFixedSize(45, 28)
         btn.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(self._path))

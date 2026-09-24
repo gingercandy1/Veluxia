@@ -24,6 +24,7 @@ dependencies = [
     "soundfile>=0.12.0",
     "deep-translator>=1.11.0",
     "torchsde>=0.2.6",  # Stable Audio Open 默认调度器 CosineDPMSolverMultistepScheduler 需要
+    "sherpa-onnx>=1.13.8",  # 语音识别（SenseVoice / Parakeet / Whisper，纯 CPU），见 ADR 0003
     "torch",
     "torchvision",
     "torchaudio",

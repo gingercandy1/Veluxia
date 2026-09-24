@@ -49,7 +49,7 @@ class ImagePreviewOverlay(QWidget):
     def _load_pixmap(self, path: str):
         pix = QPixmap(path)
         if pix.isNull():
-            self._label.setText("⚠️ 图片加载失败")
+            self._label.setText("⚠️ " + self.tr("Failed to load image"))
             self._label.setStyleSheet("color: rgba(255,255,255,0.7); font-size: 14px;")
             self._source_pixmap = None
         else:
@@ -92,7 +92,7 @@ class ImagePreviewOverlay(QWidget):
         if self._source_pixmap is None:
             return
         menu = QMenu(self)
-        copy_action = menu.addAction("复制图片")
+        copy_action = menu.addAction(self.tr("Copy image"))
         copy_action.triggered.connect(self._copy_to_clipboard)
         menu.exec(event.globalPos())
 

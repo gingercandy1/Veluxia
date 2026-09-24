@@ -24,6 +24,7 @@ from .core.model_utils import get_media_root
 from src.backend.router.image import ImageRouter
 from src.backend.router.image_frame import ImageFrameRouter
 from src.backend.router.speech import SpeechRouter
+from src.backend.router.transcription import TranscriptionRouter
 from src.backend.router.text import TextRouter
 from src.backend.router.animation import AnimationRouter
 from src.backend.router.translate import TranslateRouter
@@ -76,6 +77,7 @@ def create_app() -> FastAPI:
         TextRouter(),
         AnimationRouter(),
         SpeechRouter(),
+        TranscriptionRouter(),
         TranslateRouter(),
         PromptRouter(),
     ]

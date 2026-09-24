@@ -29,6 +29,7 @@ def init_widget():
     from src.app.ui.param.core.speech.ace_step_panel import AceStepMusicPanel
     from src.app.ui.param.core.speech.qwen3_tts_panel import Qwen3TTSPanel
     from src.app.ui.param.core.speech.stable_audio_open_panel import StableAudioOpenPanel
+    from src.app.ui.param.core.transcription.sherpa_asr_panel import TranscriptionPanel
 init_widget()
 
 
@@ -167,36 +168,12 @@ class HistoryDelegate(QStyledItemDelegate):
                 )
         painter.restore()
 
-    def editorEvent(self, event, model, option, index):
-        from PySide6.QtCore import QEvent
-        btn = self._btn_rect(option.rect)
-
-        if event.type() == QEvent.Type.MouseMove:
-            self._btn_hovered = btn.contains(event.pos())
-            return False
-
-        if event.type() == QEvent.Type.MouseButtonPress:
-            if event.button() == Qt.MouseButton.LeftButton:
-                if btn.contains(event.pos()):
-                    return True
-                else:
-                    self.signals.select_requested.emit(index)
-
-        if event.type() == QEvent.Type.MouseButtonRelease:
-            if btn.contains(event.pos()):
-                self._show_menu(index, option.widget.viewport().mapToGlobal(
-                    btn.bottomLeft()
-                ))
-                return True
-
-        return super().editorEvent(event, model, option, index)
-
     def _show_menu(self, index: QModelIndex, pos: QPoint):
         self._menu_open = True
         menu = QMenu()
         menu.setObjectName("history_item_menu")
 
-        delete_act = menu.addAction("删除")
+        delete_act = menu.addAction(self.tr("Delete"))
         delete_act.setIcon(QIcon.fromTheme("edit-delete"))
 
         action = menu.exec(pos)
@@ -211,25 +188,77 @@ class HistoryListView(QListView):
         self.setMouseTracking(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self._btn_pressed_index = QModelIndex()
+
+    def _history_delegate(self) -> "HistoryDelegate | None":
+        delegate = self.itemDelegate()
+        return delegate if isinstance(delegate, HistoryDelegate) else None
+
+    def _btn_index_at(self, pos: QPoint) -> QModelIndex:
+        """返回「⋮ 按钮被点到」的行，没点在按钮上就返回无效 index。"""
+        delegate = self._history_delegate()
+        index = self.indexAt(pos)
+        if delegate is None or not index.isValid():
+            return QModelIndex()
+        if delegate._btn_rect(self.visualRect(index)).contains(pos):
+            return index
+        return QModelIndex()
 
     def mouseMoveEvent(self, event):
         index = self.indexAt(event.pos())
-        delegate = self.itemDelegate()
-        if isinstance(delegate, HistoryDelegate):
+        delegate = self._history_delegate()
+        if delegate is not None:
             old = delegate._hovered_index
             delegate._hovered_index = index
 
-            if index.isValid():
-                btn_rect = self.visualRect(index)
-                delegate._btn_hovered = btn_rect.contains(event.pos())
-            else:
-                delegate._btn_hovered = False
+            delegate._btn_hovered = self._btn_index_at(event.pos()).isValid()
 
             if old.isValid():
                 self.viewport().update(self.visualRect(old))
             if index.isValid():
                 self.viewport().update(self.visualRect(index))
         super().mouseMoveEvent(event)
+
+    # ⋮ 按钮的命中判断放在视图里，而不是 delegate.editorEvent：后者只有在 QListView
+    # 把这次按下-抬起判定成一次"点击"（同一 index、非双击）时才会被调用，漏掉一次
+    # 事件菜单就弹不出来，删除也就没反应。
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            index = self._btn_index_at(event.pos())
+            if index.isValid():
+                self._btn_pressed_index = index
+                event.accept()
+                return
+        self._btn_pressed_index = QModelIndex()
+        super().mousePressEvent(event)
+
+        delegate = self._history_delegate()
+        if delegate is not None and event.button() == Qt.MouseButton.LeftButton:
+            index = self.indexAt(event.pos())
+            if index.isValid():
+                delegate.signals.select_requested.emit(index)
+
+    def mouseReleaseEvent(self, event):
+        pressed = self._btn_pressed_index
+        self._btn_pressed_index = QModelIndex()
+        if event.button() == Qt.MouseButton.LeftButton and pressed.isValid():
+            if self._btn_index_at(event.pos()) == pressed:
+                delegate = self._history_delegate()
+                if delegate is not None:
+                    btn = delegate._btn_rect(self.visualRect(pressed))
+                    delegate._show_menu(
+                        pressed, self.viewport().mapToGlobal(btn.bottomLeft())
+                    )
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+
+    def mouseDoubleClickEvent(self, event):
+        # 双击 ⋮ 时 Qt 不再发普通的按下事件，这里按单击处理，避免第二次点击"没反应"。
+        if event.button() == Qt.MouseButton.LeftButton and self._btn_index_at(event.pos()).isValid():
+            self.mousePressEvent(event)
+            return
+        super().mouseDoubleClickEvent(event)
 
     def leaveEvent(self, event):
         delegate = self.itemDelegate()
@@ -280,12 +309,24 @@ class SettingSidePage(QFrame):
             self._on_selected_requested
         )
 
+    def _session_id_at(self, index: QModelIndex) -> str:
+        """取该行的 session_id。菜单弹出期间列表可能已被刷新，行号会失效，
+        这时返回空串让调用方直接跳过，而不是抛 IndexError。"""
+        row = index.row()
+        if not (0 <= row < self.history_model.rowCount()):
+            return ""
+        return self.history_model.get(row)["session_id"]
+
     def _on_selected_requested(self, index: QModelIndex):
-        session_id = self.history_model.get(index.row())["session_id"]
+        session_id = self._session_id_at(index)
+        if not session_id:
+            return
         self.switch_session.emit(session_id)
 
     def _on_delete_requested(self, index: QModelIndex):
-        session_id = self.history_model.get(index.row())["session_id"]
+        session_id = self._session_id_at(index)
+        if not session_id:
+            return
         self.remove_session(session_id)
         self.delete_session.emit(session_id)
 
@@ -428,9 +469,9 @@ class GenerationPage(QWidget):
 
         self._selection_count_label = QLabel()
         self._selection_count_label.setObjectName("selection_count_label")
-        self._cancel_selection_btn = QPushButton(self.tr("取消"))
+        self._cancel_selection_btn = QPushButton(self.tr("Cancel"))
         self._cancel_selection_btn.setObjectName("selection_cancel_btn")
-        self._delete_selected_btn = QPushButton(self.tr("删除"))
+        self._delete_selected_btn = QPushButton(self.tr("Delete"))
         self._delete_selected_btn.setObjectName("selection_delete_btn")
 
         self._selection_bar = QWidget()
@@ -465,7 +506,7 @@ class GenerationPage(QWidget):
 
         bi_layout.addWidget(self._disclaimer_label)
         bi_layout.addStretch()
-        bi_layout.addWidget(QLabel(self.tr("Model：")))
+        bi_layout.addWidget(QLabel(self.tr("Model:")))
         bi_layout.addWidget(self.model_combobox)
 
         input_panel = QWidget()
@@ -613,7 +654,7 @@ class GenerationPage(QWidget):
         self._selection_bar.setVisible(enabled)
 
     def _on_chat_selection_changed(self, count: int):
-        self._selection_count_label.setText(self.tr(f"已选择 {count} 条"))
+        self._selection_count_label.setText(self.tr("%n selected", "", count))
 
     def _delete_selected_messages(self):
         ids = self._chat.selected_ids()
@@ -622,8 +663,8 @@ class GenerationPage(QWidget):
 
         reply = QMessageBox.question(
             self,
-            self.tr("删除消息"),
-            self.tr(f"确定删除选中的 {len(ids)} 条消息吗？此操作无法撤销。"),
+            self.tr("Delete messages"),
+            self.tr("Delete the %n selected message(s)? This cannot be undone.", "", len(ids)),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
@@ -649,9 +690,11 @@ class GenerationPage(QWidget):
         content = bubble.get_persisted_content()
         ts = bubble.timestamp
 
-        model_text = self._input_bar.mode_combo.currentText()
-        model_type = self._input_bar.label_to_key.get(model_text)
-        model_name = self.model_combobox.currentText()
+        # 助手气泡在发起生成时就记下了模式和模型；保存发生在生成结束后，
+        # 那时界面上的选择可能已被用户改掉，不能再以界面为准。
+        model_type = getattr(bubble, "model_type", None) or \
+            self._input_bar.label_to_key.get(self._input_bar.mode_combo.currentText())
+        model_name = getattr(bubble, "model_name", None) or self.model_combobox.currentText()
 
         history_item = {
             "session_id": getattr(bubble, "generation_session_id", None)

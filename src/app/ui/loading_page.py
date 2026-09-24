@@ -23,7 +23,7 @@ class LoadingPage(QWidget):
         self._title.setObjectName("loading_title")
         self._title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self._status = QLabel(self.tr("正在启动，请稍候…"))
+        self._status = QLabel(self.tr("Starting, please wait…"))
         self._status.setObjectName("loading_status")
         self._status.setAlignment(Qt.AlignmentFlag.AlignCenter)
 

@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Optional, Union
 
 from PySide6.QtCore import (
-    Qt, QPropertyAnimation, QEasingCurve, Signal, QUrl, QTimer, Property, QRectF, QPointF, QElapsedTimer, )
+    Qt, QPropertyAnimation, QEasingCurve, Signal, QUrl, QTimer, Property, QRectF, QPointF, QElapsedTimer,
+    QT_TRANSLATE_NOOP, )
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QLinearGradient, QClipboard, QFont, QDesktopServices, QPen, \
     QConicalGradient
 from PySide6.QtWidgets import (
@@ -90,7 +91,7 @@ class MaskContainer(BaseWidget):
         self.fade_mask.setVisible(True)
 
         # ==================== 按钮 ====================
-        self.btn = QPushButton("Show more ↓", self)
+        self.btn = QPushButton(self.tr("Show more") + " ↓", self)
         font = self.btn.font() # 获取当前字体
         font.setStyleStrategy(QFont.StyleStrategy.PreferAntialias)
         font.setHintingPreference(QFont.HintingPreference.PreferNoHinting)
@@ -128,7 +129,8 @@ class MaskContainer(BaseWidget):
         self.expanded.emit(self.is_expanded)
 
     def _update_ui(self):
-        label = "Show less ↑" if self.is_expanded else "Show more ↓"
+        label = (self.tr("Show less") + " ↑" if self.is_expanded
+                 else self.tr("Show more") + " ↓")
         self.btn.setText(label)
         self.fade_mask.setVisible(not self.is_expanded)
 
@@ -247,10 +249,10 @@ class UserBottomActionBar(BottomActionBar):
         self.setObjectName('user_bottom_action_bar')
 
         # 使用新的 ActionButton 类
-        self._copy_btn = self.add_button(":/svg/copy.svg", "复制消息")
-        self._edit_btn = self.add_button(":/svg/edit.svg", "编辑消息")
-        self._retry_btn = self.add_button(":/svg/refresh.svg", "重新发送")
-        self._translate_btn = self.add_button(":/svg/translate.svg", "翻译")
+        self._copy_btn = self.add_button(":/svg/copy.svg", self.tr("Copy message"))
+        self._edit_btn = self.add_button(":/svg/edit.svg", self.tr("Edit message"))
+        self._retry_btn = self.add_button(":/svg/refresh.svg", self.tr("Resend"))
+        self._translate_btn = self.add_button(":/svg/translate.svg", self.tr("Translate"))
 
         self.layout.addStretch()
 
@@ -276,7 +278,9 @@ class UserBottomActionBar(BottomActionBar):
         if text_to_copy.strip():
             clipboard: QClipboard = QApplication.clipboard()
             clipboard.setText(text_to_copy.strip(), QClipboard.Mode.Clipboard)
-            QMessageBox.information(None, "已复制", "消息内容已复制到剪贴板", QMessageBox.StandardButton.Ok)
+            QMessageBox.information(None, self.tr("Copied"),
+                                    self.tr("Message copied to clipboard"),
+                                    QMessageBox.StandardButton.Ok)
             print("✅ 消息已复制到剪贴板")
         else:
             print("⚠️ 没有可复制的内容")
@@ -287,7 +291,8 @@ class UserBottomActionBar(BottomActionBar):
         if parent_bubble and hasattr(parent_bubble, 'is_user') and parent_bubble.is_user:
             self.edit_clicked.emit()
         else:
-            QMessageBox.warning(None, "提示", "仅支持编辑用户自己的消息")
+            QMessageBox.warning(None, self.tr("Notice"),
+                                self.tr("Only your own messages can be edited"))
 
     def _on_retry(self):
         self.retry_clicked.emit()
@@ -301,9 +306,9 @@ class AssistantBottomActionBar(BottomActionBar):
         super().__init__(parent)
         self.setObjectName('assistant_bottom_action_bar')
         # 使用新的 ActionButton 类
-        self._copy_btn = self.add_button(":/svg/copy.svg","复制消息")
-        self._export_btn = self.add_button(":/svg/export.svg", "导出")
-        self._translate_btn = self.add_button(":/svg/translate.svg", "翻译")
+        self._copy_btn = self.add_button(":/svg/copy.svg", self.tr("Copy message"))
+        self._export_btn = self.add_button(":/svg/export.svg", self.tr("Export"))
+        self._translate_btn = self.add_button(":/svg/translate.svg", self.tr("Translate"))
 
         self.layout.addSpacing(6)
         self._model_label = QLabel(model_name)
@@ -335,7 +340,9 @@ class AssistantBottomActionBar(BottomActionBar):
         if text_to_copy.strip():
             clipboard: QClipboard = QApplication.clipboard()
             clipboard.setText(text_to_copy.strip(), QClipboard.Mode.Clipboard)
-            QMessageBox.information(None, "已复制", "消息内容已复制到剪贴板", QMessageBox.StandardButton.Ok)
+            QMessageBox.information(None, self.tr("Copied"),
+                                    self.tr("Message copied to clipboard"),
+                                    QMessageBox.StandardButton.Ok)
             print("✅ 消息已复制到剪贴板")
         else:
             print("⚠️ 没有可复制的内容")
@@ -611,7 +618,7 @@ class UserMessageBubble(MessageBubble):
         meta      = QHBoxLayout()
         meta.setContentsMargins(2, 0, 2, 0)
 
-        role_label = QLabel("User")
+        role_label = QLabel(self.tr("User"))
         role_label.setObjectName("bubble_role_label")
         time_label = QLabel(timestamp)
         time_label.setObjectName("bubble_time_label")
@@ -694,8 +701,8 @@ class UserMessageBubble(MessageBubble):
         layout = QHBoxLayout(edit_bar)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        btn_save = QPushButton("保存")
-        btn_cancel = QPushButton("取消")
+        btn_save = QPushButton(self.tr("Save"))
+        btn_cancel = QPushButton(self.tr("Cancel"))
         btn_save.setFixedHeight(32)
         btn_cancel.setFixedHeight(32)
 
@@ -894,9 +901,9 @@ class ModelStageIndicator(QWidget):
     TEXT_H = 18
 
     _STAGE_TEXTS = {
-        "checking": "检查模型文件…",
-        "download": "下载模型",
-        "loading":  "加载模型中…",
+        "checking": QT_TRANSLATE_NOOP("ModelStageIndicator", "Checking model files…"),
+        "download": QT_TRANSLATE_NOOP("ModelStageIndicator", "Downloading model"),
+        "loading":  QT_TRANSLATE_NOOP("ModelStageIndicator", "Loading model…"),
     }
 
     def __init__(self, parent=None):
@@ -913,7 +920,7 @@ class ModelStageIndicator(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
     def set_stage(self, stage: str, progress: float = 0.0, detail: str = ""):
-        label = self._STAGE_TEXTS.get(stage, stage or "")
+        label = self.tr(self._STAGE_TEXTS[stage]) if stage in self._STAGE_TEXTS else (stage or "")
         # 下载能拿到字节数，显示真实百分比；其余阶段无从估算，用流动条表示"在动"。
         self._determinate = stage == "download" and progress > 0
         self._progress = max(0.0, min(1.0, progress))
@@ -1088,6 +1095,7 @@ class AssistantMessageBubble(MessageBubble):
         self.model_name = model_name
         self._partial_paths = []
         self._placeholder = None
+        self._thinking = ""
         super().__init__("assistant", content, timestamp, message_id, parent)
         self.setObjectName("assistant_bubble")
         self._bubble_box.setObjectName("assistant_bubble_box")
@@ -1128,10 +1136,15 @@ class AssistantMessageBubble(MessageBubble):
         """从历史记录恢复静态内容（文本 + 图片/视频/音乐等附件），用于会话切换/重新加载。"""
         text = content.get("content") or ""
         attachments = content.get("attachments") or []
+        thinking = (content.get("extra") or {}).get("thinking") or ""
 
         self._content = text
         self._attachments = attachments
+        self._thinking = thinking
 
+        if thinking:
+            self.thinking_block.setVisible(True)
+            self.thinking_block.restore(thinking)
         if text:
             self._streaming_renderer.append_chunk(text)
             self._streaming_renderer.finish()
@@ -1144,7 +1157,7 @@ class AssistantMessageBubble(MessageBubble):
         meta      = QHBoxLayout()
         meta.setContentsMargins(50, 0, 2, 0)
 
-        role_label = QLabel("AI Assistant")
+        role_label = QLabel(self.tr("AI Assistant"))
         role_label.setObjectName("bubble_role_label")
         time_label = QLabel(timestamp)
         time_label.setObjectName("bubble_time_label")
@@ -1200,6 +1213,7 @@ class AssistantMessageBubble(MessageBubble):
             QDesktopServices.openUrl(QUrl.fromLocalFile(dir_path))
 
     def append_thinking(self, chunk: str):
+        self._thinking += chunk
         if not self.thinking_block.isVisible():
             self.thinking_block.setVisible(True)
         self.thinking_block.append_thinking(chunk)
@@ -1281,11 +1295,12 @@ class AssistantMessageBubble(MessageBubble):
         self.thinking_block.hide_think_area()
 
     def get_persisted_content(self):
-        """助手消息的最终内容是流式累积得到的，需要在保存时重新组装。"""
+        """助手消息的最终内容是流式累积得到的，需要在保存时重新组装。
+        中途停止时还没有最终附件列表，用已经提前展示出来的那几张，别让它们随重启丢掉。"""
         return {
             "content": self._content,
-            "attachments": self._attachments or [],
-            "extra": {},
+            "attachments": list(self._attachments or self._partial_paths),
+            "extra": {"thinking": self._thinking} if self._thinking else {},
         }
 
 

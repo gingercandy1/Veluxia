@@ -9,6 +9,7 @@ class WidgetFactory:
         FactoryType.ImageFrame: {},
         FactoryType.Animation: {},
         FactoryType.Speech: {},
+        FactoryType.Transcription: {},
     }
 
     @classmethod

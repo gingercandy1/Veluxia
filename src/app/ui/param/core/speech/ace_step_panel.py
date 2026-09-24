@@ -12,15 +12,15 @@ class AceStepMusicPanel(BaseParamPanel):
     def _build_widgets(self):
         # 时长（秒）
         self._duration = self._labeled_slider(5, 120, 10)
-        self._add_row("duration (sec)", self._duration)
+        self._add_row(self.tr("duration (sec)"), self._duration)
 
         # 批次大小
         self._batch_size = self._labeled_slider(1, 8, 4)
-        self._add_row("batch_size", self._batch_size)
+        self._add_row(self.tr("batch_size"), self._batch_size)
 
         # 随机种子
         self._seed = self._labeled_slider(0, 2147483647, 42)
-        self._add_row("seed", self._seed)
+        self._add_row(self.tr("seed"), self._seed)
 
     def get_params(self) -> dict:
         return {

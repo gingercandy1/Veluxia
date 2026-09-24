@@ -5,8 +5,10 @@ import httpx
 from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Callable
 
+from PySide6.QtCore import QCoreApplication
+
 from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, AnimationResponse, SpeechResponse, \
-    ModelInfoResponse, TranslateResponse, RefineResponse, SpriteSheetResponse
+    ModelInfoResponse, TranslateResponse, RefineResponse, SpriteSheetResponse, TranscriptionResponse
 
 _DEFAULT_LIMITS = httpx.Limits(
     max_connections=10,
@@ -61,11 +63,14 @@ class ApiClient:
             resp.raise_for_status()
             return response_cls.model_validate(resp.json())  # 直接反序列化
         except httpx.ConnectError:
-            return response_cls.from_error("無法連接後端，請確認服務是否啟動")
+            return response_cls.from_error(QCoreApplication.translate("ApiClient",
+                "Cannot connect to the backend. Please check that the service is running."))
         except httpx.ConnectTimeout:
-            return response_cls.from_error("連接超時")
+            return response_cls.from_error(
+                QCoreApplication.translate("ApiClient", "Connection timed out."))
         except httpx.ReadTimeout:
-            return response_cls.from_error("後端響應超時，任務可能仍在運行")
+            return response_cls.from_error(QCoreApplication.translate("ApiClient",
+                "The backend timed out; the task may still be running."))
         except httpx.HTTPStatusError as exc:
             try:
                 detail = exc.response.json().get("detail", str(exc))
@@ -89,7 +94,8 @@ class ApiClient:
             resp.raise_for_status()
             return response_cls.model_validate(resp.json())
         except httpx.ConnectError:
-            return response_cls.from_error("無法連接後端")
+            return response_cls.from_error(
+                QCoreApplication.translate("ApiClient", "Cannot connect to the backend."))
         except httpx.HTTPStatusError as exc:
             try:
                 detail = exc.response.json().get("detail", str(exc))
@@ -136,6 +142,11 @@ class ApiClient:
     def generate_speech(self, req, stop_event: Optional[threading.Event] = None):
         payload = req.to_api_payload()
         return self._submit_and_poll("/speech/generate", payload, SpeechResponse, stop_event=stop_event)
+
+    def transcribe(self, req, stop_event: Optional[threading.Event] = None):
+        payload = req.to_api_payload()
+        return self._submit_and_poll("/transcription/generate", payload, TranscriptionResponse,
+                                     stop_event=stop_event)
 
     def cancel_job(self, path_prefix: str, job_id: str) -> None:
         """通知后端取消一个已提交的任务；这是尽力而为，不等待/不关心结果——
@@ -187,7 +198,8 @@ class ApiClient:
             resp.raise_for_status()
             job_id = resp.json()["job_id"]
         except httpx.ConnectError:
-            return response_cls.from_error("無法連接後端，請確認服務是否啟動")
+            return response_cls.from_error(QCoreApplication.translate("ApiClient",
+                "Cannot connect to the backend. Please check that the service is running."))
         except Exception as exc:
             return response_cls.from_error(str(exc))
 
@@ -198,9 +210,11 @@ class ApiClient:
             self._interruptible_sleep(poll_interval, stop_event)
             if stop_event is not None and stop_event.is_set():
                 self.cancel_job(path_prefix, job_id)
-                return response_cls.from_error("已停止生成")
+                return response_cls.from_error(
+                    QCoreApplication.translate("ApiClient", "Generation stopped."))
             if time.monotonic() - start > max_total_wait_seconds:
-                return response_cls.from_error("生成任務等待超時，請檢查後端日誌")
+                return response_cls.from_error(QCoreApplication.translate("ApiClient",
+                    "Timed out waiting for the generation task. Please check the backend log."))
 
             try:
                 resp = self._session.get(
@@ -212,7 +226,8 @@ class ApiClient:
             except httpx.ConnectError:
                 connect_failures += 1
                 if connect_failures >= max_consecutive_connect_failures:
-                    return response_cls.from_error("與後端失去連接，無法確認生成結果")
+                    return response_cls.from_error(QCoreApplication.translate("ApiClient",
+                        "Lost connection to the backend; the generation result is unknown."))
                 continue
             except Exception:
                 # 读超时/临时解析失败等：后端大概率还活着，只是这次响应慢，继续等。
@@ -227,7 +242,9 @@ class ApiClient:
             if status == "done":
                 return response_cls.model_validate(status_json.get("result") or {})
             if status == "error":
-                return response_cls.from_error(status_json.get("error") or "生成失敗")
+                return response_cls.from_error(
+                    status_json.get("error")
+                    or QCoreApplication.translate("ApiClient", "Generation failed."))
             # pending / running：继续等待
 
     def stream_text(self, req, stop_event: Optional[threading.Event] = None) -> Generator[Dict[str, Any], None, None]:
@@ -265,12 +282,15 @@ class ApiClient:
             except (httpx.ReadTimeout, httpx.RemoteProtocolError) as exc:
                 attempt += 1
                 if attempt > max_retries:
-                    yield {"type": "error", "text": f"連接中斷（已重試{max_retries}次）: {exc}"}
+                    yield {"type": "error", "text": QCoreApplication.translate("ApiClient",
+                        "Connection lost (retried {0} times): {1}").format(max_retries, exc)}
                 else:
-                    yield {"type": "error", "text": f"連接中斷，重試第{attempt}次..."}
+                    yield {"type": "error", "text": QCoreApplication.translate("ApiClient",
+                        "Connection lost, retry {0}...").format(attempt)}
 
             except httpx.ConnectError as exc:
-                yield {"type": "error", "text": f"無法連接後端: {exc}"}
+                yield {"type": "error", "text": QCoreApplication.translate("ApiClient",
+                    "Cannot connect to the backend: {0}").format(exc)}
                 return
 
             except Exception as exc:
@@ -402,25 +422,29 @@ class ApiGuardClient:
 
             if result.get("status") == "already_running":
                 if on_progress:
-                    on_progress("⚠️ 安装任务已在运行中...\n")
+                    on_progress("⚠️ " + QCoreApplication.translate(
+                        "ApiClient", "An install task is already running...") + "\n")
                 return result
 
             if on_progress:
-                on_progress(f"✅ 已接受安装请求: {result.get('message')}\n")
+                on_progress("✅ " + QCoreApplication.translate(
+                    "ApiClient", "Install request accepted: {0}").format(result.get("message")) + "\n")
 
             # 2. check installation detail information
             self._poll_install_status(on_progress)
             return result
 
         except httpx.ConnectError:
-            error_msg = "无法连接后端，请确认服务是否启动"
+            error_msg = QCoreApplication.translate("ApiClient",
+                "Cannot connect to the backend. Please check that the service is running.")
             if on_progress:
                 on_progress(f"❌ {error_msg}\n")
             raise Exception(error_msg)
         except Exception as e:
             error_msg = str(e)
             if on_progress:
-                on_progress(f"❌ 请求异常: {error_msg}\n")
+                on_progress("❌ " + QCoreApplication.translate(
+                    "ApiClient", "Request failed: {0}").format(error_msg) + "\n")
             raise
 
     def _poll_install_status(self, on_progress: Optional[Callable[[str], None]] = None):
@@ -460,4 +484,5 @@ class ApiGuardClient:
 
         else:
             if on_progress:
-                on_progress("⚠️ 安装监控超时（超过30分钟）\n")
+                on_progress("⚠️ " + QCoreApplication.translate("ApiClient",
+                    "Install monitoring timed out (over 30 minutes).") + "\n")

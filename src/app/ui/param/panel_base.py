@@ -161,7 +161,10 @@ class BaseParamPanel(BaseWidget):
             elif isinstance(widget, QCheckBox):
                 widget.setChecked(bool(value))
             elif isinstance(widget, QComboBox):
-                index = widget.findText(str(value))
+                # 显示文字会随界面语言变化，带 itemData 的选项要按存下来的值匹配
+                index = widget.findData(value)
+                if index < 0:
+                    index = widget.findText(str(value))
                 if index < 0:
                     index = next(
                         (i for i in range(widget.count())

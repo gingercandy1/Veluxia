@@ -34,7 +34,7 @@ class _InstallWorker(QThread):
                 extra=self._backend,
                 on_progress=lambda line: self.signals.progress.emit(line),
             )
-            self.signals.done.emit(True, "安装完成")
+            self.signals.done.emit(True, self.tr("Installation complete"))
         except Exception as e:
             self.signals.done.emit(False, str(e))
 
@@ -56,22 +56,22 @@ class GpuPage(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # 标题
-        title = QLabel(self.tr("Gpu Setting"))
+        title = QLabel(self.tr("GPU Settings"))
         title.setObjectName("page_title")
         layout.addWidget(title)
 
         # 当前状态
-        status_group = QGroupBox("当前状态")
+        status_group = QGroupBox(self.tr("Current status"))
         status_group.setObjectName("setting_group")
         status_layout = QVBoxLayout(status_group)
 
-        self._status_label = QLabel("检测中...")
+        self._status_label = QLabel(self.tr("Detecting..."))
         self._status_label.setObjectName("gpu_status_label")
         self._status_label.setWordWrap(True)
         status_layout.addWidget(self._status_label)
 
-        self._refresh_btn = QPushButton("刷新状态")
-        self._refresh_btn.setFixedWidth(90)
+        self._refresh_btn = QPushButton(self.tr("Refresh"))
+        self._refresh_btn.setMinimumWidth(90)
         self._refresh_btn.clicked.connect(self._refresh_status)
         status_layout.addWidget(
             self._refresh_btn,
@@ -80,13 +80,13 @@ class GpuPage(QWidget):
         layout.addWidget(status_group)
 
         # 后端选择
-        backend_group = QGroupBox("计算后端")
+        backend_group = QGroupBox(self.tr("Compute backend"))
         backend_group.setObjectName("setting_group")
         backend_layout = QVBoxLayout(backend_group)
 
         self._btn_group = QButtonGroup(self)
-        self._cpu_radio  = QRadioButton("CPU（兼容所有设备，速度较慢）")
-        self._cuda_radio = QRadioButton("CUDA（需要 NVIDIA GPU，速度快）")
+        self._cpu_radio  = QRadioButton(self.tr("CPU (works on any device, slower)"))
+        self._cuda_radio = QRadioButton(self.tr("CUDA (requires an NVIDIA GPU, faster)"))
         self._btn_group.addButton(self._cpu_radio,  0)
         self._btn_group.addButton(self._cuda_radio, 1)
         backend_layout.addWidget(self._cpu_radio)
@@ -94,8 +94,8 @@ class GpuPage(QWidget):
 
         # 安装按钮
         btn_row = QHBoxLayout()
-        self._install_btn = QPushButton("应用并安装")
-        self._install_btn.setFixedWidth(110)
+        self._install_btn = QPushButton(self.tr("Apply and install"))
+        self._install_btn.setMinimumWidth(110)
         self._install_btn.clicked.connect(self._on_install)
         btn_row.addWidget(self._install_btn)
         btn_row.addStretch()
@@ -104,7 +104,7 @@ class GpuPage(QWidget):
         layout.addWidget(backend_group)
 
         # 安装日志
-        log_group = QGroupBox("安装日志")
+        log_group = QGroupBox(self.tr("Install log"))
         log_group.setObjectName("setting_group")
         log_layout = QVBoxLayout(log_group)
 
@@ -126,27 +126,24 @@ class GpuPage(QWidget):
             if info.get("cuda_available"):
                 gpus = info.get("gpus", [{}])[-1]
                 print(gpus)
-                gpu_name = gpus.get("name", "未知")
+                gpu_name = gpus.get("name", self.tr("Unknown"))
                 gpu_size = gpus.get('total_memory_gb', '?')
-                text = (
-                    f"后端：CUDA  ｜  "
-                    f"GPU：{gpu_name}  ｜  "
-                    f"显存：{gpu_size} GB"
-                )
+                text = self.tr("Backend: CUDA  |  GPU: {0}  |  VRAM: {1} GB").format(
+                    gpu_name, gpu_size)
                 self._status_label.setStyleSheet("color: #4ec994;")
             else:
-                text = "后端：CPU（未检测到 NVIDIA GPU 或 CUDA 未安装）"
+                text = self.tr("Backend: CPU (no NVIDIA GPU detected, or CUDA is not installed)")
                 self._status_label.setStyleSheet("color: #e5c07b;")
             self._status_label.setText(text)
         except Exception as e:
-            self._status_label.setText(f"状态获取失败: {e}")
+            self._status_label.setText(self.tr("Failed to get status: {0}").format(e))
             self._status_label.setStyleSheet("color: #e06c75;")
 
     def _on_install(self):
         backend = "cuda" if self._cuda_radio.isChecked() else "cpu"
         self._install_log.clear()
         self._install_btn.setEnabled(False)
-        self._append_log(f"开始安装 {backend.upper()} 后端...")
+        self._append_log(self.tr("Installing the {0} backend...").format(backend.upper()))
 
         try:
             self._worker = _InstallWorker(backend, ApiGuardClient.instance())
@@ -154,7 +151,7 @@ class GpuPage(QWidget):
             self._worker.signals.done.connect(self._on_install_done)
             self._worker.start()
         except Exception as e:
-            self._append_log(f"错误: {e}")
+            self._append_log(self.tr("Error: {0}").format(e))
             self._install_btn.setEnabled(True)
 
     def _append_log(self, line: str):

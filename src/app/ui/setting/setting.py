@@ -1,10 +1,11 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QT_TRANSLATE_NOOP
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout,
     QStackedWidget, QFrame, QMessageBox,
     QLabel, QPushButton, QSizePolicy
 )
 
+from src.app.ui.setting.page.general_page import GeneralPage
 from src.app.ui.setting.page.gpu_page import GpuPage
 from src.app.ui.setting.page.model_page import ModelPage
 from src.app.ui.setting.page.translation_page import TranslationPage
@@ -32,11 +33,12 @@ class _NavBar(QWidget):
     page_changed = Signal(int)
 
     NAV_ITEMS = [
-        ("Graphics Card", ":/svg/gpu.svg",          0),
-        ("Model",         ":/svg/model.svg",        1),
-        ("Translation",   ":/svg/translate.svg",    2),
-        ("Journal",       ":/svg/log.svg",          3),
-        ("About",         ":/svg/about.svg",        4),
+        (QT_TRANSLATE_NOOP("_NavBar", "General"),       ":/svg/general.svg",      0),
+        (QT_TRANSLATE_NOOP("_NavBar", "Graphics Card"), ":/svg/gpu.svg",          1),
+        (QT_TRANSLATE_NOOP("_NavBar", "Model"),         ":/svg/model.svg",        2),
+        (QT_TRANSLATE_NOOP("_NavBar", "Translation"),   ":/svg/translate.svg",    3),
+        (QT_TRANSLATE_NOOP("_NavBar", "Journal"),       ":/svg/log.svg",          4),
+        (QT_TRANSLATE_NOOP("_NavBar", "About"),         ":/svg/about.svg",        5),
     ]
 
     def __init__(self, parent=None):
@@ -51,7 +53,7 @@ class _NavBar(QWidget):
         layout.setSpacing(4)
 
         for text, svg, idx in self.NAV_ITEMS:
-            btn = _NavItem(text, svg, idx)
+            btn = _NavItem(self.tr(text), svg, idx)
             btn.clicked.connect(lambda _, b=btn: self._select(b))
             self._buttons.append(btn)
             layout.addWidget(btn)
@@ -95,7 +97,8 @@ class _BottomBar(QWidget):
 
         self._save_btn = QPushButton(self.tr("Save"))
         self._save_btn.setObjectName("save_btn")
-        self._save_btn.setFixedSize(80, 34)
+        self._save_btn.setMinimumWidth(80)
+        self._save_btn.setFixedHeight(34)
         self._save_btn.clicked.connect(self.save_clicked)
         layout.addWidget(self._save_btn)
 
@@ -164,6 +167,7 @@ class SettingPage(QWidget):
 
     def _register_pages(self):
         """按导航顺序注册子页面"""
+        self._general_page     = GeneralPage()
         self._gpu_page         = GpuPage()
         self._model_page       = ModelPage()
         self._translation_page = TranslationPage()
@@ -171,6 +175,7 @@ class SettingPage(QWidget):
         self._about_page       = AboutPage()
 
         for page in [
+            self._general_page,
             self._gpu_page,
             self._model_page,
             self._translation_page,
@@ -207,8 +212,8 @@ class SettingPage(QWidget):
         if self._config.is_dirty:
             reply = QMessageBox.question(
                 self,
-                "未保存的更改",
-                "有设置尚未保存，是否保存后再退出？",
+                self.tr("Unsaved changes"),
+                self.tr("Some settings have not been saved. Save before leaving?"),
                 QMessageBox.StandardButton.Save |
                 QMessageBox.StandardButton.Discard |
                 QMessageBox.StandardButton.Cancel,

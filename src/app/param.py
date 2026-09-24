@@ -39,12 +39,20 @@ class GenerationRequest:
         return f"output_{type_text}/{self.model_name}"
 
     _IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
+    _AUDIO_SUFFIXES = {".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aac", ".opus", ".wma"}
 
     def _reference_image(self) -> dict:
         """后端只认 extra.reference_image；不转换的话，UI 上传的图对图生图 / 去背景 / 超分都不生效。"""
         for path in self.attachments:
             if Path(path).suffix.lower() in self._IMAGE_SUFFIXES:
                 return {"reference_image": path}
+        return {}
+
+    def _audio_input(self) -> dict:
+        """语音识别只认 extra.audio_path；前后端同机，直接传本地路径。"""
+        for path in self.attachments:
+            if Path(path).suffix.lower() in self._AUDIO_SUFFIXES:
+                return {"audio_path": path}
         return {}
 
     def to_api_payload(self) -> dict:
@@ -58,6 +66,7 @@ class GenerationRequest:
                 "original":   self.prompt,
                 "output_dir": self.auto_output_dir(),
                 **self._reference_image(),
+                **self._audio_input(),
                 **self.model_params,        # 展开模型细节参数
             },
             "attachments": self.attachments,

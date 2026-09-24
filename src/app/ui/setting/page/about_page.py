@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QT_TRANSLATE_NOOP
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QFrame
@@ -7,7 +7,9 @@ from PySide6.QtWidgets import (
 APP_VERSION = "1.0.0"
 APP_NAME    = "Veluxia"
 COPYRIGHT   = "© 2025 Veluxia Team. All rights reserved."
-DESCRIPTION = "AI 驱动的多模态创作工具，支持文本、图像、动画、语音生成。"
+DESCRIPTION = QT_TRANSLATE_NOOP(
+    "AboutPage",
+    "An AI-powered multimodal creation tool for generating text, images, animation and speech.")
 
 class AboutPage(QWidget):
     def __init__(self, parent=None):
@@ -36,7 +38,7 @@ class AboutPage(QWidget):
         layout.addWidget(name_label)
 
         # 版本号
-        version_label = QLabel(f"版本  {APP_VERSION}")
+        version_label = QLabel(self.tr("Version") + f"  {APP_VERSION}")
         version_label.setObjectName("about_version")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(version_label)
@@ -48,7 +50,7 @@ class AboutPage(QWidget):
         layout.addWidget(sep)
 
         # 简介
-        desc_label = QLabel(DESCRIPTION)
+        desc_label = QLabel(self.tr(DESCRIPTION))
         desc_label.setObjectName("about_description")
         desc_label.setWordWrap(True)
         desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)

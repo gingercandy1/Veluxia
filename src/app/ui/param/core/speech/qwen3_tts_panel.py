@@ -19,7 +19,7 @@ class _CustomVoiceWidget(QWidget):
         self._voice = QComboBox()
         self._voice.addItems(self.PRESET_VOICES)
         self._voice.setCurrentText("Vivian")
-        form.addRow(QLabel("voice"), self._voice)
+        form.addRow(QLabel(self.tr("voice")), self._voice)
 
     def get_params(self) -> dict:
         return {"voice": self._voice.currentText()}
@@ -35,9 +35,10 @@ class _DesignVoiceWidget(QWidget):
         form.setContentsMargins(0, 4, 0, 0)
 
         self._voice_prompt = QTextEdit()
-        self._voice_prompt.setPlaceholderText("Example: The voice of a passionate and energetic 20-year-old girl.")
+        self._voice_prompt.setPlaceholderText(
+            self.tr("Example: The voice of a passionate and energetic 20-year-old girl."))
         self._voice_prompt.setFixedHeight(60)
-        form.addRow(QLabel("voice_prompt"), self._voice_prompt)
+        form.addRow(QLabel(self.tr("voice_prompt")), self._voice_prompt)
 
     def get_params(self) -> dict:
         return {"voice_prompt": self._voice_prompt.toPlainText().strip()}
@@ -58,23 +59,25 @@ class _CloneVoiceWidget(QWidget):
         h.setContentsMargins(0, 0, 0, 0)
         h.setSpacing(4)
         self._audio_path = QLineEdit()
-        self._audio_path.setPlaceholderText("reference_audio_path")
+        self._audio_path.setPlaceholderText(self.tr("reference_audio_path"))
         browse = QPushButton("...")
         browse.setFixedWidth(28)
         browse.clicked.connect(self._browse)
         h.addWidget(self._audio_path)
         h.addWidget(browse)
-        form.addRow(QLabel("参考音频"), row)
+        form.addRow(QLabel(self.tr("reference_audio")), row)
 
         # 参考文本
         self._ref_text = QTextEdit()
-        self._ref_text.setPlaceholderText("Refer to the text content corresponding to the audio.")
+        self._ref_text.setPlaceholderText(
+            self.tr("Refer to the text content corresponding to the audio."))
         self._ref_text.setFixedHeight(52)
-        form.addRow(QLabel("reference_text"), self._ref_text)
+        form.addRow(QLabel(self.tr("reference_text")), self._ref_text)
 
     def _browse(self):
         from PySide6.QtWidgets import QFileDialog
-        path, _ = QFileDialog.getOpenFileName(self, "choose audio", "", "audio file (*.wav *.mp3 *.flac)")
+        path, _ = QFileDialog.getOpenFileName(
+            self, self.tr("choose audio"), "", self.tr("audio file") + " (*.wav *.mp3 *.flac)")
         if path:
             self._audio_path.setText(path)
 
@@ -100,12 +103,12 @@ class Qwen3TTSPanel(BaseParamPanel):
         # 合成模式
         self._mode = QComboBox()
         self._mode.addItems(self._MODES)
-        self._add_row("mode", self._mode)
+        self._add_row(self.tr("mode"), self._mode)
 
         # 语言
         self._language = QComboBox()
         self._language.addItems(self._LANGUAGES)
-        self._add_row("language", self._language)
+        self._add_row(self.tr("language"), self._language)
 
         # 各模式参数区（stack 切换）
         self._stack = QStackedWidget()
