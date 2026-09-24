@@ -23,31 +23,32 @@ class LTX2VideoPanel(BaseParamPanel):
         self._resolution.addItems(self._RESOLUTIONS)
         self._resolution.setCurrentText("low (512×320)")
         self._resolution.setToolTip(
-            "LTX-2.3/2.5 显存占用较大：8GB 显卡建议 low，12GB 可尝试 medium，high 建议 16GB+。"
+            self.tr("LTX-2.3/2.5 needs a lot of VRAM: use low on 8GB cards, try medium on 12GB,"
+                    " and high needs 16GB+.")
         )
-        self._add_row("resolution", self._resolution)
+        self._add_row(self.tr("resolution"), self._resolution)
 
         # 帧数（从合法列表里选，帧数越多显存/耗时越高）
         self._num_frames = QComboBox()
         self._num_frames.addItems([str(f) for f in self._VALID_FRAMES])
         self._num_frames.setCurrentText("81")
-        self._add_row("num_frames", self._num_frames)
+        self._add_row(self.tr("num_frames"), self._num_frames)
 
         # 帧率
         self._frame_rate = self._labeled_slider(8, 30, 24, decimals=0, step=1)
-        self._add_row("frame_rate", self._frame_rate)
+        self._add_row(self.tr("frame_rate"), self._frame_rate)
 
         # 推理步数
         self._steps = self._labeled_slider(1, 50, 30)
-        self._add_row("num_inference_steps", self._steps)
+        self._add_row(self.tr("num_inference_steps"), self._steps)
 
         # CFG（推荐 3.0）
         self._guidance = self._labeled_slider(0.5, 10.0, 3.0, decimals=1, step=0.1)
-        self._add_row("guidance_scale", self._guidance)
+        self._add_row(self.tr("guidance_scale"), self._guidance)
 
         # 随机种子
         self._seed = self._labeled_slider(0, 2147483647, 42)
-        self._add_row("seed", self._seed)
+        self._add_row(self.tr("seed"), self._seed)
 
     def get_params(self) -> dict:
         return {

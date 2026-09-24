@@ -262,7 +262,8 @@ class ExpandButton(QAbstractButton):
 
         p.setPen(self._fg_color)
         p.setFont(self.font())
-        text = ("收起  ▲" if self._expanded else "查看更多  ▼")
+        text = (self.tr("Collapse") + "  ▲" if self._expanded
+                else self.tr("Show more") + "  ▼")
         fm = p.fontMetrics()
         x = (w - fm.horizontalAdvance(text)) // 2
         y = (h + fm.ascent() - fm.descent()) // 2

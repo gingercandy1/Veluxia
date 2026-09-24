@@ -143,7 +143,7 @@ class ChatWidget(QScrollArea):
 
         # 一键滚到底部：只在离底部有一定距离时才出现
         self._scroll_bottom_btn = ActionButton(
-            svg_str=":/svg/down.svg", tooltip="滚动到底部",
+            svg_str=":/svg/down.svg", tooltip=self.tr("Scroll to bottom"),
             width=38, height=38, icon_size_width=16, icon_size_height=16,
             is_circle=True, parent=self,
         )
@@ -381,13 +381,14 @@ class ChatWidget(QScrollArea):
         try:
             for msg in messages:
                 model_name = msg.get("model_name", "") or ""
+                model_type = msg.get("model_type") or "text"
                 try:
                     content = dict(msg["content"])
                     self.add_message(msg["role"], content, msg["time"], msg["message_id"],
-                                      model_name=model_name)
+                                      model_type=model_type, model_name=model_name)
                 except Exception as e:
                     self.add_message(msg["role"], msg["content"], msg["time"], msg["message_id"],
-                                      model_name=model_name)
+                                      model_type=model_type, model_name=model_name)
         finally:
             self._container.setUpdatesEnabled(True)
 

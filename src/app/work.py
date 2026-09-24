@@ -12,7 +12,9 @@ from PySide6.QtCore import QThread, Signal
 from .param import GenerationRequest
 from src.shared.enum_type import FactoryType
 from src.app.client import ApiClient, ApiGuardClient
-from src.shared.schemas import BaseResponse, ImageResponse, AnimationResponse, SpeechResponse
+from src.shared.schemas import (
+    BaseResponse, ImageResponse, AnimationResponse, SpeechResponse, TranscriptionResponse,
+)
 from src.shared.settings import PROJECT_ROOT
 
 # 前端本地媒体缓存：把后端 /media/... URL 下载到这里再展示，
@@ -54,8 +56,10 @@ class ApiWorker(QThread):
             if self._stop_event.is_set():
                 self.cancelled.emit()
                 return
-            self._prepare_prompt()
             model_type = self._model_type
+            # 转写模式下文本框只是备注，不用翻译/优化
+            if model_type != FactoryType.Transcription:
+                self._prepare_prompt()
             if model_type == FactoryType.Image:
                 result = self._client.generate_image(
                     self._request, stop_event=self._stop_event, on_partial=self._on_partial)
@@ -63,6 +67,8 @@ class ApiWorker(QThread):
                 result = self._client.generate_animation(self._request, stop_event=self._stop_event)
             elif model_type == FactoryType.Speech:
                 result = self._client.generate_speech(self._request, stop_event=self._stop_event)
+            elif model_type == FactoryType.Transcription:
+                result = self._client.transcribe(self._request, stop_event=self._stop_event)
             elif model_type == FactoryType.Text:
                 result = self._run_stream()
             else:
@@ -117,14 +123,14 @@ class ApiWorker(QThread):
         """精灵图导出失败不应让已经生成好的动画作废，错误写进响应交给界面提示。
         帧文件此时已下载到本地缓存，后端与前端同机，可直接按本地路径导出。"""
         if not result.frame_paths:
-            result.error = "没有可导出的序列帧"
+            result.error = self.tr("No frames to export")
             return
         try:
             export = self._client.export_sprites(
                 result.frame_paths, name="anim",
                 fps=int(self._request.model_params.get("frame_rate", 12)), trim=True)
         except Exception as e:
-            result.error = f"精灵图导出失败：{e}"
+            result.error = self.tr("Sprite sheet export failed: {0}").format(e)
             return
         result.export_paths = [p for p in (self._download(export.sheet_path), self._download(export.atlas_path)) if p]
 
@@ -151,6 +157,8 @@ class ApiWorker(QThread):
             result.frame_paths = [p for p in (self._download(p) for p in result.frame_paths) if p]
         elif isinstance(result, SpeechResponse):
             result.audio_path = self._download(result.audio_path)
+        elif isinstance(result, TranscriptionResponse):
+            result.srt_path = self._download(result.srt_path)
         return result
 
     def _run_stream(self):
@@ -165,8 +173,8 @@ class ApiWorker(QThread):
             elif t == "cancelled":
                 return BaseResponse(ok=False)
             elif t == "error":
-                self.error.emit(event["text"])
-                return BaseResponse(ok=False)
+                # 交给 run() 统一经 _emit_result 发 error；这里再发一次会让气泡多出一行 unknown error
+                return BaseResponse.from_error(event["text"])
             elif t == "done":
                 self.stream_done.emit(True)
                 break
@@ -330,7 +338,7 @@ class BackendStartupWorker(QThread):
                 print("⚠️ Backend 強制Kill")
 
     def run(self):
-        self.log.emit("⏳ 正在啟動後端...")
+        self.log.emit("⏳ " + self.tr("Starting backend..."))
         self._proc = ApiProcess.start_backend(self._port)
         main_result = ApiProcess.wait_for_backend()
         if not main_result:
@@ -343,7 +351,7 @@ class BackendStartupWorker(QThread):
             self.timeout.emit()
             return
 
-        self.log.emit("⏳ 正在加载模型列表...")
+        self.log.emit("⏳ " + self.tr("Loading model list..."))
         ApiProcess.wait_for_models()
 
         self.ready.emit()

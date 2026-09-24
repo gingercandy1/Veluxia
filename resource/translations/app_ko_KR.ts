@@ -1,0 +1,1272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS>
+<TS version="2.1" language="ko_KR">
+<context>
+    <name>AboutPage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/about_page.py" line="+10"/>
+        <source>An AI-powered multimodal creation tool for generating text, images, animation and speech.</source>
+        <translation>텍스트, 이미지, 애니메이션, 음성을 생성하는 AI 기반 멀티모달 제작 도구입니다.</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Version</source>
+        <translation>버전</translation>
+    </message>
+</context>
+<context>
+    <name>AceStepMusicPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/speech/ace_step_panel.py" line="+15"/>
+        <source>duration (sec)</source>
+        <translation>길이(초)</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>batch_size</source>
+        <translation>배치 크기</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>seed</source>
+        <translation>시드</translation>
+    </message>
+</context>
+<context>
+    <name>ApiClient</name>
+    <message>
+        <location filename="../../src/app/client.py" line="+66"/>
+        <location line="+130"/>
+        <location line="+237"/>
+        <source>Cannot connect to the backend. Please check that the service is running.</source>
+        <translation>백엔드에 연결할 수 없습니다. 서비스가 실행 중인지 확인하세요.</translation>
+    </message>
+    <message>
+        <location line="-363"/>
+        <source>Connection timed out.</source>
+        <translation>연결 시간이 초과되었습니다.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>The backend timed out; the task may still be running.</source>
+        <translation>백엔드 응답 시간이 초과되었습니다. 작업이 아직 실행 중일 수 있습니다.</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>Cannot connect to the backend.</source>
+        <translation>백엔드에 연결할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+111"/>
+        <source>Generation stopped.</source>
+        <translation>생성을 중지했습니다.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Timed out waiting for the generation task. Please check the backend log.</source>
+        <translation>생성 작업 대기 시간이 초과되었습니다. 백엔드 로그를 확인하세요.</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Lost connection to the backend; the generation result is unknown.</source>
+        <translation>백엔드와의 연결이 끊겨 생성 결과를 확인할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Generation failed.</source>
+        <translation>생성에 실패했습니다.</translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <source>Connection lost (retried {0} times): {1}</source>
+        <translation>연결이 끊어졌습니다({0}회 재시도): {1}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Connection lost, retry {0}...</source>
+        <translation>연결이 끊어졌습니다. {0}번째 재시도 중…</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Cannot connect to the backend: {0}</source>
+        <translation>백엔드에 연결할 수 없습니다: {0}</translation>
+    </message>
+    <message>
+        <location line="+133"/>
+        <source>An install task is already running...</source>
+        <translation>설치 작업이 이미 실행 중입니다…</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Install request accepted: {0}</source>
+        <translation>설치 요청이 접수되었습니다: {0}</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Request failed: {0}</source>
+        <translation>요청 실패: {0}</translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <source>Install monitoring timed out (over 30 minutes).</source>
+        <translation>설치 모니터링 시간이 초과되었습니다(30분 초과).</translation>
+    </message>
+</context>
+<context>
+    <name>ApiWorker</name>
+    <message>
+        <location filename="../../src/app/work.py" line="+120"/>
+        <source>No frames to export</source>
+        <translation>내보낼 프레임이 없습니다</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Sprite sheet export failed: {0}</source>
+        <translation>스프라이트 시트 내보내기 실패: {0}</translation>
+    </message>
+</context>
+<context>
+    <name>AssistantBottomActionBar</name>
+    <message>
+        <location filename="../../src/app/ui/message/message_bubble.py" line="+309"/>
+        <source>Copy message</source>
+        <translation>메시지 복사</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Export</source>
+        <translation>내보내기</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Translate</source>
+        <translation>번역</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>Copied</source>
+        <translation>복사됨</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Message copied to clipboard</source>
+        <translation>메시지를 클립보드에 복사했습니다</translation>
+    </message>
+</context>
+<context>
+    <name>AssistantMessageBubble</name>
+    <message>
+        <location line="+810"/>
+        <source>AI Assistant</source>
+        <translation>AI 어시스턴트</translation>
+    </message>
+</context>
+<context>
+    <name>AttachmentChip</name>
+    <message>
+        <location filename="../../src/app/ui/input/input_bar.py" line="+286"/>
+        <source>remove attachment</source>
+        <translation>첨부 파일 제거</translation>
+    </message>
+</context>
+<context>
+    <name>AudioWidget</name>
+    <message>
+        <location filename="../../src/app/ui/message/message_widgets.py" line="+369"/>
+        <source>Playback error</source>
+        <translation>재생 오류</translation>
+    </message>
+</context>
+<context>
+    <name>BackendStartupWorker</name>
+    <message>
+        <location filename="../../src/app/work.py" line="+206"/>
+        <source>Starting backend...</source>
+        <translation>백엔드를 시작하는 중…</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Loading model list...</source>
+        <translation>모델 목록을 불러오는 중…</translation>
+    </message>
+</context>
+<context>
+    <name>ChatWidget</name>
+    <message>
+        <location filename="../../src/app/ui/chat/chat_widget.py" line="+146"/>
+        <source>Scroll to bottom</source>
+        <translation>맨 아래로 스크롤</translation>
+    </message>
+</context>
+<context>
+    <name>CodeBlockWidget</name>
+    <message>
+        <location filename="../../src/app/ui/message/text/code_block_widget.py" line="+43"/>
+        <source>Copy code</source>
+        <translation>코드 복사</translation>
+    </message>
+</context>
+<context>
+    <name>ExpandButton</name>
+    <message>
+        <location filename="../../src/app/ui/base/action_button.py" line="+265"/>
+        <source>Collapse</source>
+        <translation>접기</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show more</source>
+        <translation>더 보기</translation>
+    </message>
+</context>
+<context>
+    <name>FileWidget</name>
+    <message>
+        <location filename="../../src/app/ui/message/message_widgets.py" line="+67"/>
+        <source>Open</source>
+        <translation>열기</translation>
+    </message>
+</context>
+<context>
+    <name>FilmInterpolationPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image_frame/film_interpolation_panel.py" line="+19"/>
+        <source>backend</source>
+        <translation>백엔드</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>times_to_interpolate</source>
+        <translation>보간 횟수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>width</source>
+        <translation>너비</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>height</source>
+        <translation>높이</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>fps</source>
+        <translation>FPS</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>RIFE Scale</source>
+        <translation>RIFE 스케일</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>export MP4</source>
+        <translation>MP4 내보내기</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>export_video</source>
+        <translation>동영상 내보내기</translation>
+    </message>
+</context>
+<context>
+    <name>FluxSchnellPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image/flux_schnell_panel.py" line="+18"/>
+        <source>number</source>
+        <translation>개수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>width</source>
+        <translation>너비</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>height</source>
+        <translation>높이</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>num_inference_steps</source>
+        <translation>추론 단계 수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>guidance_scale</source>
+        <translation>가이던스 스케일</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>preprocess</source>
+        <translation>전처리</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>seed</source>
+        <translation>시드</translation>
+    </message>
+</context>
+<context>
+    <name>GeneralPage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/general_page.py" line="+25"/>
+        <source>General Settings</source>
+        <translation>일반 설정</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Interface</source>
+        <translation>인터페이스</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Language:</source>
+        <translation>언어:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The new language takes effect after restarting the app.</source>
+        <translation>언어 변경은 앱을 다시 시작한 후 적용됩니다.</translation>
+    </message>
+</context>
+<context>
+    <name>GenerationPage</name>
+    <message>
+        <location filename="../../src/app/ui/gen_page.py" line="+462"/>
+        <source>Clear</source>
+        <translation>지우기</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Cancel</source>
+        <translation>취소</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Delete</source>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>v1.0.1 © 2026 All rights reserved.</source>
+        <translation>v1.0.1 © 2026 All rights reserved.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Model:</source>
+        <translation>모델:</translation>
+    </message>
+    <message numerus="yes">
+        <location line="+148"/>
+        <source>%n selected</source>
+        <translation>
+            <numerusform>%n개 선택됨</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Delete messages</source>
+        <translation>메시지 삭제</translation>
+    </message>
+    <message numerus="yes">
+        <location line="+1"/>
+        <source>Delete the %n selected message(s)? This cannot be undone.</source>
+        <translation>
+            <numerusform>선택한 메시지 %n개를 삭제할까요? 이 작업은 되돌릴 수 없습니다.</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>GpuPage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+59"/>
+        <source>GPU Settings</source>
+        <translation>GPU 설정</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Current status</source>
+        <translation>현재 상태</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Detecting...</source>
+        <translation>감지 중…</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Refresh</source>
+        <translation>새로 고침</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Compute backend</source>
+        <translation>연산 백엔드</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>CPU (works on any device, slower)</source>
+        <translation>CPU(모든 기기 호환, 느림)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>CUDA (requires an NVIDIA GPU, faster)</source>
+        <translation>CUDA(NVIDIA GPU 필요, 빠름)</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Apply and install</source>
+        <translation>적용 및 설치</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Install log</source>
+        <translation>설치 로그</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Unknown</source>
+        <translation>알 수 없음</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Backend: CUDA  |  GPU: {0}  |  VRAM: {1} GB</source>
+        <translation>백엔드: CUDA  |  GPU: {0}  |  VRAM: {1} GB</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Backend: CPU (no NVIDIA GPU detected, or CUDA is not installed)</source>
+        <translation>백엔드: CPU(NVIDIA GPU를 찾지 못했거나 CUDA가 설치되지 않음)</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Failed to get status: {0}</source>
+        <translation>상태를 가져오지 못했습니다: {0}</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Installing the {0} backend...</source>
+        <translation>{0} 백엔드를 설치하는 중…</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Error: {0}</source>
+        <translation>오류: {0}</translation>
+    </message>
+</context>
+<context>
+    <name>HistoryDelegate</name>
+    <message>
+        <location filename="../../src/app/ui/gen_page.py" line="-491"/>
+        <source>Delete</source>
+        <translation>삭제</translation>
+    </message>
+</context>
+<context>
+    <name>HistoryManager</name>
+    <message>
+        <location filename="../../src/app/ui/chat/chat_session_manager.py" line="+80"/>
+        <source>Session {0}</source>
+        <translation>세션 {0}</translation>
+    </message>
+</context>
+<context>
+    <name>ImagePreviewOverlay</name>
+    <message>
+        <location filename="../../src/app/ui/message/image_preview.py" line="+52"/>
+        <source>Failed to load image</source>
+        <translation>이미지를 불러오지 못했습니다</translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <source>Copy image</source>
+        <translation>이미지 복사</translation>
+    </message>
+</context>
+<context>
+    <name>ImageWidget</name>
+    <message>
+        <location filename="../../src/app/ui/message/message_widgets.py" line="-401"/>
+        <source>Failed to load image: {0}</source>
+        <translation>이미지를 불러오지 못했습니다: {0}</translation>
+    </message>
+    <message>
+        <location line="+64"/>
+        <source>Copy image</source>
+        <translation>이미지 복사</translation>
+    </message>
+</context>
+<context>
+    <name>InputBar</name>
+    <message>
+        <location filename="../../src/app/ui/input/input_bar.py" line="+118"/>
+        <source>Text</source>
+        <translation>텍스트</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Enter a topic, such as: write a background story for a game character.</source>
+        <translation>주제를 입력하세요. 예: 게임 캐릭터의 배경 이야기를 써 줘.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Image</source>
+        <translation>이미지</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>image prompt</source>
+        <translation>이미지 프롬프트</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Animation</source>
+        <translation>애니메이션</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>side view warrior</source>
+        <translation>측면 시점의 전사</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Speech</source>
+        <translation>음성</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Enter the text you want to read aloud; Chinese and English are supported...</source>
+        <translation>읽어 줄 텍스트를 입력하세요. 중국어와 영어를 지원합니다…</translation>
+    </message>
+    <message>
+        <location line="+89"/>
+        <source>optimize prompt</source>
+        <translation>프롬프트 최적화</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Rewrite the prompt with a local model for better results</source>
+        <translation>로컬 모델로 프롬프트를 다시 작성해 더 나은 결과를 얻습니다</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>export sprite sheet</source>
+        <translation>스프라이트 시트 내보내기</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Also export the frames as a sprite sheet with atlas JSON</source>
+        <translation>프레임을 스프라이트 시트와 아틀라스 JSON으로도 내보냅니다</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>upload files / pic</source>
+        <translation>파일 / 이미지 업로드</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>quick params</source>
+        <translation>빠른 매개변수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+279"/>
+        <source>send</source>
+        <translation>보내기</translation>
+    </message>
+    <message>
+        <location line="-4"/>
+        <source>stop</source>
+        <translation>중지</translation>
+    </message>
+</context>
+<context>
+    <name>LTX2VideoPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/animation/ltx2_video_panel.py" line="+26"/>
+        <source>LTX-2.3/2.5 needs a lot of VRAM: use low on 8GB cards, try medium on 12GB, and high needs 16GB+.</source>
+        <translation>LTX-2.3/2.5는 VRAM을 많이 사용합니다: 8GB는 low, 12GB는 medium을 권장하며 high는 16GB 이상이 필요합니다.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>resolution</source>
+        <translation>해상도</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>num_frames</source>
+        <translation>프레임 수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>frame_rate</source>
+        <translation>프레임 레이트</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>num_inference_steps</source>
+        <translation>추론 단계 수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>guidance_scale</source>
+        <translation>가이던스 스케일</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>seed</source>
+        <translation>시드</translation>
+    </message>
+</context>
+<context>
+    <name>LTXVideoPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/animation/ltx_video_panel.py" line="+24"/>
+        <source>resolution</source>
+        <translation>해상도</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>num_frames</source>
+        <translation>프레임 수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>num_inference_steps</source>
+        <translation>추론 단계 수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>guidance_scale</source>
+        <translation>가이던스 스케일</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>decode_timestep</source>
+        <translation>디코드 타임스텝</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>decode_noise_scale</source>
+        <translation>디코드 노이즈 스케일</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>seed</source>
+        <translation>시드</translation>
+    </message>
+</context>
+<context>
+    <name>LlamaChatPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/text/llama_chat_panel.py" line="+17"/>
+        <source>Max Token</source>
+        <translation>최대 토큰 수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Context Length</source>
+        <translation>컨텍스트 길이</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Temperature</source>
+        <translation>온도</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Top-p</source>
+        <translation>Top-p</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Repeat Penalty</source>
+        <translation>반복 페널티</translation>
+    </message>
+</context>
+<context>
+    <name>LoadingPage</name>
+    <message>
+        <location filename="../../src/app/ui/loading_page.py" line="+22"/>
+        <source>Veluxia</source>
+        <translation>Veluxia</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Starting, please wait…</source>
+        <translation>시작하는 중입니다. 잠시만 기다려 주세요…</translation>
+    </message>
+</context>
+<context>
+    <name>LogPanel</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/log_page.py" line="+64"/>
+        <source>Log level:</source>
+        <translation>로그 수준:</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Clear</source>
+        <translation>지우기</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Copy all</source>
+        <translation>모두 복사</translation>
+    </message>
+</context>
+<context>
+    <name>MainWindow</name>
+    <message>
+        <location filename="../../src/app/ui/window.py" line="+80"/>
+        <source>Veluxia</source>
+        <translation>Veluxia</translation>
+    </message>
+    <message>
+        <location line="+142"/>
+        <source>Generation stopped</source>
+        <translation>생성을 중지했습니다</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Generation failed: {0}</source>
+        <translation>생성 실패: {0}</translation>
+    </message>
+    <message>
+        <location line="+46"/>
+        <source>Startup timed out. Please check the log and restart the app.</source>
+        <translation>시작 시간이 초과되었습니다. 로그를 확인한 후 앱을 다시 시작하세요.</translation>
+    </message>
+</context>
+<context>
+    <name>MaskContainer</name>
+    <message>
+        <location filename="../../src/app/ui/message/message_bubble.py" line="-1060"/>
+        <location line="+39"/>
+        <source>Show more</source>
+        <translation>더 보기</translation>
+    </message>
+    <message>
+        <location line="-1"/>
+        <source>Show less</source>
+        <translation>간략히</translation>
+    </message>
+</context>
+<context>
+    <name>ModelPage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/model_page.py" line="+20"/>
+        <source>Category</source>
+        <translation>분류</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Model name</source>
+        <translation>모델 이름</translation>
+    </message>
+    <message>
+        <location line="+130"/>
+        <source>Model Settings</source>
+        <translation>모델 설정</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Double-click a cell to edit repo_id / filename / tag / note. Category and name cannot be changed.</source>
+        <translation>셀을 더블클릭하면 repo_id / filename / tag / note를 편집할 수 있습니다. 분류와 이름은 변경할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Reload</source>
+        <translation>다시 불러오기</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Load failed</source>
+        <translation>불러오기 실패</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cannot read models.json:</source>
+        <translation>models.json을 읽을 수 없습니다:</translation>
+    </message>
+</context>
+<context>
+    <name>ModelStageIndicator</name>
+    <message>
+        <location filename="../../src/app/ui/message/message_bubble.py" line="+772"/>
+        <source>Checking model files…</source>
+        <translation>모델 파일 확인 중…</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Downloading model</source>
+        <translation>모델 다운로드 중</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Loading model…</source>
+        <translation>모델 불러오는 중…</translation>
+    </message>
+</context>
+<context>
+    <name>Qwen3TTSPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="+106"/>
+        <source>mode</source>
+        <translation>모드</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>language</source>
+        <translation>언어</translation>
+    </message>
+</context>
+<context>
+    <name>SDXLPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image/sdxl_panel.py" line="+20"/>
+        <source>number</source>
+        <translation>개수</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>width</source>
+        <translation>너비</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>height</source>
+        <translation>높이</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>num_inference_steps</source>
+        <translation>추론 단계 수</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>guidance_scale</source>
+        <translation>가이던스 스케일</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>negative prompt</source>
+        <translation>네거티브 프롬프트</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>off</source>
+        <translation>끄기</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>both axes</source>
+        <translation>양방향</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>horizontal</source>
+        <translation>가로</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>vertical</source>
+        <translation>세로</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>seamless tiling</source>
+        <translation>심리스 타일링</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>seed</source>
+        <translation>시드</translation>
+    </message>
+</context>
+<context>
+    <name>SettingPage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/setting.py" line="+215"/>
+        <source>Unsaved changes</source>
+        <translation>저장되지 않은 변경 사항</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Some settings have not been saved. Save before leaving?</source>
+        <translation>저장하지 않은 설정이 있습니다. 저장한 후 나가시겠습니까?</translation>
+    </message>
+</context>
+<context>
+    <name>SettingSidePage</name>
+    <message>
+        <location filename="../../src/app/ui/gen_page.py" line="+116"/>
+        <source>New session</source>
+        <translation>새 세션</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>create new session</source>
+        <translation>새 세션 만들기</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Setting</source>
+        <translation>설정</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>set app parameter</source>
+        <translation>앱 설정</translation>
+    </message>
+</context>
+<context>
+    <name>StableAudioOpenPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/speech/stable_audio_open_panel.py" line="+17"/>
+        <source>duration (sec)</source>
+        <translation>길이(초)</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>num_inference_steps</source>
+        <translation>추론 단계 수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>negative prompt</source>
+        <translation>네거티브 프롬프트</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>seed</source>
+        <translation>시드</translation>
+    </message>
+</context>
+<context>
+    <name>ThinkingBlock</name>
+    <message>
+        <location filename="../../src/app/ui/message/think_bubble.py" line="+167"/>
+        <source>Thinking...</source>
+        <translation>생각하는 중…</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location line="+25"/>
+        <source>Collapse</source>
+        <translation>접기</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+23"/>
+        <source>Expand</source>
+        <translation>펼치기</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <location line="+19"/>
+        <location line="+2"/>
+        <source>Thought deeply</source>
+        <translation>깊이 생각함</translation>
+    </message>
+</context>
+<context>
+    <name>TopBar</name>
+    <message>
+        <location filename="../../src/app/ui/window.py" line="-250"/>
+        <source>hide side</source>
+        <translation>사이드바 표시/숨기기</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>back</source>
+        <translation>뒤로</translation>
+    </message>
+</context>
+<context>
+    <name>TranslationPage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/translation_page.py" line="+25"/>
+        <source>Translation Settings</source>
+        <translation>번역 설정</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Languages</source>
+        <translation>언어</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Auto detect</source>
+        <translation>자동 감지</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Source language:</source>
+        <translation>원본 언어:</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Target language:</source>
+        <translation>대상 언어:</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Translation engine</source>
+        <translation>번역 엔진</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Primary engine: Google Translate (best quality)</source>
+        <translation>기본 엔진: Google Translate(최고 품질)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Fallback engine: MyMemory (used automatically when Google is unavailable)</source>
+        <translation>보조 엔진: MyMemory(Google을 사용할 수 없을 때 자동 전환)</translation>
+    </message>
+</context>
+<context>
+    <name>UpscalePanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="+30"/>
+        <source>outscale (0 = native x4)</source>
+        <translation>확대 배율(0 = 기본 x4)</translation>
+    </message>
+</context>
+<context>
+    <name>UserBottomActionBar</name>
+    <message>
+        <location filename="../../src/app/ui/message/message_bubble.py" line="-654"/>
+        <source>Copy message</source>
+        <translation>메시지 복사</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Edit message</source>
+        <translation>메시지 편집</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Resend</source>
+        <translation>다시 보내기</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Translate</source>
+        <translation>번역</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>Copied</source>
+        <translation>복사됨</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Message copied to clipboard</source>
+        <translation>메시지를 클립보드에 복사했습니다</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Notice</source>
+        <translation>알림</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Only your own messages can be edited</source>
+        <translation>내 메시지만 편집할 수 있습니다</translation>
+    </message>
+</context>
+<context>
+    <name>UserMessageBubble</name>
+    <message>
+        <location line="+326"/>
+        <source>User</source>
+        <translation>사용자</translation>
+    </message>
+    <message>
+        <location line="+83"/>
+        <source>Save</source>
+        <translation>저장</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cancel</source>
+        <translation>취소</translation>
+    </message>
+</context>
+<context>
+    <name>VideoWidget</name>
+    <message>
+        <location filename="../../src/app/ui/message/message_widgets.py" line="+128"/>
+        <source>Playback error</source>
+        <translation>재생 오류</translation>
+    </message>
+</context>
+<context>
+    <name>Wan2VideoPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/animation/wan2_video_panel.py" line="+22"/>
+        <source>num_frames</source>
+        <translation>프레임 수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>num_inference_steps</source>
+        <translation>추론 단계 수</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>guidance_scale</source>
+        <translation>가이던스 스케일</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>seed</source>
+        <translation>시드</translation>
+    </message>
+</context>
+<context>
+    <name>_BottomBar</name>
+    <message>
+        <location filename="../../src/app/ui/setting/setting.py" line="-118"/>
+        <source>Save</source>
+        <translation>저장</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>● There are unsaved changes.</source>
+        <translation>● 저장되지 않은 변경 사항이 있습니다.</translation>
+    </message>
+</context>
+<context>
+    <name>_CloneVoiceWidget</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="-49"/>
+        <source>reference_audio_path</source>
+        <translation>참조 오디오 경로</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>reference_audio</source>
+        <translation>참조 오디오</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Refer to the text content corresponding to the audio.</source>
+        <translation>참조 오디오에서 말하는 텍스트입니다.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>reference_text</source>
+        <translation>참조 텍스트</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>choose audio</source>
+        <translation>오디오 선택</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>audio file</source>
+        <translation>오디오 파일</translation>
+    </message>
+</context>
+<context>
+    <name>_CustomVoiceWidget</name>
+    <message>
+        <location line="-58"/>
+        <source>voice</source>
+        <translation>음성</translation>
+    </message>
+</context>
+<context>
+    <name>_DesignVoiceWidget</name>
+    <message>
+        <location line="+17"/>
+        <source>Example: The voice of a passionate and energetic 20-year-old girl.</source>
+        <translation>예: 열정적이고 활기찬 20세 여성의 목소리.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>voice_prompt</source>
+        <translation>음성 설명</translation>
+    </message>
+</context>
+<context>
+    <name>_InstallWorker</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-117"/>
+        <source>Installation complete</source>
+        <translation>설치 완료</translation>
+    </message>
+</context>
+<context>
+    <name>_NavBar</name>
+    <message>
+        <location filename="../../src/app/ui/setting/setting.py" line="-71"/>
+        <source>General</source>
+        <translation>일반</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Graphics Card</source>
+        <translation>그래픽 카드</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Model</source>
+        <translation>모델</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Translation</source>
+        <translation>번역</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Journal</source>
+        <translation>로그</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>About</source>
+        <translation>정보</translation>
+    </message>
+</context>
+<context>
+    <name>_TextToImagePanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="+22"/>
+        <source>number</source>
+        <translation>개수</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>width</source>
+        <translation>너비</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>height</source>
+        <translation>높이</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>num_inference_steps</source>
+        <translation>추론 단계 수</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>guidance_scale</source>
+        <translation>가이던스 스케일</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>seed</source>
+        <translation>시드</translation>
+    </message>
+</context>
+</TS>

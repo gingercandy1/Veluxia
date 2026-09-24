@@ -164,14 +164,14 @@ class ThinkingBlock(QFrame):
 
         self._spinner = _InlineSpinner(color="#8888aa")
 
-        self._status_label = QLabel("思考中...")
+        self._status_label = QLabel(self.tr("Thinking..."))
         self._status_label.setObjectName("thinking_status_label")
         font = self._status_label.font()
         font.setPointSize(12)
         font.setStyleStrategy(QFont.StyleStrategy.PreferAntialias)
         self._status_label.setFont(font)
 
-        self._toggle_btn = QLabel("收起 ▴")
+        self._toggle_btn = QLabel(self.tr("Collapse") + " ▴")
         self._toggle_btn.setObjectName("thinking_toggle_btn")
         self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._toggle_btn.mousePressEvent = lambda _: self._toggle_expand()
@@ -196,7 +196,8 @@ class ThinkingBlock(QFrame):
     def _toggle_expand(self):
         self._expanded = not self._expanded
         self._run_expand_anim(self._expanded)
-        self._toggle_btn.setText("收起 ▴" if self._expanded else "展开 ▾")
+        self._toggle_btn.setText(self.tr("Collapse") + " ▴" if self._expanded
+                                 else self.tr("Expand") + " ▾")
 
     def _get_content_height(self) -> int:
         doc = self._text_area.document()
@@ -219,7 +220,7 @@ class ThinkingBlock(QFrame):
         """生成阶段自动折叠思考区"""
         self._expanded = False
         self._run_expand_anim(False)
-        self._toggle_btn.setText("展开 ▾")
+        self._toggle_btn.setText(self.tr("Expand") + " ▾")
 
     def append_thinking(self, chunk: str):
         """THINKING 阶段：流式追加思考文本"""
@@ -238,7 +239,7 @@ class ThinkingBlock(QFrame):
 
         self._spinner.stop()
         self._spinner.setVisible(False)
-        self._status_label.setText("已深度思考")
+        self._status_label.setText(self.tr("Thought deeply"))
         self._collapse_text_area()
 
     def finish(self, elapsed_ms: int = 0):
@@ -257,9 +258,20 @@ class ThinkingBlock(QFrame):
         secs = elapsed_ms / 1000
         if secs >= 1:
             time_str = f"{secs:.1f}s" if secs < 60 else f"{int(secs // 60)}m{int(secs % 60)}s"
-            self._status_label.setText(f"已深度思考  ·  {time_str}")
+            self._status_label.setText(self.tr("Thought deeply") + f"  ·  {time_str}")
         else:
-            self._status_label.setText("已深度思考")
+            self._status_label.setText(self.tr("Thought deeply"))
+
+    def restore(self, text: str):
+        """从历史记录恢复：直接呈现为"已完成、折叠"的状态，不再走流式和动画。"""
+        self._text_area.append_chunk(text)
+        self._state = self.DONE
+        self._spinner.stop()
+        self._spinner.setVisible(False)
+        self._status_label.setText(self.tr("Thought deeply"))
+        self._expanded = False
+        self._text_area.setMaximumHeight(0)
+        self._toggle_btn.setText(self.tr("Expand") + " ▾")
 
     def hide_think_area(self):
         self.setVisible(False)

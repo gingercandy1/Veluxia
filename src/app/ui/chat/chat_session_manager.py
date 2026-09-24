@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QCoreApplication, QObject, Signal
 
 from src.app.ui.setting.page.log_page import log_error, log_warning
 
@@ -77,9 +77,12 @@ class HistoryManager:
     def create_new_session(self, name: str = None) -> str:
         """创建新会话"""
         if not name:
-            name = f"会话 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            name = QCoreApplication.translate("HistoryManager", "Session {0}").format(
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-        session_id = f"session_{int(datetime.now().timestamp())}"
+        # 秒级 id 在一秒内连点两次"新建会话"时会撞主键（INSERT 直接抛异常），
+        # 所以用毫秒级时间戳。
+        session_id = f"session_{int(datetime.now().timestamp() * 1000)}"
         now = datetime.now().isoformat()
 
         with self._connect() as conn:
@@ -114,8 +117,10 @@ class HistoryManager:
             )
 
     def delete(self, session_id: str):
-        """删除会话及其所有消息（CASCADE 自动处理）。"""
+        """删除会话及其所有消息。messages 表没有外键约束，必须自己删，
+        否则消息会变成查不到也删不掉的孤儿数据。"""
         with self._connect() as conn:
+            conn.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
             conn.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
 
     def append_message(self, session_id: str, message: dict):
@@ -319,8 +324,15 @@ class ChatSessionManager(QObject):
             self.session_list_changed.emit()
             return
 
+        # 同一条消息可能被保存多次（如文本流先 stream_done 再 finished_ok），
+        # 按 message_id 原地替换，否则内存历史会出现重复项，打乱重试时的索引。
+        index = next((i for i, m in enumerate(self._history)
+                      if m.get("message_id") == message.get("message_id")), None)
         is_first_message = not self._history
-        self._history.append(message)
+        if index is None:
+            self._history.append(message)
+        else:
+            self._history[index] = message
         self._history_mgr.append_message(self._current_session_id, message)
 
         if is_first_message and message.get("role") == "user":

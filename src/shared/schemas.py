@@ -51,6 +51,21 @@ class SpeechResponse(BaseResponse):
     audio_path: Optional[str] = None
 
 
+# Transcription（语音 → 文本）
+class TranscriptSegment(BaseModel):
+    start: float = Field(..., description="起始时间（秒）")
+    end: float = Field(..., description="结束时间（秒）")
+    text: str = ""
+
+
+class TranscriptionResponse(BaseResponse):
+    text: str = ""
+    language: str = ""
+    model: str = Field("", description="实际执行识别的模型（Auto 会解析成具体模型）")
+    segments: List[TranscriptSegment] = Field(default_factory=list)
+    srt_path: Optional[str] = Field(None, description="SRT 字幕的媒体 URL；没识别出内容时为空")
+
+
 # 模型信息（供 UI 初始化下拉列表）
 class ModelInfoResponse(BaseResponse):
     """返回某个 FactoryType 下已注册的模型名称列表"""

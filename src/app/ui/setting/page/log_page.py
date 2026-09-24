@@ -61,7 +61,7 @@ class LogPanel(QWidget):
         toolbar = QHBoxLayout()
         toolbar.setSpacing(8)
 
-        toolbar.addWidget(QLabel("日志级别："))
+        toolbar.addWidget(QLabel(self.tr("Log level:")))
         self._level_combo = QComboBox()
         self._level_combo.addItems([lv.value[0] for lv in LogLevel])
         self._level_combo.currentTextChanged.connect(self._on_level_changed)
@@ -69,14 +69,14 @@ class LogPanel(QWidget):
 
         toolbar.addStretch()
 
-        self._clear_btn = QPushButton("清空")
-        self._clear_btn.setFixedWidth(56)
+        self._clear_btn = QPushButton(self.tr("Clear"))
+        self._clear_btn.setMinimumWidth(56)
         self._clear_btn.clicked.connect(self._text_view.clear
                                         if hasattr(self, "_text_view") else lambda: None)
         toolbar.addWidget(self._clear_btn)
 
-        self._copy_btn = QPushButton("复制全部")
-        self._copy_btn.setFixedWidth(72)
+        self._copy_btn = QPushButton(self.tr("Copy all"))
+        self._copy_btn.setMinimumWidth(72)
         self._copy_btn.clicked.connect(self._copy_all)
         toolbar.addWidget(self._copy_btn)
 

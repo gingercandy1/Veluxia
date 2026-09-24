@@ -7,9 +7,11 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication, QStyleFactory
 
+from src.app.i18n import DEFAULT_LANGUAGE, install_language
 from src.app.ui.window import MainWindow
 from src.app.ui.mark import build_app_icon
 from src.app.ui.setting.page.log_page import log_info, log_error
+from src.shared.settings import ConfigManager
 
 
 class Application(QApplication):
@@ -29,7 +31,10 @@ class Application(QApplication):
         )
 
         super().__init__(argv)
-        self.setApplicationName(self.tr("Material Generation"))
+        # 必须在创建任何界面之前装好翻译器：各控件的 tr() 只在构造时求值一次
+        self._setup_language()
+        # 应用名是 QStandardPaths / QSettings 的目录标识，不能随界面语言变化，所以不翻译
+        self.setApplicationName("Material Generation")
         self.setOrganizationName("YourOrg")
         self.setApplicationVersion("1.0.0")
 
@@ -40,6 +45,11 @@ class Application(QApplication):
 
         self._setup_font()
         self._load_qss()
+
+    def _setup_language(self):
+        code = ConfigManager().get("general", "language", DEFAULT_LANGUAGE)
+        for problem in install_language(self, code):
+            log_error(f"[Application] {problem}")
 
     def _setup_font(self):
         """

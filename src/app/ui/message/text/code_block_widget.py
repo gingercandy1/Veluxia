@@ -40,7 +40,7 @@ class CodeBlockWidget(BaseWidget):
 
         self._copy_btn = ActionButton(
             svg_str=":svg/copy.svg",
-            tooltip="复制消息",
+            tooltip=self.tr("Copy code"),
             width=26, height=26,
             icon_size_width=21,
             icon_size_height=21,

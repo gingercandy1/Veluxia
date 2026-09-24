@@ -9,6 +9,7 @@ class FactoryType(enum.Enum):
     Speech = 5
 
     Translation = 6
+    Transcription = 7
 
     @staticmethod
     def convert_by_text(text: str):
@@ -22,6 +23,8 @@ class FactoryType(enum.Enum):
             return FactoryType.ImageFrame
         elif text == "speech":
             return FactoryType.Speech
+        elif text == "transcription":
+            return FactoryType.Transcription
         return None
 
     @staticmethod
@@ -36,4 +39,6 @@ class FactoryType(enum.Enum):
             return "animation"
         elif _type == FactoryType.Speech:
             return "speech"
+        elif _type == FactoryType.Transcription:
+            return "transcription"
         return None

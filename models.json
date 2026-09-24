@@ -340,5 +340,36 @@
       "generator": "image_frame.film_generator:FILMInterpolationGenerator",
       "tag": "image_frame"
     }
+  },
+  "transcription": {
+    "_generator": "transcription.sherpa_asr:SherpaASRGenerator",
+    "Auto": {
+      "tag": "auto",
+      "prefer": ["Parakeet-TDT-0.6B-v3", "SenseVoice-Small", "Whisper-Turbo"],
+      "auto_detect": "SenseVoice-Small",
+      "note": "按语言自动选模型：欧洲语言用 Parakeet，中/粤/日/韩用 SenseVoice，其余用 Whisper"
+    },
+    "SenseVoice-Small": {
+      "repo_id": "csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17",
+      "arch": "sense_voice",
+      "languages": ["zh", "yue", "en", "ja", "ko"],
+      "tag": "fast",
+      "note": "中/粤/英/日/韩，自带标点，约 240MB"
+    },
+    "Parakeet-TDT-0.6B-v3": {
+      "repo_id": "csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
+      "arch": "nemo_transducer",
+      "languages": ["bg", "hr", "cs", "da", "nl", "en", "et", "fi", "fr", "de", "el", "hu", "it",
+                    "lv", "lt", "mt", "pl", "pt", "ro", "sk", "sl", "es", "sv", "ru", "uk"],
+      "tag": "fast",
+      "note": "NVIDIA，25 种欧洲语言（不含中日韩），自带标点，约 670MB"
+    },
+    "Whisper-Turbo": {
+      "repo_id": "csukuangfj/sherpa-onnx-whisper-turbo",
+      "arch": "whisper",
+      "languages": ["*"],
+      "tag": "accurate",
+      "note": "OpenAI Whisper large-v3-turbo，支持所有语言，CPU 上较慢，约 1GB"
+    }
   }
 }
