@@ -2,7 +2,8 @@ import subprocess
 import sys
 from typing import Optional
 
-from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QStackedWidget, QVBoxLayout, QFrame
+from PySide6.QtCore import QProcess
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QStackedWidget, QVBoxLayout, QFrame
 from src.app.work import ApiWorker, BackendStartupWorker
 from src.app.client import ApiClient
 from src.app.param import GenerationRequest
@@ -172,8 +173,13 @@ class MainWindow(QMainWindow):
         self._top_bar.back_btn.clicked.connect(self._on_back_btn_clicked)
         self._top_bar.side_btn.clicked.connect(self._gen_page.toggle_sidebar)
         self._gen_page.setting_requested.connect(self._go_to_setting)
+        self._setting_page.language_changed.connect(self._restart_for_language)
         self._startup.ready.connect(self._gen_page.activate_model_type)
         self._setting_page.install_requested.connect(lambda: self._startup.close())
+
+    def _restart_for_language(self, _language: str):
+        QProcess.startDetached(sys.executable, sys.argv)
+        QApplication.instance().quit()
 
     def _on_back_btn_clicked(self):
         self._stack.setCurrentIndex(0)

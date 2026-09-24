@@ -116,6 +116,7 @@ class SettingPage(QWidget):
     """
     back_requested = Signal()
     install_requested = Signal()
+    language_changed = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -123,6 +124,7 @@ class SettingPage(QWidget):
         self._config = ConfigManager()
         self._build_ui()
         self._connect_signals()
+        self._saved_language = self._config.get("general", "language")
 
     def _build_ui(self):
         root = QVBoxLayout(self)
@@ -207,6 +209,11 @@ class SettingPage(QWidget):
         self._config.save()
         self._bottom_bar.set_dirty(False)
         log_success("设置已保存")
+        language = self._config.get("general", "language")
+        language_changed = language != self._saved_language
+        self._saved_language = language
+        if language_changed:
+            self.language_changed.emit(language)
 
     def _on_back(self):
         if self._config.is_dirty:
