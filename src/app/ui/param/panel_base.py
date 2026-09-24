@@ -213,13 +213,9 @@ class BaseParamPanel(BaseWidget):
         if isinstance(params, dict):
             self.load_saved_params(params.get(model_name, {}))
 
-    LABEL_MAX_WIDTH = 92
-
     def _add_row(self, label: str, widget: QWidget):
-        lbl = QLabel(label)
-        lbl.setWordWrap(True)
-        lbl.setMaximumWidth(self.LABEL_MAX_WIDTH)
-        self._form.addRow(lbl, widget)
+        # 不开 wordWrap：QFormLayout 会把可换行的标签压到最窄，中文就变成一行一个字
+        self._form.addRow(QLabel(label), widget)
 
     def _labeled_slider(self, mn, mx, default, decimals=0, step=1) -> LabeledSlider:
         return LabeledSlider(mn, mx, default, decimals, step)
