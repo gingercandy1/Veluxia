@@ -961,7 +961,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+106"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+108"/>
         <source>New pack</source>
         <translation>새 팩</translation>
     </message>
@@ -982,12 +982,7 @@
         <translation>템플릿</translation>
     </message>
     <message>
-        <location line="-18"/>
-        <source>← Library</source>
-        <translation>← 라이브러리</translation>
-    </message>
-    <message>
-        <location line="+15"/>
+        <location line="-3"/>
         <source>Category</source>
         <translation>분류</translation>
     </message>
@@ -1062,7 +1057,12 @@
         <translation>항목</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-55"/>
+        <source>Library</source>
+        <translation>라이브러리</translation>
+    </message>
+    <message>
+        <location line="+57"/>
         <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
         <translation>한 행에 소재 하나. 여러 줄(열은 탭으로 구분)을 붙여넣으면 한꺼번에 추가됩니다.</translation>
     </message>

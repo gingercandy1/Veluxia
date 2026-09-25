@@ -963,7 +963,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+106"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+108"/>
         <source>New pack</source>
         <translation>Nuevo paquete</translation>
     </message>
@@ -984,12 +984,7 @@
         <translation>Plantilla</translation>
     </message>
     <message>
-        <location line="-18"/>
-        <source>← Library</source>
-        <translation>← Biblioteca</translation>
-    </message>
-    <message>
-        <location line="+15"/>
+        <location line="-3"/>
         <source>Category</source>
         <translation>Categoría</translation>
     </message>
@@ -1064,7 +1059,12 @@
         <translation>Elementos</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-55"/>
+        <source>Library</source>
+        <translation>Biblioteca</translation>
+    </message>
+    <message>
+        <location line="+57"/>
         <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
         <translation>Una fila por recurso. Pega varias líneas (columnas separadas por tabulador) para añadir filas.</translation>
     </message>

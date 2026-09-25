@@ -1,5 +1,5 @@
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QGuiApplication, QKeySequence
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QGuiApplication, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -99,8 +99,10 @@ class PackForm(BaseWidget):
         layout.setSpacing(12)
 
         header = QHBoxLayout()
-        back = QPushButton(self.tr("← Library"))
+        back = QPushButton(QIcon(":/svg/back.svg"), self.tr("Library"))
         back.setObjectName("library_back_btn")
+        back.setIconSize(QSize(16, 16))
+        back.setCursor(Qt.CursorShape.PointingHandCursor)
         back.clicked.connect(self.back_requested)
         header.addWidget(back)
         title = QLabel(self.tr("New pack"))

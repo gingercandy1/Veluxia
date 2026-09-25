@@ -69,17 +69,19 @@ QPlainTextEdit#library_text_edit:disabled {
 
 /* ────────────────────────────────────────────────────────────
    按钮：主操作（新建 / 创建 / 执行）、危险操作（删除）、返回
+   圆角边框用不透明色（按 #101215 底色预先混合）：qss 分段画边和圆角，
+   半透明色在接缝处叠两次，圆角会出现亮点
    ──────────────────────────────────────────────────────────── */
 QPushButton#library_primary_btn {
     background-color: rgba(123, 157, 188, 0.15);
-    border: 0.5px solid rgba(123, 157, 188, 0.35);
+    border: 0.5px solid #35434f;
     color: #7B9DBC;
     font-weight: 600;
 }
 
 QPushButton#library_primary_btn:hover {
     background-color: rgba(123, 157, 188, 0.25);
-    border-color: rgba(123, 157, 188, 0.55);
+    border-color: #4b5e71;
 }
 
 QPushButton#library_primary_btn:pressed {
@@ -88,7 +90,7 @@ QPushButton#library_primary_btn:pressed {
 
 QPushButton#library_danger_btn {
     background-color: transparent;
-    border: 0.5px solid rgba(248, 113, 113, 0.30);
+    border: 0.5px solid #562e31;
     color: #f87171;
 }
 
@@ -100,7 +102,7 @@ QPushButton#library_primary_btn:disabled,
 QPushButton#library_danger_btn:disabled {
     color: rgba(255, 255, 255, 0.25);
     background-color: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.06);
+    border-color: #1e2023;
 }
 
 QPushButton#library_back_btn {
@@ -118,19 +120,20 @@ QPushButton#library_back_btn:hover {
 /* ────────────────────────────────────────────────────────────
    卡片（资源包 / 素材）
    ──────────────────────────────────────────────────────────── */
+/* 边框同按钮，用预混合的不透明色避免圆角亮点 */
 QWidget#library_card {
     background-color: rgba(255, 255, 255, 0.03);
-    border: 0.5px solid rgba(255, 255, 255, 0.06);
+    border: 0.5px solid #1e2023;
     border-radius: 8px;
 }
 
 QWidget#library_card:hover {
     background-color: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.14);
+    border-color: #313336;
 }
 
 QWidget#library_card[selected="true"] {
-    border-color: rgba(123, 157, 188, 0.70);
+    border-color: #5b738a;
     background-color: rgba(123, 157, 188, 0.10);
 }
 
@@ -204,16 +207,7 @@ QProgressBar#card_progress[status="done"]::chunk { background-color: #4ec994; }
 QProgressBar#card_progress[status="review"]::chunk { background-color: #e5c07b; }
 QProgressBar#card_progress[status="error"]::chunk { background-color: #f87171; }
 
-QWidget#library_add_card {
-    background-color: transparent;
-    border: 1px dashed rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
-}
-
-QWidget#library_add_card:hover {
-    border-color: rgba(123, 157, 188, 0.55);
-}
-
+/* 新建卡片的虚线框在 AddCard.paintEvent 里画，qss 的 dashed 不抗锯齿 */
 QLabel#add_card_label {
     color: rgba(255, 255, 255, 0.35);
     font-size: 13px;
@@ -281,7 +275,7 @@ QLabel#detail_image {
 
 QFrame#flow_step {
     background-color: rgba(255, 255, 255, 0.03);
-    border: 0.5px solid rgba(255, 255, 255, 0.06);
+    border: 0.5px solid #1e2023;
     border-radius: 6px;
 }
 
@@ -296,7 +290,7 @@ QLabel#flow_arrow {
 
 QPushButton#flow_redo_btn {
     background-color: transparent;
-    border: 0.5px solid rgba(255, 255, 255, 0.12);
+    border: 0.5px solid #2d2e31;
     color: rgba(255, 255, 255, 0.55);
     font-size: 11px;
     padding: 1px 8px;
@@ -304,7 +298,7 @@ QPushButton#flow_redo_btn {
 
 QPushButton#flow_redo_btn:hover {
     color: #DCDCDC;
-    border-color: rgba(255, 255, 255, 0.25);
+    border-color: #4c4d50;
 }
 
 QPushButton#flow_redo_btn:disabled {

@@ -961,7 +961,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+106"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+108"/>
         <source>New pack</source>
         <translation>新しいパック</translation>
     </message>
@@ -982,12 +982,7 @@
         <translation>テンプレート</translation>
     </message>
     <message>
-        <location line="-18"/>
-        <source>← Library</source>
-        <translation>← ライブラリ</translation>
-    </message>
-    <message>
-        <location line="+15"/>
+        <location line="-3"/>
         <source>Category</source>
         <translation>カテゴリ</translation>
     </message>
@@ -1062,7 +1057,12 @@
         <translation>アイテム</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-55"/>
+        <source>Library</source>
+        <translation>ライブラリ</translation>
+    </message>
+    <message>
+        <location line="+57"/>
         <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
         <translation>1 行に 1 素材。複数行（列はタブ区切り）を貼り付けると一括追加できます。</translation>
     </message>
