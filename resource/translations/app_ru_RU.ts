@@ -937,12 +937,12 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+78"/>
-        <source>← Library</source>
-        <translation>← Библиотека</translation>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+79"/>
+        <source>Library</source>
+        <translation>Библиотека</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+35"/>
         <source>Run</source>
         <translation>Запустить</translation>
     </message>
@@ -957,7 +957,7 @@
         <translation>Удалить</translation>
     </message>
     <message>
-        <location line="+83"/>
+        <location line="+85"/>
         <source>{0}/{1} done</source>
         <translation>Готово {0}/{1}</translation>
     </message>
@@ -1119,7 +1119,7 @@
         <translation>Звуки и музыка</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+14"/>
         <source>Audio</source>
         <translation>Аудио</translation>
     </message>

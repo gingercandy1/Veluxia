@@ -1,5 +1,5 @@
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -19,6 +19,7 @@ from src.app.ui.library.flow_layout import FlowLayout
 from src.app.ui.library.pack_status import (
     MEDIA_ORDER,
     asset_progress,
+    category_icon,
     category_text,
     deliverables,
     item_title,
@@ -75,14 +76,20 @@ class PackDetail(BaseWidget):
         layout = QVBoxLayout(side)
         layout.setContentsMargins(8, 12, 8, 12)
         layout.setSpacing(8)
-        back = QPushButton(self.tr("← Library"))
+        back = QPushButton(QIcon(":/svg/back.svg"), self.tr("Library"))
         back.setObjectName("library_back_btn")
+        back.setIconSize(QSize(16, 16))
+        back.setCursor(Qt.CursorShape.PointingHandCursor)
         back.clicked.connect(self.back_requested)
         layout.addWidget(back)
         self.tree = QTreeWidget()
         self.tree.setObjectName("library_tree")
         self.tree.setHeaderHidden(True)
-        self.tree.setIndentation(12)
+        # 分类始终展开，不需要展开箭头；子项缩进到分类图标之后，和分类名对齐
+        self.tree.setRootIsDecorated(False)
+        self.tree.setItemsExpandable(False)
+        self.tree.setIndentation(22)
+        self.tree.setIconSize(QSize(16, 16))
         self.tree.itemClicked.connect(self._on_tree_clicked)
         layout.addWidget(self.tree, 1)
         return side
@@ -159,7 +166,8 @@ class PackDetail(BaseWidget):
             for pack_type, ids in key:
                 if not ids:
                     continue
-                root = QTreeWidgetItem([f"{category_text(pack_type)}  ·  {len(ids)}"])
+                root = QTreeWidgetItem([category_text(pack_type)])
+                root.setIcon(0, QIcon(category_icon(pack_type)))
                 root.setFlags(Qt.ItemFlag.ItemIsEnabled)
                 self.tree.addTopLevelItem(root)
                 for pack_id in ids:
@@ -172,7 +180,8 @@ class PackDetail(BaseWidget):
             template = templates[pack.manifest.template]
             progress = pack_progress(pack.manifest, template, running=pack.running)
             name = pack.manifest.name or template.name or pack.manifest.id
-            text = f"{name}  {progress.done}/{progress.total}"
+            # 树只管导航，进度数字在中间标题下已有；只保留需要关注的状态
+            text = name
             if progress.status in ("review", "running", "error"):
                 text += f"  · {status_text(progress.status)}"
             self._tree_items[pack.manifest.id].setText(0, text)

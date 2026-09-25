@@ -24,5 +24,11 @@
         <file>svg/about.svg</file>
         <file>svg/close.svg</file>
         <file>svg/close_hover.svg</file>
+        <file>svg/category_scene.svg</file>
+        <file>svg/category_character.svg</file>
+        <file>svg/category_item.svg</file>
+        <file>svg/category_effect.svg</file>
+        <file>svg/category_dialogue.svg</file>
+        <file>svg/category_audio.svg</file>
     </qresource>
 </RCC>

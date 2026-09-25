@@ -26,6 +26,14 @@ CATEGORY_TEXT = {
     "dialogue": QT_TRANSLATE_NOOP("PackStatus", "Dialogue"),
     "audio": QT_TRANSLATE_NOOP("PackStatus", "Sound & music"),
 }
+CATEGORY_ICON = {
+    "scene": ":/svg/category_scene.svg",
+    "character": ":/svg/category_character.svg",
+    "item": ":/svg/category_item.svg",
+    "effect": ":/svg/category_effect.svg",
+    "dialogue": ":/svg/category_dialogue.svg",
+    "audio": ":/svg/category_audio.svg",
+}
 MEDIA_ORDER = ("image", "video", "audio", "text")
 MEDIA_TEXT = {
     "image": QT_TRANSLATE_NOOP("PackStatus", "Images"),
@@ -48,6 +56,11 @@ AUDIO_SUFFIXES = (".wav", ".mp3", ".flac", ".ogg")
 
 def category_text(pack_type: str) -> str:
     return QCoreApplication.translate(_CONTEXT, CATEGORY_TEXT.get(pack_type, pack_type))
+
+
+def category_icon(pack_type: str) -> str:
+    # 模板将来新增的分类还没有专属图标，先用资料库图标占位
+    return CATEGORY_ICON.get(pack_type, ":/svg/library.svg")
 
 
 def media_text(kind: str) -> str:
