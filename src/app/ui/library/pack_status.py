@@ -65,7 +65,7 @@ def media_kind(step_type: str) -> str:
         return "image"
     if prefix == "animation":
         return "video"
-    if prefix == "speech":
+    if prefix in ("speech", "audio"):
         return "audio"
     return "text"
 

@@ -113,6 +113,8 @@ def test_parse_params_defaults_to_instrumental(tmp_path):
     assert generator.prompt == "calm forest" and generator.lyrics == ""
     assert generator.duration == 30.0 and generator.seed == 42
     assert generator.output_dir == str(tmp_path)
+    generator.parse_params({"content": "jingle", "duration": 3})
+    assert generator.duration == 10.0
 
 
 def _stub_inference(monkeypatch, result):
@@ -164,5 +166,6 @@ def test_ace_step_registered_and_used_by_music_template():
     with open(f"{PROJECT_ROOT}/models.json", encoding="utf-8") as f:
         assert "Ace-Step1.5" in json.load(f)["speech"]
     assert "Ace-Step1.5" in GeneratorFactory.get_generator_names(FactoryType.Speech)
-    [step] = load_template("audio_music").steps
-    assert step.params["model_name"] == "Ace-Step1.5"
+    music, loop = load_template("audio_music").steps
+    assert music.params["model_name"] == "Ace-Step1.5"
+    assert loop.type == "audio.loop" and list(loop.inputs) == ["music"] and loop.deliverable

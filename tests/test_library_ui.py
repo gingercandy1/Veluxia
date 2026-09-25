@@ -12,6 +12,7 @@ from src.app.ui.library.pack_status import (
     asset_progress,
     fallback_template,
     latest_image,
+    media_kind,
     pack_cover,
     pack_progress,
     step_chain,
@@ -71,6 +72,13 @@ def test_asset_progress_counts_only_its_own_chain():
     # 立绘做完了，不会因为声线出错显示成未完成
     assert asset_progress(item, chain).status == "done"
     assert asset_progress(item, step_chain(CHARACTER, "voice")).status == "error"
+
+
+def test_media_kind_treats_audio_post_processing_as_audio():
+    assert media_kind("speech.generate") == "audio"
+    assert media_kind("audio.loop") == "audio"
+    assert media_kind("animation.generate") == "video"
+    assert media_kind("dialogue.script") == "text"
 
 
 def test_review_status_outranks_error_and_running():
