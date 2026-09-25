@@ -935,12 +935,12 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+78"/>
-        <source>← Library</source>
-        <translation>← Biblioteca</translation>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+79"/>
+        <source>Library</source>
+        <translation>Biblioteca</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+35"/>
         <source>Run</source>
         <translation>Ejecutar</translation>
     </message>
@@ -955,7 +955,7 @@
         <translation>Eliminar</translation>
     </message>
     <message>
-        <location line="+83"/>
+        <location line="+85"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} listos</translation>
     </message>
@@ -1117,7 +1117,7 @@
         <translation>Sonido y música</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+14"/>
         <source>Audio</source>
         <translation>Audio</translation>
     </message>

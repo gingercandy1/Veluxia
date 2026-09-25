@@ -933,12 +933,12 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+78"/>
-        <source>← Library</source>
-        <translation>← 资料库</translation>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+79"/>
+        <source>Library</source>
+        <translation>资料库</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+35"/>
         <source>Run</source>
         <translation>执行</translation>
     </message>
@@ -953,7 +953,7 @@
         <translation>删除</translation>
     </message>
     <message>
-        <location line="+83"/>
+        <location line="+85"/>
         <source>{0}/{1} done</source>
         <translation>已完成 {0}/{1}</translation>
     </message>
@@ -1115,7 +1115,7 @@
         <translation>音效与音乐</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+14"/>
         <source>Audio</source>
         <translation>音频</translation>
     </message>

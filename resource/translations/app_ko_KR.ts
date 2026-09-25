@@ -933,12 +933,12 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+78"/>
-        <source>← Library</source>
-        <translation>← 라이브러리</translation>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+79"/>
+        <source>Library</source>
+        <translation>라이브러리</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+35"/>
         <source>Run</source>
         <translation>실행</translation>
     </message>
@@ -953,7 +953,7 @@
         <translation>삭제</translation>
     </message>
     <message>
-        <location line="+83"/>
+        <location line="+85"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 완료</translation>
     </message>
@@ -1115,7 +1115,7 @@
         <translation>효과음 및 음악</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+14"/>
         <source>Audio</source>
         <translation>오디오</translation>
     </message>
