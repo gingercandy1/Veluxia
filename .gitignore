@@ -380,3 +380,11 @@ venv/
 dist/
 build/
 *.egg-info/
+
+# Veluxia: local notes and agent settings, not part of the code
+.claude/
+AGENTS.md
+CONTEXT.md
+Plan.md
+docs/adr/
+docs/asset-workflow-notes.md
