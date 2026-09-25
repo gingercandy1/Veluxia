@@ -10,8 +10,8 @@ class AceStepMusicPanel(BaseParamPanel):
         super().__init__(title="Ace-Step panel", parent=parent)
 
     def _build_widgets(self):
-        # 时长（秒）
-        self._duration = self._labeled_slider(5, 120, 10)
+        # 时长（秒）：ACE-Step 最短只支持 10 秒
+        self._duration = self._labeled_slider(10, 120, 10)
         self._add_row(self.tr("duration (sec)"), self._duration)
 
         # 随机种子
