@@ -1,5 +1,5 @@
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QRectF, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QProgressBar, QSizePolicy, QVBoxLayout, QWidget
 
 from src.app.ui.base.widget import BaseWidget
@@ -105,10 +105,17 @@ class Card(BaseWidget):
 class AddCard(BaseWidget):
     """每个分类末尾的"新建"占位卡：空分类也有入口，直接新建这一类的资源包。"""
     clicked = Signal()
+    # qss 的 dashed 边框不抗锯齿、圆角处虚线会断开，所以虚线框自己画
+    BORDER_COLOR = QColor(255, 255, 255, 36)
+    HOVER_BORDER_COLOR = QColor(123, 157, 188, 150)
+    HOVER_FILL_COLOR = QColor(123, 157, 188, 12)
+    RADIUS = 8
 
     def __init__(self, text: str, parent=None):
         super().__init__(parent)
         self.setObjectName("library_add_card")
+        # 鼠标进出时触发重绘，paintEvent 才能切换悬停颜色
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFixedSize(PACK_THUMB.width() + 16, PACK_THUMB.height() + 16)
         layout = QVBoxLayout(self)
@@ -116,6 +123,22 @@ class AddCard(BaseWidget):
         label.setObjectName("add_card_label")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(label)
+
+    def paintEvent(self, event):
+        hovered = self.underMouse()
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        # 线宽 1 时描边落在像素中心，内缩半个像素才不会发虚
+        rect = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
+        if hovered:
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(self.HOVER_FILL_COLOR)
+            painter.drawRoundedRect(rect, self.RADIUS, self.RADIUS)
+        pen = QPen(self.HOVER_BORDER_COLOR if hovered else self.BORDER_COLOR, 1)
+        pen.setDashPattern([4, 3])
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRoundedRect(rect, self.RADIUS, self.RADIUS)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:

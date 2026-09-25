@@ -34,9 +34,10 @@ QDialog {
 /* ────────────────────────────────────────────────────────────
    通用 QPushButton
    ──────────────────────────────────────────────────────────── */
+/* 圆角边框用按 #101215 底色预混合的不透明色：半透明色在边与圆角接缝处叠两次，会出现亮点 */
 QPushButton {
     background-color: rgba(255, 255, 255, 0.06);
-    border: 0.5px solid rgba(255, 255, 255, 0.10);
+    border: 0.5px solid #282a2c;
     border-radius: 6px;
     padding: 5px 14px;
     color: #DCDCDC;
@@ -45,7 +46,7 @@ QPushButton {
 
 QPushButton:hover {
     background-color: rgba(255, 255, 255, 0.10);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: #3b3d3f;
 }
 
 QPushButton:pressed {
@@ -55,7 +56,7 @@ QPushButton:pressed {
 QPushButton:disabled {
     color: rgba(255, 255, 255, 0.25);
     background-color: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.06);
+    border-color: #1e2023;
 }
 
 /* ────────────────────────────────────────────────────────────

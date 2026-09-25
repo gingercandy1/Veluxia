@@ -965,7 +965,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+106"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+108"/>
         <source>New pack</source>
         <translation>Новый пакет</translation>
     </message>
@@ -986,12 +986,7 @@
         <translation>Шаблон</translation>
     </message>
     <message>
-        <location line="-18"/>
-        <source>← Library</source>
-        <translation>← Библиотека</translation>
-    </message>
-    <message>
-        <location line="+15"/>
+        <location line="-3"/>
         <source>Category</source>
         <translation>Категория</translation>
     </message>
@@ -1066,7 +1061,12 @@
         <translation>Элементы</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-55"/>
+        <source>Library</source>
+        <translation>Библиотека</translation>
+    </message>
+    <message>
+        <location line="+57"/>
         <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
         <translation>Одна строка — один ассет. Вставьте несколько строк (столбцы через Tab), чтобы добавить их разом.</translation>
     </message>
