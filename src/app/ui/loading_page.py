@@ -16,7 +16,8 @@ class LoadingPage(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(18)
 
-        self._mark = MarkWidget(color=QColor("#F2F3F5"), fill_ratio=0.72, loop=False)
+        # 后端启动常要几十秒，动画一直转着才不像卡死
+        self._mark = MarkWidget(color=QColor("#F2F3F5"), fill_ratio=0.72, loop=True)
         self._mark.setFixedSize(160, 160)
 
         self._title = QLabel(self.tr("Veluxia"))

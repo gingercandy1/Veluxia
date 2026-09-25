@@ -219,7 +219,7 @@
       "repo_id": "unsloth/Hy-MT2-7B-GGUF",
       "filename": "Hy-MT2-7B-Q4_K_M.gguf",
       "tag": "translate",
-      "note": "7B，~4.5GB，零一万物，中英双语"
+      "note": "7B，~4.5GB，腾讯混元翻译模型"
     }
   },
   "image": {
@@ -327,7 +327,7 @@
     },
     "Wan2.2-TI2V": {
       "generator": "animation.wan2_2:Wan2VideoGenerator",
-      "repo_id": "Sporer/Wan2.2-TI2V-5B-Diffusers ",
+      "repo_id": "Sporer/Wan2.2-TI2V-5B-Diffusers",
       "tag": "video"
     }
   },

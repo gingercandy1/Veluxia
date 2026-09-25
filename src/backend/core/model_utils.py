@@ -7,9 +7,18 @@ from typing import Any
 
 from src.shared.settings import PROJECT_ROOT
 
-# 不在源码里存 token：留空/None 时 huggingface_hub 会自动读 HF_TOKEN 环境变量，
-# 或 `huggingface-cli login` 缓存的登录态，gated 仓库照样能下。
-huggingface_token = os.environ.get("HF_TOKEN")
+# 不在源码里存 token：传 None 时 huggingface_hub 每次下载都会现读 HF_TOKEN 环境变量，
+# 再退回 `huggingface-cli login` 缓存的登录态。这里不能在 import 时快照环境变量，
+# 否则 apply_hf_token() 在生成器模块导入之后才写入的设置值不会生效。
+huggingface_token = None
+
+
+def apply_hf_token(token: str) -> None:
+    """把设置页填写的 token 写入 HF_TOKEN；留空时保留系统环境变量 / CLI 登录态。"""
+    token = (token or "").strip()
+    if token:
+        os.environ["HF_TOKEN"] = token
+        print("✅ 已使用设置中的 Hugging Face token")
 
 project_name = "material_generation"
 

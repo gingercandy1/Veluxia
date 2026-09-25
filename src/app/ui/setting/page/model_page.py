@@ -9,10 +9,10 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QTableView, QPushButton,
     QHeaderView, QAbstractItemView,
-    QMessageBox, QFrame
+    QMessageBox, QFrame, QGroupBox, QFormLayout, QLineEdit
 )
 
-from src.shared.settings import PROJECT_ROOT
+from src.shared.settings import PROJECT_ROOT, ConfigManager
 from src.app.ui.setting.page.log_page import log_success, log_error
 MODELS_PATH = os.path.join(PROJECT_ROOT, "models.json")
 
@@ -138,8 +138,11 @@ class ModelPage(QWidget):
         super().__init__(parent)
         self.setObjectName("model_page")
         self._table_model = None
+        self._config = ConfigManager()
         self._build_ui()
         self.load()
+        self._token_edit.setText(self._config.get("huggingface", "token", ""))
+        self._token_edit.textChanged.connect(self._collect_token)
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
@@ -161,6 +164,21 @@ class ModelPage(QWidget):
         sep.setFrameShape(QFrame.Shape.HLine)
         sep.setObjectName("page_separator")
         layout.addWidget(sep)
+
+        # gated 仓库（如 SD3.5、Stable Audio）必须带 token 才能下载
+        hf_group = QGroupBox("Hugging Face")
+        hf_group.setObjectName("setting_group")
+        hf_form = QFormLayout(hf_group)
+        self._token_edit = QLineEdit()
+        self._token_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        self._token_edit.setPlaceholderText("hf_...")
+        hf_form.addRow(self.tr("Access token:"), self._token_edit)
+        token_hint = QLabel(self.tr("Used to download gated models. Leave empty to use the HF_TOKEN"
+                                    " environment variable. Takes effect after restarting the app."))
+        token_hint.setObjectName("page_hint")
+        token_hint.setWordWrap(True)
+        hf_form.addRow(token_hint)
+        layout.addWidget(hf_group)
 
         # 表格
         self._table_view = QTableView()
@@ -200,7 +218,11 @@ class ModelPage(QWidget):
         self._table_model = _ModelTableModel(data)
         self._table_view.setModel(self._table_model)
 
+    def _collect_token(self):
+        self._config.set("huggingface", "token", self._token_edit.text().strip())
+
     def collect(self):
+        self._collect_token()
         if self._table_model is None or not self._table_model.is_dirty:
             return
         try:

@@ -185,6 +185,12 @@ class ModeMenuButton(QPushButton):
             self._popover.body.addWidget(row)
             self._rows[label] = row
         self._rows[self._text].setChecked(True)
+        # 用图标画箭头：文字符号 ▴ 随字体渲染，大小和粗细都不受控。
+        # RightToLeft 让图标排到文字右侧；菜单是子控件会继承方向，要单独改回来
+        self.setIcon(QIcon(":svg/spin_up.svg"))
+        self.setIconSize(QSize(10, 10))
+        self.setLayoutDirection(Qt.RightToLeft)
+        self._popover.setLayoutDirection(Qt.LeftToRight)
         self._refresh_caption()
         self.clicked.connect(self._popup_above)
 
@@ -218,7 +224,7 @@ class ModeMenuButton(QPushButton):
         self.setCurrentText(text)
 
     def _refresh_caption(self):
-        self.setText(f"{self._text} ▴")
+        self.setText(self._text)
 
     def _popup_above(self):
         # 输入栏贴着窗口底部，菜单向上弹才不会被屏幕边缘挤压
@@ -488,8 +494,9 @@ class InputBar(BaseWidget):
         QSS 里的字号挂在 #input_bar 祖先选择器上，所以要等按钮挂进输入栏后再 polish 取字宽。"""
         self.mode_combo.ensurePolished()
         metrics = self.mode_combo.fontMetrics()
-        widest = max(metrics.horizontalAdvance(f"{label} ▴") for label in self._mode_labels.values())
-        self.mode_combo.setFixedWidth(max(100, widest + 24))
+        widest = max(metrics.horizontalAdvance(label) for label in self._mode_labels.values())
+        icon_width = self.mode_combo.iconSize().width() + 6
+        self.mode_combo.setFixedWidth(max(100, widest + icon_width + 24))
 
     def build_input_page(self):
         input_widget = QWidget()

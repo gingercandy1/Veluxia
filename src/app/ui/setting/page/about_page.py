@@ -1,15 +1,23 @@
 from PySide6.QtCore import Qt, QT_TRANSLATE_NOOP
-from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QFrame
+    QApplication, QWidget, QVBoxLayout, QLabel, QFrame
 )
 
-APP_VERSION = "1.0.0"
+from src.app.ui.mark import render_icon_pixmap
+
 APP_NAME    = "Veluxia"
-COPYRIGHT   = "© 2025 Veluxia Team. All rights reserved."
+COPYRIGHT   = "© 2026 Veluxia"
+TAGLINE     = QT_TRANSLATE_NOOP("AboutPage", "Local AI studio for game assets")
 DESCRIPTION = QT_TRANSLATE_NOOP(
     "AboutPage",
-    "An AI-powered multimodal creation tool for generating text, images, animation and speech.")
+    "Generate text, images, animation, voice, music and sound effects entirely on your own "
+    "computer. Private, free to run, and optimized for 8 GB GPUs.")
+LICENSE_NOTE = QT_TRANSLATE_NOOP(
+    "AboutPage",
+    "Released under the MIT License. AI models are subject to their own licenses.")
+
+LOGO_SIZE = 96
+
 
 class AboutPage(QWidget):
     def __init__(self, parent=None):
@@ -23,33 +31,33 @@ class AboutPage(QWidget):
         layout.setSpacing(16)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        # Logo
         self._logo = QLabel()
-        self._logo.setObjectName("about_Logo")
-        self._logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._logo.setFixedSize(96, 96)
-        self._try_load_logo()
+        self._logo.setObjectName("about_logo")
+        self._logo.setFixedSize(LOGO_SIZE, LOGO_SIZE)
+        self._logo.setPixmap(self._logo_pixmap())
         layout.addWidget(self._logo, alignment=Qt.AlignmentFlag.AlignHCenter)
 
-        # 软件名
         name_label = QLabel(APP_NAME)
         name_label.setObjectName("about_app_name")
         name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(name_label)
 
-        # 版本号
-        version_label = QLabel(self.tr("Version") + f"  {APP_VERSION}")
+        tagline_label = QLabel(self.tr(TAGLINE))
+        tagline_label.setObjectName("about_tagline")
+        tagline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(tagline_label)
+
+        # 版本号统一取 Application 里设置的那个，避免两处写死不一致
+        version_label = QLabel(self.tr("Version") + f"  {QApplication.applicationVersion()}")
         version_label.setObjectName("about_version")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(version_label)
 
-        # 分割线
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
         sep.setObjectName("about_separator")
         layout.addWidget(sep)
 
-        # 简介
         desc_label = QLabel(self.tr(DESCRIPTION))
         desc_label.setObjectName("about_description")
         desc_label.setWordWrap(True)
@@ -58,24 +66,20 @@ class AboutPage(QWidget):
 
         layout.addStretch()
 
-        # 版权
+        license_label = QLabel(self.tr(LICENSE_NOTE))
+        license_label.setObjectName("about_copy_right")
+        license_label.setWordWrap(True)
+        license_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(license_label)
+
         copy_label = QLabel(COPYRIGHT)
         copy_label.setObjectName("about_copy_right")
         copy_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(copy_label)
 
-    def _try_load_logo(self):
-        """尝试加载 logo，失败则显示占位文字"""
-        import os
-        from src.shared.settings import PROJECT_ROOT
-        logo_path = os.path.join(PROJECT_ROOT, "src", "app", "resources", "logo.png")
-        if os.path.exists(logo_path):
-            pixmap = QPixmap(logo_path).scaled(
-                96, 96,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-            self._logo.setPixmap(pixmap)
-        else:
-            self._logo.setText("🎨")
-            self._logo.setStyleSheet("font-size: 48px;")
+    def _logo_pixmap(self):
+        # 按屏幕缩放比渲染，高 DPI 下图标不糊
+        ratio = self.devicePixelRatioF()
+        pixmap = render_icon_pixmap(round(LOGO_SIZE * ratio))
+        pixmap.setDevicePixelRatio(ratio)
+        return pixmap
