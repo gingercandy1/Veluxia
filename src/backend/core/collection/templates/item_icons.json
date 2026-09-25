@@ -1,0 +1,15 @@
+{
+  "id": "item_icons",
+  "version": 1,
+  "type": "item",
+  "name": "物品图标",
+  "description": "道具、装备、材料的背包图标：去背景、裁边后统一成 256×256 透明图。",
+  "prompt_label": "物品描述",
+  "cover": "resize",
+  "steps": [
+    {"id": "generate", "type": "image.generate", "label": "生成", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "game item icon, single object, plain white background, centered, clean silhouette"}},
+    {"id": "remove_bg", "type": "image.remove_bg", "label": "去背景", "params": {"model_name": "rembg-birefnet"}, "inputs": ["generate"]},
+    {"id": "trim", "type": "image.trim", "label": "裁边", "inputs": ["remove_bg"]},
+    {"id": "resize", "type": "image.resize", "label": "统一尺寸", "deliverable": true, "params": {"size": 256}, "inputs": ["trim"]}
+  ]
+}

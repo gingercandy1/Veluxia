@@ -1,0 +1,18 @@
+{
+  "id": "effect_skill",
+  "version": 1,
+  "type": "effect",
+  "name": "技能",
+  "description": "技能图标加释放音效。特效序列帧需要图生视频，实机验证后再加入。",
+  "prompt_label": "技能画面描述",
+  "cover": "resize",
+  "fields": [
+    {"id": "sfx", "label": "音效描述", "required": true}
+  ],
+  "steps": [
+    {"id": "icon", "type": "image.generate", "label": "生成图标", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "game skill icon, square composition, glowing magic effect, dark background"}},
+    {"id": "upscale", "type": "image.upscale", "label": "放大", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["icon"]},
+    {"id": "resize", "type": "image.resize", "label": "统一尺寸", "deliverable": true, "params": {"size": 256}, "inputs": ["upscale"]},
+    {"id": "sfx", "type": "speech.generate", "label": "音效", "deliverable": true, "params": {"model_name": "Stable-Audio-Open-1.0", "content": "{sfx}", "duration": 3}}
+  ]
+}

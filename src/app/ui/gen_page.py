@@ -290,6 +290,7 @@ class SettingSidePage(QFrame):
         self.layout.setSpacing(5)
 
         self.new_session_btn = self.add_button(":/svg/new_session.svg", self.tr("New session"), self.tr("create new session"))
+        self.library_btn = self.add_button(":/svg/library.svg", self.tr("Library"), self.tr("asset packs"))
         self.setting_btn = self.add_button(":/svg/setting.svg", self.tr("Setting"), self.tr("set app parameter"))
         self.add_seperator()
 
@@ -395,6 +396,7 @@ class GenerationPage(QWidget):
     session_changed = Signal(str)
     update_resized = Signal()
     setting_requested = Signal()
+    library_requested = Signal()
 
     save_message = Signal(dict)
 
@@ -599,6 +601,7 @@ class GenerationPage(QWidget):
 
         self.model_combobox.model_selected.connect(self._on_changed_model)
         self._sidebar.setting_btn.clicked.connect(self._on_go_to_setting)
+        self._sidebar.library_btn.clicked.connect(self.library_requested)
         self._sidebar.new_session_btn.clicked.connect(self.create_new_session)
         self._sidebar.delete_session.connect(self.session_manager.delete_session)
         self._sidebar.switch_session.connect(self.session_manager.switch_session)

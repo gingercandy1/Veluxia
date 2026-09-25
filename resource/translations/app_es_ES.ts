@@ -33,11 +33,6 @@
     </message>
     <message>
         <location line="+4"/>
-        <source>batch_size</source>
-        <translation>Tamaño de lote</translation>
-    </message>
-    <message>
-        <location line="+4"/>
         <source>seed</source>
         <translation>Semilla</translation>
     </message>
@@ -45,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+66"/>
+        <location filename="../../src/app/client.py" line="+68"/>
         <location line="+135"/>
-        <location line="+237"/>
+        <location line="+271"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>No se puede conectar con el backend. Comprueba que el servicio esté en ejecución.</translation>
     </message>
     <message>
-        <location line="-368"/>
+        <location line="-402"/>
         <source>Connection timed out.</source>
         <translation>Se agotó el tiempo de conexión.</translation>
     </message>
@@ -102,7 +97,7 @@
         <translation>No se puede conectar con el backend: {0}</translation>
     </message>
     <message>
-        <location line="+133"/>
+        <location line="+167"/>
         <source>An install task is already running...</source>
         <translation>Ya hay una instalación en curso…</translation>
     </message>
@@ -190,7 +185,7 @@
 <context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+208"/>
+        <location filename="../../src/app/work.py" line="+227"/>
         <source>Starting backend...</source>
         <translation>Iniciando el backend…</translation>
     </message>
@@ -214,6 +209,55 @@
         <location filename="../../src/app/ui/message/text/code_block_widget.py" line="+43"/>
         <source>Copy code</source>
         <translation>Copiar código</translation>
+    </message>
+</context>
+<context>
+    <name>DetailPanel</name>
+    <message>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+183"/>
+        <location line="+54"/>
+        <source>Select an asset to see how it was made</source>
+        <translation>Selecciona un recurso para ver cómo se generó</translation>
+    </message>
+    <message>
+        <location line="-40"/>
+        <source>Prompt</source>
+        <translation>Prompt</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Flow</source>
+        <translation>Flujo</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Not generated yet</source>
+        <translation>Aún no generado</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Double-click the card to enlarge</source>
+        <translation>Doble clic en la tarjeta para ampliar</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>Cannot read script: {0}</source>
+        <translation>No se puede leer el guion: {0}</translation>
+    </message>
+    <message>
+        <location line="+50"/>
+        <source>Redo</source>
+        <translation>Rehacer</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Regenerate this step and everything after it</source>
+        <translation>Regenerar este paso y todos los siguientes</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>{0}s</source>
+        <translation>{0} s</translation>
     </message>
 </context>
 <context>
@@ -319,6 +363,24 @@
     </message>
 </context>
 <context>
+    <name>GardenView</name>
+    <message>
+        <location filename="../../src/app/ui/library/garden.py" line="+33"/>
+        <source>Library</source>
+        <translation>Biblioteca</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>New pack</source>
+        <translation>Nuevo paquete</translation>
+    </message>
+    <message>
+        <location line="+57"/>
+        <source>New {0} pack</source>
+        <translation>Nuevo paquete de {0}</translation>
+    </message>
+</context>
+<context>
     <name>GeneralPage</name>
     <message>
         <location filename="../../src/app/ui/setting/page/general_page.py" line="+25"/>
@@ -344,7 +406,7 @@
 <context>
     <name>GenerationPage</name>
     <message>
-        <location filename="../../src/app/ui/gen_page.py" line="+463"/>
+        <location filename="../../src/app/ui/gen_page.py" line="+465"/>
         <source>Clear</source>
         <translation>Borrar</translation>
     </message>
@@ -369,7 +431,7 @@
         <translation>Modelo:</translation>
     </message>
     <message numerus="yes">
-        <location line="+148"/>
+        <location line="+149"/>
         <source>%n selected</source>
         <translation>
             <numerusform>%n seleccionado</numerusform>
@@ -471,7 +533,7 @@
 <context>
     <name>HistoryDelegate</name>
     <message>
-        <location filename="../../src/app/ui/gen_page.py" line="-491"/>
+        <location filename="../../src/app/ui/gen_page.py" line="-494"/>
         <source>Delete</source>
         <translation>Eliminar</translation>
     </message>
@@ -671,6 +733,44 @@
     </message>
 </context>
 <context>
+    <name>LibraryPage</name>
+    <message>
+        <location filename="../../src/app/ui/library/library_page.py" line="+164"/>
+        <source>Failed to load packs: {0}</source>
+        <translation>No se pudieron cargar los paquetes: {0}</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <source>Failed to load templates: {0}</source>
+        <translation>No se pudieron cargar las plantillas: {0}</translation>
+    </message>
+    <message>
+        <location line="+126"/>
+        <source>Failed to create pack: {0}</source>
+        <translation>No se pudo crear el paquete: {0}</translation>
+    </message>
+    <message>
+        <location line="-16"/>
+        <source>Run failed: {0}</source>
+        <translation>Error de ejecución: {0}</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Delete pack</source>
+        <translation>Eliminar paquete</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete pack &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
+        <translation>¿Eliminar el paquete &quot;{0}&quot; y todos sus archivos generados? No se puede deshacer.</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Failed to delete pack: {0}</source>
+        <translation>No se pudo eliminar el paquete: {0}</translation>
+    </message>
+</context>
+<context>
     <name>LlamaChatPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/text/llama_chat_panel.py" line="+17"/>
@@ -732,12 +832,12 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="+81"/>
+        <location filename="../../src/app/ui/window.py" line="+82"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
     <message>
-        <location line="+147"/>
+        <location line="+158"/>
         <source>Generation stopped</source>
         <translation>Generación detenida</translation>
     </message>
@@ -779,7 +879,7 @@
         <translation>Nombre del modelo</translation>
     </message>
     <message>
-        <location line="+130"/>
+        <location line="+133"/>
         <source>Model Settings</source>
         <translation>Ajustes de modelos</translation>
     </message>
@@ -789,7 +889,17 @@
         <translation>Haz doble clic en una celda para editar repo_id / filename / tag / note. La categoría y el nombre no se pueden cambiar.</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+18"/>
+        <source>Access token:</source>
+        <translation>Token de acceso:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Used to download gated models. Leave empty to use the HF_TOKEN environment variable. Takes effect after restarting the app.</source>
+        <translation>Se usa para descargar modelos restringidos. Déjalo vacío para usar la variable de entorno HF_TOKEN. Se aplica al reiniciar la aplicación.</translation>
+    </message>
+    <message>
+        <location line="+26"/>
         <source>Reload</source>
         <translation>Recargar</translation>
     </message>
@@ -820,6 +930,236 @@
         <location line="+1"/>
         <source>Loading model…</source>
         <translation>Cargando modelo…</translation>
+    </message>
+</context>
+<context>
+    <name>PackDetail</name>
+    <message>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+78"/>
+        <source>← Library</source>
+        <translation>← Biblioteca</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Run</source>
+        <translation>Ejecutar</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Stop</source>
+        <translation>Detener</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete</source>
+        <translation>Eliminar</translation>
+    </message>
+    <message>
+        <location line="+83"/>
+        <source>{0}/{1} done</source>
+        <translation>{0}/{1} listos</translation>
+    </message>
+</context>
+<context>
+    <name>PackForm</name>
+    <message>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+106"/>
+        <source>New pack</source>
+        <translation>Nuevo paquete</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>e.g. Forest props</source>
+        <translation>p. ej., Objetos del bosque</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+20"/>
+        <source>Name</source>
+        <translation>Nombre</translation>
+    </message>
+    <message>
+        <location line="-28"/>
+        <source>Template</source>
+        <translation>Plantilla</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <source>← Library</source>
+        <translation>← Biblioteca</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Category</source>
+        <translation>Categoría</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
+        <translation>Estilo fijo, se añade a cada elemento, p. ej., hand-painted, dark teal tones</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Style</source>
+        <translation>Estilo</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Optional</source>
+        <translation>Opcional</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Negative</source>
+        <translation>Negativo</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Cast</source>
+        <translation>Reparto</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Link a character pack to reuse its voice, or describe the voice for a new role.</source>
+        <translation>Vincula un paquete de personaje para reutilizar su voz, o describe la voz de un nuevo papel.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Character pack</source>
+        <translation>Paquete de personaje</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Voice description</source>
+        <translation>Descripción de la voz</translation>
+    </message>
+    <message>
+        <location line="+123"/>
+        <source>Prompt</source>
+        <translation>Prompt</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>Default: {0}</source>
+        <translation>Predeterminado: {0}</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>(New voice)</source>
+        <translation>(Voz nueva)</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Add row</source>
+        <translation>Añadir fila</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove row</source>
+        <translation>Quitar fila</translation>
+    </message>
+    <message>
+        <location line="-180"/>
+        <source>Items</source>
+        <translation>Elementos</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
+        <translation>Una fila por recurso. Pega varias líneas (columnas separadas por tabulador) para añadir filas.</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Create</source>
+        <translation>Crear</translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <source>No template available. Is the backend running?</source>
+        <translation>No hay plantillas disponibles. ¿Está el backend en ejecución?</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Add at least one item.</source>
+        <translation>Añade al menos un elemento.</translation>
+    </message>
+</context>
+<context>
+    <name>PackStatus</name>
+    <message>
+        <location filename="../../src/app/ui/library/pack_status.py" line="+22"/>
+        <source>Scenes</source>
+        <translation>Escenas</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Characters</source>
+        <translation>Personajes</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Items</source>
+        <translation>Objetos</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Effects</source>
+        <translation>Efectos</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Dialogue</source>
+        <translation>Diálogos</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Sound &amp; music</source>
+        <translation>Sonido y música</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Audio</source>
+        <translation>Audio</translation>
+    </message>
+    <message>
+        <location line="-2"/>
+        <source>Images</source>
+        <translation>Imágenes</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Videos</source>
+        <translation>Vídeos</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Scripts</source>
+        <translation>Guiones</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Needs review</source>
+        <translation>Por revisar</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Running</source>
+        <translation>En curso</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Failed</source>
+        <translation>Error</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Done</source>
+        <translation>Listo</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Pending</source>
+        <translation>Pendiente</translation>
     </message>
 </context>
 <context>
@@ -894,6 +1234,44 @@
     </message>
 </context>
 <context>
+    <name>ScriptEditor</name>
+    <message>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-264"/>
+        <source>Speaker</source>
+        <translation>Hablante</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Emotion</source>
+        <translation>Emoción</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Line</source>
+        <translation>Frase</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Add line</source>
+        <translation>Añadir frase</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove line</source>
+        <translation>Quitar frase</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Update script and voice again</source>
+        <translation>Actualizar guion y volver a doblar</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Confirm and voice</source>
+        <translation>Confirmar y doblar</translation>
+    </message>
+</context>
+<context>
     <name>SettingPage</name>
     <message>
         <location filename="../../src/app/ui/setting/setting.py" line="+222"/>
@@ -917,6 +1295,16 @@
         <location line="+0"/>
         <source>create new session</source>
         <translation>Crear una sesión nueva</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Library</source>
+        <translation>Biblioteca</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>asset packs</source>
+        <translation>paquetes de recursos</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -984,7 +1372,7 @@
 <context>
     <name>TopBar</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="-269"/>
+        <location filename="../../src/app/ui/window.py" line="-280"/>
         <source>hide side</source>
         <translation>Mostrar/ocultar barra lateral</translation>
     </message>

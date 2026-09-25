@@ -194,3 +194,82 @@ def test_builtin_scene_props_template_is_valid():
 def test_compose_prompt_skips_empty_parts():
     assert compose_prompt("mushroom", "") == "mushroom"
     assert compose_prompt(" ", "dark") == "dark"
+
+
+class _ParamsRecorder(StepRunner):
+    type_name = "fake.params"
+
+    def __init__(self):
+        self.seen = []
+
+    def run(self, ctx):
+        self.seen.append((ctx.params, ctx.values))
+        ctx.meta["model"] = "m"
+        path = ctx.out_dir / f"{ctx.step_id}.txt"
+        path.write_text("x", encoding="utf-8")
+        return [path]
+
+
+def test_placeholders_are_rendered_from_item_fields_and_meta_is_stored(tmp_path):
+    template = parse_template({
+        "id": "t",
+        "fields": [{"id": "voice", "default": "calm"}, {"id": "mood"}],
+        "steps": [{"id": "a", "type": "fake.params",
+                   "params": {"content": "{prompt}|{voice}|{mood}", "size": 3}}],
+    })
+    manifest = Manifest(id="pack", template="t", style=CollectionStyle(prompt="dark"), items=[
+        CollectionItem(id="x", prompt="hi {x}", fields={"mood": "sad"}),
+    ])
+    save_manifest(tmp_path, manifest)
+    runner = _ParamsRecorder()
+    CollectionExecutor(tmp_path, template, runners={"fake.params": runner}).run()
+
+    params, values = runner.seen[0]
+    # 条目原文里的花括号不会被再次解析；风格锁只进 ctx.prompt，不进 values
+    assert params == {"content": "hi {x}|calm|sad", "size": 3}
+    assert values == {"prompt": "hi {x}", "voice": "calm", "mood": "sad"}
+    meta = load_manifest(tmp_path).items[0].steps["a"].meta
+    assert meta["model"] == "m" and "elapsed" in meta
+
+
+@pytest.mark.parametrize("data, message", [
+    ({"type": "weapon"}, "类型不支持"),
+    ({"fields": [{"id": "prompt"}]}, "保留名"),
+    ({"fields": [{"id": "v", "default": "z", "options": [{"value": "a"}]}]}, "默认值"),
+    ({"steps": [{"id": "a", "type": "t", "params": {"x": "{nope}"}}]}, "未声明的字段"),
+    ({"cover": "missing"}, "封面"),
+])
+def test_invalid_template_metadata_is_rejected(data, message):
+    with pytest.raises(ValueError, match=message):
+        parse_template({"id": "bad", "steps": [{"id": "a", "type": "t"}], **data})
+
+
+def test_item_fields_are_checked_against_template():
+    template = parse_template({"id": "t", "steps": [{"id": "a", "type": "t"}], "fields": [
+        {"id": "name", "label": "角色名", "required": True},
+        {"id": "view", "default": "a", "options": [{"value": "a"}, {"value": "b"}]},
+    ]})
+    template.check_item_fields({"name": "x", "view": "b"})
+    for fields, message in (({}, "角色名"), ({"name": "x", "other": "1"}, "other"),
+                            ({"name": "x", "view": "c"}, "可选范围")):
+        with pytest.raises(ValueError, match=message):
+            template.check_item_fields(fields)
+
+
+def test_review_step_gates_downstream_until_approved(tmp_path):
+    template = parse_template({"id": "fake", "steps": [
+        {"id": "a", "type": "fake.a", "review": True},
+        {"id": "b", "type": "fake.b", "inputs": ["a"]},
+    ]})
+    pack = _make_pack(tmp_path, item_ids=("x",))
+    log = []
+    runners = {"fake.a": _Recorder("fake.a", log), "fake.b": _Recorder("fake.b", log)}
+    CollectionExecutor(pack, template, runners=runners).run()
+    assert _status(pack, "x", "b") == "pending"
+
+    manifest = load_manifest(pack)
+    manifest.items[0].steps["a"].approved = True
+    save_manifest(pack, manifest)
+    CollectionExecutor(pack, template, runners=runners).run()
+    assert _status(pack, "x", "b") == "done"
+    assert ("fake.a", "x") in log and log.count(("fake.a", "x")) == 1

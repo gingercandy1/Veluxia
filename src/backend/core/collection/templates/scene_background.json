@@ -1,0 +1,21 @@
+{
+  "id": "scene_background",
+  "version": 1,
+  "type": "scene",
+  "name": "场景背景",
+  "description": "整张场景背景图，可选横版侧视、俯视、等距或正面 CG 视角，生成宽幅图后放大。",
+  "prompt_label": "场景描述",
+  "cover": "upscale",
+  "fields": [
+    {"id": "view", "label": "视角", "default": "side-scrolling game background, side view, flat horizon, layered depth", "options": [
+      {"value": "side-scrolling game background, side view, flat horizon, layered depth", "label": "横版侧视"},
+      {"value": "top-down game map, bird's eye view, orthographic", "label": "俯视"},
+      {"value": "isometric game scene, 45 degree view, diorama", "label": "等距"},
+      {"value": "visual novel background, eye-level front view, cinematic composition", "label": "正面 CG"}
+    ]}
+  ],
+  "steps": [
+    {"id": "generate", "type": "image.generate", "label": "生成", "params": {"model_name": "Z-Image-Turbo", "width": 1344, "height": 768, "prompt_suffix": "{view}, no characters, no text"}},
+    {"id": "upscale", "type": "image.upscale", "label": "放大", "deliverable": true, "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["generate"]}
+  ]
+}

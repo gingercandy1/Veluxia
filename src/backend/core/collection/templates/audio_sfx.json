@@ -1,0 +1,19 @@
+{
+  "id": "audio_sfx",
+  "version": 1,
+  "type": "audio",
+  "name": "音效",
+  "description": "脚步、开门、打击、UI 点击等短音效，每条描述生成一段。",
+  "prompt_label": "音效描述（英文效果更好）",
+  "fields": [
+    {"id": "duration", "label": "时长（秒）", "default": "3", "options": [
+      {"value": "1", "label": "1 秒"},
+      {"value": "3", "label": "3 秒"},
+      {"value": "5", "label": "5 秒"},
+      {"value": "10", "label": "10 秒"}
+    ]}
+  ],
+  "steps": [
+    {"id": "sfx", "type": "speech.generate", "label": "生成音效", "deliverable": true, "params": {"model_name": "Stable-Audio-Open-1.0", "duration": "{duration}"}}
+  ]
+}

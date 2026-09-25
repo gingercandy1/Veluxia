@@ -6,21 +6,22 @@ QWidget#setting_content {
     background-color: transparent;
 }
 
+/* 与主窗口同底色，分区只靠分割线，和资料库页一致 */
 QStackedWidget#setting_stack {
-    background-color: #13161a;
+    background-color: transparent;
 }
 
 /* ────────────────────────────────────────────────────────────
    左侧导航栏
    ──────────────────────────────────────────────────────────── */
 QWidget#nav_bar {
-    background-color: #0d1117;
-    border-right: 0.5px solid rgba(255, 255, 255, 0.06);
+    background-color: transparent;
+    border-right: 0.5px solid rgba(100, 100, 100, 0.25);
 }
 
 /* 导航与内容区分割线 */
 QFrame#nav_separator {
-    background-color: rgba(255, 255, 255, 0.06);
+    background-color: rgba(100, 100, 100, 0.25);
     border: none;
     max-width: 1px;
 }
@@ -29,12 +30,12 @@ QFrame#nav_separator {
    底部操作栏
    ──────────────────────────────────────────────────────────── */
 QWidget#bottom_bar {
-    background-color: #0d1117;
-    border-top: 0.5px solid rgba(255, 255, 255, 0.06);
+    background-color: transparent;
+    border-top: 0.5px solid rgba(100, 100, 100, 0.25);
 }
 
 QFrame#bottom_separator {
-    background-color: rgba(255, 255, 255, 0.06);
+    background-color: rgba(100, 100, 100, 0.25);
     border: none;
     max-height: 1px;
 }

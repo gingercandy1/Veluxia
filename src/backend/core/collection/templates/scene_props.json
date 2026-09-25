@@ -1,11 +1,15 @@
 {
   "id": "scene_props",
-  "version": 1,
+  "version": 2,
   "type": "scene",
+  "name": "场景道具",
+  "description": "单个摆件、建筑部件等可放进场景的物体：去背景、放大后裁掉透明边，直接拖进引擎。",
+  "prompt_label": "道具描述",
+  "cover": "trim",
   "steps": [
-    {"id": "generate", "type": "image.generate", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "single isolated object, plain white background, centered, full view"}},
-    {"id": "remove_bg", "type": "image.remove_bg", "params": {"model_name": "rembg-birefnet"}, "inputs": ["generate"]},
-    {"id": "upscale", "type": "image.upscale", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["remove_bg"]},
-    {"id": "trim", "type": "image.trim", "inputs": ["upscale"]}
+    {"id": "generate", "type": "image.generate", "label": "生成", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "single isolated object, plain white background, centered, full view"}},
+    {"id": "remove_bg", "type": "image.remove_bg", "label": "去背景", "params": {"model_name": "rembg-birefnet"}, "inputs": ["generate"]},
+    {"id": "upscale", "type": "image.upscale", "label": "放大", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["remove_bg"]},
+    {"id": "trim", "type": "image.trim", "label": "裁边", "deliverable": true, "inputs": ["upscale"]}
   ]
 }

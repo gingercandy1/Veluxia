@@ -3,19 +3,24 @@ import asyncio
 from fastapi import HTTPException
 
 from src.backend.core.collection import library
-from src.backend.core.collection.template import list_templates
+from src.backend.core.collection.template import Template, list_templates
 from src.backend.core.job_manager import Job
 from src.backend.core.model_utils import to_media_url
 from src.backend.router_base import BaseRouter
 from src.shared.schemas import (
+    ApproveStepRequest,
     BaseResponse,
     CreatePackRequest,
+    FieldOption,
     Manifest,
     PackListResponse,
     PackResponse,
+    ResetStepRequest,
     RunPackRequest,
+    TemplateFieldInfo,
     TemplateInfo,
     TemplateListResponse,
+    TemplateStepInfo,
 )
 
 
@@ -34,9 +39,7 @@ class LibraryRouter(BaseRouter):
                 items = await asyncio.to_thread(list_templates)
             except ValueError as exc:
                 raise HTTPException(status_code=500, detail=str(exc)) from exc
-            return TemplateListResponse(templates=[
-                TemplateInfo(id=t.id, type=t.type, steps=t.step_ids()) for t in items
-            ])
+            return TemplateListResponse(templates=[self._template_info(t) for t in items])
 
         @self.router.get("/packs", response_model=PackListResponse, summary="列出资源包")
         async def list_packs() -> PackListResponse:
@@ -73,10 +76,56 @@ class LibraryRouter(BaseRouter):
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
             return BaseResponse(ok=True)
 
+        @self.router.post("/packs/{pack_id}/approve", response_model=PackResponse,
+                          summary="确认待审阅的步骤")
+        async def approve_step(pack_id: str, req: ApproveStepRequest) -> PackResponse:
+            return await self._update_pack(library.approve_step, pack_id, req)
+
+        @self.router.post("/packs/{pack_id}/reset", response_model=PackResponse,
+                          summary="重做某条目的某一步")
+        async def reset_step(pack_id: str, req: ResetStepRequest) -> PackResponse:
+            return await self._update_pack(library.reset_step, pack_id, req)
+
+    async def _update_pack(self, action, pack_id: str, req) -> PackResponse:
+        try:
+            manifest = await asyncio.to_thread(action, pack_id, req)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except library.PackBusyError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return self._pack_response(manifest)
+
     async def handle_run(self, req: RunPackRequest, job: Job) -> PackResponse:
         # runner 内部用 asyncio.run 驱动生成器，必须放到没有事件循环的线程里执行
         manifest = await asyncio.to_thread(library.run_pack, req.pack_id, job.cancel_event)
         return self._pack_response(manifest)
+
+    @staticmethod
+    def _template_info(template: Template) -> TemplateInfo:
+        return TemplateInfo(
+            id=template.id,
+            type=template.type,
+            name=template.name,
+            description=template.description,
+            prompt_label=template.prompt_label,
+            cover=template.cover,
+            fields=[
+                TemplateFieldInfo(
+                    id=spec.id, label=spec.label, required=spec.required, default=spec.default,
+                    options=[FieldOption(value=value, label=label) for value, label in spec.options],
+                )
+                for spec in template.fields
+            ],
+            steps=template.step_ids(),
+            step_details=[
+                TemplateStepInfo(id=step.id, type=step.type, label=step.label,
+                                 deliverable=step.deliverable, review=step.review,
+                                 inputs=list(step.inputs))
+                for step in template.steps
+            ],
+        )
 
     @staticmethod
     def _pack_response(manifest: Manifest) -> PackResponse:

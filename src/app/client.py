@@ -8,7 +8,9 @@ from typing import Any, Dict, Generator, Optional, Callable
 from PySide6.QtCore import QCoreApplication
 
 from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, AnimationResponse, SpeechResponse, \
-    ModelInfoResponse, TranslateResponse, RefineResponse, SpriteSheetResponse, TranscriptionResponse
+    ModelInfoResponse, TranslateResponse, RefineResponse, SpriteSheetResponse, TranscriptionResponse, \
+    CreatePackRequest, PackListResponse, PackResponse, TemplateListResponse, \
+    ApproveStepRequest, ResetStepRequest
 
 _DEFAULT_LIMITS = httpx.Limits(
     max_connections=10,
@@ -351,6 +353,40 @@ class ApiClient:
     def get_model_info(self, factory_type_str):
         _model_info = self._get(f"/{factory_type_str}/models", response_cls=ModelInfoResponse)
         return _model_info
+
+    # 资料库（ADR 0004）
+    def list_templates(self) -> TemplateListResponse:
+        return self._get("/library/templates", response_cls=TemplateListResponse)
+
+    def list_packs(self) -> PackListResponse:
+        return self._get("/library/packs", response_cls=PackListResponse)
+
+    def get_pack(self, pack_id: str) -> PackResponse:
+        return self._get(f"/library/packs/{pack_id}", response_cls=PackResponse)
+
+    def create_pack(self, request: CreatePackRequest) -> PackResponse:
+        return self._post("/library/packs", request.model_dump(), PackResponse)
+
+    def delete_pack(self, pack_id: str) -> BaseResponse:
+        return self._delete(f"/library/packs/{pack_id}")
+
+    def run_pack(self, pack_id: str, stop_event: Optional[threading.Event] = None) -> PackResponse:
+        """整包执行可能跑一整夜；进度以 manifest 为准，由界面另行轮询 get_pack。"""
+        return self._submit_and_poll("/library/run", {"pack_id": pack_id}, PackResponse,
+                                     stop_event=stop_event, max_total_wait_seconds=24 * 3600)
+
+    def approve_step(self, pack_id: str, request: ApproveStepRequest) -> PackResponse:
+        return self._post(f"/library/packs/{pack_id}/approve", request.model_dump(), PackResponse)
+
+    def reset_step(self, pack_id: str, request: ResetStepRequest) -> PackResponse:
+        return self._post(f"/library/packs/{pack_id}/reset", request.model_dump(), PackResponse)
+
+    def fetch_media(self, media_url: str) -> bytes:
+        """直接取媒体字节，不走 download_media 的按文件名缓存：
+        资源包里每个条目的产物同名（如 trim.png），重跑后内容也会变，按名缓存会串图或过期。"""
+        resp = self._session.get(f"{self.base_url}{media_url}", timeout=self._timeout)
+        resp.raise_for_status()
+        return resp.content
 
 
 
