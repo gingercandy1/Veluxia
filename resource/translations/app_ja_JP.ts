@@ -33,11 +33,6 @@
     </message>
     <message>
         <location line="+4"/>
-        <source>batch_size</source>
-        <translation>バッチサイズ</translation>
-    </message>
-    <message>
-        <location line="+4"/>
         <source>seed</source>
         <translation>シード</translation>
     </message>
@@ -45,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+66"/>
+        <location filename="../../src/app/client.py" line="+68"/>
         <location line="+135"/>
-        <location line="+237"/>
+        <location line="+271"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>バックエンドに接続できません。サービスが起動しているか確認してください。</translation>
     </message>
     <message>
-        <location line="-368"/>
+        <location line="-402"/>
         <source>Connection timed out.</source>
         <translation>接続がタイムアウトしました。</translation>
     </message>
@@ -102,7 +97,7 @@
         <translation>バックエンドに接続できません：{0}</translation>
     </message>
     <message>
-        <location line="+133"/>
+        <location line="+167"/>
         <source>An install task is already running...</source>
         <translation>インストールタスクはすでに実行中です…</translation>
     </message>
@@ -190,7 +185,7 @@
 <context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+208"/>
+        <location filename="../../src/app/work.py" line="+227"/>
         <source>Starting backend...</source>
         <translation>バックエンドを起動しています…</translation>
     </message>
@@ -214,6 +209,55 @@
         <location filename="../../src/app/ui/message/text/code_block_widget.py" line="+43"/>
         <source>Copy code</source>
         <translation>コードをコピー</translation>
+    </message>
+</context>
+<context>
+    <name>DetailPanel</name>
+    <message>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+183"/>
+        <location line="+54"/>
+        <source>Select an asset to see how it was made</source>
+        <translation>素材を選ぶと生成の過程を確認できます</translation>
+    </message>
+    <message>
+        <location line="-40"/>
+        <source>Prompt</source>
+        <translation>プロンプト</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Flow</source>
+        <translation>実行フロー</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Not generated yet</source>
+        <translation>まだ生成されていません</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Double-click the card to enlarge</source>
+        <translation>カードをダブルクリックで拡大</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>Cannot read script: {0}</source>
+        <translation>台本を読み込めません：{0}</translation>
+    </message>
+    <message>
+        <location line="+50"/>
+        <source>Redo</source>
+        <translation>やり直す</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Regenerate this step and everything after it</source>
+        <translation>このステップと以降をすべて再生成</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>{0}s</source>
+        <translation>{0} 秒</translation>
     </message>
 </context>
 <context>
@@ -319,6 +363,24 @@
     </message>
 </context>
 <context>
+    <name>GardenView</name>
+    <message>
+        <location filename="../../src/app/ui/library/garden.py" line="+33"/>
+        <source>Library</source>
+        <translation>ライブラリ</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>New pack</source>
+        <translation>新しいパック</translation>
+    </message>
+    <message>
+        <location line="+57"/>
+        <source>New {0} pack</source>
+        <translation>{0}パックを新規作成</translation>
+    </message>
+</context>
+<context>
     <name>GeneralPage</name>
     <message>
         <location filename="../../src/app/ui/setting/page/general_page.py" line="+25"/>
@@ -344,7 +406,7 @@
 <context>
     <name>GenerationPage</name>
     <message>
-        <location filename="../../src/app/ui/gen_page.py" line="+463"/>
+        <location filename="../../src/app/ui/gen_page.py" line="+465"/>
         <source>Clear</source>
         <translation>クリア</translation>
     </message>
@@ -369,7 +431,7 @@
         <translation>モデル：</translation>
     </message>
     <message numerus="yes">
-        <location line="+148"/>
+        <location line="+149"/>
         <source>%n selected</source>
         <translation>
             <numerusform>%n 件選択中</numerusform>
@@ -469,7 +531,7 @@
 <context>
     <name>HistoryDelegate</name>
     <message>
-        <location filename="../../src/app/ui/gen_page.py" line="-491"/>
+        <location filename="../../src/app/ui/gen_page.py" line="-494"/>
         <source>Delete</source>
         <translation>削除</translation>
     </message>
@@ -669,6 +731,44 @@
     </message>
 </context>
 <context>
+    <name>LibraryPage</name>
+    <message>
+        <location filename="../../src/app/ui/library/library_page.py" line="+164"/>
+        <source>Failed to load packs: {0}</source>
+        <translation>パック一覧の読み込みに失敗しました：{0}</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <source>Failed to load templates: {0}</source>
+        <translation>テンプレートの読み込みに失敗しました：{0}</translation>
+    </message>
+    <message>
+        <location line="+126"/>
+        <source>Failed to create pack: {0}</source>
+        <translation>パックの作成に失敗しました：{0}</translation>
+    </message>
+    <message>
+        <location line="-16"/>
+        <source>Run failed: {0}</source>
+        <translation>実行に失敗しました：{0}</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Delete pack</source>
+        <translation>パックを削除</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete pack &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
+        <translation>パック「{0}」と生成されたすべてのファイルを削除しますか？この操作は元に戻せません。</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Failed to delete pack: {0}</source>
+        <translation>パックの削除に失敗しました：{0}</translation>
+    </message>
+</context>
+<context>
     <name>LlamaChatPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/text/llama_chat_panel.py" line="+17"/>
@@ -730,12 +830,12 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="+81"/>
+        <location filename="../../src/app/ui/window.py" line="+82"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
     <message>
-        <location line="+147"/>
+        <location line="+158"/>
         <source>Generation stopped</source>
         <translation>生成を停止しました</translation>
     </message>
@@ -777,7 +877,7 @@
         <translation>モデル名</translation>
     </message>
     <message>
-        <location line="+130"/>
+        <location line="+133"/>
         <source>Model Settings</source>
         <translation>モデル設定</translation>
     </message>
@@ -787,7 +887,17 @@
         <translation>セルをダブルクリックすると repo_id / filename / tag / note を編集できます。カテゴリと名前は変更できません。</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+18"/>
+        <source>Access token:</source>
+        <translation>アクセストークン：</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Used to download gated models. Leave empty to use the HF_TOKEN environment variable. Takes effect after restarting the app.</source>
+        <translation>アクセス制限付きモデルのダウンロードに使用します。空欄の場合は環境変数 HF_TOKEN を使用します。アプリの再起動後に反映されます。</translation>
+    </message>
+    <message>
+        <location line="+26"/>
         <source>Reload</source>
         <translation>再読み込み</translation>
     </message>
@@ -818,6 +928,236 @@
         <location line="+1"/>
         <source>Loading model…</source>
         <translation>モデルを読み込み中…</translation>
+    </message>
+</context>
+<context>
+    <name>PackDetail</name>
+    <message>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+78"/>
+        <source>← Library</source>
+        <translation>← ライブラリ</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Run</source>
+        <translation>実行</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Stop</source>
+        <translation>停止</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete</source>
+        <translation>削除</translation>
+    </message>
+    <message>
+        <location line="+83"/>
+        <source>{0}/{1} done</source>
+        <translation>{0}/{1} 完了</translation>
+    </message>
+</context>
+<context>
+    <name>PackForm</name>
+    <message>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+106"/>
+        <source>New pack</source>
+        <translation>新しいパック</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>e.g. Forest props</source>
+        <translation>例：森の小物</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+20"/>
+        <source>Name</source>
+        <translation>名前</translation>
+    </message>
+    <message>
+        <location line="-28"/>
+        <source>Template</source>
+        <translation>テンプレート</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <source>← Library</source>
+        <translation>← ライブラリ</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Category</source>
+        <translation>カテゴリ</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
+        <translation>スタイル固定。各アイテムのプロンプトに追加されます。例：hand-painted, dark teal tones</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Style</source>
+        <translation>スタイル</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Optional</source>
+        <translation>任意</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Negative</source>
+        <translation>ネガティブ</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Cast</source>
+        <translation>登場人物</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Link a character pack to reuse its voice, or describe the voice for a new role.</source>
+        <translation>キャラクターパックを紐付けると声を再利用できます。新しい役は声の説明を入力してください。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Character pack</source>
+        <translation>キャラクターパック</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Voice description</source>
+        <translation>声の説明</translation>
+    </message>
+    <message>
+        <location line="+123"/>
+        <source>Prompt</source>
+        <translation>プロンプト</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>Default: {0}</source>
+        <translation>既定値：{0}</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>(New voice)</source>
+        <translation>（新しい声）</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Add row</source>
+        <translation>行を追加</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove row</source>
+        <translation>行を削除</translation>
+    </message>
+    <message>
+        <location line="-180"/>
+        <source>Items</source>
+        <translation>アイテム</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
+        <translation>1 行に 1 素材。複数行（列はタブ区切り）を貼り付けると一括追加できます。</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <source>No template available. Is the backend running?</source>
+        <translation>利用できるテンプレートがありません。バックエンドは起動していますか？</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Add at least one item.</source>
+        <translation>アイテムを 1 つ以上追加してください。</translation>
+    </message>
+</context>
+<context>
+    <name>PackStatus</name>
+    <message>
+        <location filename="../../src/app/ui/library/pack_status.py" line="+22"/>
+        <source>Scenes</source>
+        <translation>シーン</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Characters</source>
+        <translation>キャラクター</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Items</source>
+        <translation>アイテム</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Effects</source>
+        <translation>エフェクト</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Dialogue</source>
+        <translation>会話</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Sound &amp; music</source>
+        <translation>効果音・音楽</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Audio</source>
+        <translation>オーディオ</translation>
+    </message>
+    <message>
+        <location line="-2"/>
+        <source>Images</source>
+        <translation>画像</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Videos</source>
+        <translation>動画</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Scripts</source>
+        <translation>台本</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Needs review</source>
+        <translation>確認待ち</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Running</source>
+        <translation>実行中</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Failed</source>
+        <translation>失敗</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Done</source>
+        <translation>完了</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Pending</source>
+        <translation>待機中</translation>
     </message>
 </context>
 <context>
@@ -892,6 +1232,44 @@
     </message>
 </context>
 <context>
+    <name>ScriptEditor</name>
+    <message>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-264"/>
+        <source>Speaker</source>
+        <translation>話者</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Emotion</source>
+        <translation>感情</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Line</source>
+        <translation>セリフ</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Add line</source>
+        <translation>セリフを追加</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove line</source>
+        <translation>セリフを削除</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Update script and voice again</source>
+        <translation>台本を更新して再度音声化</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Confirm and voice</source>
+        <translation>台本を確定して音声化</translation>
+    </message>
+</context>
+<context>
     <name>SettingPage</name>
     <message>
         <location filename="../../src/app/ui/setting/setting.py" line="+222"/>
@@ -915,6 +1293,16 @@
         <location line="+0"/>
         <source>create new session</source>
         <translation>新しいセッションを作成</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Library</source>
+        <translation>ライブラリ</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>asset packs</source>
+        <translation>素材パック</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -982,7 +1370,7 @@
 <context>
     <name>TopBar</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="-269"/>
+        <location filename="../../src/app/ui/window.py" line="-280"/>
         <source>hide side</source>
         <translation>サイドバーの表示切替</translation>
     </message>

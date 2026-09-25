@@ -1,0 +1,13 @@
+{
+  "id": "dialogue_scene",
+  "version": 1,
+  "type": "dialogue",
+  "name": "剧情对话",
+  "description": "按剧情让 AI 写一段对话，确认剧本后按出场角色的声线逐句配音。",
+  "prompt_label": "剧情",
+  "steps": [
+    {"id": "script", "type": "text.dialogue", "label": "写剧本", "deliverable": true, "review": true, "params": {"model_name": "Qwen2.5-7B", "max_lines": 8, "temperature": 0.8}},
+    {"id": "voices", "type": "speech.cast_voice", "label": "准备声线", "params": {"model_name": "Qwen3-TTS-1.7b-design"}, "inputs": ["script"]},
+    {"id": "speak", "type": "speech.dialogue", "label": "配音", "deliverable": true, "params": {"model_name": "Qwen3-TTS-1.7b-base"}, "inputs": ["script", "voices"]}
+  ]
+}

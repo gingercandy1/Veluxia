@@ -96,6 +96,11 @@ class JobStatusResponse(BaseModel):
 
 # 资料库 / 资源包（ADR 0004）：manifest 是资源包进度的唯一来源，前后端都按这套结构解析
 StepStatus = Literal["pending", "running", "done", "error"]
+# 资源包分类，界面按这个顺序分区排列：按游戏里的东西分，而不是按文件类型分
+PackType = Literal["scene", "character", "item", "effect", "dialogue", "audio"]
+PACK_TYPES: tuple[str, ...] = ("scene", "character", "item", "effect", "dialogue", "audio")
+# 剧本台词的情绪：后端写进 LLM 提示词，界面审阅剧本时做下拉选项，两边必须一致
+DIALOGUE_EMOTIONS: tuple[str, ...] = ("平静", "开心", "生气", "悲伤", "惊讶", "害怕", "坚定")
 
 
 class StepState(BaseModel):
@@ -103,12 +108,17 @@ class StepState(BaseModel):
     status: StepStatus = "pending"
     outputs: List[str] = Field(default_factory=list, description="产物路径，相对于资源包目录")
     error: Optional[str] = None
+    meta: Dict[str, Any] = Field(
+        default_factory=dict, description="生成细节：模型、实际提示词、参数、尺寸、耗时等")
+    # 只对模板里标了 review 的步骤有意义：完成后要用户确认，下游才会继续执行
+    approved: bool = False
 
 
 class CollectionItem(BaseModel):
     """资源包里的一个待生成对象，逐一走完模板的各个步骤。"""
     id: str = Field(..., description="条目 ID，同时作为产物子目录名")
     prompt: str = ""
+    fields: Dict[str, str] = Field(default_factory=dict, description="模板声明的附加字段")
     steps: Dict[str, StepState] = Field(default_factory=dict, description="步骤 id → 状态")
 
 
@@ -118,25 +128,35 @@ class CollectionStyle(BaseModel):
     negative: str = ""
 
 
+class CastMember(BaseModel):
+    """对话包的出场角色。绑定了角色包条目时用它的设定和声线；否则按描述现场设计声音。"""
+    name: str
+    description: str = Field("", description="性格 / 音色描述；绑定角色包时可留空")
+    character: str = Field("", description="绑定的角色包条目，格式 <资源包 id>/<条目 id>")
+
+
 class Manifest(BaseModel):
     id: str
     name: str = ""
-    type: Literal["scene", "character", "dialogue"] = "scene"
+    type: PackType = "scene"
     template: str
     template_version: int = 1
     style: CollectionStyle = Field(default_factory=CollectionStyle)
+    cast: List[CastMember] = Field(default_factory=list)
     items: List[CollectionItem] = Field(default_factory=list)
 
 
 class NewCollectionItem(BaseModel):
     id: str = Field("", description="留空时按序号自动生成")
     prompt: str = ""
+    fields: Dict[str, str] = Field(default_factory=dict)
 
 
 class CreatePackRequest(BaseModel):
     name: str = ""
     template: str
     style: CollectionStyle = Field(default_factory=CollectionStyle)
+    cast: List[CastMember] = Field(default_factory=list)
     items: List[NewCollectionItem] = Field(default_factory=list)
 
 
@@ -144,10 +164,52 @@ class RunPackRequest(BaseModel):
     pack_id: str
 
 
+class ApproveStepRequest(BaseModel):
+    """确认一个待审阅的步骤（如 AI 写好的剧本），可同时提交修改后的内容。"""
+    item_id: str
+    step_id: str
+    content: Optional[str] = Field(None, description="修改后的产物内容；None 表示原样确认")
+
+
+class ResetStepRequest(BaseModel):
+    """把某条目的某一步连同下游标记为待重做，下次执行时重新生成。"""
+    item_id: str
+    step_id: str
+
+
+class FieldOption(BaseModel):
+    value: str = Field(..., description="实际拼进参数的值")
+    label: str = ""
+
+
+class TemplateFieldInfo(BaseModel):
+    """条目需要填写的附加字段（提示词之外），如角色的音色描述。"""
+    id: str
+    label: str = ""
+    required: bool = False
+    default: str = ""
+    options: List[FieldOption] = Field(default_factory=list, description="非空时界面用下拉选择")
+
+
+class TemplateStepInfo(BaseModel):
+    id: str
+    type: str
+    label: str = ""
+    deliverable: bool = Field(False, description="是否为最终交付的素材；否则是中间产物")
+    review: bool = Field(False, description="完成后需用户确认，下游步骤才继续")
+    inputs: List[str] = Field(default_factory=list, description="上游步骤 id，界面按它算素材的执行流程")
+
+
 class TemplateInfo(BaseModel):
     id: str
     type: str
+    name: str = ""
+    description: str = ""
+    prompt_label: str = Field("", description="条目主提示词在界面上的名称，如“外观描述”“台词”")
+    cover: str = Field("", description="用作封面缩略图的步骤 id，空表示没有图片产物")
+    fields: List[TemplateFieldInfo] = Field(default_factory=list)
     steps: List[str] = Field(default_factory=list, description="步骤 id，按执行顺序")
+    step_details: List[TemplateStepInfo] = Field(default_factory=list)
 
 
 class TemplateListResponse(BaseResponse):

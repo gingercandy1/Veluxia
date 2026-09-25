@@ -1,0 +1,330 @@
+/* ────────────────────────────────────────────────────────────
+   资料库页：与主窗口同底色 #101215，侧栏透明，分区只用分割线
+   ──────────────────────────────────────────────────────────── */
+QWidget#library_page,
+QWidget#library_garden,
+QWidget#library_detail_page,
+QWidget#pack_form {
+    background-color: #101215;
+}
+
+QWidget#library_tree_side,
+QWidget#library_center,
+QWidget#library_detail,
+QScrollArea#library_scroll,
+QWidget#library_scroll_content {
+    background-color: transparent;
+    border: none;
+}
+
+QFrame#library_divider {
+    background-color: rgba(100, 100, 100, 0.25);
+    border: none;
+}
+
+/* ────────────────────────────────────────────────────────────
+   文字
+   ──────────────────────────────────────────────────────────── */
+QLabel#library_title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #DCDCDC;
+    padding-bottom: 4px;
+}
+
+QLabel#library_section_title {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+QLabel#library_error {
+    font-size: 12px;
+    color: #f87171;
+}
+
+QLabel#library_form_label {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+/* 全局只给 QTextEdit 配了样式，表单里的多行输入是 QPlainTextEdit */
+QPlainTextEdit#library_text_edit {
+    background-color: #0d1117;
+    border: 0.5px solid rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
+    padding: 5px 8px;
+    color: #DCDCDC;
+    selection-background-color: rgba(123, 157, 188, 0.35);
+}
+
+QPlainTextEdit#library_text_edit:focus {
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+QPlainTextEdit#library_text_edit:disabled {
+    background-color: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.25);
+}
+
+/* ────────────────────────────────────────────────────────────
+   按钮：主操作（新建 / 创建 / 执行）、危险操作（删除）、返回
+   ──────────────────────────────────────────────────────────── */
+QPushButton#library_primary_btn {
+    background-color: rgba(123, 157, 188, 0.15);
+    border: 0.5px solid rgba(123, 157, 188, 0.35);
+    color: #7B9DBC;
+    font-weight: 600;
+}
+
+QPushButton#library_primary_btn:hover {
+    background-color: rgba(123, 157, 188, 0.25);
+    border-color: rgba(123, 157, 188, 0.55);
+}
+
+QPushButton#library_primary_btn:pressed {
+    background-color: rgba(123, 157, 188, 0.35);
+}
+
+QPushButton#library_danger_btn {
+    background-color: transparent;
+    border: 0.5px solid rgba(248, 113, 113, 0.30);
+    color: #f87171;
+}
+
+QPushButton#library_danger_btn:hover {
+    background-color: rgba(248, 113, 113, 0.12);
+}
+
+QPushButton#library_primary_btn:disabled,
+QPushButton#library_danger_btn:disabled {
+    color: rgba(255, 255, 255, 0.25);
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+QPushButton#library_back_btn {
+    background-color: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    text-align: left;
+    padding: 4px 6px;
+}
+
+QPushButton#library_back_btn:hover {
+    color: #DCDCDC;
+}
+
+/* ────────────────────────────────────────────────────────────
+   卡片（资源包 / 素材）
+   ──────────────────────────────────────────────────────────── */
+QWidget#library_card {
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 0.5px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+}
+
+QWidget#library_card:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+QWidget#library_card[selected="true"] {
+    border-color: rgba(123, 157, 188, 0.70);
+    background-color: rgba(123, 157, 188, 0.10);
+}
+
+/* 没有图片时的占位：按分类给不同底色，对话、音效卡片也能一眼区分 */
+QLabel#card_thumb {
+    background-color: rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 13px;
+}
+
+QLabel#card_thumb[category="scene"] { background-color: rgba(78, 201, 148, 0.10); }
+QLabel#card_thumb[category="character"] { background-color: rgba(123, 157, 188, 0.12); }
+QLabel#card_thumb[category="item"] { background-color: rgba(229, 192, 123, 0.10); }
+QLabel#card_thumb[category="effect"] { background-color: rgba(198, 120, 221, 0.12); }
+QLabel#card_thumb[category="dialogue"] { background-color: rgba(86, 182, 194, 0.12); }
+QLabel#card_thumb[category="audio"] { background-color: rgba(224, 108, 117, 0.10); }
+
+QLabel#card_name {
+    font-size: 13px;
+    color: #DCDCDC;
+}
+
+QLabel#card_meta {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.40);
+}
+
+/* 状态角标：待确认要用户动手，用实底最醒目；其余是描边淡底 */
+QLabel#card_badge {
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.45);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+QLabel#card_badge[status="review"] {
+    color: #101215;
+    background-color: #e5c07b;
+    font-weight: 600;
+}
+
+QLabel#card_badge[status="running"] {
+    color: #7B9DBC;
+    background-color: rgba(123, 157, 188, 0.15);
+}
+
+QLabel#card_badge[status="error"] {
+    color: #f87171;
+    background-color: rgba(248, 113, 113, 0.12);
+}
+
+QLabel#card_badge[status="done"] {
+    color: #4ec994;
+    background-color: rgba(78, 201, 148, 0.12);
+}
+
+QProgressBar#card_progress {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: none;
+    border-radius: 1px;
+}
+
+QProgressBar#card_progress::chunk {
+    background-color: #7B9DBC;
+    border-radius: 1px;
+}
+
+QProgressBar#card_progress[status="done"]::chunk { background-color: #4ec994; }
+QProgressBar#card_progress[status="review"]::chunk { background-color: #e5c07b; }
+QProgressBar#card_progress[status="error"]::chunk { background-color: #f87171; }
+
+QWidget#library_add_card {
+    background-color: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+}
+
+QWidget#library_add_card:hover {
+    border-color: rgba(123, 157, 188, 0.55);
+}
+
+QLabel#add_card_label {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 13px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   资源包详情：左侧树
+   ──────────────────────────────────────────────────────────── */
+QTreeWidget#library_tree {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    color: rgba(255, 255, 255, 0.70);
+}
+
+QTreeWidget#library_tree::item {
+    padding: 5px 4px;
+}
+
+QTreeWidget#library_tree::item:selected {
+    background-color: rgba(123, 157, 188, 0.15);
+    color: #DCDCDC;
+}
+
+/* 选中行左侧的展开箭头区域默认是系统高亮蓝，和整体配色冲突 */
+QTreeWidget#library_tree {
+    show-decoration-selected: 0;
+}
+
+QTreeWidget#library_tree::branch,
+QTreeWidget#library_tree::branch:selected {
+    background-color: transparent;
+}
+
+/* ────────────────────────────────────────────────────────────
+   资源包详情：右侧素材详情
+   ──────────────────────────────────────────────────────────── */
+QLabel#detail_title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #DCDCDC;
+}
+
+QLabel#detail_heading {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.45);
+    padding-top: 6px;
+}
+
+QLabel#detail_text {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.80);
+}
+
+QLabel#detail_muted {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.40);
+}
+
+QLabel#detail_image {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+}
+
+QFrame#flow_step {
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 0.5px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+}
+
+QLabel#flow_step_name {
+    font-size: 13px;
+    color: #DCDCDC;
+}
+
+QLabel#flow_arrow {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+QPushButton#flow_redo_btn {
+    background-color: transparent;
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 11px;
+    padding: 1px 8px;
+}
+
+QPushButton#flow_redo_btn:hover {
+    color: #DCDCDC;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+QPushButton#flow_redo_btn:disabled {
+    color: rgba(255, 255, 255, 0.20);
+}
+
+/* ────────────────────────────────────────────────────────────
+   表格：新建表单的条目 / 角色表、剧本编辑（同设置页 model_table）
+   ──────────────────────────────────────────────────────────── */
+QTableWidget#library_table,
+QTableWidget#script_table {
+    background-color: #0d1117;
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    gridline-color: rgba(255, 255, 255, 0.05);
+    outline: none;
+}
+
+QTableWidget#library_table::item,
+QTableWidget#script_table::item {
+    padding: 4px 8px;
+    border: none;
+}

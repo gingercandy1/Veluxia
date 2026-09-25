@@ -100,7 +100,7 @@ class StableAudioOpenGenerator(BaseSpeechGenerator):
         self.prompt = raw.get("content", "")
         self.negative_prompt = raw.get("negative_prompt", "").strip() or None
         # 47s 是模型上限，音效场景大多数几秒即可，默认给短一点
-        self.duration = raw.get("duration", 5.0)
+        self.duration = float(raw.get("duration", 5.0))
         self.num_inference_steps = raw.get("num_inference_steps", 8)
 
         seed_value = raw.get("seed", 0)

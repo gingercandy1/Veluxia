@@ -9,6 +9,7 @@ from src.app.client import ApiClient
 from src.app.param import GenerationRequest
 from src.app.ui.base.action_button import ActionButton
 from src.app.ui.gen_page import GenerationPage
+from src.app.ui.library.library_page import LibraryPage
 from src.app.ui.loading_page import LoadingPage
 from src.app.ui.setting.setting import SettingPage
 from src.app.ui.window_data import WindowData
@@ -127,6 +128,10 @@ class MainWindow(QMainWindow):
         self._setting_page = SettingPage()
         self._stack.addWidget(self._setting_page)
 
+        # Page 2
+        self._library_page = LibraryPage()
+        self._stack.addWidget(self._library_page)
+
         self._connect()
         self.debug_paint_areas()
 
@@ -173,6 +178,7 @@ class MainWindow(QMainWindow):
         self._top_bar.back_btn.clicked.connect(self._on_back_btn_clicked)
         self._top_bar.side_btn.clicked.connect(self._gen_page.toggle_sidebar)
         self._gen_page.setting_requested.connect(self._go_to_setting)
+        self._gen_page.library_requested.connect(self._go_to_library)
         self._setting_page.language_changed.connect(self._restart_for_language)
         self._startup.ready.connect(self._gen_page.activate_model_type)
         self._setting_page.install_requested.connect(lambda: self._startup.close())
@@ -188,6 +194,12 @@ class MainWindow(QMainWindow):
     def _go_to_setting(self):
         self._stack.setCurrentIndex(1)
         self._top_bar.set_index(1)
+
+    def _go_to_library(self):
+        self._stack.setCurrentWidget(self._library_page)
+        # 顶栏只有"主页 / 带返回按钮"两种形态，资料库复用设置页那一种
+        self._top_bar.set_index(1)
+        self._library_page.activate()
 
     def on_generate_requested(self, params: dict):
         req = GenerationRequest.build(
@@ -318,6 +330,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         self._save_running_generation()
+        self._library_page.shutdown()
         self._gen_page.closeEvent(event)
         self._client.close()
         if self._startup:

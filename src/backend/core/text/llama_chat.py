@@ -34,6 +34,22 @@ class LlamaGenerator(BaseTextGenerator):
         )
         return output["choices"][0]["message"]["content"].strip()
 
+    def complete_chat(self, messages: list[dict], max_tokens: int = 1024,
+                      temperature: float = 0.7, json_output: bool = False) -> str:
+        """不带对话记忆的单次补全：批量任务（如资源包写剧本）不能读写聊天会话的记忆。
+
+        json_output 时用 llama.cpp 的 JSON 语法约束解码，保证输出能被解析。
+        """
+        kwargs = {"response_format": {"type": "json_object"}} if json_output else {}
+        output = self.pipe.create_chat_completion(
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            stream=False,
+            **kwargs,
+        )
+        return output["choices"][0]["message"]["content"].strip()
+
     def _check_model_file(self):
         if not self.llama_local.exists() or not self.llama_path.exists():
             print("⏬ 正在下载 权重...")

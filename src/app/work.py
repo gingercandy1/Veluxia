@@ -4,7 +4,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Any, Callable, Optional
 
 import psutil
 from PySide6.QtCore import QThread, Signal
@@ -211,6 +211,25 @@ class ClearMemoryWorker(QThread):
         resp = ApiClient.instance().clear_memory(session_id=self._session_id)
         if not resp.ok:
             print(f"⚠️ 清除会话记忆失败: {resp.error}")
+
+
+class LibraryTaskWorker(QThread):
+    """在线程里执行一次资料库调用（ApiClient 方法都是同步阻塞的），结果经 finished_ok 回到主线程。
+    资料库页面的调用种类多、处理逻辑都在页面里，用一个通用 worker 而不是每种调用写一个类。"""
+    finished_ok = Signal(object)
+    error       = Signal(str)
+
+    def __init__(self, fn: Callable[..., Any], *args, **kwargs):
+        super().__init__()
+        self._fn = fn
+        self._args = args
+        self._kwargs = kwargs
+
+    def run(self):
+        try:
+            self.finished_ok.emit(self._fn(*self._args, **self._kwargs))
+        except Exception as e:
+            self.error.emit(str(e) or e.__class__.__name__)
 
 
 class BaseProcess:

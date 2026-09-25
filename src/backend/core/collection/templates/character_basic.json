@@ -1,0 +1,22 @@
+{
+  "id": "character_basic",
+  "version": 1,
+  "type": "character",
+  "name": "角色立绘",
+  "description": "透明底的全身立绘，同时按音色描述生成一段声线样本，对话包会用它给这个角色配音。",
+  "prompt_label": "外观描述",
+  "cover": "trim",
+  "fields": [
+    {"id": "name", "label": "角色名", "required": true},
+    {"id": "personality", "label": "性格设定"},
+    {"id": "voice", "label": "音色描述", "default": "年轻的声音，语速适中，吐字清晰"},
+    {"id": "sample_line", "label": "试音台词", "default": "你好，很高兴认识你，接下来请多关照。"}
+  ],
+  "steps": [
+    {"id": "generate", "type": "image.generate", "label": "生成立绘", "params": {"model_name": "Z-Image-Turbo", "width": 768, "height": 1344, "prompt_suffix": "full body character, standing pose, plain white background, centered"}},
+    {"id": "remove_bg", "type": "image.remove_bg", "label": "去背景", "params": {"model_name": "rembg-birefnet"}, "inputs": ["generate"]},
+    {"id": "upscale", "type": "image.upscale", "label": "放大", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["remove_bg"]},
+    {"id": "trim", "type": "image.trim", "label": "裁边", "deliverable": true, "inputs": ["upscale"]},
+    {"id": "voice", "type": "speech.generate", "label": "声线样本", "deliverable": true, "params": {"model_name": "Qwen3-TTS-1.7b-design", "content": "{sample_line}", "voice_prompt": "{voice}"}}
+  ]
+}

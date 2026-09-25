@@ -33,6 +33,21 @@ class _EchoRunner(StepRunner):
         return [path]
 
 
+class _DraftRunner(StepRunner):
+    """可审阅修改的草稿步骤：修改内容为空时视为不合法。"""
+    type_name = "test.draft"
+
+    def run(self, ctx: StepContext):
+        path = ctx.out_dir / f"{ctx.step_id}.txt"
+        path.write_text(ctx.values["prompt"], encoding="utf-8")
+        return [path]
+
+    def validate_edit(self, content: str) -> str:
+        if not content.strip():
+            raise ValueError("内容不能为空")
+        return content.strip()
+
+
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     media = tmp_path / "media"
@@ -42,10 +57,25 @@ def client(tmp_path, monkeypatch):
         "id": "echo", "version": 2, "type": "scene",
         "steps": [{"id": "write", "type": "test.echo"}],
     }), encoding="utf-8")
+    (templates / "reviewed.json").write_text(json.dumps({
+        "id": "reviewed", "type": "scene",
+        "steps": [{"id": "draft", "type": "test.draft", "review": True},
+                  {"id": "final", "type": "test.echo", "inputs": ["draft"]}],
+    }), encoding="utf-8")
+    (templates / "cast.json").write_text(json.dumps({
+        "id": "cast", "type": "character",
+        "fields": [{"id": "voice", "label": "音色"}],
+        "steps": [{"id": "voice", "type": "test.echo"}],
+    }), encoding="utf-8")
+    (templates / "talk.json").write_text(json.dumps({
+        "id": "talk", "type": "dialogue",
+        "steps": [{"id": "write", "type": "test.echo"}],
+    }), encoding="utf-8")
     monkeypatch.setattr(model_utils, "get_media_root", lambda: media)
     monkeypatch.setattr(library, "get_media_root", lambda: media)
     monkeypatch.setattr(template, "TEMPLATE_DIR", templates)
     steps.register_runner(_EchoRunner())
+    steps.register_runner(_DraftRunner())
     _EchoRunner.gate.set()
     _EchoRunner.started.clear()
 
@@ -55,6 +85,7 @@ def client(tmp_path, monkeypatch):
         yield test_client
     _EchoRunner.gate.set()
     steps._RUNNERS.pop(_EchoRunner.type_name, None)
+    steps._RUNNERS.pop(_DraftRunner.type_name, None)
 
 
 def _create(client, **overrides):
@@ -126,7 +157,9 @@ def test_run_job_writes_outputs_into_manifest(client):
     pack = client.get(f"/library/packs/{pack_id}").json()
     assert pack["running"] is False
     state = pack["manifest"]["items"][0]["steps"]["write"]
-    assert state == {"status": "done", "outputs": ["mushroom/write.txt"], "error": None}
+    assert state["status"] == "done" and state["error"] is None
+    assert state["outputs"] == ["mushroom/write.txt"]
+    assert "elapsed" in state["meta"]
     assert (library.pack_dir(pack_id) / "mushroom" / "write.txt").read_text(
         encoding="utf-8") == "mushroom, teal"
 
@@ -165,6 +198,146 @@ def test_routers_without_factory_type_skip_models_route(client):
     assert client.get("/library/models").status_code == 404
 
 
-def test_builtin_templates_are_listed():
-    ids = [t.id for t in template.list_templates()]
-    assert "scene_props" in ids
+def _run(client, pack_id):
+    job = client.post("/library/run/submit", json={"pack_id": pack_id}).json()
+    status = _wait_job(client, job["job_id"])
+    assert status["status"] == "done", status["error"]
+    return client.get(f"/library/packs/{pack_id}").json()["manifest"]
+
+
+def _steps(manifest):
+    return manifest["items"][0]["steps"]
+
+
+def test_review_step_blocks_downstream_until_approved(client):
+    pack_id = _create(client, template="reviewed", items=[{"id": "a", "prompt": "hello"}]
+                      ).json()["manifest"]["id"]
+    manifest = _run(client, pack_id)
+    assert _steps(manifest)["draft"]["status"] == "done"
+    assert _steps(manifest)["final"]["status"] == "pending"
+
+    body = {"item_id": "a", "step_id": "draft"}
+    approved = client.post(f"/library/packs/{pack_id}/approve", json=body)
+    assert approved.status_code == 200
+    assert _steps(approved.json()["manifest"])["draft"]["approved"] is True
+    assert _steps(_run(client, pack_id))["final"]["status"] == "done"
+
+
+def test_approve_with_edit_rewrites_output_and_resets_downstream(client):
+    pack_id = _create(client, template="reviewed", items=[{"id": "a", "prompt": "hello"}]
+                      ).json()["manifest"]["id"]
+    _run(client, pack_id)
+    client.post(f"/library/packs/{pack_id}/approve", json={"item_id": "a", "step_id": "draft"})
+    _run(client, pack_id)
+
+    body = {"item_id": "a", "step_id": "draft", "content": "  edited  "}
+    manifest = client.post(f"/library/packs/{pack_id}/approve", json=body).json()["manifest"]
+    assert _steps(manifest)["draft"]["meta"]["edited"] is True
+    assert _steps(manifest)["final"]["status"] == "pending"
+    assert (library.pack_dir(pack_id) / "a" / "draft.txt").read_text(encoding="utf-8") == "edited"
+
+
+@pytest.mark.parametrize("body, status", [
+    ({"item_id": "a", "step_id": "final"}, 400),       # 不需要审阅的步骤
+    ({"item_id": "x", "step_id": "draft"}, 400),       # 条目不存在
+    ({"item_id": "a", "step_id": "nope"}, 400),        # 步骤不存在
+    ({"item_id": "a", "step_id": "draft", "content": " "}, 400),  # 修改内容不合法
+])
+def test_approve_rejects_invalid_requests(client, body, status):
+    pack_id = _create(client, template="reviewed", items=[{"id": "a", "prompt": "hello"}]
+                      ).json()["manifest"]["id"]
+    _run(client, pack_id)
+    assert client.post(f"/library/packs/{pack_id}/approve", json=body).status_code == status
+
+
+def test_approve_requires_finished_step(client):
+    pack_id = _create(client, template="reviewed", items=[{"id": "a", "prompt": "hello"}]
+                      ).json()["manifest"]["id"]
+    body = {"item_id": "a", "step_id": "draft"}
+    assert client.post(f"/library/packs/{pack_id}/approve", json=body).status_code == 400
+    assert client.post("/library/packs/missing/approve", json=body).status_code == 404
+
+
+def test_reset_step_marks_it_and_downstream_pending(client):
+    pack_id = _create(client, template="reviewed", items=[{"id": "a", "prompt": "hello"}]
+                      ).json()["manifest"]["id"]
+    _run(client, pack_id)
+    client.post(f"/library/packs/{pack_id}/approve", json={"item_id": "a", "step_id": "draft"})
+    _run(client, pack_id)
+
+    reset = client.post(f"/library/packs/{pack_id}/reset", json={"item_id": "a", "step_id": "draft"})
+    assert reset.status_code == 200
+    states = _steps(reset.json()["manifest"])
+    assert states["draft"]["status"] == "pending" and states["final"]["status"] == "pending"
+    assert states["draft"]["approved"] is False
+
+
+def test_item_fields_are_validated_and_stored(client):
+    items = [{"id": "hero", "prompt": "knight", "fields": {"voice": "低沉"}}]
+    manifest = _create(client, template="cast", items=items).json()["manifest"]
+    assert manifest["items"][0]["fields"] == {"voice": "低沉"}
+    unknown = [{"prompt": "knight", "fields": {"color": "red"}}]
+    assert _create(client, template="cast", items=unknown).status_code == 400
+
+
+def test_dialogue_cast_is_validated(client):
+    character = _create(client, template="cast", items=[{"id": "hero", "prompt": "knight"}]
+                        ).json()["manifest"]["id"]
+    scene = _create(client).json()["manifest"]["id"]
+    talk = {"template": "talk", "items": [{"prompt": "相遇"}]}
+
+    ok = [{"name": "骑士", "character": f"{character}/hero"}, {"name": "路人", "description": "老人"}]
+    assert _create(client, **talk, cast=ok).status_code == 200
+    for cast in (
+        [],                                                        # 对话包必须有角色
+        [{"name": "骑士"}],                                        # 既没绑定也没描述
+        [{"name": "甲", "description": "a"}, {"name": "甲", "description": "b"}],  # 重名
+        [{"name": "骑士", "character": f"{character}/nobody"}],     # 条目不存在
+        [{"name": "骑士", "character": f"{scene}/mushroom"}],       # 不是角色包
+        [{"name": "骑士", "character": "missing/hero"}],            # 角色包不存在
+    ):
+        assert _create(client, **talk, cast=cast).status_code == 400, cast
+    # 非对话包不能带出场角色
+    assert _create(client, cast=ok).status_code == 400
+
+
+def test_cast_resolves_character_voice_sample(client):
+    character = _create(client, template="cast", items=[
+        {"id": "hero", "prompt": "knight", "fields": {"voice": "低沉"}}]).json()["manifest"]["id"]
+    member = library.CastMember(name="骑士", character=f"{character}/hero")
+
+    # 还没生成声线时退回按描述设计
+    voice = library._resolve_cast_member(member)
+    assert voice.sample_audio is None and voice.voice_prompt == "低沉"
+    assert voice.description == "knight"
+
+    manifest = _run(client, character)
+    directory = library.pack_dir(character)
+    state = manifest["items"][0]["steps"]["voice"]
+    # 假 runner 不写 meta.prompt，手动补上样本文本，模拟 TTS 步骤的产物
+    stored = library.load_manifest(directory)
+    stored.items[0].steps["voice"].meta["prompt"] = "你好"
+    library.save_manifest(directory, stored)
+
+    voice = library._resolve_cast_member(member)
+    assert voice.sample_audio == directory / state["outputs"][0]
+    assert voice.sample_text == "你好"
+
+
+def test_templates_route_exposes_fields_and_steps(client):
+    templates = {t["id"]: t for t in client.get("/library/templates").json()["templates"]}
+    assert templates["cast"]["fields"][0]["id"] == "voice"
+    assert templates["reviewed"]["steps"] == ["draft", "final"]
+    assert templates["reviewed"]["step_details"][0]["review"] is True
+
+
+def test_builtin_templates_load_and_use_registered_runners():
+    runners = steps.registered_runners()
+    loaded = template.list_templates()
+    assert {t.type for t in loaded} >= {"scene", "character", "item", "effect", "dialogue",
+                                        "audio"}
+    for tpl in loaded:
+        assert tpl.name, tpl.id
+        missing = [s.type for s in tpl.steps if s.type not in runners]
+        assert not missing, (tpl.id, missing)
+        assert any(s.deliverable for s in tpl.steps), tpl.id
