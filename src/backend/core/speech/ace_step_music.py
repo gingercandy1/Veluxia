@@ -1,109 +1,135 @@
-import gc
-import os
+import asyncio
+import sys
 from pathlib import Path
 
 from src.backend.core.model_base import BaseSpeechGenerator
-from src.backend.core.model_utils import print_vram_usage, get_temp_dir
+from src.backend.core.model_utils import get_temp_dir, huggingface_token, print_vram_usage
 from src.shared.settings import PROJECT_ROOT
 
+# 第三方源码目录（gitignore，单独克隆 + 安装依赖，见 backend/pyproject.toml）
+ACE_STEP_ROOT = Path(PROJECT_ROOT) / "src" / "backend" / "core" / "speech" / "ACE_Step"
+
+
 class AceStepMusicGenerator(BaseSpeechGenerator):
+    """ACE-Step 1.5 音乐生成：5Hz LM 先规划曲式与音频码，DiT 再合成音频。
+
+    ACE-Step 内部以 `acestep.*` 互相导入，只能把 ACE_Step 根目录挂进 sys.path，
+    不能按 `ACE_Step.acestep` 包路径导入。
+    """
+    # pipe 指向 DiT handler（ensure_model_loaded 靠它判断是否已加载），LM 单独持有
+    _model_attrs = ("pipe", "llm_handler")
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.llm_handler = None
+        self.checkpoint_dir = ACE_STEP_ROOT / "checkpoints"
+        extra = getattr(self, "model_extra", {})
+        self.dit_model = extra.get("dit_model", "acestep-v15-turbo")
+        # 官方 GPU 分档里 8GB 只推荐 0.6B LM；1.7B 需要 12GB 以上
+        self.lm_model = extra.get("lm_model", "acestep-5Hz-lm-0.6B")
 
-        # ACE-Step 项目路径
-        self.ace_step_root = Path(os.path.join(PROJECT_ROOT, "src/core/speech/ACE_Step"))
-        self.ace_model_path = Path(os.path.join(self.ace_step_root, "checkpoints"))
-
-        self.model_dir = self.ace_step_root / "checkpoints"
-        self.output_dir = Path("output/music")
+    @staticmethod
+    def _add_import_path():
+        if str(ACE_STEP_ROOT) not in sys.path:
+            sys.path.insert(0, str(ACE_STEP_ROOT))
 
     def _check_model_file(self):
-        pass
+        if not (ACE_STEP_ROOT / "acestep").is_dir():
+            raise FileNotFoundError(
+                f"未找到 ACE-Step 源码：{ACE_STEP_ROOT}，请先把 ACE-Step-1.5 克隆到该目录并安装依赖")
+        self._add_import_path()
+        from acestep.model_downloader import ensure_lm_model, ensure_main_model
+
+        # 主模型包（DiT turbo、VAE、文本编码器）缺失时由 ACE-Step 自带下载器补齐；
+        # 非默认的 LM 不在主模型包里，要单独下
+        ok, message = ensure_main_model(self.checkpoint_dir, token=huggingface_token)
+        if not ok:
+            raise RuntimeError(f"ACE-Step 主模型下载失败：{message}")
+        ok, message = ensure_lm_model(self.lm_model, self.checkpoint_dir, token=huggingface_token)
+        if not ok:
+            raise RuntimeError(f"ACE-Step LM {self.lm_model} 下载失败：{message}")
 
     def _load_model(self):
-        if self.pipe is not None:
-            return
-        print(f"🔄 正在加载 ACE-Step 1.5...")
+        self._add_import_path()
+        from acestep.handler import AceStepHandler
+        from acestep.llm_inference import LLMHandler
 
-        import sys
-        if str(self.ace_step_root) not in sys.path:
-            sys.path.insert(0, str(self.ace_step_root))
+        print(f"🔄 正在加载 {self.model_name}（DiT {self.dit_model} + LM {self.lm_model}）...")
+        dit_handler = AceStepHandler()
+        # 8GB 下 DiT 与 LM 放不下同时驻留：两者都开 offload，推理时轮流上显存
+        message, ok = dit_handler.initialize_service(
+            project_root=str(ACE_STEP_ROOT),
+            config_path=self.dit_model,
+            device=self.device,
+            offload_to_cpu=True,
+            offload_dit_to_cpu=True,
+        )
+        if not ok:
+            raise RuntimeError(f"ACE-Step DiT 加载失败：{message}")
 
-        try:
-            from ACE_Step.acestep.handler import AceStepHandler
-            from ACE_Step.acestep.llm_inference import LLMHandler
-            from ACE_Step.acestep.inference import GenerationParams, GenerationConfig, generate_music
+        llm_handler = LLMHandler()
+        # vllm 不支持 Windows，只能用 PyTorch 后端
+        message, ok = llm_handler.initialize(
+            checkpoint_dir=str(self.checkpoint_dir),
+            lm_model_path=self.lm_model,
+            backend="pt",
+            device=self.device,
+            offload_to_cpu=True,
+        )
+        if not ok:
+            raise RuntimeError(f"ACE-Step LM 加载失败：{message}")
 
-            self.dit_handler = AceStepHandler()
-            self.llm_handler = LLMHandler()
+        self.pipe = dit_handler
+        self.llm_handler = llm_handler
+        print(f"✅ {self.model_name} 加载完成")
+        print_vram_usage()
 
-            self.dit_handler.initialize_service(
-                project_root=str(self.ace_step_root),
-                config_path="acestep-v15-turbo",
-                device=self.device,
-            )
-
-            self.llm_handler.initialize(
-                checkpoint_dir=str(self.ace_model_path),
-                lm_model_path="acestep-5Hz-lm-0.6B",
-                backend="vllm",
-                device=self.device,
-            )
-            print("✅ ACE-Step 1.5 模型加载完成")
-            print_vram_usage()
-
-        except Exception as e:
-            print(f"❌ 加载 ACE-Step 失败: {e}")
-            print("请确认：")
-            print("1. ACE-Step-1.5 项目已正确克隆并 uv sync")
-            print("2. self.ace_step_root 路径是否正确")
-            raise
-
-    def generate_music(self) -> Path:
+    async def generate_music(self) -> Path:
         self.ensure_model_loaded()
-        output_dir = Path(self.output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
+        from acestep.inference import GenerationConfig, GenerationParams, generate_music
 
         print(f"🎵 开始生成音乐 | 时长: {self.duration}s")
-        from acestep.inference import GenerationParams, GenerationConfig, generate_music
-
-        # 配置生成参数
         params = GenerationParams(
             caption=self.prompt,
-            bpm=128,
+            # 游戏 BGM 多为纯音乐：没给歌词就按纯音乐生成，避免模型自己编词哼唱
+            lyrics=self.lyrics or "[Instrumental]",
+            instrumental=not self.lyrics,
             duration=self.duration,
             seed=self.seed,
         )
-
-        # 配置生成设置
+        # 只返回一首，批量只会多占显存
         config = GenerationConfig(
-            batch_size=self.batch_size,
-            audio_format="flac",
+            batch_size=1,
+            use_random_seed=False,
+            seeds=[self.seed],
+            audio_format="wav",
         )
 
-        # 生成音乐
-        result = generate_music(self.dit_handler,
-                                self.llm_handler,
-                                params,
-                                config,
-                                save_dir=str(output_dir))
+        # ACE-Step 只在阶段切换时回调进度，取消也只能在这些点生效
+        def _progress(*args, **kwargs):
+            self.check_cancelled()
 
-        if result.success:
-            for audio in result.audios:
-                print(f"✅ 已生成：{audio['path']}")
-                print(f"   Seed：{audio['params'].get('seed', 'N/A')}")
-            return Path(result.audios[0]["path"])
-        else:
-            print(f"❌ 生成失败：{result.error}")
-            return Path("")
+        try:
+            result = await asyncio.to_thread(
+                generate_music, self.pipe, self.llm_handler, params, config,
+                save_dir=self.output_dir, progress=_progress)
+        finally:
+            self.torch.cuda.empty_cache()
+
+        # ACE-Step 会把回调里抛出的异常吞成失败结果，取消要在这里重新识别
+        self.check_cancelled()
+        if not result.success or not result.audios or not result.audios[0].get("path"):
+            raise RuntimeError(f"ACE-Step 生成失败：{result.error or result.status_message}")
+        path = Path(result.audios[0]["path"])
+        print(f"✅ 生成完成: {path.name}")
+        return path
 
     def parse_params(self, raw: dict):
         self.prompt = raw.get("content", "")
+        self.lyrics = raw.get("lyrics", "").strip()
         self.output_dir = get_temp_dir(raw.get("output_dir", ""))
-
-        self.duration = raw.get("duration", 10)  # 秒
-        self.batch_size = raw.get("batch_size", 4)
-        self.seed = raw.get("seed", 42)
+        self.duration = float(raw.get("duration", 10))
+        self.seed = int(raw.get("seed", 42))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -176,11 +202,7 @@ ORI_STYLE_PROMPTS = {
 }
 
 
-
 if __name__ == '__main__':
-    generator = AceStepMusicGenerator()
-    generator.ensure_model_loaded()
-    generator._run_pipeline(
-        prompt=ORI_STYLE_PROMPTS["forest_exploration"],
-        duration=30.0,
-    )
+    generator = AceStepMusicGenerator(model_name="Ace-Step1.5", device="auto")
+    generator.parse_params({"content": ORI_STYLE_PROMPTS["forest_exploration"], "duration": 30})
+    print(asyncio.run(generator.generate_music()))
