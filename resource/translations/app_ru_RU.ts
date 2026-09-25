@@ -5,11 +5,21 @@
     <name>AboutPage</name>
     <message>
         <location filename="../../src/app/ui/setting/page/about_page.py" line="+10"/>
-        <source>An AI-powered multimodal creation tool for generating text, images, animation and speech.</source>
-        <translation>Мультимодальный инструмент на базе ИИ для создания текста, изображений, анимации и речи.</translation>
+        <source>Local AI studio for game assets</source>
+        <translation>Локальная ИИ-студия для игровых ассетов</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+1"/>
+        <source>Generate text, images, animation, voice, music and sound effects entirely on your own computer. Private, free to run, and optimized for 8 GB GPUs.</source>
+        <translation>Создавайте текст, изображения, анимацию, озвучку, музыку и звуковые эффекты прямо на своём компьютере. Приватно, бесплатно и оптимизировано для видеокарт с 8 ГБ памяти.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Released under the MIT License. AI models are subject to their own licenses.</source>
+        <translation>Распространяется по лицензии MIT. На модели ИИ распространяются их собственные лицензии.</translation>
+    </message>
+    <message>
+        <location line="+36"/>
         <source>Version</source>
         <translation>Версия</translation>
     </message>
@@ -36,13 +46,13 @@
     <name>ApiClient</name>
     <message>
         <location filename="../../src/app/client.py" line="+66"/>
-        <location line="+130"/>
+        <location line="+135"/>
         <location line="+237"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>Не удаётся подключиться к серверу. Проверьте, запущена ли служба.</translation>
     </message>
     <message>
-        <location line="-363"/>
+        <location line="-368"/>
         <source>Connection timed out.</source>
         <translation>Время ожидания подключения истекло.</translation>
     </message>
@@ -57,7 +67,7 @@
         <translation>Не удаётся подключиться к серверу.</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+116"/>
         <source>Generation stopped.</source>
         <translation>Генерация остановлена.</translation>
     </message>
@@ -115,7 +125,7 @@
 <context>
     <name>ApiWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+120"/>
+        <location filename="../../src/app/work.py" line="+126"/>
         <source>No frames to export</source>
         <translation>Нет кадров для экспорта</translation>
     </message>
@@ -156,7 +166,7 @@
 <context>
     <name>AssistantMessageBubble</name>
     <message>
-        <location line="+810"/>
+        <location line="+816"/>
         <source>AI Assistant</source>
         <translation>ИИ-ассистент</translation>
     </message>
@@ -164,7 +174,7 @@
 <context>
     <name>AttachmentChip</name>
     <message>
-        <location filename="../../src/app/ui/input/input_bar.py" line="+286"/>
+        <location filename="../../src/app/ui/input/input_bar.py" line="+292"/>
         <source>remove attachment</source>
         <translation>Удалить вложение</translation>
     </message>
@@ -172,7 +182,7 @@
 <context>
     <name>AudioWidget</name>
     <message>
-        <location filename="../../src/app/ui/message/message_widgets.py" line="+369"/>
+        <location filename="../../src/app/ui/message/message_widgets.py" line="+406"/>
         <source>Playback error</source>
         <translation>Ошибка воспроизведения</translation>
     </message>
@@ -180,7 +190,7 @@
 <context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+206"/>
+        <location filename="../../src/app/work.py" line="+208"/>
         <source>Starting backend...</source>
         <translation>Запуск сервера…</translation>
     </message>
@@ -334,7 +344,7 @@
 <context>
     <name>GenerationPage</name>
     <message>
-        <location filename="../../src/app/ui/gen_page.py" line="+462"/>
+        <location filename="../../src/app/ui/gen_page.py" line="+463"/>
         <source>Clear</source>
         <translation>Очистить</translation>
     </message>
@@ -385,7 +395,7 @@
 <context>
     <name>GpuPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+59"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+64"/>
         <source>GPU Settings</source>
         <translation>Настройки GPU</translation>
     </message>
@@ -492,7 +502,7 @@
 <context>
     <name>ImageWidget</name>
     <message>
-        <location filename="../../src/app/ui/message/message_widgets.py" line="-401"/>
+        <location filename="../../src/app/ui/message/message_widgets.py" line="-438"/>
         <source>Failed to load image: {0}</source>
         <translation>Не удалось загрузить изображение: {0}</translation>
     </message>
@@ -545,7 +555,7 @@
         <translation>Введите текст для озвучивания; поддерживаются китайский и английский…</translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="+90"/>
         <source>optimize prompt</source>
         <translation>Улучшить запрос</translation>
     </message>
@@ -693,7 +703,7 @@
 <context>
     <name>LoadingPage</name>
     <message>
-        <location filename="../../src/app/ui/loading_page.py" line="+22"/>
+        <location filename="../../src/app/ui/loading_page.py" line="+23"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
@@ -724,22 +734,22 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="+80"/>
+        <location filename="../../src/app/ui/window.py" line="+81"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
     <message>
-        <location line="+142"/>
+        <location line="+147"/>
         <source>Generation stopped</source>
         <translation>Генерация остановлена</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+30"/>
         <source>Generation failed: {0}</source>
         <translation>Ошибка генерации: {0}</translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location line="+59"/>
         <source>Startup timed out. Please check the log and restart the app.</source>
         <translation>Время запуска истекло. Проверьте журнал и перезапустите приложение.</translation>
     </message>
@@ -747,7 +757,7 @@
 <context>
     <name>MaskContainer</name>
     <message>
-        <location filename="../../src/app/ui/message/message_bubble.py" line="-1060"/>
+        <location filename="../../src/app/ui/message/message_bubble.py" line="-1066"/>
         <location line="+39"/>
         <source>Show more</source>
         <translation>Показать ещё</translation>
@@ -818,11 +828,6 @@
     <name>Qwen3TTSPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="+106"/>
-        <source>mode</source>
-        <translation>Режим</translation>
-    </message>
-    <message>
-        <location line="+5"/>
         <source>language</source>
         <translation>Язык</translation>
     </message>
@@ -893,7 +898,7 @@
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="+215"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="+222"/>
         <source>Unsaved changes</source>
         <translation>Несохранённые изменения</translation>
     </message>
@@ -965,13 +970,15 @@
     <message>
         <location line="+1"/>
         <location line="+23"/>
+        <location line="+51"/>
         <source>Expand</source>
         <translation>Развернуть</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="-32"/>
         <location line="+19"/>
         <location line="+2"/>
+        <location line="+8"/>
         <source>Thought deeply</source>
         <translation>Обдумано</translation>
     </message>
@@ -979,7 +986,7 @@
 <context>
     <name>TopBar</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="-250"/>
+        <location filename="../../src/app/ui/window.py" line="-269"/>
         <source>hide side</source>
         <translation>Показать/скрыть боковую панель</translation>
     </message>
@@ -987,6 +994,132 @@
         <location line="+10"/>
         <source>back</source>
         <translation>Назад</translation>
+    </message>
+</context>
+<context>
+    <name>TranscriptionLanguage</name>
+    <message>
+        <location filename="../../src/app/stt_languages.py" line="+10"/>
+        <source>Auto detect</source>
+        <translation>Автоопределение</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Chinese</source>
+        <translation>Китайский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cantonese</source>
+        <translation>Кантонский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>English</source>
+        <translation>Английский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Japanese</source>
+        <translation>Японский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Korean</source>
+        <translation>Корейский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Russian</source>
+        <translation>Русский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Spanish</source>
+        <translation>Испанский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>French</source>
+        <translation>Французский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>German</source>
+        <translation>Немецкий</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Italian</source>
+        <translation>Итальянский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Portuguese</source>
+        <translation>Португальский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Dutch</source>
+        <translation>Нидерландский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Polish</source>
+        <translation>Польский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Ukrainian</source>
+        <translation>Украинский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Thai</source>
+        <translation>Тайский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Vietnamese</source>
+        <translation>Вьетнамский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Indonesian</source>
+        <translation>Индонезийский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Turkish</source>
+        <translation>Турецкий</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Arabic</source>
+        <translation>Арабский</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Hindi</source>
+        <translation>Хинди</translation>
+    </message>
+</context>
+<context>
+    <name>TranscriptionPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/transcription/sherpa_asr_panel.py" line="+20"/>
+        <source>language</source>
+        <translation>Язык</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>export SRT subtitles</source>
+        <translation>Экспорт субтитров SRT</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>subtitles</source>
+        <translation>Субтитры</translation>
     </message>
 </context>
 <context>
@@ -1135,7 +1268,7 @@
 <context>
     <name>_BottomBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-118"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-125"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
@@ -1148,7 +1281,7 @@
 <context>
     <name>_CloneVoiceWidget</name>
     <message>
-        <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="-49"/>
+        <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="-44"/>
         <source>reference_audio_path</source>
         <translation>Путь к образцу звука</translation>
     </message>
@@ -1202,7 +1335,7 @@
 <context>
     <name>_InstallWorker</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-117"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-122"/>
         <source>Installation complete</source>
         <translation>Установка завершена</translation>
     </message>

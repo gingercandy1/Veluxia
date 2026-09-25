@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .core import generator_registry
 from .core.model_base import GeneratorFactory
-from .core.model_utils import get_media_root
+from .core.model_utils import apply_hf_token, get_media_root
 from src.backend.router.image import ImageRouter
 from src.backend.router.image_frame import ImageFrameRouter
 from src.backend.router.speech import SpeechRouter
@@ -49,6 +49,8 @@ def _warmup_generators():
 async def lifespan(app: FastAPI):
     generator_registry.register_all()
     GeneratorFactory.apply_setting(setting=ConfigManager().get_backend_config())
+    # token 只在后端进程内读取，不放进 get_backend_config()，避免随每个请求体传输
+    apply_hf_token(ConfigManager().get("huggingface", "token", ""))
     GeneratorFactory.mark_ready()
     threading.Thread(target=_warmup_generators, daemon=True, name="warmup-generators").start()
     yield

@@ -152,6 +152,10 @@ class BaseParamPanel(BaseWidget):
         self._form.setSpacing(10)
         self._build_widgets()
 
+    def bind_model(self, model_name: str):
+        """面板构造完才知道对应哪个模型；控件随模型变化的子类在这里调整。"""
+        self._model_name = model_name
+
     def load_saved_params(self, params: Dict[str, Any]):
         """Restore values saved for this model without emitting user changes."""
         for name, value in params.items():
@@ -161,7 +165,6 @@ class BaseParamPanel(BaseWidget):
             elif isinstance(widget, QCheckBox):
                 widget.setChecked(bool(value))
             elif isinstance(widget, QComboBox):
-                # 显示文字会随界面语言变化，带 itemData 的选项要按存下来的值匹配
                 index = widget.findData(value)
                 if index < 0:
                     index = widget.findText(str(value))

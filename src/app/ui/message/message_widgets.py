@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from PySide6.QtCore import QUrl, Qt
+from PySide6.QtCore import QRectF, QUrl, Qt
 from PySide6.QtGui import QPixmap, QDesktopServices, QPainterPath, QColor, QPainter, QGuiApplication
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout,
+    QWidget, QVBoxLayout, QHBoxLayout, QAbstractButton,
     QPushButton, QLabel, QSlider, QSizePolicy, QMenu,
 )
 
@@ -236,14 +236,70 @@ class VideoWidget(QWidget):
         self._player.stop()
 
 
-class AudioWidget(QWidget):
-    """音频播放器组件 - 支持音乐播放、进度条、时间显示、波形风格图标"""
+class _PlayButton(QAbstractButton):
+    """圆形播放/暂停按钮。图形用 QPainter 画：▶ ⏸ 这类字符随字体渲染，
+    不同字体下大小、基线都不一样，在圆里很难居中。"""
 
-    FIXED_HEIGHT = 92
+    SIZE = 36
+    COLOR = QColor("#7B9DBC")
+    HOVER_COLOR = QColor("#9AC5EC")
+    PRESSED_COLOR = QColor("#5f80a0")
+    GLYPH_COLOR = QColor("#ffffff")
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(self.SIZE, self.SIZE)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._playing = False
+
+    def set_playing(self, playing: bool):
+        self._playing = playing
+        self.update()
+
+    def paintEvent(self, _event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setPen(Qt.PenStyle.NoPen)
+        if self.isDown():
+            p.setBrush(self.PRESSED_COLOR)
+        elif self.underMouse():
+            p.setBrush(self.HOVER_COLOR)
+        else:
+            p.setBrush(self.COLOR)
+        p.drawEllipse(self.rect())
+
+        p.setBrush(self.GLYPH_COLOR)
+        c = self.SIZE / 2
+        if self._playing:
+            bar_w, bar_h, gap = 3.5, 12, 3.5
+            p.drawRoundedRect(QRectF(c - gap / 2 - bar_w, c - bar_h / 2, bar_w, bar_h), 1, 1)
+            p.drawRoundedRect(QRectF(c + gap / 2, c - bar_h / 2, bar_w, bar_h), 1, 1)
+        else:
+            # 三角形视觉重心偏左，整体右移 1.5px 才显得居中
+            path = QPainterPath()
+            path.moveTo(c - 4.5, c - 7)
+            path.lineTo(c + 7.5, c)
+            path.lineTo(c - 4.5, c + 7)
+            path.closeSubpath()
+            p.drawPath(path)
+
+    def enterEvent(self, e):
+        self.update(); super().enterEvent(e)
+
+    def leaveEvent(self, e):
+        self.update(); super().leaveEvent(e)
+
+
+class AudioWidget(QWidget):
+    """音频播放卡片：播放按钮 + 文件名/时长 + 细进度条，单行紧凑布局。"""
+
+    FIXED_HEIGHT = 64
 
     def __init__(self, path: str, parent=None):
         super().__init__(parent)
         self.setObjectName("audio_widget")
+        # 纯 QWidget 默认不画 QSS 背景，卡片底色和圆角要靠这个属性
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
         self._current_path = path
         self._filename = Path(path).name
 
@@ -266,54 +322,47 @@ class AudioWidget(QWidget):
     def _build_ui(self):
         self.setFixedHeight(self.FIXED_HEIGHT)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 10, 12, 10)
-        layout.setSpacing(8)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(14, 0, 16, 0)
+        layout.setSpacing(12)
 
-        # 上半部分：图标 + 文件名
-        top_layout = QHBoxLayout()
-        top_layout.setSpacing(12)
-
-        self._icon_lbl = QLabel("🎵")
-        self._icon_lbl.setFixedSize(48, 48)
-        self._icon_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._icon_lbl.setStyleSheet("""
-            font-size: 28px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-        """)
-
-        info_layout = QVBoxLayout()
-        info_layout.setSpacing(2)
-
-        self._name_lbl = QLabel(self._filename)
-        self._name_lbl.setStyleSheet("font-size: 13px; color: #E0E0E0;")
-
-        self._time_lbl = QLabel("00:00 / 00:00")
-        self._time_lbl.setStyleSheet("font-size: 10px; color: rgba(200,200,200,0.75);")
-
-        info_layout.addWidget(self._name_lbl)
-        info_layout.addWidget(self._time_lbl)
-
-        top_layout.addWidget(self._icon_lbl)
-        top_layout.addLayout(info_layout, stretch=1)
-
-        # 播放按钮
-        self._play_btn = QPushButton("▶")
-        self._play_btn.setFixedSize(42, 42)
-        self._play_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._play_btn = _PlayButton()
         self._play_btn.clicked.connect(self._toggle_play)
 
-        top_layout.addWidget(self._play_btn)
+        # 右侧两行：文件名 + 时长，下面是进度条
+        info_layout = QVBoxLayout()
+        info_layout.setContentsMargins(0, 0, 0, 0)
+        info_layout.setSpacing(4)
 
-        # 进度条
+        title_row = QHBoxLayout()
+        title_row.setSpacing(8)
+        self._name_lbl = QLabel(self._filename)
+        self._name_lbl.setObjectName("audio_name")
+        self._name_lbl.setToolTip(self._filename)
+        # 生成的文件名很长（带 uuid），不让它把卡片撑宽，放不下时在 resizeEvent 里省略
+        self._name_lbl.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self._time_lbl = QLabel("00:00 / 00:00")
+        self._time_lbl.setObjectName("audio_time")
+        title_row.addWidget(self._name_lbl, stretch=1)
+        title_row.addWidget(self._time_lbl)
+
         self._slider = QSlider(Qt.Orientation.Horizontal)
+        self._slider.setObjectName("audio_progress")
         self._slider.setRange(0, 0)
+        self._slider.setCursor(Qt.CursorShape.PointingHandCursor)
         self._slider.sliderMoved.connect(self._seek)
 
-        # 组装
-        layout.addLayout(top_layout)
-        layout.addWidget(self._slider)
+        info_layout.addLayout(title_row)
+        info_layout.addWidget(self._slider)
+
+        layout.addWidget(self._play_btn)
+        layout.addLayout(info_layout, stretch=1)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        metrics = self._name_lbl.fontMetrics()
+        self._name_lbl.setText(metrics.elidedText(
+            self._filename, Qt.TextElideMode.ElideMiddle, self._name_lbl.width()))
 
     def _toggle_play(self):
         if self._player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
@@ -322,24 +371,12 @@ class AudioWidget(QWidget):
             self._player.play()
 
     def _on_state_changed(self, state):
-        if state == QMediaPlayer.PlaybackState.PlayingState:
-            self._play_btn.setText("⏸")
-            self._icon_lbl.setStyleSheet("""
-                font-size: 28px;
-                background: rgba(74, 222, 128, 0.2);
-                border-radius: 10px;
-                color: #4ade80;
-            """)
-        else:
-            self._play_btn.setText("▶")
-            self._icon_lbl.setStyleSheet("""
-                font-size: 28px;
-                background: rgba(255, 255, 255, 0.08);
-                border-radius: 10px;
-            """)
+        self._play_btn.set_playing(state == QMediaPlayer.PlaybackState.PlayingState)
 
     def _on_duration_changed(self, duration: int):
         self._slider.setRange(0, duration)
+        # 媒体加载完就显示总时长，不用等用户点播放
+        self._update_time_label(self._player.position())
 
     def _on_position_changed(self, position: int):
         if not self._slider.isSliderDown():

@@ -5,11 +5,21 @@
     <name>AboutPage</name>
     <message>
         <location filename="../../src/app/ui/setting/page/about_page.py" line="+10"/>
-        <source>An AI-powered multimodal creation tool for generating text, images, animation and speech.</source>
-        <translation>AI 驱动的多模态创作工具，支持文本、图像、动画、语音生成。</translation>
+        <source>Local AI studio for game assets</source>
+        <translation>本地运行的游戏素材 AI 工作室</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+1"/>
+        <source>Generate text, images, animation, voice, music and sound effects entirely on your own computer. Private, free to run, and optimized for 8 GB GPUs.</source>
+        <translation>在你自己的电脑上生成文本、图片、动画、语音、音乐和音效。数据不出本机，无需付费，针对 8 GB 显存优化。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Released under the MIT License. AI models are subject to their own licenses.</source>
+        <translation>本软件以 MIT 协议发布，各 AI 模型遵循其各自的许可协议。</translation>
+    </message>
+    <message>
+        <location line="+36"/>
         <source>Version</source>
         <translation>版本</translation>
     </message>
@@ -36,13 +46,13 @@
     <name>ApiClient</name>
     <message>
         <location filename="../../src/app/client.py" line="+66"/>
-        <location line="+130"/>
+        <location line="+135"/>
         <location line="+237"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>无法连接后端，请确认服务是否已启动。</translation>
     </message>
     <message>
-        <location line="-363"/>
+        <location line="-368"/>
         <source>Connection timed out.</source>
         <translation>连接超时。</translation>
     </message>
@@ -57,7 +67,7 @@
         <translation>无法连接后端。</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+116"/>
         <source>Generation stopped.</source>
         <translation>已停止生成。</translation>
     </message>
@@ -115,7 +125,7 @@
 <context>
     <name>ApiWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+120"/>
+        <location filename="../../src/app/work.py" line="+126"/>
         <source>No frames to export</source>
         <translation>没有可导出的序列帧</translation>
     </message>
@@ -156,7 +166,7 @@
 <context>
     <name>AssistantMessageBubble</name>
     <message>
-        <location line="+810"/>
+        <location line="+816"/>
         <source>AI Assistant</source>
         <translation>AI 助手</translation>
     </message>
@@ -164,7 +174,7 @@
 <context>
     <name>AttachmentChip</name>
     <message>
-        <location filename="../../src/app/ui/input/input_bar.py" line="+286"/>
+        <location filename="../../src/app/ui/input/input_bar.py" line="+292"/>
         <source>remove attachment</source>
         <translation>移除附件</translation>
     </message>
@@ -172,7 +182,7 @@
 <context>
     <name>AudioWidget</name>
     <message>
-        <location filename="../../src/app/ui/message/message_widgets.py" line="+369"/>
+        <location filename="../../src/app/ui/message/message_widgets.py" line="+406"/>
         <source>Playback error</source>
         <translation>播放错误</translation>
     </message>
@@ -180,7 +190,7 @@
 <context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+206"/>
+        <location filename="../../src/app/work.py" line="+208"/>
         <source>Starting backend...</source>
         <translation>正在启动后端…</translation>
     </message>
@@ -334,7 +344,7 @@
 <context>
     <name>GenerationPage</name>
     <message>
-        <location filename="../../src/app/ui/gen_page.py" line="+462"/>
+        <location filename="../../src/app/ui/gen_page.py" line="+463"/>
         <source>Clear</source>
         <translation>清空</translation>
     </message>
@@ -381,7 +391,7 @@
 <context>
     <name>GpuPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+59"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+64"/>
         <source>GPU Settings</source>
         <translation>显卡设置</translation>
     </message>
@@ -488,7 +498,7 @@
 <context>
     <name>ImageWidget</name>
     <message>
-        <location filename="../../src/app/ui/message/message_widgets.py" line="-401"/>
+        <location filename="../../src/app/ui/message/message_widgets.py" line="-438"/>
         <source>Failed to load image: {0}</source>
         <translation>图片载入失败：{0}</translation>
     </message>
@@ -541,7 +551,7 @@
         <translation>输入要朗读的文本，支持中文和英文…</translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="+90"/>
         <source>optimize prompt</source>
         <translation>优化提示词</translation>
     </message>
@@ -689,7 +699,7 @@
 <context>
     <name>LoadingPage</name>
     <message>
-        <location filename="../../src/app/ui/loading_page.py" line="+22"/>
+        <location filename="../../src/app/ui/loading_page.py" line="+23"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
@@ -720,22 +730,22 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="+80"/>
+        <location filename="../../src/app/ui/window.py" line="+81"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
     <message>
-        <location line="+142"/>
+        <location line="+147"/>
         <source>Generation stopped</source>
         <translation>已停止生成</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+30"/>
         <source>Generation failed: {0}</source>
         <translation>生成失败：{0}</translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location line="+59"/>
         <source>Startup timed out. Please check the log and restart the app.</source>
         <translation>启动超时，请检查日志后重启应用。</translation>
     </message>
@@ -743,7 +753,7 @@
 <context>
     <name>MaskContainer</name>
     <message>
-        <location filename="../../src/app/ui/message/message_bubble.py" line="-1060"/>
+        <location filename="../../src/app/ui/message/message_bubble.py" line="-1066"/>
         <location line="+39"/>
         <source>Show more</source>
         <translation>查看更多</translation>
@@ -814,11 +824,6 @@
     <name>Qwen3TTSPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="+106"/>
-        <source>mode</source>
-        <translation>模式</translation>
-    </message>
-    <message>
-        <location line="+5"/>
         <source>language</source>
         <translation>语言</translation>
     </message>
@@ -889,7 +894,7 @@
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="+215"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="+222"/>
         <source>Unsaved changes</source>
         <translation>未保存的更改</translation>
     </message>
@@ -961,13 +966,15 @@
     <message>
         <location line="+1"/>
         <location line="+23"/>
+        <location line="+51"/>
         <source>Expand</source>
         <translation>展开</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="-32"/>
         <location line="+19"/>
         <location line="+2"/>
+        <location line="+8"/>
         <source>Thought deeply</source>
         <translation>已深度思考</translation>
     </message>
@@ -975,7 +982,7 @@
 <context>
     <name>TopBar</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="-250"/>
+        <location filename="../../src/app/ui/window.py" line="-269"/>
         <source>hide side</source>
         <translation>显示 / 隐藏侧边栏</translation>
     </message>
@@ -983,6 +990,132 @@
         <location line="+10"/>
         <source>back</source>
         <translation>返回</translation>
+    </message>
+</context>
+<context>
+    <name>TranscriptionLanguage</name>
+    <message>
+        <location filename="../../src/app/stt_languages.py" line="+10"/>
+        <source>Auto detect</source>
+        <translation>自动检测</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Chinese</source>
+        <translation>中文</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cantonese</source>
+        <translation>粤语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>English</source>
+        <translation>英语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Japanese</source>
+        <translation>日语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Korean</source>
+        <translation>韩语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Russian</source>
+        <translation>俄语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Spanish</source>
+        <translation>西班牙语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>French</source>
+        <translation>法语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>German</source>
+        <translation>德语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Italian</source>
+        <translation>意大利语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Portuguese</source>
+        <translation>葡萄牙语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Dutch</source>
+        <translation>荷兰语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Polish</source>
+        <translation>波兰语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Ukrainian</source>
+        <translation>乌克兰语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Thai</source>
+        <translation>泰语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Vietnamese</source>
+        <translation>越南语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Indonesian</source>
+        <translation>印尼语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Turkish</source>
+        <translation>土耳其语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Arabic</source>
+        <translation>阿拉伯语</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Hindi</source>
+        <translation>印地语</translation>
+    </message>
+</context>
+<context>
+    <name>TranscriptionPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/transcription/sherpa_asr_panel.py" line="+20"/>
+        <source>language</source>
+        <translation>语言</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>export SRT subtitles</source>
+        <translation>导出 SRT 字幕</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>subtitles</source>
+        <translation>字幕</translation>
     </message>
 </context>
 <context>
@@ -1131,7 +1264,7 @@
 <context>
     <name>_BottomBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-118"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-125"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
@@ -1144,7 +1277,7 @@
 <context>
     <name>_CloneVoiceWidget</name>
     <message>
-        <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="-49"/>
+        <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="-44"/>
         <source>reference_audio_path</source>
         <translation>参考音频路径</translation>
     </message>
@@ -1198,7 +1331,7 @@
 <context>
     <name>_InstallWorker</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-117"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-122"/>
         <source>Installation complete</source>
         <translation>安装完成</translation>
     </message>

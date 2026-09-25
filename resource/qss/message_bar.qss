@@ -44,6 +44,53 @@ QWidget#video_widget {
     border: 0.5px solid rgba(255, 255, 255, 0.08);
 }
 
+/* 音頻播放卡片 */
+QWidget#audio_widget {
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    min-width: 320px;
+    max-width: 440px;
+}
+
+QLabel#audio_name {
+    color: #E0E0E0;
+    font-size: 13px;
+}
+
+QLabel#audio_time {
+    color: rgba(200, 200, 200, 0.6);
+    font-size: 11px;
+}
+
+QSlider#audio_progress {
+    background: transparent;
+    min-height: 14px;
+}
+
+QSlider#audio_progress::groove:horizontal {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.10);
+    border-radius: 2px;
+}
+
+QSlider#audio_progress::sub-page:horizontal {
+    background: #7B9DBC;
+    border-radius: 2px;
+}
+
+QSlider#audio_progress::handle:horizontal {
+    width: 10px;
+    height: 10px;
+    margin: -3px 0;
+    background: #DCDCDC;
+    border-radius: 5px;
+}
+
+QSlider#audio_progress::handle:horizontal:hover {
+    background: #ffffff;
+}
+
 /* 文件附件卡片 */
 QWidget#file_widget {
     background: rgba(255, 255, 255, 0.04);

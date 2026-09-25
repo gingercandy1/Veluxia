@@ -25,6 +25,9 @@ DEFAULT_CONFIG = {
         "video_dir": "",
         "audio_dir": "",
     },
+    "huggingface": {
+        "token": "",
+    },
 }
 
 

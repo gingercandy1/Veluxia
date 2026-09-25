@@ -1,241 +1,142 @@
-### 项目使用方法
+<p align="center"><img src="resource/icons/veluxia.png" width="120" alt="Veluxia logo"></p>
+
+# Veluxia
+
+**A local, offline-first AI studio for game assets.** Veluxia brings text, image, animation, voice, music, sound effects, frame interpolation, speech-to-text and translation into one desktop app. Every model runs on your own machine, and the whole thing is tuned to fit a single **8 GB GPU**.
+
+It's built for indie developers and small teams who want to go from an idea to usable game material without juggling a dozen tools, cloud subscriptions or per-image fees: character concepts, idle and run animations, NPC voice lines, background music, UI sound effects, sprite sheets.
+
+---
+
+## Features
 
-uv pip install -r src/core/speech/ACE_Step/requirements.txt
+### Text and dialogue
+- Chat with local LLMs (GGUF via `llama-cpp-python`) for story outlines, character bios, quest text and dialogue trees.
+- More than 30 ready-to-download models, grouped by size so you can pick one that fits your hardware: **Qwen 2.5 / 3 / 3.5, Llama 3.x, DeepSeek-R1 distills, Mistral, Phi-4, Gemma 3, Yi, SmolLM2**. They range from a 135M model for weak machines to a 70B flagship.
+- Streaming responses, a collapsible "thinking" view for reasoning models, and per-session conversation memory (local vector store).
 
+### Image
+| Model | Use |
+| --- | --- |
+| FLUX.2 Klein 4B (NVFP4) | Fast, high-quality text-to-image |
+| SDXL | Versatile base model, seamless tiling for textures |
+| SD 3.5 Medium | Strong prompt adherence |
+| Z-Image-Turbo (GGUF) | Few-step generation that fits in 8 GB |
+| Qwen-Image Lightning (FP8) | Fast generation, strong with Chinese prompts |
+| rembg U²-Net / BiRefNet | One-click background removal for sprites and props |
+| Real-ESRGAN x4plus / anime 6B | 4× upscaling for photos and illustrations |
 
-uv pip install -e "."
+### Animation (image-to-video)
+- **LTX-Video, LTX-2.3, LTX-2.5**: image-to-video. The LTX-2 models also generate a synchronized audio track, and LTX-2.5 supports distilled fast sampling and automatic duration.
+- **Wan 2.2 TI2V 5B**: text- or image-to-video.
+- Turn a character concept into idle, walk, attack or other motion clips.
 
+### Frame interpolation and sprite export
+- **FILM / RIFE** frame interpolation to smooth choppy animations or raise the frame rate.
+- **Sprite sheet export**: pack a frame sequence into one sheet, plus an atlas JSON (frame rects, grid, fps) and numbered PNGs, ready to import into Unity or another engine. It runs on the CPU and never touches the GPU.
 
-### 资产生成流程
+### Voice, music and sound effects
+- **Qwen3-TTS** (0.6B / 1.7B) in three modes:
+  - *Custom voice*: pick from built-in preset speakers.
+  - *Voice design*: describe a voice in plain words ("a passionate, energetic 20-year-old girl").
+  - *Voice clone*: clone a voice from a short reference clip and its transcript.
+- **ACE-Step 1.5**: full-length music generation for background tracks.
+- **Stable Audio Open 1.0**: sound effects and short audio clips.
 
-角色设计
-1. 设计角色的关键词
-2. 批量生成图片（角色、场景）
-3. 图片提高分辨率
-4. 将图片转换为视频 
-5. 推荐实现自动化生成关键词，生成一些不重要的角色
+### Speech-to-text
+- Local transcription through **sherpa-onnx**. *Auto* mode picks the best engine for the language:
+  - **SenseVoice**: Chinese, Cantonese, English, Japanese, Korean.
+  - **Parakeet TDT 0.6B v3**: 25 European languages.
+  - **Whisper large-v3-turbo**: every other language.
 
-场景设计
-1. 设计场景关键词
-2. 批量生成图片
-3. 导入到unity参考设计场景
+### Workflow helpers
+- **Prompt optimizer**: a small local LLM rewrites short ideas into detailed image and video prompts, using a built-in style vocabulary.
+- **Prompt translation**: write in your own language and the prompt is translated before it reaches the model (Google Translate with a MyMemory fallback; you can switch it off).
+- **Per-model parameter panels**: every model has tailored controls, and your last settings are remembered for each model.
+- **Chat-style history**: every generation is kept in a session you can browse, reuse, multi-select and delete.
+- **Multilingual UI**: English, 简体中文, 日本語, 한국어, Русский, Español.
 
-角色对话面部
-1. 编写对话内容
-2. 根据对话内容角色生成声音
-3. 根据对话内容生成角色面部表情
+---
 
-背景音乐
-1. 生成背景音乐
-2. 还有各种技能特效的声音
+## Why Veluxia
 
+- **Private and free to run.** No accounts, no API keys, no per-image cost. Your prompts, reference voices and assets never leave your machine.
+- **Built for 8 GB GPUs.** The backend keeps only **one large model in VRAM at a time** and swaps automatically when you switch. The models run in fp16 / bf16, FP8, NVFP4 or GGUF, and use CPU offload plus VAE slicing and tiling. Consumer cards like an RTX 3060, 4060 or 4070 can run the full lineup.
+- **Safe under load.** A lease system never swaps or unloads a model while a job is running. A second request gets a clear "busy" message instead of corrupting the first job.
+- **One app for the whole asset pipeline.** Go from concept (text) to art (image) to motion (animation, interpolation, sprite sheet) to sound (voice, music, SFX) without changing tools.
+- **Commercially friendly model choices.** The image lineup was chosen to leave out models whose licenses forbid commercial use. Always check each model's license for your own use case.
+- **Responsive while working.** Long jobs run as background tasks with progress, download and load stages, and a working cancel button. The UI never freezes.
+- **Easy to extend.** Models are declared in a single `models.json`. You can add a model that uses an existing generator without touching code, and a new generator class plugs in with its own parameter panel.
 
-### Unity流程
-1. 角色导入到Unity中
-2. 角色和场景交互
-3. 界面实现添加
-4. 
+---
 
-### 第三方库
-1. Qwen2.5-1.5B-Instruct (Apache协议)  # 优化提示词
-2. FLUX.2-klein-4b-nvfp4 （Apache协议）   # 生成图片
-3. Meta-Llama-3.1-8B （ Llama 3.1 社区许可协议） # 文本生成
-4. LTX Video（Apache协议）  # 图片生成动画
-5. Wan 2.2 （Apache协议）   # 图片生成动画
-6. ACE-Step/Ace-Step1.5     # 生成音乐
-7. Qwen3-TTS-12Hz-1.7B-VoiceDesign  (Apache协议) # 生成人物音频 
+## System requirements
 
+Veluxia is currently **Windows-only** and needs an **NVIDIA GPU** (PyTorch is built for CUDA 12.8).
 
-接下来
-程序界面
-1. 完善界面需要继续补充界面的功能，比如按钮
+| | Minimum | Recommended |
+| --- | --- | --- |
+| OS | Windows 10 64-bit | Windows 11 64-bit |
+| GPU | NVIDIA, **8 GB VRAM**, RTX 20-series or newer | NVIDIA RTX 40/50-series, 12 GB+ VRAM |
+| GPU driver | Recent driver with CUDA 12.8 support | Latest Game Ready / Studio driver |
+| CPU | 6-core, x86-64 | 8+ cores |
+| System RAM | 16 GB | **32 GB** (CPU offload keeps parts of the model in RAM) |
+| Storage | 60 GB free on an SSD (app plus a few models) | 200 GB+ on an NVMe SSD (for the full lineup) |
+| Network | Needed on first use of each model (weights download from Hugging Face) | Fast connection; many weights are several GB |
 
-文本、对话
-1. 需要生成故事剧情以及人物的对话流程，可以制作一个工具
-2. 生成角色身份
-3. 
+Notes:
+- 8 GB of VRAM is the design target: every model in the default lineup can run on it. More VRAM mainly shortens load times and allows larger resolutions or longer videos.
+- Text models tagged **Large** (14B–70B) need 12–48 GB of VRAM and are listed for stronger machines. Stick to *Tiny*, *Small* and *Medium* models on 8 GB.
+- Speech-to-text, background removal and sprite export work well on the CPU.
 
-声音、音乐
-2. 添加人声阅读 https://github.com/QwenLM/Qwen3-TTS 【有待测试】
-3. 添加音乐生成支持 https://github.com/ace-step/ACE-Step-1.5 【有待测试】
+---
 
+## Getting started
 
-视频图像
-2. 生成的视频需要解决循环问题。
-3. 我希望生成一段图片中人物跟着阅读的视频，主要是为了让人物和声音口型能对上，我给一个声音和一张图片不知道是否能实现？
+Requirements: **Python 3.12+** and [**uv**](https://docs.astral.sh/uv/).
 
+```bat
+:: 1. Install dependencies (creates .venv)
+uv sync
 
-目标：
-1. 先将主要角色概念图生成
-2. 生成角色动画效果，比如一些常见的动作，比如跑、随意站立等效果
-3. 生成主要角色战斗效果
-4. 生成角色后然后生成一些简单的场景，让角色再场景中能跑起来。
+:: 2. ACE-Step (music) has its own pinned dependencies, so install them separately
+uv pip install -r src/backend/core/speech/ACE_Step/requirements.txt
 
+:: 3. Launch the backend and the desktop app together
+script\start.bat
+```
 
-prompt = (
-    f"{prompt}, "
-    "high quality, smooth motion, consistent character, "
-    "anime style, 2D animation"
-)
+On first launch the app starts its local backend (`127.0.0.1:8765`). Each model's weights download to `models/` the first time you use it.
 
+Manual start, from the project root:
 
+```bat
+.venv\Scripts\python.exe -m src.backend.server --port 8765
+.venv\Scripts\python.exe -m src.main
+```
 
+Run the tests with `pytest`. Packaging (a separate frontend exe and backend bundle) is done with `python script/package.py front|backend|all`.
 
+---
 
-### 正派角色提示词
-A distinctive cartoon character, full body standing pose, front view or three-quarter view, 
-sharp and bold line art with thick heavy outlines, crisp ink-like strokes, dark sophisticated color palette with muted grays, 
-deep blacks, cool tones and high-end grayish atmosphere, premium dark aesthetic, stylish and memorable design, 
-clean white background, high contrast,  professional game character sheet, positive and likable appearance
+## Architecture at a glance
 
-A brave young girl, around 13-16 years old, determined and slightly melancholic expression, short messy dark hair with a small braid, 
-big expressive eyes, wearing oversized patched cloak, simple linen dress with leather straps, worn boots, carrying a small dagger on her belt, 
-full body standing pose, distinctive cartoon style, thick heavy black outlines, sharp crisp linework, dark sophisticated muted gray and cool tone color palette, 
-premium dark aesthetic, clean white background, high contrast, professional character sheet
+```
+PySide6 desktop app  ──HTTP──▶  FastAPI backend  ──▶  Generator (one resident model)
+ (input bar, param panels,        (routers per modality,      (diffusers / transformers /
+  chat history, settings)          job queue, SSE streaming)    llama.cpp / sherpa-onnx)
+```
 
+- `src/app`: desktop UI. Network calls run on worker threads.
+- `src/backend`: API routers, job manager, model generators.
+- `src/shared`: request and response schemas and settings shared by both sides.
+- `models.json`: the single source of truth for the model lineup.
+- `docs/adr`: architecture decision records.
 
-A burly middle-aged male blacksmith, around 38-45 years old, tall and muscular build, rough square face with thick beard and short messy brown hair, 
-kind but tired eyes, wearing a dirty leather apron over bare chest with burn marks, thick leather bracers, heavy boots, holding a large hammer in one hand, 
-full body standing pose, distinctive cartoon style, thick heavy black outlines, sharp crisp linework, dark sophisticated muted gray and cool tone color palette, 
-premium dark aesthetic, clean white background, high contrast, professional character sheet
+---
 
-A sarcastic young adult female mage, around 26-30 years old, slim and elegant build, sharp intelligent eyes with a mocking expression, 
-long straight black hair with silver streaks, pale skin, wearing a dark hooded mage robe with subtle glowing runes, leather belt with potion vials, 
-high boots, holding a wooden staff, full body standing pose, distinctive cartoon style, thick heavy black outlines, sharp crisp linework, 
-dark sophisticated muted gray and cool tone color palette, premium dark aesthetic, clean white background, high contrast, professional character sheet
+## License
 
+Veluxia's own code is released under the [MIT License](LICENSE).
 
-### 反派提示词
-Grotesque horror monster, full body standing pose, distinctive dark cartoon style, thick heavy black outlines, sharp crisp edgy linework, 
-dark sophisticated muted gray palette with sickly accents, creepy and horrif    ying atmosphere, clean white background, high contrast, professional game enemy character sheet
-
-
-A horrifying plant-human hybrid monster, human torso fused with twisted black vines and thorny flowers blooming from body, mushroom-like growths on head, 
-long vine tentacles for arms, glowing sickly yellow eyes, tattered clothes, full body standing pose, distinctive dark cartoon style, thick heavy black outlines, 
-sharp crisp linework, dark sophisticated muted gray and dark green tones, grotesque atmosphere, clean white background, high contrast, professional game enemy character sheet
-
-
-
-### 动作提示词
-
-walking forward naturally, smooth gait, arms swinging
-running at moderate speed, dynamic motion
-standing idle, subtle breathing motion, slight body sway
-sitting down slowly, natural movement
-standing up from chair, realistic motion
-
-jumping in place, arms raised in joy
-spinning around once, smooth rotation
-kicking forward, martial arts style
-punching forward, action pose
-dancing rhythmically, hip hop style
-throwing an object forward, full body follow-through
-
-
-bowing respectfully, slow and deliberate motion
-praying with hands clasped together
-meditating, cross-legged, eyes closed, calm breathing
-playing piano, fingers moving gracefully
-writing with pen on paper, focused expression
-reading a book, page turning slowly
-
-talking on phone, expressive hand gestures
-typing on keyboard quickly, focused expression
-drinking from a cup, slow sip
-eating with chopsticks, natural motion
-looking at watch, checking time
-opening a door and walking through
-
-
-high quality, smooth motion, 
-anatomically correct, stable body, consistent limbs, 
-no morphing, no flickering, 
-
-# 质量类
-high quality, smooth animation, fluid motion, 
-realistic movement, cinematic style
-
-# 视角类
-front view          # 正面
-side view           # 侧面
-close-up            # 特写
-full body shot      # 全身
-
-# 风格类
-anime style         # 动漫风
-3D rendered         # 3D渲染
-cartoon style       # 卡通风
-realistic           # 写实风
-
-
-
-# 素材
-
-蘑菇
-A diverse cluster of bioluminescent mushrooms, various sizes and heights, 
-irregular organic shapes, small glowing mushrooms cluster, hand-painted fantasy illustration, 
-bioluminescent blue-white glow, detailed cap texture, visible brush strokes, painterly style, 
-dark base with luminous tips, soft light emission, natural asymmetrical composition, 
-some tilted and some upright, mystical forest floor element, white background, isolated, high detail.
-
-
-卢苇草
-reed grass with long slender leaves, gently swaying,
-hand-painted illustration style, detailed brush strokes,
-oil painting texture, visible paint texture on leaves,
-
-deep blue and teal color palette, 
-dark forest atmosphere, mystical glowing ambiance,
-soft bioluminescent light catching the edges of leaves,
-subtle rim lighting, blue-purple light from background,
-
-delicate leaf details, fine vein texture on each blade,
-layered depth, foreground element,
-slightly transparent leaf tips,
-organic natural shapes, asymmetric growth pattern,
-
-white background, isolated element, clean edges,
-game concept art style, cinematic fantasy,
-high detail, high quality
-
-树干/树枝
-ancient twisted tree trunk with bare branches,
-hand-painted illustration, detailed bark texture,
-visible brush strokes, oil painting style,
-deep blue purple atmospheric background glow,
-dark silhouette with subtle blue-grey highlights,
-mystical forest, cinematic fantasy game art,
-white background, isolated, high detail
-
-发光蘑菇
-small glowing mushrooms cluster, 
-hand-painted fantasy illustration,
-bioluminescent blue-white glow, detailed cap texture,
-visible brush strokes, painterly style,
-dark base with luminous tips, soft light emission,
-mystical forest floor element,
-white background, isolated, high detail
-
-藤蔓
-hanging vine with small leaves, 
-hand-painted illustration, detailed brush texture,
-deep teal green tones, subtle blue rim lighting,
-organic flowing shape, naturalistic curl,
-painterly fantasy art style,
-white background, isolated, high detail
-
-
-
-
-SIZE_GROUP_LABELS = {
-    "tiny":           "Tiny  ( < 1B )",
-    "small":          "Small  ( 1B – 3B )",
-    "medium":         "Medium  ( 4B – 9B )",
-    "large":          "Large  ( 10B – 30B )",
-    "xlarge":         "XLarge  ( 30B+ )",
-    "custom":         "Custom Voice",
-    "clone":          "Voice Clone",
-    "design":         "Voice Design",
-    "fast":           "Fast",
-    "image-to-video": "Image to Video",
-}
+Each AI model is distributed under **its own license** (Apache-2.0, the Llama Community License, the Stability AI Community License and others). Some models limit commercial use, for example by revenue threshold. Check the license of every model you use before shipping assets commercially.

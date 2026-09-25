@@ -5,11 +5,21 @@
     <name>AboutPage</name>
     <message>
         <location filename="../../src/app/ui/setting/page/about_page.py" line="+10"/>
-        <source>An AI-powered multimodal creation tool for generating text, images, animation and speech.</source>
-        <translation>텍스트, 이미지, 애니메이션, 음성을 생성하는 AI 기반 멀티모달 제작 도구입니다.</translation>
+        <source>Local AI studio for game assets</source>
+        <translation>게임 에셋을 위한 로컬 AI 스튜디오</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+1"/>
+        <source>Generate text, images, animation, voice, music and sound effects entirely on your own computer. Private, free to run, and optimized for 8 GB GPUs.</source>
+        <translation>텍스트, 이미지, 애니메이션, 음성, 음악, 효과음을 모두 내 컴퓨터에서 생성합니다. 데이터가 외부로 나가지 않고 무료이며, 8GB GPU에 최적화되어 있습니다.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Released under the MIT License. AI models are subject to their own licenses.</source>
+        <translation>이 소프트웨어는 MIT 라이선스로 배포됩니다. 각 AI 모델에는 해당 모델의 라이선스가 적용됩니다.</translation>
+    </message>
+    <message>
+        <location line="+36"/>
         <source>Version</source>
         <translation>버전</translation>
     </message>
@@ -36,13 +46,13 @@
     <name>ApiClient</name>
     <message>
         <location filename="../../src/app/client.py" line="+66"/>
-        <location line="+130"/>
+        <location line="+135"/>
         <location line="+237"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>백엔드에 연결할 수 없습니다. 서비스가 실행 중인지 확인하세요.</translation>
     </message>
     <message>
-        <location line="-363"/>
+        <location line="-368"/>
         <source>Connection timed out.</source>
         <translation>연결 시간이 초과되었습니다.</translation>
     </message>
@@ -57,7 +67,7 @@
         <translation>백엔드에 연결할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+116"/>
         <source>Generation stopped.</source>
         <translation>생성을 중지했습니다.</translation>
     </message>
@@ -115,7 +125,7 @@
 <context>
     <name>ApiWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+120"/>
+        <location filename="../../src/app/work.py" line="+126"/>
         <source>No frames to export</source>
         <translation>내보낼 프레임이 없습니다</translation>
     </message>
@@ -156,7 +166,7 @@
 <context>
     <name>AssistantMessageBubble</name>
     <message>
-        <location line="+810"/>
+        <location line="+816"/>
         <source>AI Assistant</source>
         <translation>AI 어시스턴트</translation>
     </message>
@@ -164,7 +174,7 @@
 <context>
     <name>AttachmentChip</name>
     <message>
-        <location filename="../../src/app/ui/input/input_bar.py" line="+286"/>
+        <location filename="../../src/app/ui/input/input_bar.py" line="+292"/>
         <source>remove attachment</source>
         <translation>첨부 파일 제거</translation>
     </message>
@@ -172,7 +182,7 @@
 <context>
     <name>AudioWidget</name>
     <message>
-        <location filename="../../src/app/ui/message/message_widgets.py" line="+369"/>
+        <location filename="../../src/app/ui/message/message_widgets.py" line="+406"/>
         <source>Playback error</source>
         <translation>재생 오류</translation>
     </message>
@@ -180,7 +190,7 @@
 <context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+206"/>
+        <location filename="../../src/app/work.py" line="+208"/>
         <source>Starting backend...</source>
         <translation>백엔드를 시작하는 중…</translation>
     </message>
@@ -334,7 +344,7 @@
 <context>
     <name>GenerationPage</name>
     <message>
-        <location filename="../../src/app/ui/gen_page.py" line="+462"/>
+        <location filename="../../src/app/ui/gen_page.py" line="+463"/>
         <source>Clear</source>
         <translation>지우기</translation>
     </message>
@@ -381,7 +391,7 @@
 <context>
     <name>GpuPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+59"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+64"/>
         <source>GPU Settings</source>
         <translation>GPU 설정</translation>
     </message>
@@ -488,7 +498,7 @@
 <context>
     <name>ImageWidget</name>
     <message>
-        <location filename="../../src/app/ui/message/message_widgets.py" line="-401"/>
+        <location filename="../../src/app/ui/message/message_widgets.py" line="-438"/>
         <source>Failed to load image: {0}</source>
         <translation>이미지를 불러오지 못했습니다: {0}</translation>
     </message>
@@ -541,7 +551,7 @@
         <translation>읽어 줄 텍스트를 입력하세요. 중국어와 영어를 지원합니다…</translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="+90"/>
         <source>optimize prompt</source>
         <translation>프롬프트 최적화</translation>
     </message>
@@ -689,7 +699,7 @@
 <context>
     <name>LoadingPage</name>
     <message>
-        <location filename="../../src/app/ui/loading_page.py" line="+22"/>
+        <location filename="../../src/app/ui/loading_page.py" line="+23"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
@@ -720,22 +730,22 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="+80"/>
+        <location filename="../../src/app/ui/window.py" line="+81"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
     <message>
-        <location line="+142"/>
+        <location line="+147"/>
         <source>Generation stopped</source>
         <translation>생성을 중지했습니다</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+30"/>
         <source>Generation failed: {0}</source>
         <translation>생성 실패: {0}</translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location line="+59"/>
         <source>Startup timed out. Please check the log and restart the app.</source>
         <translation>시작 시간이 초과되었습니다. 로그를 확인한 후 앱을 다시 시작하세요.</translation>
     </message>
@@ -743,7 +753,7 @@
 <context>
     <name>MaskContainer</name>
     <message>
-        <location filename="../../src/app/ui/message/message_bubble.py" line="-1060"/>
+        <location filename="../../src/app/ui/message/message_bubble.py" line="-1066"/>
         <location line="+39"/>
         <source>Show more</source>
         <translation>더 보기</translation>
@@ -814,11 +824,6 @@
     <name>Qwen3TTSPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="+106"/>
-        <source>mode</source>
-        <translation>모드</translation>
-    </message>
-    <message>
-        <location line="+5"/>
         <source>language</source>
         <translation>언어</translation>
     </message>
@@ -889,7 +894,7 @@
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="+215"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="+222"/>
         <source>Unsaved changes</source>
         <translation>저장되지 않은 변경 사항</translation>
     </message>
@@ -961,13 +966,15 @@
     <message>
         <location line="+1"/>
         <location line="+23"/>
+        <location line="+51"/>
         <source>Expand</source>
         <translation>펼치기</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="-32"/>
         <location line="+19"/>
         <location line="+2"/>
+        <location line="+8"/>
         <source>Thought deeply</source>
         <translation>깊이 생각함</translation>
     </message>
@@ -975,7 +982,7 @@
 <context>
     <name>TopBar</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="-250"/>
+        <location filename="../../src/app/ui/window.py" line="-269"/>
         <source>hide side</source>
         <translation>사이드바 표시/숨기기</translation>
     </message>
@@ -983,6 +990,132 @@
         <location line="+10"/>
         <source>back</source>
         <translation>뒤로</translation>
+    </message>
+</context>
+<context>
+    <name>TranscriptionLanguage</name>
+    <message>
+        <location filename="../../src/app/stt_languages.py" line="+10"/>
+        <source>Auto detect</source>
+        <translation>자동 감지</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Chinese</source>
+        <translation>중국어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cantonese</source>
+        <translation>광둥어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>English</source>
+        <translation>영어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Japanese</source>
+        <translation>일본어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Korean</source>
+        <translation>한국어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Russian</source>
+        <translation>러시아어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Spanish</source>
+        <translation>스페인어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>French</source>
+        <translation>프랑스어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>German</source>
+        <translation>독일어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Italian</source>
+        <translation>이탈리아어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Portuguese</source>
+        <translation>포르투갈어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Dutch</source>
+        <translation>네덜란드어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Polish</source>
+        <translation>폴란드어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Ukrainian</source>
+        <translation>우크라이나어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Thai</source>
+        <translation>태국어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Vietnamese</source>
+        <translation>베트남어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Indonesian</source>
+        <translation>인도네시아어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Turkish</source>
+        <translation>터키어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Arabic</source>
+        <translation>아랍어</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Hindi</source>
+        <translation>힌디어</translation>
+    </message>
+</context>
+<context>
+    <name>TranscriptionPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/transcription/sherpa_asr_panel.py" line="+20"/>
+        <source>language</source>
+        <translation>언어</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>export SRT subtitles</source>
+        <translation>SRT 자막 내보내기</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>subtitles</source>
+        <translation>자막</translation>
     </message>
 </context>
 <context>
@@ -1131,7 +1264,7 @@
 <context>
     <name>_BottomBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-118"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-125"/>
         <source>Save</source>
         <translation>저장</translation>
     </message>
@@ -1144,7 +1277,7 @@
 <context>
     <name>_CloneVoiceWidget</name>
     <message>
-        <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="-49"/>
+        <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="-44"/>
         <source>reference_audio_path</source>
         <translation>참조 오디오 경로</translation>
     </message>
@@ -1198,7 +1331,7 @@
 <context>
     <name>_InstallWorker</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-117"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-122"/>
         <source>Installation complete</source>
         <translation>설치 완료</translation>
     </message>

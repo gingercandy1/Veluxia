@@ -41,4 +41,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=str(ROOT / "resource" / "icons" / "veluxia.ico"),  # 由 script/build_icon.py 生成
 )
