@@ -6,10 +6,12 @@ import json
 import threading
 from typing import ClassVar
 
+import numpy as np
 import pytest
+import soundfile as sf
 from PIL import Image
 
-from src.backend.core.collection.audio_steps import SpeechGenerateRunner
+from src.backend.core.collection.audio_steps import AudioLoopRunner, SpeechGenerateRunner
 from src.backend.core.collection.dialogue_steps import (
     CAST_VOICES_NAME,
     DIALOGUE_NAME,
@@ -246,6 +248,39 @@ def test_speak_step_requires_voice_for_every_speaker(tmp_path, fake_models):
     ctx = _ctx(tmp_path, {"model_name": "fake-clone"}, "speak", inputs=[script, voices])
     with pytest.raises(ValueError, match="没有声线"):
         _run(DialogueSpeakRunner(), ctx)
+
+
+def _write_tone(path, seconds, rate=1000):
+    # 单调递增的锯齿：每个采样值都不同，才能验证拼接位置
+    samples = np.linspace(-0.5, 0.5, round(seconds * rate))
+    sf.write(str(path), np.stack([samples, -samples], axis=1), rate, subtype="FLOAT")
+    return samples
+
+
+def test_loop_crossfades_tail_into_head(tmp_path):
+    samples = _write_tone(tmp_path / "music.wav", seconds=10)
+    ctx = _ctx(tmp_path, {"crossfade": 2}, "loop", inputs=[tmp_path / "music.wav"])
+    [path] = AudioLoopRunner().run(ctx)
+
+    looped, rate = sf.read(str(path), always_2d=True)
+    overlap = 2 * rate
+    # 成品按 16 位 PCM 写出（引擎导入最通用），比较时要容忍量化误差
+    tolerance = 1e-4
+    assert rate == 1000 and looped.shape == (8000, 2)
+    # 接缝起点完全是原曲结尾，终点过渡到原曲开头，之后原样接上中段
+    assert looped[0, 0] == pytest.approx(samples[-overlap], abs=tolerance)
+    assert looped[overlap - 1, 0] == pytest.approx(samples[overlap - 1], abs=1e-3)
+    assert np.allclose(looped[overlap:, 0], samples[overlap:-overlap], atol=tolerance)
+    # 循环回绕处：成品末尾的下一个采样就是原曲里紧跟着的那个
+    assert looped[-1, 0] == pytest.approx(samples[-overlap - 1], abs=tolerance)
+    assert ctx.meta == {"crossfade": 2.0, "seconds": 8.0}
+
+
+def test_loop_rejects_crossfade_longer_than_half(tmp_path):
+    _write_tone(tmp_path / "music.wav", seconds=3)
+    ctx = _ctx(tmp_path, {"crossfade": 2}, "loop", inputs=[tmp_path / "music.wav"])
+    with pytest.raises(ValueError, match="过渡时长"):
+        AudioLoopRunner().run(ctx)
 
 
 def test_resize_fits_image_into_transparent_square(tmp_path):
