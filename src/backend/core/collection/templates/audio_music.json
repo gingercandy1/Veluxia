@@ -1,0 +1,19 @@
+{
+  "id": "audio_music",
+  "version": 1,
+  "type": "audio",
+  "name": "背景音乐",
+  "description": "关卡、战斗、主菜单等纯音乐 BGM，每条描述生成一首。",
+  "prompt_label": "曲风与情绪（英文效果更好，如 orchestral, calm forest, harp）",
+  "fields": [
+    {"id": "duration", "label": "时长（秒）", "default": "30", "options": [
+      {"value": "15", "label": "15 秒"},
+      {"value": "30", "label": "30 秒"},
+      {"value": "60", "label": "60 秒"},
+      {"value": "120", "label": "120 秒"}
+    ]}
+  ],
+  "steps": [
+    {"id": "music", "type": "speech.generate", "label": "生成音乐", "deliverable": true, "params": {"model_name": "Ace-Step1.5", "duration": "{duration}"}}
+  ]
+}
