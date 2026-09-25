@@ -42,6 +42,10 @@ class BaseRouter(ABC):
         pass
 
     def _register_common_routes(self) -> None:
+        # 没有对应 FactoryType 的 Router（资料库、提示词优化）拿不到模型信息，不注册 /models
+        if self.factory_type is None:
+            return
+
         @self.router.get("/models", response_model=ModelInfoResponse, summary="获取已注册模型列表")
         async def get_models() -> ModelInfoResponse:
             return self._get_model_info()

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -92,3 +92,74 @@ class JobStatusResponse(BaseModel):
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     partial: List[str] = Field(default_factory=list, description="已产出的中间结果（媒体 URL）")
+
+
+# 资料库 / 资源包（ADR 0004）：manifest 是资源包进度的唯一来源，前后端都按这套结构解析
+StepStatus = Literal["pending", "running", "done", "error"]
+
+
+class StepState(BaseModel):
+    """一个条目在某一步上的状态。"""
+    status: StepStatus = "pending"
+    outputs: List[str] = Field(default_factory=list, description="产物路径，相对于资源包目录")
+    error: Optional[str] = None
+
+
+class CollectionItem(BaseModel):
+    """资源包里的一个待生成对象，逐一走完模板的各个步骤。"""
+    id: str = Field(..., description="条目 ID，同时作为产物子目录名")
+    prompt: str = ""
+    steps: Dict[str, StepState] = Field(default_factory=dict, description="步骤 id → 状态")
+
+
+class CollectionStyle(BaseModel):
+    """风格锁：自动拼到每个条目的提示词上。"""
+    prompt: str = ""
+    negative: str = ""
+
+
+class Manifest(BaseModel):
+    id: str
+    name: str = ""
+    type: Literal["scene", "character", "dialogue"] = "scene"
+    template: str
+    template_version: int = 1
+    style: CollectionStyle = Field(default_factory=CollectionStyle)
+    items: List[CollectionItem] = Field(default_factory=list)
+
+
+class NewCollectionItem(BaseModel):
+    id: str = Field("", description="留空时按序号自动生成")
+    prompt: str = ""
+
+
+class CreatePackRequest(BaseModel):
+    name: str = ""
+    template: str
+    style: CollectionStyle = Field(default_factory=CollectionStyle)
+    items: List[NewCollectionItem] = Field(default_factory=list)
+
+
+class RunPackRequest(BaseModel):
+    pack_id: str
+
+
+class TemplateInfo(BaseModel):
+    id: str
+    type: str
+    steps: List[str] = Field(default_factory=list, description="步骤 id，按执行顺序")
+
+
+class TemplateListResponse(BaseResponse):
+    templates: List[TemplateInfo] = Field(default_factory=list)
+
+
+class PackResponse(BaseResponse):
+    manifest: Optional[Manifest] = None
+    media_base: str = Field("", description="资源包目录的媒体 URL，拼上产物相对路径即可访问")
+    # 程序中途被关掉时 manifest 里可能残留 running，界面以这个字段判断是否真的在执行
+    running: bool = False
+
+
+class PackListResponse(BaseResponse):
+    packs: List[PackResponse] = Field(default_factory=list)

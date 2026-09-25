@@ -1,0 +1,11 @@
+{
+  "id": "scene_props",
+  "version": 1,
+  "type": "scene",
+  "steps": [
+    {"id": "generate", "type": "image.generate", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "single isolated object, plain white background, centered, full view"}},
+    {"id": "remove_bg", "type": "image.remove_bg", "params": {"model_name": "rembg-birefnet"}, "inputs": ["generate"]},
+    {"id": "upscale", "type": "image.upscale", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["remove_bg"]},
+    {"id": "trim", "type": "image.trim", "inputs": ["upscale"]}
+  ]
+}
