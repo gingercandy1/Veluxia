@@ -128,7 +128,8 @@ class AceStepMusicGenerator(BaseSpeechGenerator):
         self.prompt = raw.get("content", "")
         self.lyrics = raw.get("lyrics", "").strip()
         self.output_dir = get_temp_dir(raw.get("output_dir", ""))
-        self.duration = float(raw.get("duration", 10))
+        # ACE-Step 最短 10 秒；API 和资料库模板不经过面板的滑块限制，这里兜底
+        self.duration = max(10.0, float(raw.get("duration", 10)))
         self.seed = int(raw.get("seed", 42))
 
 

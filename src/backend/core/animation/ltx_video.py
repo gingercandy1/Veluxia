@@ -302,6 +302,6 @@ class LTXVideoGenerator(BaseAnimationGenerator):
 
         self.seed = raw.get("seed", 42)
         self.decode_timestep = raw.get("decode_timestep", 0.05)
-        self.decode_noise_scale = raw.get("decode_timestep", 0.025)
+        self.decode_noise_scale = raw.get("decode_noise_scale", 0.025)
 
         self.generator = self.torch.Generator(device=self.device).manual_seed(self.seed)

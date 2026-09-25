@@ -1,6 +1,5 @@
 import uuid
 from pathlib import Path
-from typing import Optional
 
 from src.backend.core.exceptions import GenerationCancelled
 from src.backend.core.model_base import BaseSpeechGenerator
@@ -65,7 +64,7 @@ class StableAudioOpenGenerator(BaseSpeechGenerator):
         print(f"✅ {self.model_name} 加载完成")
         print_vram_usage()
 
-    async def generate_music(self) -> Optional[Path]:
+    async def generate_music(self) -> Path:
         self.ensure_model_loaded()
 
         with self.torch.inference_mode():
@@ -77,6 +76,10 @@ class StableAudioOpenGenerator(BaseSpeechGenerator):
                     audio_end_in_s=self.duration,
                     num_waveforms_per_prompt=1,
                     generator=self.generator,
+                    # StableAudioPipeline 只支持旧式 callback(step, timestep, latents)，
+                    # 用不了 make_cancel_callback()
+                    callback=lambda *_: self.check_cancelled(),
+                    callback_steps=1,
                 ).audios[0]
 
                 import soundfile as sf
@@ -88,8 +91,9 @@ class StableAudioOpenGenerator(BaseSpeechGenerator):
                 print("🛑 生成已被用户取消")
                 raise
             except Exception as e:
+                # 必须抛出：返回 None 时前端只会收到空结果，用户看不到失败原因
                 print(f"❌ 生成失败: {e}")
-                return None
+                raise
             finally:
                 self.torch.cuda.empty_cache()
 

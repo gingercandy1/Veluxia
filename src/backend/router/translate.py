@@ -1,4 +1,4 @@
-from core.translate_pipeline import translate
+from src.backend.core.translate_pipeline import translate
 from src.shared.schemas import BaseRequest, TranslateResponse
 from src.shared.enum_type import FactoryType
 from src.backend.router_base import BaseRouter

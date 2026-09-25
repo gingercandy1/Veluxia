@@ -37,10 +37,21 @@ def test_animation_accepts_reference_image_key():
     torch = pytest.importorskip("torch", reason="动画 parse 需 torch（本机无，随后端环境跑）")
     from src.backend.core.animation.ltx_video import LTXVideoGenerator
     g = LTXVideoGenerator.__new__(LTXVideoGenerator)
+    # __new__ 绕过了 __init__，parse_params 建随机数发生器要用到 device
+    g.device = "cpu"
     g.parse_params({"content": "x", "reference_image": "a.png"})
     assert g.reference_image_path == "a.png"
     g.parse_params({"content": "x", "reference_image_path": "b.png"})
     assert g.reference_image_path == "b.png"
+
+
+def test_animation_reads_decode_noise_scale_from_its_own_key():
+    pytest.importorskip("torch", reason="动画 parse 需 torch（本机无，随后端环境跑）")
+    from src.backend.core.animation.ltx_video import LTXVideoGenerator
+    g = LTXVideoGenerator.__new__(LTXVideoGenerator)
+    g.device = "cpu"
+    g.parse_params({"content": "x", "decode_timestep": 0.05, "decode_noise_scale": 0.01})
+    assert g.decode_timestep == 0.05 and g.decode_noise_scale == 0.01
 
 
 def test_stable_audio_open_parse_params_defaults(tmp_path):
