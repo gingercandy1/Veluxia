@@ -229,6 +229,9 @@ class PackDetail(BaseWidget):
         # 确认剧本、重做只改本包的 manifest，别的包在跑也能改，改完等那边结束再执行
         self.detail.set_busy(running)
 
+    def asset_card(self, item_id: str, step_id: str) -> Card | None:
+        return self._cards.get((item_id, step_id))
+
     def set_asset_thumbnail(self, item_id: str, step_id: str, pixmap: QPixmap):
         card = self._cards.get((item_id, step_id))
         if card is not None:

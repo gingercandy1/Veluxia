@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QStackedWidget
 
 from src.app.client import ApiClient
 from src.app.ui.base.widget import BaseWidget
-from src.app.ui.library.cards import ASSET_THUMB, PACK_THUMB
+from src.app.ui.library.cards import ASSET_THUMB, PACK_THUMB, Card
 from src.app.ui.library.detail_panel import PREVIEW_WIDTH, AssetKey
 from src.app.ui.library.garden import GardenView
 from src.app.ui.library.pack_detail import PackDetail
@@ -69,7 +69,6 @@ class LibraryPage(BaseWidget):
         self._template_list: list[TemplateInfo] = []
         self._templates: dict[str, TemplateInfo] = {}
         self._packs: list[PackResponse] = []
-        self._thumb_keys: dict[tuple, str] = {}
         self._refreshing = False
         self._run_worker: LibraryTaskWorker | None = None
         self._run_pack_id = ""
@@ -339,7 +338,8 @@ class LibraryPage(BaseWidget):
             item_id = relative.split("/", 1)[0]
             item = next((i for i in pack.manifest.items if i.id == item_id), None)
             signature = state_signature(item, template.steps) if item else ""
-            self._load_thumbnail(("pack", pack.manifest.id), f"{pack.media_base}/{relative}",
+            self._load_thumbnail(self.garden.card(pack.manifest.id),
+                                 f"{pack.media_base}/{relative}",
                                  signature, PACK_THUMB,
                                  lambda pixmap, pack_id=pack.manifest.id:
                                  self.garden.set_thumbnail(pack_id, pixmap))
@@ -354,19 +354,19 @@ class LibraryPage(BaseWidget):
                 if not relative:
                     continue
                 self._load_thumbnail(
-                    ("asset", pack.manifest.id, item.id, step.id),
+                    self.detail.asset_card(item.id, step.id),
                     f"{pack.media_base}/{relative}",
                     state_signature(item, [s.id for s in chain]), ASSET_THUMB,
                     lambda pixmap, item_id=item.id, step_id=step.id:
                     self.detail.set_asset_thumbnail(item_id, step_id, pixmap))
 
-    def _load_thumbnail(self, key: tuple, url: str, signature: str, size: QSize,
+    def _load_thumbnail(self, card: Card | None, url: str, signature: str, size: QSize,
                         apply: Callable[[QPixmap], None]):
         token = f"{url}#{signature}"
-        if self._thumb_keys.get(key) == token:
+        if card is None or card.thumb_token == token:
             return
         # 先记下再加载：失败也不会每次轮询都重试同一张坏图
-        self._thumb_keys[key] = token
+        card.thumb_token = token
         self._start(self._fetch_image, url, size,
                     on_ok=lambda image: apply(QPixmap.fromImage(image)),
                     on_error=lambda message: print(f"⚠️ 缩略图加载失败：{message}"))

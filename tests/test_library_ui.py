@@ -1,6 +1,7 @@
 """资料库界面：进度与分类计算、花园卡片、新建表单、剧本审阅、详情与执行状态。不连后端。"""
 import json
 
+from PySide6.QtCore import QEvent
 from PySide6.QtWidgets import QTableWidgetItem
 
 from src.app.ui.library.detail_panel import DetailPanel, ScriptEditor
@@ -188,6 +189,17 @@ def test_detail_panel_reports_changes_and_flow(qapp):
     assert "站立" not in panel.fields_label.text() and "亚瑟" in panel.fields_label.text()
 
 
+def test_detail_panel_set_busy_after_clear(qapp):
+    # 清空后流程按钮已被删除，切换资源包时 set_busy 不能再碰它们
+    panel = DetailPanel()
+    pack = _character_pack()
+    panel.show_asset(pack, CHARACTER, pack.manifest.items[0], CHARACTER.step_details[1],
+                     busy=False)
+    panel.clear()
+    qapp.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    panel.set_busy(True)
+
+
 def test_pack_detail_groups_assets_by_media(qapp):
     view = PackDetail()
     view.show_pack(_character_pack(), CHARACTER, busy=False)
@@ -215,6 +227,24 @@ def test_page_run_state_follows_packs(qapp):
     page._on_packs(PackListResponse(packs=[_character_pack()]))
     assert not page.detail.run_btn.isHidden() and page.detail.run_btn.isEnabled()
     assert not page._poll_timer.isActive()
+
+
+def test_page_reloads_thumbnails_for_rebuilt_cards(qapp):
+    # 切换资源包会重建素材卡片，切回来时新卡片必须重新加载，不能被旧记录跳过
+    page = LibraryPage()
+    page._template_list = [CHARACTER]
+    fetched = []
+    page._start = lambda fn, *args, **kwargs: fetched.append(args[0])
+    other = _character_pack()
+    other.manifest.id, other.media_base = "c2", "/media/library/c2"
+    page._on_packs(PackListResponse(packs=[_character_pack(), other]))
+    hero_thumb = "/media/library/c1/hero/trim.png"
+    page._open_pack("c1")
+    page._on_packs(PackListResponse(packs=[_character_pack(), other]))
+    assert fetched.count(hero_thumb) == 2  # 花园封面一次、素材卡片一次，轮询不重复加载
+    page._open_pack("c2")
+    page._open_pack("c1")
+    assert fetched.count(hero_thumb) == 3
 
 
 def test_page_runs_after_approve_when_idle(qapp):

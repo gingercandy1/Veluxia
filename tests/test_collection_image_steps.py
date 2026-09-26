@@ -9,9 +9,13 @@ from PIL import Image
 
 from src.backend.core.collection.executor import CollectionExecutor
 from src.backend.core.collection.image_steps import (
+    ColorMatchRunner,
+    CompositeRunner,
     ImageGenerateRunner,
     RemoveBackgroundRunner,
+    TileHorizontalRunner,
     TrimRunner,
+    tile_horizontal,
     trim_transparent,
 )
 from src.backend.core.collection.steps import StepContext
@@ -128,3 +132,105 @@ def test_trim_rejects_fully_transparent_image():
 def test_builtin_runners_cover_the_scene_props_template(tmp_path):
     # 构造时会校验模板里每种步骤类型都有 runner
     CollectionExecutor(tmp_path, load_template("scene_props"))
+
+
+def _gradient(width: int, height: int = 4) -> Image.Image:
+    image = Image.new("RGBA", (width, height))
+    for x in range(width):
+        for y in range(height):
+            image.putpixel((x, y), (x * 255 // (width - 1), 0, 0, 255))
+    return image
+
+
+def test_tile_x_wraps_right_edge_into_left_edge(tmp_path):
+    source = tmp_path / "in.png"
+    _gradient(80).save(source)
+    [path] = TileHorizontalRunner().run(
+        _ctx(tmp_path, {"overlap": 0.25}, inputs=[source], step_id="far"))
+    with Image.open(path) as result:
+        red = [result.getpixel((x, 0))[0] for x in range(result.width)]
+    assert result.size == (60, 4)
+    # 平铺时最右一列接着最左一列：左端从原图右端开始过渡，接缝两侧颜色相近
+    assert abs(red[0] - red[-1]) <= 5
+    # 过渡带结束后回到原图 overlap 处
+    assert abs(red[20] - 20 * 255 // 79) <= 1
+
+
+def test_tile_x_does_not_bleed_color_from_transparent_pixels():
+    image = Image.new("RGBA", (40, 2), (0, 255, 0, 0))
+    image.paste((255, 0, 0, 255), (30, 0, 40, 2))
+    tiled = tile_horizontal(image, 10)
+    red, green, _, alpha = tiled.getpixel((5, 0))
+    assert 0 < alpha < 255 and green == 0 and red == 255
+
+
+def test_tile_x_rejects_bad_overlap(tmp_path):
+    source = tmp_path / "in.png"
+    _gradient(10).save(source)
+    with pytest.raises(ValueError, match="overlap"):
+        TileHorizontalRunner().run(_ctx(tmp_path, {"overlap": 0.6}, inputs=[source]))
+
+
+def test_composite_stacks_layers_in_input_order(tmp_path):
+    far, near = tmp_path / "far.png", tmp_path / "near.png"
+    Image.new("RGBA", (8, 8), (0, 0, 255, 255)).save(far)
+    top = Image.new("RGBA", (8, 8), (0, 0, 0, 0))
+    top.paste((255, 0, 0, 255), (0, 4, 8, 8))
+    top.save(near)
+    [path] = CompositeRunner().run(_ctx(tmp_path, {}, inputs=[far, near], step_id="preview"))
+    with Image.open(path) as result:
+        assert result.size == (8, 8)
+        assert result.getpixel((0, 0)) == (0, 0, 255, 255)
+        assert result.getpixel((0, 7)) == (255, 0, 0, 255)
+
+
+def _two_tone(first, second, alpha=255):
+    image = Image.new("RGBA", (8, 8), (*first, alpha))
+    image.paste((*second, alpha), (0, 4, 8, 8))
+    return image
+
+
+def test_color_match_shifts_hue_toward_reference_and_keeps_alpha(tmp_path):
+    target, reference = tmp_path / "mid.png", tmp_path / "far.png"
+    layer = _two_tone((200, 40, 40), (120, 20, 20))
+    layer.putpixel((0, 0), (0, 255, 0, 0))
+    layer.save(target)
+    _two_tone((40, 60, 200), (80, 100, 230)).save(reference)
+    [path] = ColorMatchRunner().run(
+        _ctx(tmp_path, {"strength": 1.0}, inputs=[target, reference], step_id="mid_color"))
+    with Image.open(path) as result:
+        red, _, blue, alpha = result.getpixel((0, 7))
+        assert blue > red
+        assert result.getpixel((0, 0))[3] == 0 and alpha == 255
+
+
+def test_color_match_with_zero_strength_is_identity(tmp_path):
+    target, reference = tmp_path / "mid.png", tmp_path / "far.png"
+    _two_tone((200, 40, 40), (120, 20, 20)).save(target)
+    _two_tone((40, 60, 200), (80, 100, 230)).save(reference)
+    [path] = ColorMatchRunner().run(
+        _ctx(tmp_path, {"strength": 0.0}, inputs=[target, reference], step_id="mid_color"))
+    with Image.open(path) as result:
+        # 只经过一次 LAB 往返，允许少量量化误差
+        assert all(abs(a - b) <= 3 for a, b in zip(result.getpixel((0, 7)), (120, 20, 20, 255)))
+
+
+def test_color_match_requires_target_and_reference(tmp_path):
+    source = tmp_path / "in.png"
+    _two_tone((0, 0, 0), (255, 255, 255)).save(source)
+    with pytest.raises(ValueError, match="两张输入"):
+        ColorMatchRunner().run(_ctx(tmp_path, {}, inputs=[source]))
+
+
+def test_builtin_runners_cover_the_scene_parallax_template(tmp_path):
+    template = load_template("scene_parallax")
+    CollectionExecutor(tmp_path, template)
+    # 同模型的步骤相邻：执行器按步骤分组，相邻才不会来回换模型
+    models = [step.params.get("model_name") for step in template.steps]
+    runs = [name for index, name in enumerate(models)
+            if name and (index == 0 or models[index - 1] != name)]
+    assert len(runs) == len(set(runs))
+    assert [s.id for s in template.steps if s.deliverable] == ["far", "mid", "near", "preview"]
+    # 中近景都要以远景为参考对齐色调，否则各层色温不一，叠起来穿帮
+    assert template.step("mid_color").inputs == ("mid_remove_bg", "far_generate")
+    assert template.step("near_color").inputs == ("near_remove_bg", "far_generate")
