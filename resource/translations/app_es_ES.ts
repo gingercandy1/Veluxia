@@ -40,7 +40,7 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+68"/>
+        <location filename="../../src/app/client.py" line="+100"/>
         <location line="+135"/>
         <location line="+271"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
@@ -120,7 +120,7 @@
 <context>
     <name>ApiWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+126"/>
+        <location filename="../../src/app/work.py" line="+127"/>
         <source>No frames to export</source>
         <translation>No hay fotogramas para exportar</translation>
     </message>
@@ -183,14 +183,173 @@
     </message>
 </context>
 <context>
+    <name>BackendPage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/backend_page.py" line="+52"/>
+        <source>Backend</source>
+        <translation>Backend</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Connection</source>
+        <translation>Conexión</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Local backend (runs on this computer)</source>
+        <translation>Backend local (se ejecuta en este equipo)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remote backend (connect to a deployed service)</source>
+        <translation>Backend remoto (conectar a un servicio desplegado)</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Changes take effect after saving and restarting the app.</source>
+        <translation>Los cambios se aplican después de guardar y reiniciar la aplicación.</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Remote backend</source>
+        <translation>Backend remoto</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Address</source>
+        <translation>Dirección</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Token</source>
+        <translation>Token</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Test connection</source>
+        <translation>Probar conexión</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Local backend</source>
+        <translation>Backend local</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Browse...</source>
+        <translation>Examinar...</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Install directory</source>
+        <translation>Carpeta de instalación</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Download and install</source>
+        <translation>Descargar e instalar</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Install from local zip...</source>
+        <translation>Instalar desde zip local...</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The first install downloads PyTorch (about 3 GB) and needs an internet connection.</source>
+        <translation>La primera instalación descarga PyTorch (unos 3 GB) y necesita conexión a internet.</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Enter an address first.</source>
+        <translation>Introduce primero una dirección.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Connecting...</source>
+        <translation>Conectando...</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Connected.</source>
+        <translation>Conectado.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Connected, but the token was rejected.</source>
+        <translation>Conectado, pero el token fue rechazado.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Cannot connect to this address.</source>
+        <translation>No se puede conectar a esta dirección.</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Installed: {0}</source>
+        <translation>Instalado: {0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Not installed: {0}</source>
+        <translation>No instalado: {0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Choose install directory</source>
+        <translation>Elegir carpeta de instalación</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Choose backend package</source>
+        <translation>Elegir paquete del backend</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Backend installed</source>
+        <translation>Backend instalado</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The local backend is installed. Restart the app now to use it?</source>
+        <translation>El backend local está instalado. ¿Reiniciar la aplicación ahora para usarlo?</translation>
+    </message>
+</context>
+<context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+227"/>
+        <location filename="../../src/app/work.py" line="+264"/>
+        <location line="+23"/>
         <source>Starting backend...</source>
         <translation>Iniciando el backend…</translation>
     </message>
     <message>
+        <location line="-3"/>
+        <source>The local backend is not installed. Install it or set a remote address in Settings → Backend.</source>
+        <translation>El backend local no está instalado. Instálalo o indica una dirección remota en Ajustes → Backend.</translation>
+    </message>
+    <message>
         <location line="+13"/>
+        <source>The remote backend address is empty. Set it in Settings → Backend.</source>
+        <translation>La dirección del backend remoto está vacía. Configúrala en Ajustes → Backend.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Connecting to {0}...</source>
+        <translation>Conectando a {0}...</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>The remote backend rejected the token. Check it in Settings → Backend.</source>
+        <translation>El backend remoto rechazó el token. Revísalo en Ajustes → Backend.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Cannot connect to {0}. Check the address in Settings → Backend.</source>
+        <translation>No se puede conectar a {0}. Revisa la dirección en Ajustes → Backend.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Loading model list...</source>
         <translation>Cargando la lista de modelos…</translation>
     </message>
@@ -235,7 +394,7 @@
         <translation>Aún no generado</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+26"/>
         <source>Double-click the card to enlarge</source>
         <translation>Doble clic en la tarjeta para ampliar</translation>
     </message>
@@ -735,7 +894,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+164"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+163"/>
         <source>Failed to load packs: {0}</source>
         <translation>No se pudieron cargar los paquetes: {0}</translation>
     </message>
@@ -801,7 +960,7 @@
 <context>
     <name>LoadingPage</name>
     <message>
-        <location filename="../../src/app/ui/loading_page.py" line="+23"/>
+        <location filename="../../src/app/ui/loading_page.py" line="+25"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
@@ -809,6 +968,11 @@
         <location line="+4"/>
         <source>Starting, please wait…</source>
         <translation>Iniciando, espera un momento…</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Backend settings</source>
+        <translation>Ajustes del backend</translation>
     </message>
 </context>
 <context>
@@ -837,7 +1001,7 @@
         <translation>Veluxia</translation>
     </message>
     <message>
-        <location line="+158"/>
+        <location line="+170"/>
         <source>Generation stopped</source>
         <translation>Generación detenida</translation>
     </message>
@@ -847,7 +1011,7 @@
         <translation>La generación falló: {0}</translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+63"/>
         <source>Startup timed out. Please check the log and restart the app.</source>
         <translation>Se agotó el tiempo de inicio. Revisa el registro y reinicia la aplicación.</translation>
     </message>
@@ -968,7 +1132,7 @@
         <translation>Nuevo paquete</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+25"/>
         <source>e.g. Forest props</source>
         <translation>p. ej., Objetos del bosque</translation>
     </message>
@@ -989,7 +1153,7 @@
         <translation>Categoría</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+18"/>
         <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
         <translation>Estilo fijo, se añade a cada elemento, p. ej., hand-painted, dark teal tones</translation>
     </message>
@@ -999,7 +1163,7 @@
         <translation>Estilo</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-7"/>
         <source>Optional</source>
         <translation>Opcional</translation>
     </message>
@@ -1009,7 +1173,7 @@
         <translation>Negativo</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+12"/>
         <source>Cast</source>
         <translation>Reparto</translation>
     </message>
@@ -1059,12 +1223,12 @@
         <translation>Elementos</translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="-59"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+61"/>
         <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
         <translation>Una fila por recurso. Pega varias líneas (columnas separadas por tabulador) para añadir filas.</translation>
     </message>
@@ -1236,7 +1400,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-264"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-265"/>
         <source>Speaker</source>
         <translation>Hablante</translation>
     </message>
@@ -1274,7 +1438,17 @@
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="+222"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="+236"/>
+        <source>Backend settings changed</source>
+        <translation>Ajustes del backend modificados</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Restart the app now to connect with the new backend settings?</source>
+        <translation>¿Reiniciar la aplicación ahora para conectar con los nuevos ajustes del backend?</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Unsaved changes</source>
         <translation>Cambios sin guardar</translation>
     </message>
@@ -1372,7 +1546,7 @@
 <context>
     <name>TopBar</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="-280"/>
+        <location filename="../../src/app/ui/window.py" line="-296"/>
         <source>hide side</source>
         <translation>Mostrar/ocultar barra lateral</translation>
     </message>
@@ -1631,7 +1805,12 @@
 <context>
     <name>Wan2VideoPanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/animation/wan2_video_panel.py" line="+22"/>
+        <location filename="../../src/app/ui/param/core/animation/wan2_video_panel.py" line="+25"/>
+        <source>resolution</source>
+        <translation>Resolución</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>num_frames</source>
         <translation>Fotogramas</translation>
     </message>
@@ -1654,7 +1833,7 @@
 <context>
     <name>_BottomBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-125"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-145"/>
         <source>Save</source>
         <translation>Guardar</translation>
     </message>
@@ -1729,7 +1908,7 @@
 <context>
     <name>_NavBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-71"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-73"/>
         <source>General</source>
         <translation>General</translation>
     </message>
@@ -1737,6 +1916,11 @@
         <location line="+1"/>
         <source>Graphics Card</source>
         <translation>Tarjeta gráfica</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Backend</source>
+        <translation>Backend</translation>
     </message>
     <message>
         <location line="+1"/>

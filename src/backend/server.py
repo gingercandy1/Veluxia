@@ -18,6 +18,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from .auth import install_token_auth, is_loopback_host
 from .core import generator_registry
 from .core.model_base import GeneratorFactory
 from .core.model_utils import apply_hf_token, get_media_root
@@ -72,6 +73,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    install_token_auth(app)
 
     # 注册路由
     _routers = [
@@ -137,7 +139,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--token", default=os.environ.get("VELUXIA_TOKEN", ""),
+                        help="远程访问令牌；也可用环境变量 VELUXIA_TOKEN，避免出现在进程命令行里")
     args = parser.parse_args()
+    # 后端能读写生成结果、占用显卡，对外暴露时不允许裸奔
+    if not args.token and not is_loopback_host(args.host):
+        parser.error("监听非本机地址时必须提供 --token 或环境变量 VELUXIA_TOKEN")
+    app.state.api_token = args.token
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
 
 

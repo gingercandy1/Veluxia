@@ -89,14 +89,15 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1, 1)
         self._sidebar_visible = True
 
+        self._client = ApiClient()
+
         self._startup = BackendStartupWorker()
         self._startup.ready.connect(self._on_backend_ready)
         self._startup.timeout.connect(self._on_backend_timeout)
+        self._startup.failed.connect(self._on_backend_failed)
         self._startup.log.connect(self._on_backend_log)
         self._startup.log.connect(lambda msg: log_info(msg))
         self._startup.start()
-
-        self._client = ApiClient()
 
         self._outer_stack = QStackedWidget()
         self.setCentralWidget(self._outer_stack)
@@ -182,10 +183,21 @@ class MainWindow(QMainWindow):
         self._setting_page.language_changed.connect(self._restart_for_language)
         self._startup.ready.connect(self._gen_page.activate_model_type)
         self._setting_page.install_requested.connect(lambda: self._startup.close())
+        self._setting_page.restart_requested.connect(self._restart_app)
+        self._loading_page.settings_requested.connect(self._open_backend_settings)
 
     def _restart_for_language(self, _language: str):
+        self._restart_app()
+
+    def _restart_app(self):
         QProcess.startDetached(sys.executable, sys.argv)
         QApplication.instance().quit()
+
+    def _open_backend_settings(self):
+        """后端不可用时从加载页进入设置；改完设置后重启才会重新走启动流程。"""
+        self._outer_stack.setCurrentIndex(1)
+        self._go_to_setting()
+        self._setting_page.show_backend_page()
 
     def _on_back_btn_clicked(self):
         self._stack.setCurrentIndex(0)
@@ -323,6 +335,10 @@ class MainWindow(QMainWindow):
         log_info("✅ Backend 已就緒")
         self._gen_page.setEnabled(True)
         self._outer_stack.setCurrentIndex(1)
+
+    def _on_backend_failed(self, msg: str):
+        log_error(f"⚠️ Backend 不可用: {msg}")
+        self._loading_page.set_error(msg)
 
     def _on_backend_timeout(self):
         log_error("⚠️ Backend 啟動超時")

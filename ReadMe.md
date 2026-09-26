@@ -115,7 +115,23 @@ Manual start, from the project root:
 .venv\Scripts\python.exe -m src.main
 ```
 
-Run the tests with `pytest`. Packaging (a separate frontend exe and backend bundle) is done with `python script/package.py front|backend|all`.
+Run the tests with `pytest`. Packaging (a separate frontend exe and backend bundle) is done with `python script/package.py front|backend|all`. Pushing a `v*` tag builds both and attaches them to a GitHub Release.
+
+### Release builds and remote backend
+
+The release ships two files: `veluxia-app.exe` and `veluxia-backend.zip`. The zip contains Python and every dependency except PyTorch, which is downloaded (about 3 GB) on first install.
+
+- **Local backend:** in the app, open **Settings → Backend** and choose **Download and install**, or install from a zip you already downloaded.
+- **Remote backend:** unzip `veluxia-backend.zip` on the GPU machine and start it with a token:
+
+  ```bat
+  set VELUXIA_TOKEN=choose-a-long-random-token
+  run_backend.bat --host 0.0.0.0
+  ```
+
+  Then in the app choose **Remote backend** and enter `http://<gpu-machine>:8765` and the same token. The backend refuses to listen on a non-local address without a token. The token is sent over plain HTTP, so use this on a trusted LAN or behind an HTTPS reverse proxy.
+
+Remote mode does not yet upload attachments, so features that take an input file (image-to-image, frame interpolation, transcription) only work with a local backend.
 
 ---
 

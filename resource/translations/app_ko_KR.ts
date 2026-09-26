@@ -40,7 +40,7 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+68"/>
+        <location filename="../../src/app/client.py" line="+100"/>
         <location line="+135"/>
         <location line="+271"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
@@ -120,7 +120,7 @@
 <context>
     <name>ApiWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+126"/>
+        <location filename="../../src/app/work.py" line="+127"/>
         <source>No frames to export</source>
         <translation>내보낼 프레임이 없습니다</translation>
     </message>
@@ -183,14 +183,173 @@
     </message>
 </context>
 <context>
+    <name>BackendPage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/backend_page.py" line="+52"/>
+        <source>Backend</source>
+        <translation>백엔드</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Connection</source>
+        <translation>연결</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Local backend (runs on this computer)</source>
+        <translation>로컬 백엔드 (이 컴퓨터에서 실행)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remote backend (connect to a deployed service)</source>
+        <translation>원격 백엔드 (배포된 서비스에 연결)</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Changes take effect after saving and restarting the app.</source>
+        <translation>저장하고 앱을 다시 시작하면 적용됩니다.</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Remote backend</source>
+        <translation>원격 백엔드</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Address</source>
+        <translation>주소</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Token</source>
+        <translation>토큰</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Test connection</source>
+        <translation>연결 테스트</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Local backend</source>
+        <translation>로컬 백엔드</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Browse...</source>
+        <translation>찾아보기...</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Install directory</source>
+        <translation>설치 경로</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Download and install</source>
+        <translation>다운로드 및 설치</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Install from local zip...</source>
+        <translation>로컬 zip에서 설치...</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The first install downloads PyTorch (about 3 GB) and needs an internet connection.</source>
+        <translation>처음 설치할 때 PyTorch(약 3 GB)를 다운로드하므로 인터넷 연결이 필요합니다.</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Enter an address first.</source>
+        <translation>먼저 주소를 입력하세요.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Connecting...</source>
+        <translation>연결 중...</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Connected.</source>
+        <translation>연결되었습니다.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Connected, but the token was rejected.</source>
+        <translation>연결되었지만 토큰이 거부되었습니다.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Cannot connect to this address.</source>
+        <translation>이 주소에 연결할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Installed: {0}</source>
+        <translation>설치됨: {0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Not installed: {0}</source>
+        <translation>설치되지 않음: {0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Choose install directory</source>
+        <translation>설치 경로 선택</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Choose backend package</source>
+        <translation>백엔드 패키지 선택</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Backend installed</source>
+        <translation>백엔드 설치 완료</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The local backend is installed. Restart the app now to use it?</source>
+        <translation>로컬 백엔드가 설치되었습니다. 지금 앱을 다시 시작하여 사용하시겠습니까?</translation>
+    </message>
+</context>
+<context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+227"/>
+        <location filename="../../src/app/work.py" line="+264"/>
+        <location line="+23"/>
         <source>Starting backend...</source>
         <translation>백엔드를 시작하는 중…</translation>
     </message>
     <message>
+        <location line="-3"/>
+        <source>The local backend is not installed. Install it or set a remote address in Settings → Backend.</source>
+        <translation>로컬 백엔드가 설치되지 않았습니다. 설정 → 백엔드에서 설치하거나 원격 주소를 설정하세요.</translation>
+    </message>
+    <message>
         <location line="+13"/>
+        <source>The remote backend address is empty. Set it in Settings → Backend.</source>
+        <translation>원격 백엔드 주소가 비어 있습니다. 설정 → 백엔드에서 설정하세요.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Connecting to {0}...</source>
+        <translation>{0}에 연결 중...</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>The remote backend rejected the token. Check it in Settings → Backend.</source>
+        <translation>원격 백엔드가 토큰을 거부했습니다. 설정 → 백엔드에서 확인하세요.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Cannot connect to {0}. Check the address in Settings → Backend.</source>
+        <translation>{0}에 연결할 수 없습니다. 설정 → 백엔드에서 주소를 확인하세요.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Loading model list...</source>
         <translation>모델 목록을 불러오는 중…</translation>
     </message>
@@ -235,7 +394,7 @@
         <translation>아직 생성되지 않음</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+26"/>
         <source>Double-click the card to enlarge</source>
         <translation>카드를 더블클릭하면 확대됩니다</translation>
     </message>
@@ -733,7 +892,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+164"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+163"/>
         <source>Failed to load packs: {0}</source>
         <translation>팩 목록을 불러오지 못했습니다: {0}</translation>
     </message>
@@ -799,7 +958,7 @@
 <context>
     <name>LoadingPage</name>
     <message>
-        <location filename="../../src/app/ui/loading_page.py" line="+23"/>
+        <location filename="../../src/app/ui/loading_page.py" line="+25"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
@@ -807,6 +966,11 @@
         <location line="+4"/>
         <source>Starting, please wait…</source>
         <translation>시작하는 중입니다. 잠시만 기다려 주세요…</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Backend settings</source>
+        <translation>백엔드 설정</translation>
     </message>
 </context>
 <context>
@@ -835,7 +999,7 @@
         <translation>Veluxia</translation>
     </message>
     <message>
-        <location line="+158"/>
+        <location line="+170"/>
         <source>Generation stopped</source>
         <translation>생성을 중지했습니다</translation>
     </message>
@@ -845,7 +1009,7 @@
         <translation>생성 실패: {0}</translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+63"/>
         <source>Startup timed out. Please check the log and restart the app.</source>
         <translation>시작 시간이 초과되었습니다. 로그를 확인한 후 앱을 다시 시작하세요.</translation>
     </message>
@@ -966,7 +1130,7 @@
         <translation>새 팩</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+25"/>
         <source>e.g. Forest props</source>
         <translation>예: 숲 소품</translation>
     </message>
@@ -987,7 +1151,7 @@
         <translation>분류</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+18"/>
         <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
         <translation>스타일 고정. 모든 항목 프롬프트에 덧붙습니다. 예: hand-painted, dark teal tones</translation>
     </message>
@@ -997,7 +1161,7 @@
         <translation>스타일</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-7"/>
         <source>Optional</source>
         <translation>선택 사항</translation>
     </message>
@@ -1007,7 +1171,7 @@
         <translation>네거티브</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+12"/>
         <source>Cast</source>
         <translation>등장인물</translation>
     </message>
@@ -1057,12 +1221,12 @@
         <translation>항목</translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="-59"/>
         <source>Library</source>
         <translation>라이브러리</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+61"/>
         <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
         <translation>한 행에 소재 하나. 여러 줄(열은 탭으로 구분)을 붙여넣으면 한꺼번에 추가됩니다.</translation>
     </message>
@@ -1234,7 +1398,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-264"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-265"/>
         <source>Speaker</source>
         <translation>화자</translation>
     </message>
@@ -1272,7 +1436,17 @@
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="+222"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="+236"/>
+        <source>Backend settings changed</source>
+        <translation>백엔드 설정이 변경됨</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Restart the app now to connect with the new backend settings?</source>
+        <translation>새 백엔드 설정으로 연결하려면 지금 앱을 다시 시작하시겠습니까?</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Unsaved changes</source>
         <translation>저장되지 않은 변경 사항</translation>
     </message>
@@ -1370,7 +1544,7 @@
 <context>
     <name>TopBar</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="-280"/>
+        <location filename="../../src/app/ui/window.py" line="-296"/>
         <source>hide side</source>
         <translation>사이드바 표시/숨기기</translation>
     </message>
@@ -1629,7 +1803,12 @@
 <context>
     <name>Wan2VideoPanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/animation/wan2_video_panel.py" line="+22"/>
+        <location filename="../../src/app/ui/param/core/animation/wan2_video_panel.py" line="+25"/>
+        <source>resolution</source>
+        <translation>해상도</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>num_frames</source>
         <translation>프레임 수</translation>
     </message>
@@ -1652,7 +1831,7 @@
 <context>
     <name>_BottomBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-125"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-145"/>
         <source>Save</source>
         <translation>저장</translation>
     </message>
@@ -1727,7 +1906,7 @@
 <context>
     <name>_NavBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-71"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-73"/>
         <source>General</source>
         <translation>일반</translation>
     </message>
@@ -1735,6 +1914,11 @@
         <location line="+1"/>
         <source>Graphics Card</source>
         <translation>그래픽 카드</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Backend</source>
+        <translation>백엔드</translation>
     </message>
     <message>
         <location line="+1"/>

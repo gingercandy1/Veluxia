@@ -37,3 +37,31 @@ def test_launcher_points_to_embed_python(tmp_path):
     assert "src.backend.server" in text
     assert "8765" in text
     assert "PYTHONPATH" in text
+
+
+def test_launcher_installs_on_first_run_and_forwards_args(tmp_path):
+    text = ab.write_launcher(tmp_path).read_text(encoding="ascii")
+    assert "install_backend.bat" in text
+    assert "%*" in text
+
+
+def test_installer_is_offline_first_then_torch(tmp_path):
+    text = ab.write_installer(tmp_path).read_text(encoding="ascii")
+    assert "--no-index" in text and "backend.requirements.txt" in text
+    assert ab.TORCH_INDEX in text and "torch.requirements.txt" in text
+    assert text.index("backend.requirements.txt") < text.index("torch.requirements.txt")
+
+
+def test_split_requirements_moves_torch_out():
+    text = (
+        "# comment\n"
+        "torch==2.11.0+cu128 ; sys_platform == 'win32'\n"
+        "torchao==0.18.0 ; sys_platform == 'win32'\n"
+        "torchvision==0.26.0+cu128 ; sys_platform == 'win32'\n"
+        "torchaudio==2.11.0+cu128\n"
+        "llama-cpp-python @ https://example.com/x.whl ; sys_platform == 'win32'\n"
+    )
+    base, torch = ab.split_requirements(text)
+    assert [line.split("==")[0] for line in torch] == ["torch", "torchvision", "torchaudio"]
+    assert any(line.startswith("torchao") for line in base)
+    assert any(line.startswith("llama-cpp-python") for line in base)

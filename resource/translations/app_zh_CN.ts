@@ -40,7 +40,7 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+68"/>
+        <location filename="../../src/app/client.py" line="+100"/>
         <location line="+135"/>
         <location line="+271"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
@@ -120,7 +120,7 @@
 <context>
     <name>ApiWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+126"/>
+        <location filename="../../src/app/work.py" line="+127"/>
         <source>No frames to export</source>
         <translation>没有可导出的序列帧</translation>
     </message>
@@ -183,14 +183,173 @@
     </message>
 </context>
 <context>
+    <name>BackendPage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/backend_page.py" line="+52"/>
+        <source>Backend</source>
+        <translation>后端</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Connection</source>
+        <translation>连接方式</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Local backend (runs on this computer)</source>
+        <translation>本机后端（在这台电脑上运行）</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remote backend (connect to a deployed service)</source>
+        <translation>远程后端（连接已部署的服务）</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Changes take effect after saving and restarting the app.</source>
+        <translation>保存并重启应用后生效。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Remote backend</source>
+        <translation>远程后端</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Address</source>
+        <translation>地址</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Token</source>
+        <translation>Token</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Test connection</source>
+        <translation>测试连接</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Local backend</source>
+        <translation>本机后端</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Browse...</source>
+        <translation>浏览...</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Install directory</source>
+        <translation>安装目录</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Download and install</source>
+        <translation>下载并安装</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Install from local zip...</source>
+        <translation>从本地 zip 安装...</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The first install downloads PyTorch (about 3 GB) and needs an internet connection.</source>
+        <translation>首次安装会下载 PyTorch（约 3 GB），需要联网。</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Enter an address first.</source>
+        <translation>请先填写地址。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Connecting...</source>
+        <translation>正在连接...</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Connected.</source>
+        <translation>连接成功。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Connected, but the token was rejected.</source>
+        <translation>已连通，但 Token 被拒绝。</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Cannot connect to this address.</source>
+        <translation>无法连接到该地址。</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Installed: {0}</source>
+        <translation>已安装：{0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Not installed: {0}</source>
+        <translation>未安装：{0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Choose install directory</source>
+        <translation>选择安装目录</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Choose backend package</source>
+        <translation>选择后端安装包</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Backend installed</source>
+        <translation>后端已安装</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The local backend is installed. Restart the app now to use it?</source>
+        <translation>本机后端已安装，现在重启应用以使用它吗？</translation>
+    </message>
+</context>
+<context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+227"/>
+        <location filename="../../src/app/work.py" line="+264"/>
+        <location line="+23"/>
         <source>Starting backend...</source>
         <translation>正在启动后端…</translation>
     </message>
     <message>
+        <location line="-3"/>
+        <source>The local backend is not installed. Install it or set a remote address in Settings → Backend.</source>
+        <translation>本机后端尚未安装。请在 设置 → 后端 中安装，或填写远程地址。</translation>
+    </message>
+    <message>
         <location line="+13"/>
+        <source>The remote backend address is empty. Set it in Settings → Backend.</source>
+        <translation>远程后端地址为空，请在 设置 → 后端 中填写。</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Connecting to {0}...</source>
+        <translation>正在连接 {0}...</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>The remote backend rejected the token. Check it in Settings → Backend.</source>
+        <translation>远程后端拒绝了 Token，请在 设置 → 后端 中检查。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Cannot connect to {0}. Check the address in Settings → Backend.</source>
+        <translation>无法连接到 {0}，请在 设置 → 后端 中检查地址。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Loading model list...</source>
         <translation>正在加载模型列表…</translation>
     </message>
@@ -235,7 +394,7 @@
         <translation>尚未生成</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+26"/>
         <source>Double-click the card to enlarge</source>
         <translation>双击卡片放大查看</translation>
     </message>
@@ -733,7 +892,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+164"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+163"/>
         <source>Failed to load packs: {0}</source>
         <translation>加载资源包列表失败：{0}</translation>
     </message>
@@ -799,7 +958,7 @@
 <context>
     <name>LoadingPage</name>
     <message>
-        <location filename="../../src/app/ui/loading_page.py" line="+23"/>
+        <location filename="../../src/app/ui/loading_page.py" line="+25"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
@@ -807,6 +966,11 @@
         <location line="+4"/>
         <source>Starting, please wait…</source>
         <translation>正在启动，请稍候…</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Backend settings</source>
+        <translation>后端设置</translation>
     </message>
 </context>
 <context>
@@ -835,7 +999,7 @@
         <translation>Veluxia</translation>
     </message>
     <message>
-        <location line="+158"/>
+        <location line="+170"/>
         <source>Generation stopped</source>
         <translation>已停止生成</translation>
     </message>
@@ -845,7 +1009,7 @@
         <translation>生成失败：{0}</translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+63"/>
         <source>Startup timed out. Please check the log and restart the app.</source>
         <translation>启动超时，请检查日志后重启应用。</translation>
     </message>
@@ -966,7 +1130,7 @@
         <translation>新建资源包</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+25"/>
         <source>e.g. Forest props</source>
         <translation>例如：森林道具</translation>
     </message>
@@ -987,7 +1151,7 @@
         <translation>分类</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+18"/>
         <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
         <translation>风格锁，会追加到每个条目的提示词后，例如 hand-painted, dark teal tones</translation>
     </message>
@@ -997,7 +1161,7 @@
         <translation>风格</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-7"/>
         <source>Optional</source>
         <translation>可选</translation>
     </message>
@@ -1007,7 +1171,7 @@
         <translation>反向提示词</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+12"/>
         <source>Cast</source>
         <translation>出场角色</translation>
     </message>
@@ -1057,12 +1221,12 @@
         <translation>条目</translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="-59"/>
         <source>Library</source>
         <translation>资料库</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+61"/>
         <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
         <translation>每行一个素材。粘贴多行文本（列之间用 Tab 分隔）可批量添加。</translation>
     </message>
@@ -1234,7 +1398,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-264"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-265"/>
         <source>Speaker</source>
         <translation>说话人</translation>
     </message>
@@ -1272,7 +1436,17 @@
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="+222"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="+236"/>
+        <source>Backend settings changed</source>
+        <translation>后端设置已更改</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Restart the app now to connect with the new backend settings?</source>
+        <translation>现在重启应用以使用新的后端设置吗？</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Unsaved changes</source>
         <translation>未保存的更改</translation>
     </message>
@@ -1370,7 +1544,7 @@
 <context>
     <name>TopBar</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="-280"/>
+        <location filename="../../src/app/ui/window.py" line="-296"/>
         <source>hide side</source>
         <translation>显示 / 隐藏侧边栏</translation>
     </message>
@@ -1629,7 +1803,12 @@
 <context>
     <name>Wan2VideoPanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/animation/wan2_video_panel.py" line="+22"/>
+        <location filename="../../src/app/ui/param/core/animation/wan2_video_panel.py" line="+25"/>
+        <source>resolution</source>
+        <translation>分辨率</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>num_frames</source>
         <translation>帧数</translation>
     </message>
@@ -1652,7 +1831,7 @@
 <context>
     <name>_BottomBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-125"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-145"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
@@ -1727,7 +1906,7 @@
 <context>
     <name>_NavBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-71"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-73"/>
         <source>General</source>
         <translation>通用</translation>
     </message>
@@ -1735,6 +1914,11 @@
         <location line="+1"/>
         <source>Graphics Card</source>
         <translation>显卡</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Backend</source>
+        <translation>后端</translation>
     </message>
     <message>
         <location line="+1"/>
