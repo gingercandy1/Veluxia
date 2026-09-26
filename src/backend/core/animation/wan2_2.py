@@ -6,11 +6,10 @@ from typing import List
 import numpy as np
 from PIL import Image
 from PIL.Image import Resampling
-from huggingface_hub import hf_hub_download, snapshot_download
-
 from src.shared.settings import PROJECT_ROOT
+from src.backend.core.diffusers_utils import apply_offload, gguf_filename, load_gguf_transformer
 from src.backend.core.model_base import BaseAnimationGenerator
-from src.backend.core.model_utils import huggingface_token, print_vram_usage, get_temp_dir
+from src.backend.core.model_utils import ensure_file, ensure_snapshot, print_vram_usage, get_temp_dir
 
 class Wan2VideoGenerator(BaseAnimationGenerator):
     _BASE_REPO_ID = "Wan-AI/Wan2.2-TI2V-5B-Diffusers"
@@ -44,40 +43,16 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
         self.model_dir  = Path(PROJECT_ROOT) / "models" / "animation" / "wan2"
         # models.json 给了 .gguf 文件名才走量化链路：官方 transformer 是 fp32（约 19GB），
         # 加载时连同文本编码器一起会撑爆 32GB 内存，GGUF 在内存和显存里都保持压缩
-        self.gguf_filename = (self.model_filename
-                              if str(self.model_filename or "").endswith(".gguf") else None)
+        self.gguf_filename = gguf_filename(self.model_filename)
         self.gguf_repo_id = (getattr(self, "model_extra", None) or {}).get("gguf_repo_id", "")
         self.gguf_local = Path(PROJECT_ROOT) / "models" / "animation" / "wan2-gguf"
+        if not self.model_id:
+            self.model_id = self._BASE_REPO_ID
 
     def _check_model_file(self):
-        if self.gguf_filename and not (self.gguf_local / self.gguf_filename).exists():
-            print(f"⏬ 正在下载 GGUF 量化权重 {self.gguf_filename}...")
-            self.gguf_local.mkdir(parents=True, exist_ok=True)
-            hf_hub_download(
-                repo_id=self.gguf_repo_id,
-                filename=self.gguf_filename,
-                local_dir=str(self.gguf_local),
-                token=huggingface_token,
-            )
-            print("✅ GGUF 权重下载完成")
-        if self.model_dir.exists():
-            return
-
-        print(f"📥 未找到基础组件，开始下载...")
-        self.model_dir.mkdir(parents=True, exist_ok=True)
-        if self.model_id:
-            snapshot_download(
-                repo_id=self.model_id,
-                local_dir=str(self.model_dir),
-                token=huggingface_token,
-            )
-        else:
-            snapshot_download(
-                repo_id=self._BASE_REPO_ID,
-                local_dir=str(self.model_dir),
-                token=huggingface_token,
-            )
-        print(f"✅ 基础组件下载完成")
+        if self.gguf_filename:
+            ensure_file(self.gguf_repo_id, self.gguf_filename, self.gguf_local)
+        ensure_snapshot(self.model_id, self.model_dir)
 
     def _load_model(self):
         print(f"🔄 正在加载 Wan2.2-TI2V...")
@@ -88,32 +63,18 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
         pipe_kwargs = {"vae": AutoencoderKLWan.from_pretrained(
             str(self.model_dir), subfolder="vae", torch_dtype=torch.float32)}
         if self.gguf_filename:
-            pipe_kwargs["transformer"] = self._build_gguf_transformer()
+            from diffusers import WanTransformer3DModel
+            pipe_kwargs["transformer"] = load_gguf_transformer(
+                WanTransformer3DModel, self.gguf_local / self.gguf_filename, self.model_dir)
         self.pipe = WanImageToVideoPipeline.from_pretrained(
             str(self.model_dir),
             torch_dtype=torch.bfloat16,
             **pipe_kwargs,
         )
-
-        self.pipe.enable_model_cpu_offload()
-        self.pipe.vae.enable_tiling()
-        self.pipe.vae.enable_slicing()
+        apply_offload(self.pipe, "model", self.device)
 
         print("✅ 加载完成")
         print_vram_usage()
-
-    def _build_gguf_transformer(self):
-        from diffusers import GGUFQuantizationConfig, WanTransformer3DModel
-
-        print(f"⚡ 正在以 GGUF 量化加载 transformer（{self.gguf_filename}）...")
-        return WanTransformer3DModel.from_single_file(
-            str(self.gguf_local / self.gguf_filename),
-            quantization_config=GGUFQuantizationConfig(compute_dtype=self.torch.bfloat16),
-            # 结构配置取本地官方目录，免得单文件加载时再去联网猜配置
-            config=str(self.model_dir),
-            subfolder="transformer",
-            torch_dtype=self.torch.bfloat16,
-        )
 
     def _nearest_valid_frames(self, num_frames: int) -> int:
         """Wan2.x 要求帧数为 4N+1，找最接近的合法值。"""

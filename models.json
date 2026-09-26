@@ -240,16 +240,22 @@
     },
     "Z-Image-Turbo": {
       "generator": "image.z_image:ZImageGenerator",
-      "repo_id": "jayn7/Z-Image-Turbo-GGUF",
+      "repo_id": "Tongyi-MAI/Z-Image-Turbo",
       "filename": "z_image_turbo-Q4_K_M.gguf",
-      "base_id": "Tongyi-MAI/Z-Image-Turbo",
+      "gguf_repo_id": "jayn7/Z-Image-Turbo-GGUF",
       "tag": "fast",
       "note": "GGUF Q4_K_M 约5GB，transformer 单文件加载，其余走官方骨架，8GB显存可用"
     },
     "Qwen-Image-Lightning": {
       "generator": "image.qwen_image:QwenImageLightningGenerator",
       "repo_id": "unsloth/Qwen-Image-2512-FP8",
-      "lora_id": "lightx2v/Qwen-Image-Lightning",
+      "loras": [
+        {
+          "repo_id": "lightx2v/Qwen-Image-Lightning",
+          "weight_name": "Qwen-Image-Lightning-8steps-V1.0.safetensors",
+          "name": "lightning"
+        }
+      ],
       "tag": "fast"
     },
     "rembg-u2net": {
