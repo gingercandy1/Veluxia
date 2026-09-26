@@ -32,7 +32,7 @@
 | # | model_name | 最小 extra |
 |---|-----------|-----------|
 | 9 | Qwen3-TTS-1.7b-custom | `"content":"你好","voice":"Vivian"`（`mode`错则换 `-base` 名重试并记录） |
-| 10 | Ace-Step1.5 | `"content":"epic battle music","duration":10,"batch_size":1`（batch 先改1，默认4太重） |
+| 10 | Ace-Step1.5 | `"content":"epic battle music","duration":30`（首次会下载 0.6B LM 约 1.2GB；看 DiT+LM 双 offload 下是否 OOM） |
 
 ## 补测
 
@@ -44,8 +44,8 @@
 
 ## 已知静态问题（跑之前先看，命中即记，不用深挖）
 
-1. **动画参考图键不一致**：image 路由读 `reference_image`，ltx/wan 的 parse 读 `reference_image_path`——UI 传哪个都有一个收不到。冒烟时两个键各试一次，记哪个通。
-2. **TTS model_name 待对**：models.json 有 5 个 Qwen3-TTS 名，Generator 的 names 是否一一对应未知；报“未知的生成器”即记。
+1. ~~动画参考图键不一致~~：已修，ltx 两个键都认（`tests/test_speech_anim.py`）。
+2. ~~TTS model_name 待对~~：注册已改为 models.json 驱动，每个模型都能解析到对应基类（`tests/test_image_registry.py`）。
 3. **Qwen-Lightning 必看项**：LoRA 跨版本（8月底座训 / 2512底座用）load 时形状报错=预期内失败，贴错即结论。
 
 回传：记录表 + 命中条目编号，我按 界面/后端路由/生成器/参数传递/环境权重 五维归因。
