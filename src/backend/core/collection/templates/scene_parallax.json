@@ -1,0 +1,25 @@
+{
+  "id": "scene_parallax",
+  "version": 1,
+  "type": "scene",
+  "name": "视差分层背景",
+  "description": "横版视差背景：同一场景分成远景、中景、近景三层，中近景去背景透明并对齐远景色调，三层都左右无缝可平铺，另出一张合成预览。",
+  "prompt_label": "场景描述",
+  "cover": "preview",
+  "steps": [
+    {"id": "far_generate", "type": "image.generate", "label": "远景生成", "params": {"model_name": "Z-Image-Turbo", "width": 1344, "height": 768, "prompt_suffix": "2D side-scrolling game background art, one consistent art style, side view, no characters, no text, far background layer: distant scenery and sky filling the whole frame, hazy atmospheric perspective, no foreground objects, flat horizon"}},
+    {"id": "mid_generate", "type": "image.generate", "label": "中景生成", "params": {"model_name": "Z-Image-Turbo", "width": 1344, "height": 768, "prompt_suffix": "2D side-scrolling game background art, one consistent art style, side view, no characters, no text, middle ground layer: main scenery elements standing in the lower half, isolated on plain white background, empty white sky"}},
+    {"id": "near_generate", "type": "image.generate", "label": "近景生成", "params": {"model_name": "Z-Image-Turbo", "width": 1344, "height": 768, "prompt_suffix": "2D side-scrolling game background art, one consistent art style, side view, no characters, no text, foreground layer: large close-up scenery along the bottom edge, isolated on plain white background, empty white upper half"}},
+    {"id": "mid_remove_bg", "type": "image.remove_bg", "label": "中景去背景", "params": {"model_name": "rembg-birefnet"}, "inputs": ["mid_generate"]},
+    {"id": "near_remove_bg", "type": "image.remove_bg", "label": "近景去背景", "params": {"model_name": "rembg-birefnet"}, "inputs": ["near_generate"]},
+    {"id": "mid_color", "type": "image.color_match", "label": "中景对齐色调", "params": {"strength": 0.7}, "inputs": ["mid_remove_bg", "far_generate"]},
+    {"id": "near_color", "type": "image.color_match", "label": "近景对齐色调", "params": {"strength": 0.7}, "inputs": ["near_remove_bg", "far_generate"]},
+    {"id": "far_upscale", "type": "image.upscale", "label": "远景放大", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["far_generate"]},
+    {"id": "mid_upscale", "type": "image.upscale", "label": "中景放大", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["mid_color"]},
+    {"id": "near_upscale", "type": "image.upscale", "label": "近景放大", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["near_color"]},
+    {"id": "far", "type": "image.tile_x", "label": "远景", "deliverable": true, "params": {"overlap": 0.125}, "inputs": ["far_upscale"]},
+    {"id": "mid", "type": "image.tile_x", "label": "中景", "deliverable": true, "params": {"overlap": 0.125}, "inputs": ["mid_upscale"]},
+    {"id": "near", "type": "image.tile_x", "label": "近景", "deliverable": true, "params": {"overlap": 0.125}, "inputs": ["near_upscale"]},
+    {"id": "preview", "type": "image.composite", "label": "合成预览", "deliverable": true, "inputs": ["far", "mid", "near"]}
+  ]
+}

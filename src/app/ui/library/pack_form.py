@@ -3,7 +3,7 @@ from PySide6.QtGui import QGuiApplication, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
-    QFormLayout,
+    QGridLayout,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -111,32 +111,36 @@ class PackForm(BaseWidget):
         header.addStretch()
         layout.addLayout(header)
 
-        form = QFormLayout()
-        form.setSpacing(10)
-        form.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+        # 标签放在输入框上方、两列并排：标签列放左侧会让上面的表单和下面顶格的表格左边缘错开，
+        # 标签全放上方又太高，把"创建"按钮挤出首屏
+        form = QGridLayout()
+        form.setHorizontalSpacing(16)
+        form.setVerticalSpacing(12)
+        form.setColumnStretch(0, 1)
+        form.setColumnStretch(1, 1)
         self.category_combo = QComboBox()
         self.category_combo.currentIndexChanged.connect(self._fill_template_combo)
-        form.addRow(self._label(self.tr("Category")), self.category_combo)
+        form.addLayout(self._field(self.tr("Category"), self.category_combo), 0, 0)
         self.template_combo = QComboBox()
         self.template_combo.currentIndexChanged.connect(self._on_template_changed)
-        form.addRow(self._label(self.tr("Template")), self.template_combo)
+        form.addLayout(self._field(self.tr("Template"), self.template_combo), 0, 1)
         self.description_label = QLabel()
         self.description_label.setObjectName("detail_muted")
         self.description_label.setWordWrap(True)
-        form.addRow(QLabel(), self.description_label)
+        form.addWidget(self.description_label, 1, 0, 1, 2)
 
         self.name_edit = QLineEdit()
         self.name_edit.setPlaceholderText(self.tr("e.g. Forest props"))
-        form.addRow(self._label(self.tr("Name")), self.name_edit)
+        form.addLayout(self._field(self.tr("Name"), self.name_edit), 2, 0)
+        self.negative_edit = QLineEdit()
+        self.negative_edit.setPlaceholderText(self.tr("Optional"))
+        form.addLayout(self._field(self.tr("Negative"), self.negative_edit), 2, 1)
         self.style_edit = QPlainTextEdit()
         self.style_edit.setObjectName("library_text_edit")
         self.style_edit.setPlaceholderText(
             self.tr("Style lock, appended to every item, e.g. hand-painted, dark teal tones"))
         self.style_edit.setFixedHeight(64)
-        form.addRow(self._label(self.tr("Style")), self.style_edit)
-        self.negative_edit = QLineEdit()
-        self.negative_edit.setPlaceholderText(self.tr("Optional"))
-        form.addRow(self._label(self.tr("Negative")), self.negative_edit)
+        form.addLayout(self._field(self.tr("Style"), self.style_edit), 3, 0, 1, 2)
         layout.addLayout(form)
 
         self.cast_section = QWidget()
@@ -361,11 +365,14 @@ class PackForm(BaseWidget):
         table.setColumnWidth(stretch_column, 320)
 
     @staticmethod
-    def _label(text: str) -> QLabel:
-        # addRow 传字符串时 Qt 自建的标签没有 objectName，qss 挂不上
+    def _field(text: str, widget: QWidget) -> QVBoxLayout:
         label = QLabel(text)
         label.setObjectName("library_form_label")
-        return label
+        column = QVBoxLayout()
+        column.setSpacing(6)
+        column.addWidget(label)
+        column.addWidget(widget)
+        return column
 
     @staticmethod
     def _heading(text: str) -> QLabel:

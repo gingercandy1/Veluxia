@@ -238,6 +238,7 @@ class DetailPanel(BaseWidget):
         self.subtitle_label.clear()
         self._clear_preview()
         self._clear_layout(self._flow)
+        self._redo_buttons = []
         self._set_sections_visible(False)
 
     def set_busy(self, busy: bool):

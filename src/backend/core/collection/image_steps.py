@@ -1,4 +1,4 @@
-"""图片类步骤的 runner（ADR 0004）：文生图、去背景、放大、裁透明边、统一尺寸。"""
+"""图片类步骤的 runner（ADR 0004）：文生图、去背景、放大、裁透明边、统一尺寸、色调对齐、横向无缝、图层合成。"""
 from pathlib import Path
 from typing import Any
 
@@ -77,6 +77,69 @@ class ResizeRunner(StepRunner):
         return [path]
 
 
+class ColorMatchRunner(StepRunner):
+    """把第一张输入的色调对齐到第二张参考图（纯 CPU）：视差各层分开生成，色温、色相各不相同，
+    叠在一起就穿帮。
+
+    只迁移 LAB 的 a/b 色彩通道、不动亮度 L：近景本该比远景暗、对比强，连亮度一起对齐会把景深压平。
+    """
+    type_name = "image.color_match"
+
+    def run(self, ctx: StepContext) -> list[Path]:
+        if len(ctx.inputs) != 2:
+            raise ValueError(f"{self.type_name} 需要目标图和参考图两张输入，实际 {len(ctx.inputs)} 张")
+        strength = float(ctx.params.get("strength", 0.7))
+        if not 0 <= strength <= 1:
+            raise ValueError(f"{self.type_name} 的 strength 必须在 0 到 1 之间：{strength}")
+        target_path, reference_path = ctx.inputs
+        with Image.open(target_path) as target, Image.open(reference_path) as reference:
+            matched = match_color(target.convert("RGBA"), reference.convert("RGBA"), strength)
+        path = ctx.out_dir / f"{ctx.step_id}.png"
+        matched.save(path)
+        ctx.meta.update(describe_image(path))
+        return [path]
+
+
+class TileHorizontalRunner(StepRunner):
+    """把图片左右边缘做成无缝衔接（纯 CPU）：视差背景层在引擎里横向平铺滚动，接缝不能露出来。
+
+    做法同 audio.loop：右端 overlap 宽度淡出、叠到左端的淡入上，再去掉右端这段，
+    平铺时右边缘接着的正是"被叠进左端的那段右端"，两侧都连续。
+    """
+    type_name = "image.tile_x"
+
+    def run(self, ctx: StepContext) -> list[Path]:
+        overlap_ratio = float(ctx.params.get("overlap", 0.125))
+        with Image.open(single_input(self.type_name, ctx)) as image:
+            if not 0 < overlap_ratio < 0.5:
+                raise ValueError(f"{self.type_name} 的 overlap 必须在 0 到 0.5 之间：{overlap_ratio}")
+            tiled = tile_horizontal(image.convert("RGBA"), round(image.width * overlap_ratio))
+        path = ctx.out_dir / f"{ctx.step_id}.png"
+        tiled.save(path)
+        ctx.meta.update(describe_image(path))
+        return [path]
+
+
+class CompositeRunner(StepRunner):
+    """按输入顺序从后往前叠图层（纯 CPU）：分层背景看不出整体效果，合成一张预览当封面。"""
+    type_name = "image.composite"
+
+    def run(self, ctx: StepContext) -> list[Path]:
+        if len(ctx.inputs) < 2:
+            raise ValueError(f"{self.type_name} 至少需要两张输入图，实际 {len(ctx.inputs)} 张")
+        with Image.open(ctx.inputs[0]) as base_image:
+            result = base_image.convert("RGBA")
+        for layer_path in ctx.inputs[1:]:
+            with Image.open(layer_path) as layer:
+                # 各层分别生成放大，尺寸按理一致；万一不同就拉到底图尺寸，不让预览失败
+                result = Image.alpha_composite(
+                    result, layer.convert("RGBA").resize(result.size, Image.Resampling.LANCZOS))
+        path = ctx.out_dir / f"{ctx.step_id}.png"
+        result.save(path)
+        ctx.meta.update(describe_image(path))
+        return [path]
+
+
 def single_input(type_name: str, ctx: StepContext) -> Path:
     if len(ctx.inputs) != 1:
         raise ValueError(f"{type_name} 需要恰好一张输入图，实际 {len(ctx.inputs)} 张")
@@ -101,6 +164,56 @@ def fit_square(image: Image.Image, size: int) -> Image.Image:
     return canvas
 
 
+def match_color(image: Image.Image, reference: Image.Image, strength: float) -> Image.Image:
+    import numpy as np
+    from PIL import ImageCms
+
+    srgb, lab = ImageCms.createProfile("sRGB"), ImageCms.createProfile("LAB")
+    to_lab = ImageCms.buildTransform(srgb, lab, "RGB", "LAB")
+    to_rgb = ImageCms.buildTransform(lab, srgb, "LAB", "RGB")
+
+    def lab_pixels(source: Image.Image):
+        pixels = np.asarray(ImageCms.applyTransform(source.convert("RGB"), to_lab), dtype=np.float32)
+        # 只统计不透明像素：去背景后大片透明区域的底色不属于画面，会把均值拉偏
+        opaque = np.asarray(source.getchannel("A")) > 127
+        if not opaque.any():
+            raise ValueError("图片完全透明，无法统计色调")
+        return pixels, pixels[opaque]
+
+    pixels, target_opaque = lab_pixels(image)
+    _, reference_opaque = lab_pixels(reference)
+    for channel in (1, 2):
+        target_mean, target_std = target_opaque[:, channel].mean(), target_opaque[:, channel].std()
+        reference_mean, reference_std = (reference_opaque[:, channel].mean(),
+                                         reference_opaque[:, channel].std())
+        scale = reference_std / target_std if target_std > 1e-3 else 1.0
+        matched = (pixels[..., channel] - target_mean) * scale + reference_mean
+        pixels[..., channel] += strength * (matched - pixels[..., channel])
+    lab_image = Image.fromarray(np.round(np.clip(pixels, 0, 255)).astype(np.uint8), "LAB")
+    result = ImageCms.applyTransform(lab_image, to_rgb).convert("RGBA")
+    result.putalpha(image.getchannel("A"))
+    return result
+
+
+def tile_horizontal(image: Image.Image, overlap: int) -> Image.Image:
+    import numpy as np
+
+    if overlap <= 0 or image.width <= overlap * 2:
+        raise ValueError(f"图片宽 {image.width}px，无法做 {overlap}px 的无缝过渡")
+    pixels = np.asarray(image, dtype=np.float32) / 255.0
+    # 预乘 alpha 再混合：直接混合 RGBA 时，透明像素里的底色会在过渡带渗出一圈杂边
+    alpha = pixels[..., 3:]
+    premultiplied = np.concatenate([pixels[..., :3] * alpha, alpha], axis=-1)
+    weight = np.linspace(0.0, 1.0, overlap, dtype=np.float32)[None, :, None]
+    seam = premultiplied[:, -overlap:] * (1 - weight) + premultiplied[:, :overlap] * weight
+    blended = np.concatenate([seam, premultiplied[:, overlap:-overlap]], axis=1)
+    blended_alpha = blended[..., 3:]
+    rgb = np.divide(blended[..., :3], blended_alpha, out=np.zeros_like(blended[..., :3]),
+                    where=blended_alpha > 0)
+    result = np.concatenate([rgb, blended_alpha], axis=-1)
+    return Image.fromarray(np.round(np.clip(result, 0, 1) * 255).astype(np.uint8), "RGBA")
+
+
 def describe_image(path: Path) -> dict[str, Any]:
     with Image.open(path) as image:
         return {"size": [image.width, image.height]}
@@ -112,4 +225,7 @@ BUILTIN_RUNNERS: tuple[StepRunner, ...] = (
     UpscaleRunner(),
     TrimRunner(),
     ResizeRunner(),
+    ColorMatchRunner(),
+    TileHorizontalRunner(),
+    CompositeRunner(),
 )

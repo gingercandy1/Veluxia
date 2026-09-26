@@ -98,6 +98,9 @@ class GardenView(BaseWidget):
             self._sections.addWidget(section)
         self._sections.addStretch()
 
+    def card(self, pack_id: str) -> Card | None:
+        return self._cards.get(pack_id)
+
     def set_thumbnail(self, pack_id: str, pixmap: QPixmap):
         card = self._cards.get(pack_id)
         if card is not None:
