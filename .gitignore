@@ -13,7 +13,7 @@ cache
 src/backend/core/speech/ACE_Step
 src/test
 *.zip
-
+*.serena
 *.rsuser
 *.suo
 *.user
