@@ -2,6 +2,7 @@ import json
 import threading
 import time
 import httpx
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Callable
 
@@ -17,6 +18,31 @@ _DEFAULT_LIMITS = httpx.Limits(
     max_keepalive_connections=5,
     keepalive_expiry=30.0,
 )
+
+
+class BackendStatus(str, Enum):
+    OK = "ok"
+    UNREACHABLE = "unreachable"
+    UNAUTHORIZED = "unauthorized"
+
+
+def auth_headers(token: str) -> dict:
+    return {"Authorization": f"Bearer {token}"} if token else {}
+
+
+def probe_backend(base_url: str, token: str = "", timeout: float = 5.0) -> BackendStatus:
+    """区分"连不上"和"token 错"，前者等一会儿可能恢复，后者要提示用户改设置。
+
+    /health 不需要 token，只能证明进程活着；所以探测需要鉴权的 /ready。
+    """
+    try:
+        resp = httpx.get(f"{base_url.rstrip('/')}/ready",
+                         headers=auth_headers(token), timeout=timeout)
+    except httpx.HTTPError:
+        return BackendStatus.UNREACHABLE
+    if resp.status_code == 401:
+        return BackendStatus.UNAUTHORIZED
+    return BackendStatus.OK if resp.is_success else BackendStatus.UNREACHABLE
 
 
 class ApiClient:
@@ -54,6 +80,12 @@ class ApiClient:
 
     def close(self):
         self._session.close()
+
+    def configure(self, base_url: str, token: str = "") -> None:
+        """地址和 token 由启动流程按设置决定（本机 / 远程），单例构造时还不知道。"""
+        self.base_url = base_url.rstrip("/")
+        self._session.headers.pop("Authorization", None)
+        self._session.headers.update(auth_headers(token))
 
     def _post(self, path: str, payload: Dict[str, Any], response_cls=BaseResponse) -> BaseResponse:
         try:

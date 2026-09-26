@@ -11,11 +11,12 @@ from PySide6.QtCore import QThread, Signal
 
 from .param import GenerationRequest
 from src.shared.enum_type import FactoryType
-from src.app.client import ApiClient, ApiGuardClient
+from src.app import local_backend
+from src.app.client import ApiClient, ApiGuardClient, BackendStatus, probe_backend
 from src.shared.schemas import (
     BaseResponse, ImageResponse, AnimationResponse, SpeechResponse, TranscriptionResponse,
 )
-from src.shared.settings import PROJECT_ROOT
+from src.shared.settings import BACKEND_URL, PROJECT_ROOT, ConfigManager
 
 # 前端本地媒体缓存：把后端 /media/... URL 下载到这里再展示，
 # 放在项目目录下而非系统临时目录，保证聊天记录里的历史附件不会被系统清理掉。
@@ -232,6 +233,25 @@ class LibraryTaskWorker(QThread):
             self.error.emit(str(e) or e.__class__.__name__)
 
 
+class BackendInstallWorker(QThread):
+    """下载 / 解压 / 安装本机后端，可能持续几十分钟（torch 要联网装），日志逐行回到主线程。"""
+    progress    = Signal(str)
+    finished_ok = Signal()
+    error       = Signal(str)
+
+    def __init__(self, root: Path, archive: Path | None = None):
+        super().__init__()
+        self._root = root
+        self._archive = archive
+
+    def run(self):
+        try:
+            local_backend.install(self._root, self.progress.emit, archive=self._archive)
+            self.finished_ok.emit()
+        except Exception as e:
+            self.error.emit(str(e) or e.__class__.__name__)
+
+
 class BaseProcess:
     @staticmethod
     def is_port_in_use(port: int) -> bool:
@@ -326,6 +346,11 @@ class BackendStartupWorker(QThread):
     ready   = Signal()        # 後端就緒
     timeout = Signal()        # 啟動超時
     log     = Signal(str)     # 日誌輸出
+    failed  = Signal(str)     # 需要用户去设置页处理（未安装 / 地址或 token 不对）
+
+    # 安装版后端冷启动要导入 torch 等重型依赖，比源码模式慢得多
+    INSTALLED_START_RETRIES = 240
+    REMOTE_CONNECT_RETRIES = 10
 
     def __init__(self, port: int = 8765, guard_port: int = 8756):
         super().__init__()
@@ -357,6 +382,19 @@ class BackendStartupWorker(QThread):
                 print("⚠️ Backend 強制Kill")
 
     def run(self):
+        server = ConfigManager().get_section("server")
+        if server.get("mode") == "remote":
+            self._connect_remote(server.get("url", ""), server.get("token", ""))
+            return
+
+        ApiClient.instance().configure(BACKEND_URL)
+        if local_backend.is_frozen():
+            self._start_installed()
+        else:
+            self._start_from_source()
+
+    def _start_from_source(self):
+        """源码运行：用当前解释器拉起后端和守护进程（开发流程）。"""
         self.log.emit("⏳ " + self.tr("Starting backend..."))
         self._proc = ApiProcess.start_backend(self._port)
         main_result = ApiProcess.wait_for_backend()
@@ -370,9 +408,49 @@ class BackendStartupWorker(QThread):
             self.timeout.emit()
             return
 
+        self._wait_models_and_ready()
+
+    def _start_installed(self):
+        """exe 运行：自身没有后端依赖，从安装目录拉起后端。"""
+        root = local_backend.install_dir()
+        if not local_backend.is_installed(root):
+            self.failed.emit(self.tr(
+                "The local backend is not installed. Install it or set a remote address "
+                "in Settings → Backend."))
+            return
+        self.log.emit("⏳ " + self.tr("Starting backend..."))
+        self._proc = local_backend.start(root, self._port)
+        if not ApiProcess.wait_for_backend(retries=self.INSTALLED_START_RETRIES):
+            self.timeout.emit()
+            return
+        self._wait_models_and_ready()
+
+    def _connect_remote(self, url: str, token: str):
+        if not url:
+            self.failed.emit(self.tr(
+                "The remote backend address is empty. Set it in Settings → Backend."))
+            return
+        self.log.emit("⏳ " + self.tr("Connecting to {0}...").format(url))
+        status = BackendStatus.UNREACHABLE
+        for _ in range(self.REMOTE_CONNECT_RETRIES):
+            status = probe_backend(url, token)
+            if status != BackendStatus.UNREACHABLE:
+                break
+            time.sleep(1.0)
+        if status == BackendStatus.UNAUTHORIZED:
+            self.failed.emit(self.tr(
+                "The remote backend rejected the token. Check it in Settings → Backend."))
+            return
+        if status == BackendStatus.UNREACHABLE:
+            self.failed.emit(self.tr(
+                "Cannot connect to {0}. Check the address in Settings → Backend.").format(url))
+            return
+        ApiClient.instance().configure(url, token)
+        self._wait_models_and_ready()
+
+    def _wait_models_and_ready(self):
         self.log.emit("⏳ " + self.tr("Loading model list..."))
         ApiProcess.wait_for_models()
-
         self.ready.emit()
 
 

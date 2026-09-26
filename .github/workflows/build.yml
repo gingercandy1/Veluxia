@@ -1,0 +1,73 @@
+name: build
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # runner 控制台默认 cp1252，打包脚本里的中文 / emoji 一 print 就抛 UnicodeEncodeError
+  PYTHONUTF8: "1"
+
+jobs:
+  frontend:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.13"
+          python-version: "3.12"
+      - name: Install frontend deps
+        # 只装 app 成员（按 uv.lock），不拉 torch / diffusers 等后端依赖
+        # app/ 只是依赖清单、没有可打包的源码，--no-install-project 跳过构建成员本身
+        run: uv sync --frozen --package veluxia-app --no-install-project
+      - name: Generate default config
+        # veluxia.spec 会打入 config/setting.json，而它被 gitignore，由 ConfigManager 按默认值生成
+        run: .venv\Scripts\python.exe -c "from src.shared.settings import ConfigManager; ConfigManager()"
+      - name: Build frontend exe
+        run: .venv\Scripts\python.exe script/package.py front
+      - uses: actions/upload-artifact@v4
+        with:
+          name: veluxia-app
+          path: dist/front/veluxia-app.exe
+
+  backend:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.13"
+          python-version: "3.12"
+      - name: Assemble backend zip
+        # 放入 python-build-standalone 与除 torch 外的全部 wheels（ADR 0005）；
+        # torch cu128 单个 wheel 就接近 Release 2GB 上限，由 install_backend.bat 首次联网安装
+        run: uv run --no-project python script/package.py backend --bundle
+      - name: Check release size limit
+        shell: bash
+        run: |
+          size=$(stat -c %s dist/veluxia-backend.zip)
+          echo "veluxia-backend.zip: $((size / 1024 / 1024)) MB"
+          test "$size" -lt 2000000000
+      - uses: actions/upload-artifact@v4
+        with:
+          name: veluxia-backend
+          path: dist/veluxia-backend.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [frontend, backend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/veluxia-app.exe
+            artifacts/veluxia-backend.zip

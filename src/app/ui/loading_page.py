@@ -1,12 +1,14 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
 
 from src.app.ui.mark import MarkWidget
 
 
 class LoadingPage(QWidget):
     """启动加载页：后端进程与模型加载完成前展示，避免用户看到不可用的主界面。"""
+
+    settings_requested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -28,9 +30,16 @@ class LoadingPage(QWidget):
         self._status.setObjectName("loading_status")
         self._status.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        # 后端没装 / 连不上时主界面进不去，得从这里直达设置页，否则用户无路可走
+        self._settings_btn = QPushButton(self.tr("Backend settings"))
+        self._settings_btn.setObjectName("loading_settings_btn")
+        self._settings_btn.clicked.connect(self.settings_requested)
+        self._settings_btn.hide()
+
         layout.addWidget(self._mark, 0, Qt.AlignmentFlag.AlignHCenter)
         layout.addWidget(self._title)
         layout.addWidget(self._status)
+        layout.addWidget(self._settings_btn, 0, Qt.AlignmentFlag.AlignHCenter)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -48,3 +57,4 @@ class LoadingPage(QWidget):
         self._status.setObjectName("loading_status_error")
         self._status.setStyleSheet("color: #E5A5A5;")
         self._status.setText(text)
+        self._settings_btn.show()

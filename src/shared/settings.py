@@ -1,12 +1,15 @@
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any, TypeVar
 
 T = TypeVar("T")
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 BACKEND_URL = "http://127.0.0.1:8765"
-SETTING_CONFIG_PATH = os.path.join(PROJECT_ROOT, "config", "setting.json")
+# 单文件 exe 里 PROJECT_ROOT 是每次启动都会清空的临时解压目录，设置写在 exe 旁边才能保留
+_CONFIG_ROOT = Path(sys.executable).parent if getattr(sys, "frozen", False) else PROJECT_ROOT
+SETTING_CONFIG_PATH = os.path.join(_CONFIG_ROOT, "config", "setting.json")
 
 DEFAULT_CONFIG = {
     "general": {
@@ -27,6 +30,12 @@ DEFAULT_CONFIG = {
     },
     "huggingface": {
         "token": "",
+    },
+    "server": {
+        "mode": "local",
+        "url": "",
+        "token": "",
+        "install_dir": "",
     },
 }
 

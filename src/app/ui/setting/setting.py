@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 
 from src.app.ui.setting.page.general_page import GeneralPage
 from src.app.ui.setting.page.gpu_page import GpuPage
+from src.app.ui.setting.page.backend_page import BackendPage
 from src.app.ui.setting.page.model_page import ModelPage
 from src.app.ui.setting.page.translation_page import TranslationPage
 from src.app.ui.setting.page.about_page import AboutPage
@@ -35,11 +36,13 @@ class _NavBar(QWidget):
     NAV_ITEMS = [
         (QT_TRANSLATE_NOOP("_NavBar", "General"),       ":/svg/general.svg",      0),
         (QT_TRANSLATE_NOOP("_NavBar", "Graphics Card"), ":/svg/gpu.svg",          1),
-        (QT_TRANSLATE_NOOP("_NavBar", "Model"),         ":/svg/model.svg",        2),
-        (QT_TRANSLATE_NOOP("_NavBar", "Translation"),   ":/svg/translate.svg",    3),
-        (QT_TRANSLATE_NOOP("_NavBar", "Journal"),       ":/svg/log.svg",          4),
-        (QT_TRANSLATE_NOOP("_NavBar", "About"),         ":/svg/about.svg",        5),
+        (QT_TRANSLATE_NOOP("_NavBar", "Backend"),       ":/svg/server.svg",       2),
+        (QT_TRANSLATE_NOOP("_NavBar", "Model"),         ":/svg/model.svg",        3),
+        (QT_TRANSLATE_NOOP("_NavBar", "Translation"),   ":/svg/translate.svg",    4),
+        (QT_TRANSLATE_NOOP("_NavBar", "Journal"),       ":/svg/log.svg",          5),
+        (QT_TRANSLATE_NOOP("_NavBar", "About"),         ":/svg/about.svg",        6),
     ]
+    BACKEND_INDEX = 2
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -117,6 +120,7 @@ class SettingPage(QWidget):
     back_requested = Signal()
     install_requested = Signal()
     language_changed = Signal(str)
+    restart_requested = Signal()  # 后端连接方式变了，要重新走启动流程
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -125,6 +129,7 @@ class SettingPage(QWidget):
         self._build_ui()
         self._connect_signals()
         self._saved_language = self._config.get("general", "language")
+        self._saved_server = self._config.get_section("server")
 
     def _build_ui(self):
         root = QVBoxLayout(self)
@@ -171,6 +176,7 @@ class SettingPage(QWidget):
         """按导航顺序注册子页面"""
         self._general_page     = GeneralPage()
         self._gpu_page         = GpuPage()
+        self._backend_page     = BackendPage()
         self._model_page       = ModelPage()
         self._translation_page = TranslationPage()
         self._log_panel        = LogPanel()
@@ -179,6 +185,7 @@ class SettingPage(QWidget):
         for page in [
             self._general_page,
             self._gpu_page,
+            self._backend_page,
             self._model_page,
             self._translation_page,
             self._log_panel,
@@ -190,6 +197,8 @@ class SettingPage(QWidget):
         self._navbar.page_changed.connect(self._stack.setCurrentIndex)
         self._bottom_bar.save_clicked.connect(self._on_save)
         self._gpu_page.install.connect(self.install_requested.emit)
+        self._backend_page.install.connect(self.install_requested.emit)
+        self._backend_page.restart_requested.connect(self.restart_requested.emit)
 
         # 监听 ConfigManager dirty 变化
         # 各子页面修改数据后调用 _check_dirty 即可
@@ -214,6 +223,20 @@ class SettingPage(QWidget):
         self._saved_language = language
         if language_changed:
             self.language_changed.emit(language)
+            return
+        server = self._config.get_section("server")
+        server_changed = server != self._saved_server
+        self._saved_server = server
+        if server_changed and self._confirm_restart():
+            self.restart_requested.emit()
+
+    def _confirm_restart(self) -> bool:
+        reply = QMessageBox.question(
+            self,
+            self.tr("Backend settings changed"),
+            self.tr("Restart the app now to connect with the new backend settings?"),
+        )
+        return reply == QMessageBox.StandardButton.Yes
 
     def _on_back(self):
         if self._config.is_dirty:
@@ -239,3 +262,6 @@ class SettingPage(QWidget):
     def navigate_to(self, index: int):
         """外部调用跳转到指定页"""
         self._navbar.select_index(index)
+
+    def show_backend_page(self):
+        self.navigate_to(_NavBar.BACKEND_INDEX)
