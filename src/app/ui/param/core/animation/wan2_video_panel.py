@@ -5,8 +5,12 @@ from src.app.ui.param.panel_base import BaseParamPanel, LabeledSlider
 
 
 class Wan2VideoPanel(BaseParamPanel):
-    names = ["Wan2.2-TI2V"]
+    names = ["Wan2.2-TI2V", "Wan2.2-TI2V-Turbo"]
     type = FactoryType.Animation
+
+    _RESOLUTIONS = ["low (320×320)", "medium (480×480)", "high (704×704)"]
+    _RESOLUTION_MAP = {"low (320×320)": "low", "medium (480×480)": "medium",
+                       "high (704×704)": "high"}
 
     # 合法帧数：4N+1
     _VALID_FRAMES = [17, 25, 33, 49, 65, 81]
@@ -15,6 +19,11 @@ class Wan2VideoPanel(BaseParamPanel):
         super().__init__(title="Wan2.2-TI2V panel", parent=parent)
 
     def _build_widgets(self):
+        # 分辨率（后端按档位取宽高）
+        self._resolution = QComboBox()
+        self._resolution.addItems(self._RESOLUTIONS)
+        self._add_row(self.tr("resolution"), self._resolution)
+
         # 帧数（从合法列表里选）
         self._num_frames = QComboBox()
         self._num_frames.addItems([str(f) for f in self._VALID_FRAMES])
@@ -35,6 +44,7 @@ class Wan2VideoPanel(BaseParamPanel):
 
     def get_params(self) -> dict:
         return {
+            "resolution":          self._RESOLUTION_MAP[self._resolution.currentText()],
             "num_frames":          int(self._num_frames.currentText()),
             "num_inference_steps": self._steps.value(),
             "guidance_scale":      self._guidance.value(),

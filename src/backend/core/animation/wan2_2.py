@@ -6,7 +6,7 @@ from typing import List
 import numpy as np
 from PIL import Image
 from PIL.Image import Resampling
-from huggingface_hub import snapshot_download
+from huggingface_hub import hf_hub_download, snapshot_download
 
 from src.shared.settings import PROJECT_ROOT
 from src.backend.core.model_base import BaseAnimationGenerator
@@ -21,6 +21,13 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
     # 480P 标准分辨率（Blackwell 8GB 安全上限）
     _DEFAULT_WIDTH = 320
     _DEFAULT_HEIGHT = 320
+    # TI2V-5B 原生训练在 704p 附近，320 离分布太远时会乱画背景、肢体跑偏；
+    # 宽高需是 32 的倍数（VAE 16 倍下采样 × patch 2）
+    _RESOLUTIONS = {
+        "low": (320, 320),
+        "medium": (480, 480),
+        "high": (704, 704),
+    }
 
     # 固定负面提示词
     _NEGATIVE_PROMPT = (
@@ -35,8 +42,24 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
         self.height = self._DEFAULT_HEIGHT
         # 本地存储目录
         self.model_dir  = Path(PROJECT_ROOT) / "models" / "animation" / "wan2"
+        # models.json 给了 .gguf 文件名才走量化链路：官方 transformer 是 fp32（约 19GB），
+        # 加载时连同文本编码器一起会撑爆 32GB 内存，GGUF 在内存和显存里都保持压缩
+        self.gguf_filename = (self.model_filename
+                              if str(self.model_filename or "").endswith(".gguf") else None)
+        self.gguf_repo_id = (getattr(self, "model_extra", None) or {}).get("gguf_repo_id", "")
+        self.gguf_local = Path(PROJECT_ROOT) / "models" / "animation" / "wan2-gguf"
 
     def _check_model_file(self):
+        if self.gguf_filename and not (self.gguf_local / self.gguf_filename).exists():
+            print(f"⏬ 正在下载 GGUF 量化权重 {self.gguf_filename}...")
+            self.gguf_local.mkdir(parents=True, exist_ok=True)
+            hf_hub_download(
+                repo_id=self.gguf_repo_id,
+                filename=self.gguf_filename,
+                local_dir=str(self.gguf_local),
+                token=huggingface_token,
+            )
+            print("✅ GGUF 权重下载完成")
         if self.model_dir.exists():
             return
 
@@ -59,11 +82,17 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
     def _load_model(self):
         print(f"🔄 正在加载 Wan2.2-TI2V...")
         print(f"   ② 组装 Pipeline（VAE / T5 / CLIP）...")
-        from diffusers import WanImageToVideoPipeline
+        from diffusers import AutoencoderKLWan, WanImageToVideoPipeline
         import torch  # 后台注册线程早已 import 过，这里只是拿缓存，不会重新触发加载
+        # 与官方示例一致，VAE 固定 fp32：bf16 解码有精度损失，fp32 只多占约 1GB 内存
+        pipe_kwargs = {"vae": AutoencoderKLWan.from_pretrained(
+            str(self.model_dir), subfolder="vae", torch_dtype=torch.float32)}
+        if self.gguf_filename:
+            pipe_kwargs["transformer"] = self._build_gguf_transformer()
         self.pipe = WanImageToVideoPipeline.from_pretrained(
             str(self.model_dir),
             torch_dtype=torch.bfloat16,
+            **pipe_kwargs,
         )
 
         self.pipe.enable_model_cpu_offload()
@@ -72,6 +101,19 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
 
         print("✅ 加载完成")
         print_vram_usage()
+
+    def _build_gguf_transformer(self):
+        from diffusers import GGUFQuantizationConfig, WanTransformer3DModel
+
+        print(f"⚡ 正在以 GGUF 量化加载 transformer（{self.gguf_filename}）...")
+        return WanTransformer3DModel.from_single_file(
+            str(self.gguf_local / self.gguf_filename),
+            quantization_config=GGUFQuantizationConfig(compute_dtype=self.torch.bfloat16),
+            # 结构配置取本地官方目录，免得单文件加载时再去联网猜配置
+            config=str(self.model_dir),
+            subfolder="transformer",
+            torch_dtype=self.torch.bfloat16,
+        )
 
     def _nearest_valid_frames(self, num_frames: int) -> int:
         """Wan2.x 要求帧数为 4N+1，找最接近的合法值。"""
@@ -218,6 +260,8 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
         self.output_dir = get_temp_dir(raw.get("output_dir", ""))
         self.reference_image_path = raw.get("reference_image_path", raw.get("reference_image", ""))
 
+        self.width, self.height = self._RESOLUTIONS.get(
+            raw.get("resolution", ""), (self._DEFAULT_WIDTH, self._DEFAULT_HEIGHT))
         self.num_frames = raw.get("num_frames", 25)
         self.prompt = raw.get("content")
 
