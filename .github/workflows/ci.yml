@@ -6,13 +6,21 @@ on:
 jobs:
   contract-tests:
     runs-on: windows-latest
+    env:
+      # runner 控制台默认 cp1252，日志里的中文 / emoji 一 print 就抛 UnicodeEncodeError
+      PYTHONUTF8: "1"
+      # Qt 控件测试在无显示器的 runner 上走离屏渲染
+      QT_QPA_PLATFORM: offscreen
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install test-only deps
-        # 契约测试只覆盖注册表/pyproject/装配纯函数，不需要 torch/GPU。
-        run: pip install pillow pydantic pytest httpx psutil
+        # 测试不加载模型权重、不需要 GPU，但会导入 Qt 控件、FastAPI 路由和 torch 张量工具，
+        # 所以装 CPU 版 torch（比 cu128 小得多），不装 diffusers / transformers 等推理库。
+        run: |
+          pip install pillow pydantic pytest httpx psutil PySide6 fastapi uvicorn python-multipart numpy soundfile huggingface-hub markdown-it-py pygments
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Run contract tests
         run: python -m pytest tests/ -q
