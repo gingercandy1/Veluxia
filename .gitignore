@@ -388,3 +388,7 @@ CONTEXT.md
 Plan.md
 docs/adr/
 docs/asset-workflow-notes.md
+
+# Veluxia: personal IDE settings (contain local absolute paths)
+.vscode/
+.idea/
