@@ -6,9 +6,10 @@ from typing import Optional
 
 from PIL import Image
 
+from src.backend.core.diffusers_utils import apply_loras, apply_offload, ensure_loras, parse_loras
 from src.backend.core.exceptions import GenerationCancelled
 from src.backend.core.model_base import BaseImageGenerator
-from src.backend.core.model_utils import huggingface_token, get_temp_dir
+from src.backend.core.model_utils import ensure_snapshot, get_temp_dir
 from src.shared.settings import PROJECT_ROOT
 
 
@@ -20,8 +21,6 @@ class QwenImageLightningGenerator(BaseImageGenerator):
     若翻车，回退底座为 Qwen/Qwen-Image 即可。图生图走官方 Qwen-Image-Edit，为二期链路。
     """
     model_dir = "qwen-image-2512-fp8"
-    lora_id = "lightx2v/Qwen-Image-Lightning"
-    lora_weight = "Qwen-Image-Lightning-8steps-V1.0.safetensors"
     edit_model_id = "Qwen/Qwen-Image-Edit"
 
     _model_attrs = ("pipe_edit", "pipe")
@@ -33,18 +32,12 @@ class QwenImageLightningGenerator(BaseImageGenerator):
         self.edit_local = Path(PROJECT_ROOT) / "models" / "image" / "qwen-image-edit"
         if not self.model_id:
             self.model_id = "unsloth/Qwen-Image-2512-FP8"
+        # Lightning LoRA 只挂在文生图管道上，编辑管道用官方原版权重
+        self.loras = parse_loras(getattr(self, "model_extra", None))
 
     def _check_model_file(self):
-        from huggingface_hub import snapshot_download
-        if not self.base_local.exists():
-            print("⏬ 正在下载 Qwen-Image-2512-FP8 底座（~20GB，注意磁盘）...")
-            snapshot_download(
-                repo_id=self.model_id,
-                local_dir=str(self.base_local),
-                token=huggingface_token,
-            )
-            print("✅ Qwen-Image 底座下载完成")
-        # Lightning LoRA 较小，加载时由 diffusers 自动从 hub 获取
+        ensure_snapshot(self.model_id, self.base_local)
+        ensure_loras(self.loras)
 
     @staticmethod
     def _lightning_scheduler():
@@ -84,10 +77,8 @@ class QwenImageLightningGenerator(BaseImageGenerator):
             torch_dtype=dtype,
             local_files_only=True,
         )
-        self.pipe.load_lora_weights(self.lora_id, weight_name=self.lora_weight)
-        self.pipe.enable_model_cpu_offload()
-        self.pipe.vae.enable_slicing()
-        self.pipe.vae.enable_tiling()
+        apply_loras(self.pipe, self.loras)
+        apply_offload(self.pipe, "model", self.device)
         self.torch.cuda.empty_cache()
 
     def _load_edit(self):
@@ -98,21 +89,14 @@ class QwenImageLightningGenerator(BaseImageGenerator):
             # 单驻留：先卸文生图管道，再载编辑管道
             del self.pipe
             self.pipe = None
-        from huggingface_hub import snapshot_download
         from diffusers import QwenImageEditPipeline
-        if not self.edit_local.exists():
-            print("⏬ 正在下载 Qwen-Image-Edit 权重...")
-            snapshot_download(
-                repo_id=self.edit_model_id,
-                local_dir=str(self.edit_local),
-                token=huggingface_token,
-            )
+        ensure_snapshot(self.edit_model_id, self.edit_local)
         self.pipe_edit = QwenImageEditPipeline.from_pretrained(
             str(self.edit_local),
             torch_dtype=self.torch.bfloat16,
             local_files_only=True,
         )
-        self.pipe_edit.enable_model_cpu_offload()
+        apply_offload(self.pipe_edit, "model", self.device)
 
     async def generate(self) -> Optional[Path | None]:
         self.ensure_model_loaded()

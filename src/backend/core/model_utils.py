@@ -119,6 +119,31 @@ def hf_download_progress(callback):
         file_download._get_progress_bar_context = original
 
 
+def ensure_snapshot(repo_id: str, local_dir: Path, ignore_patterns: list[str] | None = None):
+    """整仓下载到 local_dir；目录已存在就视为下载过，不再联网校验（离线也能启动）。"""
+    local_dir = Path(local_dir)
+    if local_dir.exists():
+        return
+    print(f"⏬ 正在下载 {repo_id}...")
+    from huggingface_hub import snapshot_download
+    snapshot_download(repo_id=repo_id, local_dir=str(local_dir),
+                      ignore_patterns=ignore_patterns, token=huggingface_token)
+    print(f"✅ {repo_id} 下载完成")
+
+
+def ensure_file(repo_id: str, filename: str, local_dir: Path) -> Path:
+    """下载仓库里的单个文件，返回本地路径；filename 带子目录时本地也保留同样的层级。"""
+    path = Path(local_dir) / filename
+    if path.exists():
+        return path
+    print(f"⏬ 正在下载 {repo_id}/{filename}...")
+    from huggingface_hub import hf_hub_download
+    hf_hub_download(repo_id=repo_id, filename=filename, local_dir=str(local_dir),
+                    token=huggingface_token)
+    print(f"✅ {filename} 下载完成")
+    return path
+
+
 def get_media_root() -> Path:
     """生成素材的持久化存储根目录（随项目安装位置，不会被系统清理临时文件时删除）。"""
     root = Path(PROJECT_ROOT) / "output" / project_name
