@@ -1,4 +1,4 @@
-"""图片类步骤的 runner（ADR 0004）：文生图、去背景、放大、裁透明边、统一尺寸、色调对齐、横向无缝、图层合成。"""
+"""图片类步骤的 runner（ADR 0004）：文生图、去背景、放大、裁透明边、统一尺寸、色调对齐、空气透视、横向无缝、图层合成。"""
 from pathlib import Path
 from typing import Any
 
@@ -100,6 +100,30 @@ class ColorMatchRunner(StepRunner):
         return [path]
 
 
+class AtmosphereRunner(StepRunner):
+    """空气透视（纯 CPU）：把图层颜色往远景的雾色推，越远推得越多。
+
+    色调对齐只让各层"同一种光"，但对比度、饱和度一样，叠起来远近拉不开、显得平。
+    真实远处物体因大气散射会变淡、变灰、趋向天空色；混向远景平均色一步就同时压低了
+    对比和饱和度。第一张输入是图层，第二张是远景参考；haze 是混合比例（0 不变，1 全成雾色）。
+    """
+    type_name = "image.atmosphere"
+
+    def run(self, ctx: StepContext) -> list[Path]:
+        if len(ctx.inputs) != 2:
+            raise ValueError(f"{self.type_name} 需要图层和远景参考两张输入，实际 {len(ctx.inputs)} 张")
+        haze = float(ctx.params.get("haze", 0.25))
+        if not 0 <= haze <= 1:
+            raise ValueError(f"{self.type_name} 的 haze 必须在 0 到 1 之间：{haze}")
+        layer_path, reference_path = ctx.inputs
+        with Image.open(layer_path) as layer, Image.open(reference_path) as reference:
+            result = apply_haze(layer.convert("RGBA"), reference.convert("RGBA"), haze)
+        path = ctx.out_dir / f"{ctx.step_id}.png"
+        result.save(path)
+        ctx.meta.update(describe_image(path))
+        return [path]
+
+
 class TileHorizontalRunner(StepRunner):
     """把图片左右边缘做成无缝衔接（纯 CPU）：视差背景层在引擎里横向平铺滚动，接缝不能露出来。
 
@@ -195,6 +219,21 @@ def match_color(image: Image.Image, reference: Image.Image, strength: float) -> 
     return result
 
 
+def apply_haze(image: Image.Image, reference: Image.Image, haze: float) -> Image.Image:
+    import numpy as np
+
+    reference_pixels = np.asarray(reference, dtype=np.float32)
+    opaque = reference_pixels[..., 3] > 127
+    if not opaque.any():
+        raise ValueError("远景参考图完全透明，无法取雾色")
+    haze_color = reference_pixels[..., :3][opaque].mean(axis=0)
+    pixels = np.asarray(image, dtype=np.float32)
+    # 只动 RGB：alpha 不变，轮廓和透明区保持原样
+    rgb = pixels[..., :3] * (1 - haze) + haze_color * haze
+    result = np.concatenate([rgb, pixels[..., 3:]], axis=-1)
+    return Image.fromarray(np.round(np.clip(result, 0, 255)).astype(np.uint8), "RGBA")
+
+
 def tile_horizontal(image: Image.Image, overlap: int) -> Image.Image:
     import numpy as np
 
@@ -205,10 +244,16 @@ def tile_horizontal(image: Image.Image, overlap: int) -> Image.Image:
     alpha = pixels[..., 3:]
     premultiplied = np.concatenate([pixels[..., :3] * alpha, alpha], axis=-1)
     weight = np.linspace(0.0, 1.0, overlap, dtype=np.float32)[None, :, None]
-    seam = premultiplied[:, -overlap:] * (1 - weight) + premultiplied[:, :overlap] * weight
-    blended = np.concatenate([seam, premultiplied[:, overlap:-overlap]], axis=1)
+
+    def blend(layer):
+        seam = layer[:, -overlap:] * (1 - weight) + layer[:, :overlap] * weight
+        return np.concatenate([seam, layer[:, overlap:-overlap]], axis=1)
+
+    blended = blend(premultiplied)
     blended_alpha = blended[..., 3:]
-    rgb = np.divide(blended[..., :3], blended_alpha, out=np.zeros_like(blended[..., :3]),
+    # 全透明处保留原 RGB（去背景时已填成外推的前景色）而不是写 0：
+    # 引擎双线性采样会混入透明邻居的 RGB，黑色会在边缘拉出一圈暗边
+    rgb = np.divide(blended[..., :3], blended_alpha, out=blend(pixels[..., :3]),
                     where=blended_alpha > 0)
     result = np.concatenate([rgb, blended_alpha], axis=-1)
     return Image.fromarray(np.round(np.clip(result, 0, 1) * 255).astype(np.uint8), "RGBA")
@@ -226,6 +271,7 @@ BUILTIN_RUNNERS: tuple[StepRunner, ...] = (
     TrimRunner(),
     ResizeRunner(),
     ColorMatchRunner(),
+    AtmosphereRunner(),
     TileHorizontalRunner(),
     CompositeRunner(),
 )

@@ -1,12 +1,25 @@
 import random
 import uuid
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
+import torch.nn.functional as F
 from PIL import Image
 
 from src.backend.core.diffusers_utils import apply_offload, gguf_filename, load_gguf_transformer
 from src.backend.core.exceptions import GenerationCancelled
+from src.backend.core.image.panorama import (
+    panorama_transformer,
+    parse_segment_prompts,
+    validate_segments,
+)
+from src.backend.core.image.tileable import (
+    CIRCULAR_CONTEXT,
+    apply_tile_mode,
+    circular_transformer,
+    validate_tile_mode,
+)
 from src.backend.core.model_base import BaseImageGenerator
 from src.backend.core.model_utils import ensure_file, ensure_snapshot, get_temp_dir
 from src.shared.settings import PROJECT_ROOT
@@ -126,19 +139,78 @@ class ZImageGenerator(BaseImageGenerator):
         )
         apply_offload(self.pipe_img2img, offload, self.device)
 
+    def _apply_tile_mode(self):
+        """transformer 由 circular_transformer 补边，VAE 解码也要循环填充，否则边缘一圈接不上。"""
+        apply_tile_mode((self.pipe.vae,), self.tile_mode)
+        # 分块解码时块边界也会被当成首尾循环填充，平铺模式下只能整图解码
+        if self.tile_mode == "off":
+            self.pipe.vae.enable_tiling()
+        else:
+            self.pipe.vae.disable_tiling()
+
+    def _generate_single(self) -> Image.Image:
+        self._apply_tile_mode()
+        tiling = (circular_transformer(self.pipe.transformer, self.tile_mode)
+                  if self.tile_mode != "off" else nullcontext())
+        # 单屏时分段描述只有一段，和多屏一样排在整体描述前面
+        prompt = ", ".join([*self.segment_prompts, self.prompt])
+        with tiling:
+            return self.pipe(prompt=prompt,
+                             width=self.width,
+                             height=self.height,
+                             num_inference_steps=self.num_inference_steps,
+                             guidance_scale=self.guidance_scale,
+                             generator=self.generator,
+                             callback_on_step_end=self.make_cancel_callback(),
+                             ).images[0]
+
+    def _generate_panorama(self) -> Image.Image:
+        """width 是单屏宽度，整张图宽 width × segments，由 panorama_transformer 分窗生成。
+
+        超宽图整图解码 8GB 放不下，VAE 只能分块解码；而分块时循环卷积会把块边界当成首尾，
+        所以 VAE 不走 apply_tile_mode，改为解码前 latent 沿平铺轴用对侧内容补边、解码后裁掉。
+        """
+        wrap_w = self.tile_mode in ("both", "horizontal")
+        wrap_h = self.tile_mode in ("both", "vertical")
+        vae = self.pipe.vae
+        apply_tile_mode((vae,), "off")
+        vae.enable_tiling()
+        # 横向首尾由窗口绕圈衔接，纵向仍靠循环补边
+        vertical = (circular_transformer(self.pipe.transformer, "vertical")
+                    if wrap_h else nullcontext())
+        window = self.width // self.pipe.vae_scale_factor
+        # 分段描述排在整体描述前面，让这一段的主体压过全局描述
+        segment_feats = [
+            self.pipe.encode_prompt(f"{part}, {self.prompt}", do_classifier_free_guidance=False)[0]
+            for part in self.segment_prompts] or None
+        with vertical, panorama_transformer(self.pipe.transformer, window, wrap=wrap_w,
+                                            segment_feats=segment_feats):
+            latents = self.pipe(prompt=self.prompt,
+                                width=self.width * self.segments,
+                                height=self.height,
+                                num_inference_steps=self.num_inference_steps,
+                                guidance_scale=self.guidance_scale,
+                                generator=self.generator,
+                                callback_on_step_end=self.make_cancel_callback(),
+                                output_type="latent",
+                                ).images
+
+        latents = latents.to(vae.dtype) / vae.config.scaling_factor + vae.config.shift_factor
+        pad_w = CIRCULAR_CONTEXT if wrap_w else 0
+        pad_h = CIRCULAR_CONTEXT if wrap_h else 0
+        latents = F.pad(latents, (pad_w, pad_w, pad_h, pad_h), mode="circular")
+        image = vae.decode(latents, return_dict=False)[0]
+        scale = self.pipe.vae_scale_factor
+        image = image[..., pad_h * scale:image.shape[-2] - pad_h * scale,
+                      pad_w * scale:image.shape[-1] - pad_w * scale]
+        return self.pipe.image_processor.postprocess(image, output_type="pil")[0]
+
     async def generate(self) -> Optional[Path | None]:
         self.ensure_model_loaded()
 
         with self.torch.inference_mode():
             try:
-                image = self.pipe(prompt=self.prompt,
-                                  width=self.width,
-                                  height=self.height,
-                                  num_inference_steps=self.num_inference_steps,
-                                  guidance_scale=self.guidance_scale,
-                                  generator=self.generator,
-                                  callback_on_step_end=self.make_cancel_callback(),
-                                  ).images[0]
+                image = self._generate_panorama() if self.segments > 1 else self._generate_single()
                 image.save(self.save_path)
                 print(f"✅ 生成完成: {self.save_path.name}")
                 return self.save_path
@@ -192,6 +264,20 @@ class ZImageGenerator(BaseImageGenerator):
         # 官方 8 NFE ≈ 9 steps
         self.num_inference_steps = raw.get("num_inference_steps", 9)
         self.strength = raw.get("strength", 0.6)
+        # 只作用于文生图：图生图的参考图本身首尾不连续，补边也接不上
+        self.tile_mode = validate_tile_mode(raw.get("tile_mode", "off"))
+        # 大于 1 时按单屏宽度 width 横向生成多屏长背景（panorama.py）
+        self.segments = validate_segments(raw.get("segments", 1))
+        if self.segments > 1 and self.width % 16:
+            # 窗口宽度要和 VAE 8 倍下采样、2×2 patch 同时对齐
+            raise ValueError(f"多屏背景的单屏宽度必须是 16 的倍数：{self.width}")
+        self.segment_prompts = parse_segment_prompts(raw.get("segment_prompts", ""))
+        if self.segment_prompts and len(self.segment_prompts) != self.segments:
+            raise ValueError(f"分段描述有 {len(self.segment_prompts)} 段，但长度选的是 "
+                             f"{self.segments} 屏，两者要一致")
+        if self.segment_prompts and self.guidance_scale > 0:
+            # 开 CFG 时嵌入列表里还混着负向提示词，按段替换会把负向也换掉
+            raise ValueError("分段描述只支持 guidance_scale=0（Turbo 默认值）")
 
         seed_value = raw.get("seed", 0) + random.randint(1, 100000)
         self.generator = self.torch.Generator("cpu").manual_seed(int(seed_value))

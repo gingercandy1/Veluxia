@@ -3,19 +3,31 @@
   "version": 1,
   "type": "scene",
   "name": "场景背景",
-  "description": "整张场景背景图，可选横版侧视、俯视、等距或正面 CG 视角，生成宽幅图后放大。",
+  "description": "整张场景背景图，可选横版侧视、俯视、等距或正面 CG 视角，生成宽幅图后放大。可选左右或四向无缝，生成时就首尾相接，引擎里可直接平铺。长度选多屏时一次生成几屏宽的长卷，各段内容不同但生成时就自然衔接；填了分段描述（如\"幽暗森林 | 林间村庄 | 山顶城堡\"）时逐段变换场景。",
   "prompt_label": "场景描述",
   "cover": "upscale",
   "fields": [
-    {"id": "view", "label": "视角", "default": "side-scrolling game background, side view, flat horizon, layered depth", "options": [
-      {"value": "side-scrolling game background, side view, flat horizon, layered depth", "label": "横版侧视"},
+    {"id": "view", "label": "视角", "default": "2D side-scrolling platformer game background, orthographic side view, straight-on camera, flat horizontal ground line running across the whole width, scenery arranged side by side from left to right, no vanishing point, no one-point perspective, no path leading into the distance", "options": [
+      {"value": "2D side-scrolling platformer game background, orthographic side view, straight-on camera, flat horizontal ground line running across the whole width, scenery arranged side by side from left to right, no vanishing point, no one-point perspective, no path leading into the distance", "label": "横版侧视"},
       {"value": "top-down game map, bird's eye view, orthographic", "label": "俯视"},
       {"value": "isometric game scene, 45 degree view, diorama", "label": "等距"},
       {"value": "visual novel background, eye-level front view, cinematic composition", "label": "正面 CG"}
-    ]}
+    ]},
+    {"id": "tile", "label": "无缝", "default": "horizontal", "options": [
+      {"value": "horizontal", "label": "左右无缝（横版卷轴）"},
+      {"value": "both", "label": "四向无缝（俯视地图）"},
+      {"value": "off", "label": "不需要"}
+    ]},
+    {"id": "length", "label": "长度", "default": "1", "options": [
+      {"value": "1", "label": "单屏"},
+      {"value": "2", "label": "2 屏宽（自动衔接）"},
+      {"value": "3", "label": "3 屏宽（自动衔接）"},
+      {"value": "4", "label": "4 屏宽（自动衔接）"}
+    ]},
+    {"id": "segment_desc", "label": "分段描述（用 | 分隔，段数同长度）"}
   ],
   "steps": [
-    {"id": "generate", "type": "image.generate", "label": "生成", "params": {"model_name": "Z-Image-Turbo", "width": 1344, "height": 768, "prompt_suffix": "{view}, no characters, no text"}},
-    {"id": "upscale", "type": "image.upscale", "label": "放大", "deliverable": true, "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["generate"]}
+    {"id": "generate", "type": "image.generate", "label": "生成", "params": {"model_name": "Z-Image-Turbo", "width": 1344, "height": 768, "tile_mode": "{tile}", "segments": "{length}", "segment_prompts": "{segment_desc}", "prompt_suffix": "{view}, no characters, no text"}},
+    {"id": "upscale", "type": "image.upscale", "label": "放大", "deliverable": true, "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2, "tile_mode": "{tile}"}, "inputs": ["generate"]}
   ]
 }
