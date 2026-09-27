@@ -12,10 +12,12 @@ from src.backend.core.collection.image_steps import (
     AtmosphereRunner,
     ColorMatchRunner,
     CompositeRunner,
+    GroundBlendRunner,
     ImageGenerateRunner,
     RemoveBackgroundRunner,
     TileHorizontalRunner,
     TrimRunner,
+    ground_line,
     tile_horizontal,
     trim_transparent,
 )
@@ -79,6 +81,28 @@ def test_generate_builds_prompt_and_moves_output_into_pack(tmp_path, fake_model)
                    "negative_prompt": "blurry"}
     assert path == tmp_path / "pack" / "x" / "generate.png" and path.is_file()
     assert not (tmp_path / "raw_output.png").exists()
+
+
+def test_generate_prompt_param_replaces_item_prompt_but_keeps_style(tmp_path, fake_model):
+    runner = ImageGenerateRunner()
+    params = {"model_name": fake_model, "prompt": "mossy stone ground", "prompt_suffix": "side view"}
+    ctx = _ctx(tmp_path, params)
+    ctx.style_prompt = "dark"
+    with runner.open(params, threading.Event()):
+        runner.run(ctx)
+        raw = SingletonMeta._instances[_FakeImage].raw
+    assert raw["content"] == "mossy stone ground, dark, side view"
+    assert "prompt" not in raw
+
+
+def test_scene_ground_template_feeds_ground_field_into_its_own_step():
+    template = load_template("scene_ground")
+    ground_step = template.step("ground_generate")
+    assert ground_step.params["prompt"] == "{ground}"
+    assert "prompt" not in template.step("background_generate").params
+    assert template.step("preview").inputs == ("background", "ground")
+    assert template.step("preview").params["align"] == "bottom"
+    assert template.step("background").inputs == ("background_upscale", "ground")
 
 
 def test_lease_is_held_for_the_whole_group(tmp_path, fake_model):
@@ -183,6 +207,49 @@ def test_composite_stacks_layers_in_input_order(tmp_path):
         assert result.size == (8, 8)
         assert result.getpixel((0, 0)) == (0, 0, 255, 255)
         assert result.getpixel((0, 7)) == (255, 0, 0, 255)
+
+
+def test_composite_bottom_align_places_short_layer_at_bottom_without_scaling(tmp_path):
+    background, ground = tmp_path / "background.png", tmp_path / "ground.png"
+    Image.new("RGBA", (8, 8), (0, 0, 255, 255)).save(background)
+    Image.new("RGBA", (8, 2), (255, 0, 0, 255)).save(ground)
+    [path] = CompositeRunner().run(
+        _ctx(tmp_path, {"align": "bottom"}, inputs=[background, ground], step_id="preview"))
+    with Image.open(path) as result:
+        assert result.getpixel((0, 5)) == (0, 0, 255, 255)
+        assert result.getpixel((0, 6)) == (255, 0, 0, 255)
+
+
+def test_ground_line_skips_sparse_tufts_above_the_surface():
+    ground = Image.new("RGBA", (10, 6), (0, 0, 0, 0))
+    ground.paste((0, 255, 0, 255), (2, 0, 3, 2))  # 冒出地表的一根草
+    ground.paste((0, 255, 0, 255), (0, 2, 10, 6))
+    # 地面高 6px 贴底放进 20px 的背景，地表在地面第 2 行 → 背景第 16 行
+    assert ground_line(20, ground) == 16
+
+
+def test_ground_line_rejects_ground_without_surface():
+    with pytest.raises(ValueError, match="找不到连续的地表"):
+        ground_line(20, Image.new("RGBA", (10, 6), (0, 0, 0, 0)))
+
+
+def test_ground_blend_darkens_and_fogs_only_near_the_line_and_keeps_rows_uniform(tmp_path):
+    background = Image.new("RGBA", (10, 100), (200, 200, 200, 255))
+    background.paste((100, 150, 50, 255), (0, 25, 10, 100))
+    background_path, ground_path = tmp_path / "background.png", tmp_path / "ground.png"
+    background.save(background_path)
+    Image.new("RGBA", (10, 20), (0, 0, 0, 255)).save(ground_path)
+    params = {"fog": 0.5, "fog_height": 0.2, "shadow": 0.5, "shadow_height": 0.05}
+    [path] = GroundBlendRunner().run(
+        _ctx(tmp_path, params, inputs=[background_path, ground_path], step_id="background"))
+    with Image.open(path) as result:
+        # 离顶线（第 80 行）超过雾带高度的地方不变
+        assert result.getpixel((0, 50)) == (100, 150, 50, 255)
+        # 顶线处先混向雾色（上部平均色 200）再压暗一半
+        assert result.getpixel((0, 80))[:3] == (75, 88, 62)
+        # 效果只随高度变化，左右两端一致，不破坏无缝
+        for y in range(result.height):
+            assert result.getpixel((0, y)) == result.getpixel((9, y))
 
 
 def _two_tone(first, second, alpha=255):

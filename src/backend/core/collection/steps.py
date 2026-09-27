@@ -41,6 +41,8 @@ class StepContext:
     values: dict[str, str] = field(default_factory=dict)
     meta: dict[str, Any] = field(default_factory=dict)
     cast: list[CastVoice] = field(default_factory=list)
+    # 单独的风格锁：出图步骤用参数 prompt 换掉条目主提示词时，风格仍要加上
+    style_prompt: str = ""
 
 
 class StepRunner:

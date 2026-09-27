@@ -97,6 +97,7 @@ class CollectionExecutor:
             cancel_event=self.cancel_event,
             values=values,
             cast=self.cast,
+            style_prompt=manifest.style.prompt,
         )
         started = time.monotonic()
         try:
