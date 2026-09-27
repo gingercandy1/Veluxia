@@ -12,9 +12,16 @@ class ImageGenerateRunner(GeneratorStepRunner):
     type_name = "image.generate"
 
     def build_params(self, ctx: StepContext) -> dict[str, Any]:
-        params = {k: v for k, v in ctx.params.items() if k not in ("model_name", "prompt_suffix")}
+        params = {k: v for k, v in ctx.params.items()
+                  if k not in ("model_name", "prompt", "prompt_suffix")}
         suffix = ctx.params.get("prompt_suffix", "")
-        params["content"] = ", ".join(p for p in (ctx.prompt, suffix) if p)
+        # 参数 prompt 换掉条目主提示词：同一条目要画两样东西时（背景 + 地面），
+        # 第二样的描述放在字段里，用 "{字段}" 引过来；风格锁照样加，两张图才统一
+        if "prompt" in ctx.params:
+            subject = [ctx.params["prompt"], ctx.style_prompt]
+        else:
+            subject = [ctx.prompt]
+        params["content"] = ", ".join(p.strip() for p in (*subject, suffix) if p.strip())
         if ctx.negative_prompt:
             params["negative_prompt"] = ctx.negative_prompt
         return params
@@ -144,20 +151,61 @@ class TileHorizontalRunner(StepRunner):
         return [path]
 
 
+class GroundBlendRunner(StepRunner):
+    """在背景上沿地面顶线烘焙雾带和接地暗带（纯 CPU）：背景和地面分开生成，直接叠上去
+    背景里的景物被地面一刀切断，交界处发硬。
+
+    第一张输入是背景，第二张是贴底放置的地面条带。两种效果都只随高度变化、左右均匀，
+    所以不破坏左右无缝，背景在引擎里做视差滚动时也不会和地面错位。
+    fog / shadow 是强度（0~1），fog_height / shadow_height 是从顶线往上延伸的高度（占背景高度的比例）。
+    """
+    type_name = "image.ground_blend"
+
+    def run(self, ctx: StepContext) -> list[Path]:
+        if len(ctx.inputs) != 2:
+            raise ValueError(f"{self.type_name} 需要背景和地面两张输入，实际 {len(ctx.inputs)} 张")
+        values = {key: float(ctx.params.get(key, default)) for key, default in
+                  (("fog", 0.35), ("fog_height", 0.15), ("shadow", 0.35), ("shadow_height", 0.04))}
+        for key, value in values.items():
+            if not 0 <= value <= 1:
+                raise ValueError(f"{self.type_name} 的 {key} 必须在 0 到 1 之间：{value}")
+        background_path, ground_path = ctx.inputs
+        with Image.open(background_path) as background, Image.open(ground_path) as ground:
+            line = ground_line(background.height, ground.convert("RGBA"))
+            result = blend_ground_line(background.convert("RGBA"), line, **values)
+        path = ctx.out_dir / f"{ctx.step_id}.png"
+        result.save(path)
+        ctx.meta.update({**describe_image(path), "ground_line": line})
+        return [path]
+
+
 class CompositeRunner(StepRunner):
-    """按输入顺序从后往前叠图层（纯 CPU）：分层背景看不出整体效果，合成一张预览当封面。"""
+    """按输入顺序从后往前叠图层（纯 CPU）：分层背景看不出整体效果，合成一张预览当封面。
+
+    align="bottom" 时图层不缩放、贴底居中：地面条带裁过透明边后比背景矮，引擎里也是贴着画面底部放。
+    """
     type_name = "image.composite"
 
     def run(self, ctx: StepContext) -> list[Path]:
         if len(ctx.inputs) < 2:
             raise ValueError(f"{self.type_name} 至少需要两张输入图，实际 {len(ctx.inputs)} 张")
+        align = ctx.params.get("align", "stretch")
+        if align not in ("stretch", "bottom"):
+            raise ValueError(f"{self.type_name} 的 align 只能是 stretch 或 bottom：{align}")
         with Image.open(ctx.inputs[0]) as base_image:
             result = base_image.convert("RGBA")
         for layer_path in ctx.inputs[1:]:
             with Image.open(layer_path) as layer:
-                # 各层分别生成放大，尺寸按理一致；万一不同就拉到底图尺寸，不让预览失败
-                result = Image.alpha_composite(
-                    result, layer.convert("RGBA").resize(result.size, Image.Resampling.LANCZOS))
+                layer = layer.convert("RGBA")
+                if align == "bottom":
+                    canvas = Image.new("RGBA", result.size, (0, 0, 0, 0))
+                    canvas.paste(layer, ((result.width - layer.width) // 2,
+                                         result.height - layer.height))
+                    layer = canvas
+                else:
+                    # 各层分别生成放大，尺寸按理一致；万一不同就拉到底图尺寸，不让预览失败
+                    layer = layer.resize(result.size, Image.Resampling.LANCZOS)
+                result = Image.alpha_composite(result, layer)
         path = ctx.out_dir / f"{ctx.step_id}.png"
         result.save(path)
         ctx.meta.update(describe_image(path))
@@ -234,6 +282,47 @@ def apply_haze(image: Image.Image, reference: Image.Image, haze: float) -> Image
     return Image.fromarray(np.round(np.clip(result, 0, 255)).astype(np.uint8), "RGBA")
 
 
+def ground_line(background_height: int, ground: Image.Image) -> int:
+    """地面贴底放在背景上时，地表顶线落在背景的第几行。
+
+    取"一半以上的列都不透明"的第一行：草丛、碎石尖会冒出地表，按最高点算顶线会偏高。
+    """
+    import numpy as np
+
+    if ground.height > background_height:
+        raise ValueError(f"地面高 {ground.height}px，比背景 {background_height}px 还高")
+    coverage = (np.asarray(ground.getchannel("A")) > 127).mean(axis=1)
+    rows = np.nonzero(coverage >= 0.5)[0]
+    if rows.size == 0:
+        raise ValueError("地面图里找不到连续的地表，去背景可能把地面也去掉了")
+    return background_height - ground.height + int(rows[0])
+
+
+def blend_ground_line(image: Image.Image, line: int, fog: float, fog_height: float,
+                      shadow: float, shadow_height: float) -> Image.Image:
+    import numpy as np
+
+    pixels = np.asarray(image, dtype=np.float32)
+    rgb = pixels[..., :3]
+    # 雾色取画面上部四分之一的平均色：那里多是天空和远景，雾本就趋向天空色；
+    # 取整图均值在森林这类暗场景里会偏暗，雾反而像脏
+    fog_color = rgb[: max(image.height // 4, 1)].reshape(-1, 3).mean(axis=0)
+
+    rows = np.arange(image.height, dtype=np.float32)
+
+    def falloff(height_ratio: float) -> np.ndarray:
+        # 顶线处为 1，往上按平滑曲线衰减到 0；顶线以下被地面挡住，保持 1，
+        # 地表边缘有缺口时透出来的也是雾和暗部而不是突兀的原图
+        height = max(height_ratio * image.height, 1.0)
+        t = np.clip((line - rows) / height, 0.0, 1.0)
+        return (1 - t * t * (3 - 2 * t))[:, None, None]
+
+    rgb = rgb + (fog_color - rgb) * (fog * falloff(fog_height))
+    rgb = rgb * (1 - shadow * falloff(shadow_height))
+    result = np.concatenate([rgb, pixels[..., 3:]], axis=-1)
+    return Image.fromarray(np.round(np.clip(result, 0, 255)).astype(np.uint8), "RGBA")
+
+
 def tile_horizontal(image: Image.Image, overlap: int) -> Image.Image:
     import numpy as np
 
@@ -273,5 +362,6 @@ BUILTIN_RUNNERS: tuple[StepRunner, ...] = (
     ColorMatchRunner(),
     AtmosphereRunner(),
     TileHorizontalRunner(),
+    GroundBlendRunner(),
     CompositeRunner(),
 )
