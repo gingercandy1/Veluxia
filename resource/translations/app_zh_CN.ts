@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+100"/>
         <location line="+135"/>
-        <location line="+271"/>
+        <location line="+275"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>无法连接后端，请确认服务是否已启动。</translation>
     </message>
     <message>
-        <location line="-402"/>
+        <location line="-406"/>
         <source>Connection timed out.</source>
         <translation>连接超时。</translation>
     </message>
@@ -97,7 +97,7 @@
         <translation>无法连接后端：{0}</translation>
     </message>
     <message>
-        <location line="+167"/>
+        <location line="+171"/>
         <source>An install task is already running...</source>
         <translation>安装任务已在运行中…</translation>
     </message>
@@ -892,7 +892,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+163"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+166"/>
         <source>Failed to load packs: {0}</source>
         <translation>加载资源包列表失败：{0}</translation>
     </message>
@@ -912,7 +912,12 @@
         <translation>执行失败：{0}</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+33"/>
+        <source>AI draft failed: {0}</source>
+        <translation>AI 起草失败：{0}</translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <source>Delete pack</source>
         <translation>删除资源包</translation>
     </message>
@@ -1125,7 +1130,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+108"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+120"/>
         <source>New pack</source>
         <translation>新建资源包</translation>
     </message>
@@ -1191,7 +1196,33 @@
         <translation>音色描述</translation>
     </message>
     <message>
-        <location line="+123"/>
+        <location line="+13"/>
+        <source>AI draft theme, e.g. ground details for a glowing forest</source>
+        <translation>AI 起草主题，例如：发光森林的地面细节</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Count </source>
+        <translation>数量 </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+71"/>
+        <source>AI draft</source>
+        <translation>AI 起草</translation>
+    </message>
+    <message>
+        <location line="-69"/>
+        <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
+        <translation>替换空行和未改动过的 AI 条目；你手动输入或修改过的行会保留。首次运行需加载文本模型，约一分钟。</translation>
+    </message>
+    <message>
+        <location line="+69"/>
+        <source>Drafting...</source>
+        <translation>起草中...</translation>
+    </message>
+    <message>
+        <location line="+73"/>
         <source>Prompt</source>
         <translation>提示词</translation>
     </message>
@@ -1201,7 +1232,7 @@
         <translation>默认：{0}</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+26"/>
         <source>(New voice)</source>
         <translation>（新声线）</translation>
     </message>
@@ -1216,7 +1247,12 @@
         <translation>删除行</translation>
     </message>
     <message>
-        <location line="-180"/>
+        <location line="+56"/>
+        <source>Enter a theme for the AI to draft items from.</source>
+        <translation>请先填写主题，AI 会据此起草条目。</translation>
+    </message>
+    <message>
+        <location line="-288"/>
         <source>Items</source>
         <translation>条目</translation>
     </message>
@@ -1231,17 +1267,18 @@
         <translation>每行一个素材。粘贴多行文本（列之间用 Tab 分隔）可批量添加。</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+34"/>
         <source>Create</source>
         <translation>创建</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+79"/>
+        <location line="+169"/>
         <source>No template available. Is the backend running?</source>
         <translation>没有可用的模板，后端是否已启动？</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-156"/>
         <source>Add at least one item.</source>
         <translation>请至少添加一个条目。</translation>
     </message>

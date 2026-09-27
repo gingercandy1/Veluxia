@@ -160,6 +160,21 @@ class CreatePackRequest(BaseModel):
     items: List[NewCollectionItem] = Field(default_factory=list)
 
 
+class DraftItemsRequest(BaseModel):
+    """让文本模型按模板字段起草一批条目，填回新建表单由用户修改后再建包。"""
+    template: str
+    theme: str = Field("", description="用户给的主题，如“奥日风格的森林地面元素”")
+    count: int = 10
+    style: str = Field("", description="资源包的风格锁，只作参考")
+    cast: List[CastMember] = Field(default_factory=list, description="对话包的出场角色")
+    exclude: List[str] = Field(default_factory=list, description="表格里已有的条目，避免重复")
+    model_name: str = Field("", description="文本模型；空表示用默认模型")
+
+
+class DraftItemsResponse(BaseResponse):
+    items: List[NewCollectionItem] = Field(default_factory=list)
+
+
 class RunPackRequest(BaseModel):
     pack_id: str
 

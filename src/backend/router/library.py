@@ -3,7 +3,9 @@ import asyncio
 from fastapi import HTTPException
 
 from src.backend.core.collection import library
+from src.backend.core.collection.drafts import draft_items
 from src.backend.core.collection.template import Template, list_templates
+from src.backend.core.exceptions import GeneratorBusyError
 from src.backend.core.job_manager import Job
 from src.backend.core.model_utils import to_media_url
 from src.backend.router_base import BaseRouter
@@ -11,6 +13,8 @@ from src.shared.schemas import (
     ApproveStepRequest,
     BaseResponse,
     CreatePackRequest,
+    DraftItemsRequest,
+    DraftItemsResponse,
     FieldOption,
     Manifest,
     PackListResponse,
@@ -53,6 +57,17 @@ class LibraryRouter(BaseRouter):
             except ValueError as exc:
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
             return self._pack_response(manifest)
+
+        @self.router.post("/drafts", response_model=DraftItemsResponse, summary="AI 起草条目")
+        async def draft(req: DraftItemsRequest) -> DraftItemsResponse:
+            try:
+                # 加载并运行 LLM 是同步阻塞的，放进线程池避免卡住事件循环
+                items = await asyncio.to_thread(draft_items, req)
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            except GeneratorBusyError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+            return DraftItemsResponse(items=items)
 
         @self.router.get("/packs/{pack_id}", response_model=PackResponse, summary="读取资源包")
         async def get_pack(pack_id: str) -> PackResponse:
