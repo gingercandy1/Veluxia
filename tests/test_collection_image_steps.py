@@ -9,6 +9,7 @@ from PIL import Image
 
 from src.backend.core.collection.executor import CollectionExecutor
 from src.backend.core.collection.image_steps import (
+    AtmosphereRunner,
     ColorMatchRunner,
     CompositeRunner,
     ImageGenerateRunner,
@@ -234,3 +235,34 @@ def test_builtin_runners_cover_the_scene_parallax_template(tmp_path):
     # 中近景都要以远景为参考对齐色调，否则各层色温不一，叠起来穿帮
     assert template.step("mid_color").inputs == ("mid_remove_bg", "far_generate")
     assert template.step("near_color").inputs == ("near_remove_bg", "far_generate")
+    # 中景要比近景更接近远景的雾色，远近才拉得开
+    assert template.step("mid_upscale").inputs == ("mid_haze",)
+
+
+def test_atmosphere_pushes_color_toward_far_mean_and_keeps_alpha(tmp_path):
+    layer, far = tmp_path / "mid.png", tmp_path / "far.png"
+    image = Image.new("RGBA", (4, 4), (200, 40, 40, 255))
+    image.putpixel((0, 0), (200, 40, 40, 0))
+    image.save(layer)
+    _two_tone((0, 0, 200), (100, 100, 100)).save(far)
+    [path] = AtmosphereRunner().run(
+        _ctx(tmp_path, {"haze": 0.5}, inputs=[layer, far], step_id="mid_haze"))
+    with Image.open(path) as result:
+        # 远景平均色 (50, 50, 150)，一半一半混合
+        assert result.getpixel((1, 1)) == (125, 45, 95, 255)
+        assert result.getpixel((0, 0))[3] == 0
+
+
+def test_atmosphere_rejects_bad_haze(tmp_path):
+    source = tmp_path / "in.png"
+    _two_tone((0, 0, 0), (255, 255, 255)).save(source)
+    with pytest.raises(ValueError, match="haze"):
+        AtmosphereRunner().run(_ctx(tmp_path, {"haze": 1.5}, inputs=[source, source]))
+
+
+def test_tile_x_keeps_color_in_fully_transparent_pixels():
+    # 全透明处 RGB 写 0 的话，引擎双线性采样会在边缘拉出暗边
+    image = Image.new("RGBA", (40, 2), (0, 255, 0, 0))
+    image.paste((255, 0, 0, 255), (15, 0, 25, 2))
+    tiled = tile_horizontal(image, 10)
+    assert tiled.getpixel((28, 0)) == (0, 255, 0, 0)

@@ -6,6 +6,7 @@ from typing import Callable, Optional
 
 from PIL import Image
 
+from src.backend.core.image.tileable import validate_tile_mode
 from src.backend.core.model_base import BaseImageGenerator
 from src.backend.core.model_utils import get_temp_dir
 from src.shared.settings import PROJECT_ROOT
@@ -90,8 +91,15 @@ class UpscaleGenerator(BaseImageGenerator):
         scale = self.pipe.scale
         dtype = next(self.pipe.model.parameters()).dtype
         array = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
+        # 无缝图的边缘在模型眼里是图像边界（零填充），放大后首尾会对不上；
+        # 先用对侧内容循环补边再放大，裁掉补的部分，首尾仍然相接
+        pad_h = self.PAD if self.tile_mode in ("both", "vertical") else 0
+        pad_w = self.PAD if self.tile_mode in ("both", "horizontal") else 0
+        array = np.pad(array, ((pad_h, pad_h), (pad_w, pad_w), (0, 0)), mode="wrap")
         tensor = torch.from_numpy(array).permute(2, 0, 1).unsqueeze(0).to(self.device, dtype)
         result = tiled_upscale(self.pipe, tensor, scale, self.TILE, self.PAD, self.check_cancelled)
+        height, width = result.shape[-2:]
+        result = result[..., pad_h * scale:height - pad_h * scale, pad_w * scale:width - pad_w * scale]
         result = (result.squeeze(0).permute(1, 2, 0).float().clamp(0, 1) * 255).round().byte().cpu().numpy()
         return Image.fromarray(result)
 
@@ -101,14 +109,15 @@ class UpscaleGenerator(BaseImageGenerator):
             raise ValueError(f"输出超过 {_MAX_OUTPUT_PIXELS // 1_000_000} 百万像素上限，请先缩小输入图")
 
         result = self._upscale_rgb(image)
+        # 先缩 RGB 再合 alpha：PIL 缩放 RGBA 会预乘 alpha，全透明像素的 RGB 被清成黑色，
+        # 引擎双线性采样时边缘会混进黑色、出现暗边
+        if self.outscale and self.outscale != scale:
+            size = (round(image.width * self.outscale), round(image.height * self.outscale))
+            result = result.resize(size, Image.LANCZOS)
         if image.mode in ("RGBA", "LA"):
             # 游戏素材常带透明通道；模型只吃 RGB，alpha 单独放大再合回去
             alpha = image.getchannel("A").resize(result.size, Image.LANCZOS)
             result.putalpha(alpha)
-
-        if self.outscale and self.outscale != scale:
-            size = (round(image.width * self.outscale), round(image.height * self.outscale))
-            result = result.resize(size, Image.LANCZOS)
         return result
 
     async def generate(self) -> Optional[Path]:
@@ -130,6 +139,7 @@ class UpscaleGenerator(BaseImageGenerator):
         self.input_path = raw.get("input_path", "") or raw.get("reference_image", "")
         # 0 表示保持模型原生倍率
         self.outscale = float(raw.get("outscale", 0))
+        self.tile_mode = validate_tile_mode(raw.get("tile_mode", "off"))
 
 
 class RealEsrganX4PlusGenerator(UpscaleGenerator):

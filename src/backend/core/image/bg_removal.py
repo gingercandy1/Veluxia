@@ -36,7 +36,10 @@ class BgRemovalGenerator(BaseImageGenerator):
 
         try:
             img = Image.open(self.input_path)
-            out = remove(img, session=self.session)
+            # 默认抠图把边缘半透明像素的颜色和黑色混在一起却按非预乘 alpha 保存，边缘发暗；
+            # 叠到别的图层上一圈脏边。decontaminate 反推边缘的真实前景色，透明区也填上外推色，
+            # 后续放大、引擎双线性采样都不会再把黑色带进边缘
+            out = remove(img, session=self.session, decontaminate=True)
             out.save(self.save_path)
             print(f"✅ 去背景完成: {self.save_path.name}")
             return self.save_path
