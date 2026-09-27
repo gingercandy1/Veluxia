@@ -1262,11 +1262,6 @@
         <translation>ライブラリ</translation>
     </message>
     <message>
-        <location line="+61"/>
-        <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
-        <translation>1 行に 1 素材。複数行（列はタブ区切り）を貼り付けると一括追加できます。</translation>
-    </message>
-    <message>
         <location line="+34"/>
         <source>Create</source>
         <translation>作成</translation>

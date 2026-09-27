@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QRect, QSize, Qt, Signal
 from PySide6.QtGui import QGuiApplication, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -12,6 +12,8 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSpinBox,
+    QStyle,
+    QStyleOptionViewItem,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -171,8 +173,6 @@ class PackForm(BaseWidget):
         layout.addWidget(self.cast_section)
 
         layout.addWidget(self._heading(self.tr("Items")))
-        layout.addWidget(self._hint(self.tr(
-            "One row per asset. Paste multiple lines (tab-separated for columns) to add rows.")))
         draft_row = QHBoxLayout()
         self.draft_theme_edit = QLineEdit()
         self.draft_theme_edit.setPlaceholderText(
@@ -352,7 +352,7 @@ class PackForm(BaseWidget):
                 for option in spec.options:
                     combo.addItem(option.label or option.value, option.value)
                 combo.setCurrentIndex(max(combo.findData(spec.default), 0))
-                self.items_table.setCellWidget(row, col, combo)
+                self._set_cell_combo(self.items_table, row, col, combo)
             elif spec.default:
                 cell = QTableWidgetItem()
                 # 默认值只做提示：留空时后端用默认值，改模板默认值也能生效
@@ -378,7 +378,7 @@ class PackForm(BaseWidget):
         self.cast_table.insertRow(row)
         combo = QComboBox()
         self._fill_character_combo(combo)
-        self.cast_table.setCellWidget(row, 1, combo)
+        self._set_cell_combo(self.cast_table, row, 1, combo)
 
     def _fill_character_combo(self, combo: QComboBox):
         combo.clear()
@@ -417,6 +417,25 @@ class PackForm(BaseWidget):
             rows = [table.currentRow()]
         for row in rows:
             table.removeRow(row)
+
+    @staticmethod
+    def _set_cell_combo(table: QTableWidget, row: int, col: int, combo: QComboBox):
+        """下拉框带内边距和箭头，比表格默认行高、最小列宽大，不撑开就会被裁掉文字。"""
+        table.setCellWidget(row, col, combo)
+        # 先套上样式表再量尺寸，否则拿到的是未加内边距的原生尺寸（表格未显示时也还没套）
+        table.ensurePolished()
+        combo.ensurePolished()
+        # 单元格控件会被 ::item 的 padding 和网格线再缩一圈，从样式里量出来一并补上
+        option = QStyleOptionViewItem()
+        option.rect = QRect(0, 0, 100, 100)
+        inner = table.style().subElementRect(QStyle.SubElement.SE_ItemViewItemText, option, table)
+        grid = 1 if table.showGrid() else 0
+        height = combo.sizeHint().height() + 100 - inner.height() + grid
+        width = combo.sizeHint().width() + 100 - inner.width() + grid
+        if table.rowHeight(row) < height:
+            table.setRowHeight(row, height)
+        if table.columnWidth(col) < width:
+            table.setColumnWidth(col, width)
 
     @staticmethod
     def _setup_table(table: QTableWidget, stretch_column: int):

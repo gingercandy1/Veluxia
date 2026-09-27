@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QTableWidgetItem
 from src.app.ui.library.detail_panel import DetailPanel, ScriptEditor
 from src.app.ui.library.garden import GardenView
 from src.app.ui.library.library_page import LibraryPage
-from src.app.ui.library.pack_detail import PackDetail
+from src.app.ui.library.pack_detail import RUNNING_ROLE, PackDetail
 from src.app.ui.library.pack_form import PackForm
 from src.app.ui.library.pack_status import (
     asset_progress,
@@ -118,6 +118,10 @@ def test_garden_updates_cards_in_place(qapp):
 
     garden.set_packs([_character_pack(running=True)], templates)
     assert garden._cards["c1"] is card and card.badge.property("status") == "running"
+    # 执行中的包卡片进度条走流光，停下后流光也停
+    assert card.progress.is_active()
+    garden.set_packs([_character_pack()], templates)
+    assert not card.progress.is_active()
 
 
 # ---- 新建表单 ----
@@ -251,6 +255,29 @@ def test_pack_detail_groups_assets_by_media(qapp):
     assert set(view._cards) == {("hero", "trim"), ("mage", "trim"),
                                 ("hero", "voice"), ("mage", "voice")}
     assert view._cards[("hero", "voice")].badge.property("status") == "error"
+
+
+def test_pack_detail_animates_only_what_is_running(qapp):
+    view = PackDetail()
+    pack = _character_pack(running=True)
+    pack.manifest.items[1].steps["generate"] = StepState(status="running")
+    view.set_tree([pack], {"character_basic": CHARACTER})
+    view.show_pack(pack, CHARACTER, busy=True)
+    entry = view._tree_items["c1"]
+    # 执行中用跳动的点代替文字状态
+    assert entry.data(0, RUNNING_ROLE) and "·" not in entry.text(0)
+    assert view._tree_ticker.is_running() and view.progress_strip.is_active()
+    assert view._cards[("mage", "trim")].progress.is_active()
+    assert not view._cards[("hero", "trim")].progress.is_active()
+
+    # 程序被关掉后 manifest 里残留的 running 不算在跑
+    stale = _character_pack()
+    stale.manifest.items[1].steps["generate"] = StepState(status="running")
+    view.set_tree([stale], {"character_basic": CHARACTER})
+    view.show_pack(stale, CHARACTER, busy=False)
+    assert not entry.data(0, RUNNING_ROLE) and not view._tree_ticker.is_running()
+    assert not view.progress_strip.is_active()
+    assert not view._cards[("mage", "trim")].progress.is_active()
 
 
 # ---- 页面 ----

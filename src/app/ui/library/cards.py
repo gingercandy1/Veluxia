@@ -1,8 +1,9 @@
 from PySide6.QtCore import QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QProgressBar, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from src.app.ui.base.widget import BaseWidget
+from src.app.ui.library.activity import ProgressStrip
 from src.app.ui.library.pack_status import Progress, status_text
 
 PACK_THUMB = QSize(184, 124)
@@ -56,10 +57,7 @@ class Card(BaseWidget):
         row.addWidget(self.badge)
         layout.addLayout(row)
 
-        self.progress = QProgressBar()
-        self.progress.setObjectName("card_progress")
-        self.progress.setTextVisible(False)
-        self.progress.setFixedHeight(3)
+        self.progress = ProgressStrip(height=3)
         layout.addWidget(self.progress)
 
         self.setFixedWidth(thumb_size.width() + 16)
@@ -70,18 +68,19 @@ class Card(BaseWidget):
         self.name_label.setText(metrics.elidedText(
             name, Qt.TextElideMode.ElideRight, self._thumb_size.width()))
 
-    def set_progress(self, progress: Progress, meta: str, percent: int | None = None):
+    def set_progress(self, progress: Progress, meta: str, percent: int | None = None,
+                     active: bool = False):
+        """active：这张卡片对应的内容正在执行，进度条上走流光。"""
         self.meta_label.setText(meta)
-        self.progress.setValue(progress.percent if percent is None else percent)
+        self.progress.set_progress(progress.percent if percent is None else percent,
+                                   progress.status, active)
         # 全部完成后不再显示角标，卡片墙里只有需要关注的卡片带标记
         show_badge = progress.status != "done" and not (
             progress.status == "pending" and progress.done == 0)
         self.badge.setText(status_text(progress.status) if show_badge else "")
         self.badge.setVisible(show_badge)
         self.badge.setProperty("status", progress.status)
-        self.progress.setProperty("status", progress.status)
         repolish(self.badge)
-        repolish(self.progress)
 
     def set_thumbnail(self, pixmap: QPixmap):
         self.thumb.setPixmap(pixmap.scaled(

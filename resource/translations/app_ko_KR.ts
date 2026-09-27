@@ -1262,11 +1262,6 @@
         <translation>라이브러리</translation>
     </message>
     <message>
-        <location line="+61"/>
-        <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
-        <translation>한 행에 소재 하나. 여러 줄(열은 탭으로 구분)을 붙여넣으면 한꺼번에 추가됩니다.</translation>
-    </message>
-    <message>
         <location line="+34"/>
         <source>Create</source>
         <translation>만들기</translation>

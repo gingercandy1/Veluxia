@@ -1266,11 +1266,6 @@
         <translation>Библиотека</translation>
     </message>
     <message>
-        <location line="+61"/>
-        <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
-        <translation>Одна строка — один ассет. Вставьте несколько строк (столбцы через Tab), чтобы добавить их разом.</translation>
-    </message>
-    <message>
         <location line="+34"/>
         <source>Create</source>
         <translation>Создать</translation>

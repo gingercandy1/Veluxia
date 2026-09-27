@@ -6,6 +6,9 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -13,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.ui.base.widget import BaseWidget
+from src.app.ui.library.activity import DOTS_WIDTH, FrameTicker, ProgressStrip, paint_dots
 from src.app.ui.library.cards import ASSET_THUMB, Card
 from src.app.ui.library.detail_panel import DetailPanel
 from src.app.ui.library.flow_layout import FlowLayout
@@ -29,11 +33,33 @@ from src.app.ui.library.pack_status import (
     pack_progress,
     status_text,
     step_chain,
+    step_fraction,
 )
 from src.app.ui.message.image_preview import ImagePreviewOverlay
 from src.shared.schemas import PackResponse, TemplateInfo, TemplateStepInfo
 
 TREE_WIDTH = 220
+# 树节点上标记"正在执行"：由委托在名字后面画跳动的三个点
+RUNNING_ROLE = Qt.ItemDataRole.UserRole + 1
+
+
+class RunningDotsDelegate(QStyledItemDelegate):
+    """执行中的资源包名字后面画跳动的三个点；名字太长时先省略，给点留出位置。"""
+    GAP = 6
+
+    def paint(self, painter, option, index):
+        if not index.data(RUNNING_ROLE):
+            super().paint(painter, option, index)
+            return
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        style = opt.widget.style() if opt.widget else QStyle()
+        text_rect = style.subElementRect(QStyle.SubElement.SE_ItemViewItemText, opt, opt.widget)
+        opt.text = opt.fontMetrics.elidedText(
+            opt.text, Qt.TextElideMode.ElideRight, int(text_rect.width() - DOTS_WIDTH - self.GAP))
+        style.drawControl(QStyle.ControlElement.CE_ItemViewItem, opt, painter, opt.widget)
+        left = text_rect.left() + opt.fontMetrics.horizontalAdvance(opt.text) + self.GAP
+        paint_dots(painter, left, text_rect.center().y() + 1)
 
 
 class PackDetail(BaseWidget):
@@ -90,6 +116,9 @@ class PackDetail(BaseWidget):
         self.tree.setItemsExpandable(False)
         self.tree.setIndentation(22)
         self.tree.setIconSize(QSize(16, 16))
+        self.tree.setItemDelegate(RunningDotsDelegate(self.tree))
+        # 只有树里有执行中的包时才逐帧刷新
+        self._tree_ticker = FrameTicker(self.tree.viewport())
         self.tree.itemClicked.connect(self._on_tree_clicked)
         layout.addWidget(self.tree, 1)
         return side
@@ -108,8 +137,13 @@ class PackDetail(BaseWidget):
         self.title_label.setObjectName("library_title")
         self.summary_label = QLabel()
         self.summary_label.setObjectName("detail_muted")
+        # 整包进度：按步骤完成比例，执行中带流光，停在某一步较久时也能看出没卡死
+        self.progress_strip = ProgressStrip(height=4)
+        self.progress_strip.setMaximumWidth(360)
         titles.addWidget(self.title_label)
         titles.addWidget(self.summary_label)
+        titles.addSpacing(4)
+        titles.addWidget(self.progress_strip)
         header.addLayout(titles, 1)
         self.run_btn = QPushButton(self.tr("Run"))
         self.run_btn.setObjectName("library_primary_btn")
@@ -180,11 +214,15 @@ class PackDetail(BaseWidget):
             template = templates[pack.manifest.template]
             progress = pack_progress(pack.manifest, template, running=pack.running)
             name = pack.manifest.name or template.name or pack.manifest.id
-            # 树只管导航，进度数字在中间标题下已有；只保留需要关注的状态
+            # 树只管导航，进度数字在中间标题下已有；只保留需要关注的状态，执行中改用跳动的点
             text = name
-            if progress.status in ("review", "running", "error"):
+            if progress.status in ("review", "error"):
                 text += f"  · {status_text(progress.status)}"
-            self._tree_items[pack.manifest.id].setText(0, text)
+            entry = self._tree_items[pack.manifest.id]
+            entry.setText(0, text)
+            entry.setData(0, RUNNING_ROLE, pack.running)
+            entry.setToolTip(0, f"{name}  · {status_text(progress.status)}")
+        self._tree_ticker.set_running(any(pack.running for pack in packs))
         self._select_tree_item()
 
     def show_pack(self, pack: PackResponse, template: TemplateInfo, busy: bool):
@@ -203,6 +241,8 @@ class PackDetail(BaseWidget):
         if progress.status in ("review", "running", "error"):
             summary.append(status_text(progress.status))
         self.summary_label.setText("  ·  ".join(summary))
+        self.progress_strip.set_progress(step_fraction(manifest, template), progress.status,
+                                         active=pack.running)
         self._select_tree_item()
         self._show_assets()
         return self.refresh_detail(busy)
@@ -266,7 +306,9 @@ class PackDetail(BaseWidget):
         for (item_id, step_id), card in self._cards.items():
             item = next(i for i in items if i.id == item_id)
             progress = asset_progress(item, step_chain(self.template, step_id))
-            card.set_progress(progress, f"{progress.done}/{progress.total}")
+            # manifest 里残留的 running 不算：包真的在跑时才让卡片动起来
+            card.set_progress(progress, f"{progress.done}/{progress.total}",
+                              active=self.pack.running and progress.status == "running")
 
     def _rebuild_assets(self, groups: list[tuple[str, list[TemplateStepInfo]]]):
         self._cards.clear()

@@ -1264,11 +1264,6 @@
         <translation>Library</translation>
     </message>
     <message>
-        <location line="+61"/>
-        <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
-        <translation>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</translation>
-    </message>
-    <message>
         <location line="+34"/>
         <source>Create</source>
         <translation>Create</translation>

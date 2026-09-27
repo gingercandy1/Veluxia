@@ -1,9 +1,3 @@
-"""资源包的进度与分类计算（ADR 0004），不含控件，花园卡片、素材卡片、详情栏共用。
-
-界面上的一张素材卡片 = 一个条目的一个交付步骤（如角色的立绘、声线）。
-卡片进度只数这个交付物的执行流程（它和它的全部上游步骤），这样同一条目的立绘做完了，
-不会因为声线还在排队而显示成未完成。
-"""
 from dataclasses import dataclass
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QCoreApplication
