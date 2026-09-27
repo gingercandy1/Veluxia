@@ -32,6 +32,8 @@ from src.shared.schemas import (
     ApproveStepRequest,
     CollectionItem,
     CreatePackRequest,
+    DraftItemsRequest,
+    DraftItemsResponse,
     PackListResponse,
     PackResponse,
     ResetStepRequest,
@@ -92,6 +94,7 @@ class LibraryPage(BaseWidget):
         self.garden.new_requested.connect(self._show_form)
         self.form.back_requested.connect(self._show_garden)
         self.form.create_requested.connect(self._create_pack)
+        self.form.draft_requested.connect(self._draft_items)
         self.detail.back_requested.connect(self._show_garden)
         self.detail.pack_selected.connect(self._open_pack)
         self.detail.run_requested.connect(self._run_current)
@@ -274,6 +277,20 @@ class LibraryPage(BaseWidget):
         self._packs = [*self._packs, response]
         self._on_packs(PackListResponse(packs=self._packs))
         self._open_pack(response.manifest.id)
+
+    def _draft_items(self, request: DraftItemsRequest):
+        self.form.set_drafting(True)
+        self._start(self._client.draft_items, request,
+                    on_ok=lambda response: self._on_drafted(request.template, response),
+                    on_error=lambda message: self._on_drafted(
+                        request.template, DraftItemsResponse.from_error(message)))
+
+    def _on_drafted(self, template_id: str, response: DraftItemsResponse):
+        self.form.set_drafting(False)
+        if not response.ok:
+            self.form.set_error(self.tr("AI draft failed: {0}").format(response.error))
+            return
+        self.form.apply_drafts(template_id, response.items)
 
     def _delete_current(self):
         pack = self.detail.pack

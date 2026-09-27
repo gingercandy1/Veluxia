@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+100"/>
         <location line="+135"/>
-        <location line="+271"/>
+        <location line="+275"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>백엔드에 연결할 수 없습니다. 서비스가 실행 중인지 확인하세요.</translation>
     </message>
     <message>
-        <location line="-402"/>
+        <location line="-406"/>
         <source>Connection timed out.</source>
         <translation>연결 시간이 초과되었습니다.</translation>
     </message>
@@ -97,7 +97,7 @@
         <translation>백엔드에 연결할 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location line="+167"/>
+        <location line="+171"/>
         <source>An install task is already running...</source>
         <translation>설치 작업이 이미 실행 중입니다…</translation>
     </message>
@@ -892,7 +892,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+163"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+166"/>
         <source>Failed to load packs: {0}</source>
         <translation>팩 목록을 불러오지 못했습니다: {0}</translation>
     </message>
@@ -912,7 +912,12 @@
         <translation>실행 실패: {0}</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+33"/>
+        <source>AI draft failed: {0}</source>
+        <translation>AI 초안 작성 실패: {0}</translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <source>Delete pack</source>
         <translation>팩 삭제</translation>
     </message>
@@ -1125,7 +1130,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+108"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+120"/>
         <source>New pack</source>
         <translation>새 팩</translation>
     </message>
@@ -1191,7 +1196,33 @@
         <translation>음색 설명</translation>
     </message>
     <message>
-        <location line="+123"/>
+        <location line="+13"/>
+        <source>AI draft theme, e.g. ground details for a glowing forest</source>
+        <translation>AI 초안 주제, 예: 빛나는 숲의 지면 디테일</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Count </source>
+        <translation>개수 </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+71"/>
+        <source>AI draft</source>
+        <translation>AI 초안</translation>
+    </message>
+    <message>
+        <location line="-69"/>
+        <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
+        <translation>빈 행과 수정하지 않은 AI 행을 교체합니다. 직접 입력하거나 수정한 행은 유지됩니다. 첫 실행 시 텍스트 모델을 불러오느라 약 1분 걸립니다.</translation>
+    </message>
+    <message>
+        <location line="+69"/>
+        <source>Drafting...</source>
+        <translation>작성 중...</translation>
+    </message>
+    <message>
+        <location line="+73"/>
         <source>Prompt</source>
         <translation>프롬프트</translation>
     </message>
@@ -1201,7 +1232,7 @@
         <translation>기본값: {0}</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+26"/>
         <source>(New voice)</source>
         <translation>(새 음성)</translation>
     </message>
@@ -1216,7 +1247,12 @@
         <translation>행 삭제</translation>
     </message>
     <message>
-        <location line="-180"/>
+        <location line="+56"/>
+        <source>Enter a theme for the AI to draft items from.</source>
+        <translation>AI가 항목을 작성할 주제를 입력하세요.</translation>
+    </message>
+    <message>
+        <location line="-288"/>
         <source>Items</source>
         <translation>항목</translation>
     </message>
@@ -1231,17 +1267,18 @@
         <translation>한 행에 소재 하나. 여러 줄(열은 탭으로 구분)을 붙여넣으면 한꺼번에 추가됩니다.</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+34"/>
         <source>Create</source>
         <translation>만들기</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+79"/>
+        <location line="+169"/>
         <source>No template available. Is the backend running?</source>
         <translation>사용 가능한 템플릿이 없습니다. 백엔드가 실행 중인가요?</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-156"/>
         <source>Add at least one item.</source>
         <translation>항목을 하나 이상 추가하세요.</translation>
     </message>

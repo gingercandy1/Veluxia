@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+100"/>
         <location line="+135"/>
-        <location line="+271"/>
+        <location line="+275"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>バックエンドに接続できません。サービスが起動しているか確認してください。</translation>
     </message>
     <message>
-        <location line="-402"/>
+        <location line="-406"/>
         <source>Connection timed out.</source>
         <translation>接続がタイムアウトしました。</translation>
     </message>
@@ -97,7 +97,7 @@
         <translation>バックエンドに接続できません：{0}</translation>
     </message>
     <message>
-        <location line="+167"/>
+        <location line="+171"/>
         <source>An install task is already running...</source>
         <translation>インストールタスクはすでに実行中です…</translation>
     </message>
@@ -892,7 +892,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+163"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+166"/>
         <source>Failed to load packs: {0}</source>
         <translation>パック一覧の読み込みに失敗しました：{0}</translation>
     </message>
@@ -912,7 +912,12 @@
         <translation>実行に失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+33"/>
+        <source>AI draft failed: {0}</source>
+        <translation>AI 下書きに失敗しました：{0}</translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <source>Delete pack</source>
         <translation>パックを削除</translation>
     </message>
@@ -1125,7 +1130,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+108"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+120"/>
         <source>New pack</source>
         <translation>新しいパック</translation>
     </message>
@@ -1191,7 +1196,33 @@
         <translation>声の説明</translation>
     </message>
     <message>
-        <location line="+123"/>
+        <location line="+13"/>
+        <source>AI draft theme, e.g. ground details for a glowing forest</source>
+        <translation>AI 下書きのテーマ（例：光る森の地面のディテール）</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Count </source>
+        <translation>件数 </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+71"/>
+        <source>AI draft</source>
+        <translation>AI 下書き</translation>
+    </message>
+    <message>
+        <location line="-69"/>
+        <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
+        <translation>空の行と未編集の AI 行を置き換えます。入力・編集した行は残ります。初回はテキストモデルの読み込みに約 1 分かかります。</translation>
+    </message>
+    <message>
+        <location line="+69"/>
+        <source>Drafting...</source>
+        <translation>下書き中...</translation>
+    </message>
+    <message>
+        <location line="+73"/>
         <source>Prompt</source>
         <translation>プロンプト</translation>
     </message>
@@ -1201,7 +1232,7 @@
         <translation>既定値：{0}</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+26"/>
         <source>(New voice)</source>
         <translation>（新しい声）</translation>
     </message>
@@ -1216,7 +1247,12 @@
         <translation>行を削除</translation>
     </message>
     <message>
-        <location line="-180"/>
+        <location line="+56"/>
+        <source>Enter a theme for the AI to draft items from.</source>
+        <translation>AI が項目を下書きするためのテーマを入力してください。</translation>
+    </message>
+    <message>
+        <location line="-288"/>
         <source>Items</source>
         <translation>アイテム</translation>
     </message>
@@ -1231,17 +1267,18 @@
         <translation>1 行に 1 素材。複数行（列はタブ区切り）を貼り付けると一括追加できます。</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+34"/>
         <source>Create</source>
         <translation>作成</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+79"/>
+        <location line="+169"/>
         <source>No template available. Is the backend running?</source>
         <translation>利用できるテンプレートがありません。バックエンドは起動していますか？</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-156"/>
         <source>Add at least one item.</source>
         <translation>アイテムを 1 つ以上追加してください。</translation>
     </message>

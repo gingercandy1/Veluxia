@@ -11,7 +11,7 @@ from PySide6.QtCore import QCoreApplication
 from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, AnimationResponse, SpeechResponse, \
     ModelInfoResponse, TranslateResponse, RefineResponse, SpriteSheetResponse, TranscriptionResponse, \
     CreatePackRequest, PackListResponse, PackResponse, TemplateListResponse, \
-    ApproveStepRequest, ResetStepRequest
+    ApproveStepRequest, ResetStepRequest, DraftItemsRequest, DraftItemsResponse
 
 _DEFAULT_LIMITS = httpx.Limits(
     max_connections=10,
@@ -398,6 +398,10 @@ class ApiClient:
 
     def create_pack(self, request: CreatePackRequest) -> PackResponse:
         return self._post("/library/packs", request.model_dump(), PackResponse)
+
+    def draft_items(self, request: DraftItemsRequest) -> DraftItemsResponse:
+        """首次调用要加载 LLM，较慢；仍在默认 300 秒超时之内。"""
+        return self._post("/library/drafts", request.model_dump(), DraftItemsResponse)
 
     def delete_pack(self, pack_id: str) -> BaseResponse:
         return self._delete(f"/library/packs/{pack_id}")

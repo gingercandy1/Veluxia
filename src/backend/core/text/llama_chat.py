@@ -35,10 +35,12 @@ class LlamaGenerator(BaseTextGenerator):
         return output["choices"][0]["message"]["content"].strip()
 
     def complete_chat(self, messages: list[dict], max_tokens: int = 1024,
-                      temperature: float = 0.7, json_output: bool = False) -> str:
+                      temperature: float = 0.7, json_output: bool = False,
+                      seed: int | None = None) -> str:
         """不带对话记忆的单次补全：批量任务（如资源包写剧本）不能读写聊天会话的记忆。
 
         json_output 时用 llama.cpp 的 JSON 语法约束解码，保证输出能被解析。
+        seed 不传时 llama-cpp 从固定默认种子推出序列，每次重新加载模型后的第一次结果都一样。
         """
         kwargs = {"response_format": {"type": "json_object"}} if json_output else {}
         output = self.pipe.create_chat_completion(
@@ -46,6 +48,7 @@ class LlamaGenerator(BaseTextGenerator):
             max_tokens=max_tokens,
             temperature=temperature,
             stream=False,
+            seed=seed,
             **kwargs,
         )
         return output["choices"][0]["message"]["content"].strip()

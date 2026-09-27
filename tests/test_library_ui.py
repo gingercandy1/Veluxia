@@ -23,6 +23,7 @@ from src.shared.schemas import (
     CollectionItem,
     FieldOption,
     Manifest,
+    NewCollectionItem,
     PackListResponse,
     PackResponse,
     StepState,
@@ -144,6 +145,50 @@ def test_form_requires_items(qapp):
     form.create_requested.connect(emitted.append)
     form.create_btn.click()
     assert not emitted and form.error_label.text()
+
+
+def test_form_draft_requires_theme(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER])
+    emitted = []
+    form.draft_requested.connect(emitted.append)
+    form.draft_btn.click()
+    assert not emitted and form.error_label.text()
+
+
+def test_form_draft_keeps_user_rows_and_replaces_untouched_drafts(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER])
+    form.items_table.setCurrentCell(0, 0)
+    form.items_table.paste_rows("my own knight\t亚瑟")
+    form.apply_drafts("character_basic", [
+        NewCollectionItem(prompt="a mage", fields={"name": "梅林", "pose": "sit"}),
+        NewCollectionItem(prompt="a thief", fields={"name": "罗宾"}),
+    ])
+    # 空行被换掉，手填的行保留在前
+    assert [form.items_table.cell_text(r, 0) for r in range(form.items_table.rowCount())] == [
+        "my own knight", "a mage", "a thief"]
+    assert form.items_table.cell_text(1, 2) == "sit"
+
+    # 改过的起草行算用户的，再起草时保留；没动过的被换掉
+    form.items_table.set_cell_text(1, 1, "大法师")
+    emitted = []
+    form.draft_requested.connect(emitted.append)
+    form.draft_theme_edit.setText("奇幻冒险队")
+    form.draft_btn.click()
+    assert emitted[0].exclude == ["my own knight", "a mage", "a thief"]
+    assert emitted[0].theme == "奇幻冒险队" and emitted[0].template == "character_basic"
+    form.apply_drafts("character_basic", [NewCollectionItem(prompt="a bard")])
+    assert [form.items_table.cell_text(r, 0) for r in range(form.items_table.rowCount())] == [
+        "my own knight", "a mage", "a bard"]
+
+
+def test_form_ignores_drafts_for_another_template(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER, DIALOGUE])
+    form.preselect_category("dialogue")
+    form.apply_drafts("character_basic", [NewCollectionItem(prompt="a mage")])
+    assert form.items_table.cell_text(0, 0) == ""
 
 
 def test_form_dialogue_cast_links_character(qapp):

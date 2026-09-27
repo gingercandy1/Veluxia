@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QScrollArea,
+    QSpinBox,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -23,12 +24,15 @@ from src.shared.schemas import (
     CastMember,
     CollectionStyle,
     CreatePackRequest,
+    DraftItemsRequest,
     NewCollectionItem,
     TemplateFieldInfo,
     TemplateInfo,
 )
 
 DIALOGUE_TYPE = "dialogue"
+# 与后端 drafts.MAX_DRAFT_COUNT 一致：再多 LLM 的 4096 上下文装不下
+MAX_DRAFT_COUNT = 20
 
 
 class PasteTable(QTableWidget):
@@ -68,13 +72,19 @@ class PasteTable(QTableWidget):
             index = combo.findText(value)
             combo.setCurrentIndex(index if index >= 0 else max(combo.findData(value), 0))
             return
-        self.setItem(row, col, QTableWidgetItem(value))
+        cell = self.item(row, col)
+        if cell is None:
+            self.setItem(row, col, QTableWidgetItem(value))
+        else:
+            # 保留新行上的"默认值"提示
+            cell.setText(value)
 
 
 class PackForm(BaseWidget):
     """新建资源包：选分类和模板，填风格锁，条目用表格录入（模板字段各占一列）；
     对话包另填出场角色，可以绑定已有角色包的声线。"""
     create_requested = Signal(object)  # CreatePackRequest
+    draft_requested = Signal(object)  # DraftItemsRequest
     back_requested = Signal()
 
     def __init__(self, parent=None):
@@ -83,6 +93,8 @@ class PackForm(BaseWidget):
         self._templates: list[TemplateInfo] = []
         self._characters: list[tuple[str, str]] = []  # (显示名, "<资源包 id>/<条目 id>")
         self._fields: list[TemplateFieldInfo] = []
+        # 上次 AI 起草填进去的行内容：再次起草时，没被用户改过的这些行会被换掉
+        self._drafted_rows: set[tuple[str, ...]] = set()
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -161,6 +173,24 @@ class PackForm(BaseWidget):
         layout.addWidget(self._heading(self.tr("Items")))
         layout.addWidget(self._hint(self.tr(
             "One row per asset. Paste multiple lines (tab-separated for columns) to add rows.")))
+        draft_row = QHBoxLayout()
+        self.draft_theme_edit = QLineEdit()
+        self.draft_theme_edit.setPlaceholderText(
+            self.tr("AI draft theme, e.g. ground details for a glowing forest"))
+        self.draft_theme_edit.returnPressed.connect(self._on_draft)
+        draft_row.addWidget(self.draft_theme_edit, 1)
+        self.draft_count_spin = QSpinBox()
+        self.draft_count_spin.setRange(1, MAX_DRAFT_COUNT)
+        self.draft_count_spin.setValue(10)
+        self.draft_count_spin.setPrefix(self.tr("Count "))
+        draft_row.addWidget(self.draft_count_spin)
+        self.draft_btn = QPushButton(self.tr("AI draft"))
+        self.draft_btn.setToolTip(self.tr(
+            "Replaces empty rows and untouched AI rows; rows you typed or edited are kept. "
+            "The first run loads the text model and takes about a minute."))
+        self.draft_btn.clicked.connect(self._on_draft)
+        draft_row.addWidget(self.draft_btn)
+        layout.addLayout(draft_row)
         self.items_table = PasteTable(0, 1)
         self._setup_table(self.items_table, stretch_column=0)
         self.items_table.setMinimumHeight(240)
@@ -223,6 +253,29 @@ class PackForm(BaseWidget):
     def set_busy(self, busy: bool):
         self.create_btn.setEnabled(not busy)
 
+    def set_drafting(self, drafting: bool):
+        self.draft_btn.setEnabled(not drafting)
+        self.draft_btn.setText(self.tr("Drafting...") if drafting else self.tr("AI draft"))
+
+    def apply_drafts(self, template_id: str, items: list[NewCollectionItem]):
+        """把 AI 起草的条目填进表格：空行和上次起草后没动过的行换成新条目，用户写过的行保留。"""
+        template = self.current_template()
+        if template is None or template.id != template_id:
+            # 起草期间切换了模板，字段列已经对不上
+            return
+        for row in reversed(range(self.items_table.rowCount())):
+            if self._is_empty_row(row) or self._row_values(row) in self._drafted_rows:
+                self.items_table.removeRow(row)
+        self._drafted_rows = set()
+        for item in items:
+            row = self.items_table.rowCount()
+            self._add_item_row()
+            self.items_table.set_cell_text(row, 0, item.prompt)
+            for col, spec in enumerate(self._fields, start=1):
+                if spec.id in item.fields:
+                    self.items_table.set_cell_text(row, col, item.fields[spec.id])
+            self._drafted_rows.add(self._row_values(row))
+
     def set_error(self, message: str):
         # 空标签也占一行布局高度，没有错误时隐藏
         self.error_label.setText(message)
@@ -273,6 +326,7 @@ class PackForm(BaseWidget):
     def _on_template_changed(self):
         template = self.current_template()
         self._fields = list(template.fields) if template else []
+        self._drafted_rows = set()
         self.description_label.setText(template.description if template else "")
         prompt_label = (template.prompt_label if template else "") or self.tr("Prompt")
         self.items_table.clear()
@@ -304,6 +358,16 @@ class PackForm(BaseWidget):
                 # 默认值只做提示：留空时后端用默认值，改模板默认值也能生效
                 cell.setToolTip(self.tr("Default: {0}").format(spec.default))
                 self.items_table.setItem(row, col, cell)
+
+    def _row_values(self, row: int) -> tuple[str, ...]:
+        return tuple(self.items_table.cell_text(row, col)
+                     for col in range(self.items_table.columnCount()))
+
+    def _is_empty_row(self, row: int) -> bool:
+        # 下拉列总有值，不算用户填写；与 build_request 跳过空行的规则一致
+        return not self.items_table.cell_text(row, 0) and not any(
+            self.items_table.cell_text(row, col)
+            for col, spec in enumerate(self._fields, start=1) if not spec.options)
 
     def _ensure_item_rows(self, count: int):
         while self.items_table.rowCount() < count:
@@ -386,6 +450,27 @@ class PackForm(BaseWidget):
         label.setObjectName("detail_muted")
         label.setWordWrap(True)
         return label
+
+    def _on_draft(self):
+        template = self.current_template()
+        if template is None:
+            self.set_error(self.tr("No template available. Is the backend running?"))
+            return
+        theme = self.draft_theme_edit.text().strip()
+        if not theme:
+            self.set_error(self.tr("Enter a theme for the AI to draft items from."))
+            return
+        # 表格里已有的条目（含上次起草的）都告诉模型，再点一次拿到的是新条目
+        existing = [self.items_table.cell_text(row, 0) for row in range(self.items_table.rowCount())]
+        self.set_error("")
+        self.draft_requested.emit(DraftItemsRequest(
+            template=template.id,
+            theme=theme,
+            count=self.draft_count_spin.value(),
+            style=self.style_edit.toPlainText().strip(),
+            cast=self._cast() if template.type == DIALOGUE_TYPE else [],
+            exclude=[prompt for prompt in existing if prompt],
+        ))
 
     def _on_create(self):
         try:

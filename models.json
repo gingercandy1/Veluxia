@@ -51,8 +51,8 @@
       "note": "3B，~2GB，中文性价比高"
     },
     "Qwen2.5-7B": {
-      "repo_id": "Qwen/Qwen2.5-7B-Instruct-GGUF",
-      "filename": "qwen2.5-7b-instruct-q4_k_m.gguf",
+      "repo_id": "bartowski/Qwen2.5-7B-Instruct-GGUF",
+      "filename": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
       "tag": "medium",
       "note": "7B，~5GB，中文最推荐"
     },

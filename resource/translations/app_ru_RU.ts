@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+100"/>
         <location line="+135"/>
-        <location line="+271"/>
+        <location line="+275"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>Не удаётся подключиться к серверу. Проверьте, запущена ли служба.</translation>
     </message>
     <message>
-        <location line="-402"/>
+        <location line="-406"/>
         <source>Connection timed out.</source>
         <translation>Время ожидания подключения истекло.</translation>
     </message>
@@ -97,7 +97,7 @@
         <translation>Не удаётся подключиться к серверу: {0}</translation>
     </message>
     <message>
-        <location line="+167"/>
+        <location line="+171"/>
         <source>An install task is already running...</source>
         <translation>Установка уже выполняется…</translation>
     </message>
@@ -896,7 +896,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+163"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+166"/>
         <source>Failed to load packs: {0}</source>
         <translation>Не удалось загрузить пакеты: {0}</translation>
     </message>
@@ -916,7 +916,12 @@
         <translation>Ошибка выполнения: {0}</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+33"/>
+        <source>AI draft failed: {0}</source>
+        <translation>Не удалось составить черновик ИИ: {0}</translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <source>Delete pack</source>
         <translation>Удалить пакет</translation>
     </message>
@@ -1129,7 +1134,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+108"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+120"/>
         <source>New pack</source>
         <translation>Новый пакет</translation>
     </message>
@@ -1195,7 +1200,33 @@
         <translation>Описание голоса</translation>
     </message>
     <message>
-        <location line="+123"/>
+        <location line="+13"/>
+        <source>AI draft theme, e.g. ground details for a glowing forest</source>
+        <translation>Тема для ИИ, напр.: детали земли в светящемся лесу</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Count </source>
+        <translation>Кол-во </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+71"/>
+        <source>AI draft</source>
+        <translation>Черновик ИИ</translation>
+    </message>
+    <message>
+        <location line="-69"/>
+        <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
+        <translation>Заменяет пустые строки и нетронутые строки ИИ; введённые или изменённые вами строки сохраняются. Первый запуск загружает текстовую модель и занимает около минуты.</translation>
+    </message>
+    <message>
+        <location line="+69"/>
+        <source>Drafting...</source>
+        <translation>Составление...</translation>
+    </message>
+    <message>
+        <location line="+73"/>
         <source>Prompt</source>
         <translation>Промпт</translation>
     </message>
@@ -1205,7 +1236,7 @@
         <translation>По умолчанию: {0}</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+26"/>
         <source>(New voice)</source>
         <translation>(Новый голос)</translation>
     </message>
@@ -1220,7 +1251,12 @@
         <translation>Удалить строку</translation>
     </message>
     <message>
-        <location line="-180"/>
+        <location line="+56"/>
+        <source>Enter a theme for the AI to draft items from.</source>
+        <translation>Введите тему, по которой ИИ составит элементы.</translation>
+    </message>
+    <message>
+        <location line="-288"/>
         <source>Items</source>
         <translation>Элементы</translation>
     </message>
@@ -1235,17 +1271,18 @@
         <translation>Одна строка — один ассет. Вставьте несколько строк (столбцы через Tab), чтобы добавить их разом.</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+34"/>
         <source>Create</source>
         <translation>Создать</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+79"/>
+        <location line="+169"/>
         <source>No template available. Is the backend running?</source>
         <translation>Нет доступных шаблонов. Бэкенд запущен?</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-156"/>
         <source>Add at least one item.</source>
         <translation>Добавьте хотя бы один элемент.</translation>
     </message>

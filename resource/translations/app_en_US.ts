@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+100"/>
         <location line="+135"/>
-        <location line="+271"/>
+        <location line="+275"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>Cannot connect to the backend. Please check that the service is running.</translation>
     </message>
     <message>
-        <location line="-402"/>
+        <location line="-406"/>
         <source>Connection timed out.</source>
         <translation>Connection timed out.</translation>
     </message>
@@ -97,7 +97,7 @@
         <translation>Cannot connect to the backend: {0}</translation>
     </message>
     <message>
-        <location line="+167"/>
+        <location line="+171"/>
         <source>An install task is already running...</source>
         <translation>An install task is already running...</translation>
     </message>
@@ -894,7 +894,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+163"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+166"/>
         <source>Failed to load packs: {0}</source>
         <translation>Failed to load packs: {0}</translation>
     </message>
@@ -914,7 +914,12 @@
         <translation>Run failed: {0}</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+33"/>
+        <source>AI draft failed: {0}</source>
+        <translation>AI draft failed: {0}</translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <source>Delete pack</source>
         <translation>Delete pack</translation>
     </message>
@@ -1127,7 +1132,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+108"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+120"/>
         <source>New pack</source>
         <translation>New pack</translation>
     </message>
@@ -1193,7 +1198,33 @@
         <translation>Voice description</translation>
     </message>
     <message>
-        <location line="+123"/>
+        <location line="+13"/>
+        <source>AI draft theme, e.g. ground details for a glowing forest</source>
+        <translation>AI draft theme, e.g. ground details for a glowing forest</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Count </source>
+        <translation>Count </translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+71"/>
+        <source>AI draft</source>
+        <translation>AI draft</translation>
+    </message>
+    <message>
+        <location line="-69"/>
+        <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
+        <translation>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</translation>
+    </message>
+    <message>
+        <location line="+69"/>
+        <source>Drafting...</source>
+        <translation>Drafting...</translation>
+    </message>
+    <message>
+        <location line="+73"/>
         <source>Prompt</source>
         <translation>Prompt</translation>
     </message>
@@ -1203,7 +1234,7 @@
         <translation>Default: {0}</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+26"/>
         <source>(New voice)</source>
         <translation>(New voice)</translation>
     </message>
@@ -1218,7 +1249,12 @@
         <translation>Remove row</translation>
     </message>
     <message>
-        <location line="-180"/>
+        <location line="+56"/>
+        <source>Enter a theme for the AI to draft items from.</source>
+        <translation>Enter a theme for the AI to draft items from.</translation>
+    </message>
+    <message>
+        <location line="-288"/>
         <source>Items</source>
         <translation>Items</translation>
     </message>
@@ -1233,17 +1269,18 @@
         <translation>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+34"/>
         <source>Create</source>
         <translation>Create</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+79"/>
+        <location line="+169"/>
         <source>No template available. Is the backend running?</source>
         <translation>No template available. Is the backend running?</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-156"/>
         <source>Add at least one item.</source>
         <translation>Add at least one item.</translation>
     </message>
