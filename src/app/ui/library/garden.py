@@ -120,7 +120,7 @@ class GardenView(BaseWidget):
         card.set_name(manifest.name or template.name or manifest.id)
         progress = pack_progress(manifest, template, running=pack.running)
         card.set_progress(progress, f"{progress.done}/{progress.total}",
-                          percent=step_fraction(manifest, template))
+                          percent=step_fraction(manifest, template), active=pack.running)
 
     def _clear_sections(self):
         self._cards.clear()

@@ -1,15 +1,14 @@
 @echo off
-REM Veluxia 一键开发启动：后端(8765) + 前端
+REM Dev launcher: the frontend starts the backend (8765) and guard (8756) itself.
+REM Kept ASCII-only: cmd parses UTF-8 Chinese as GBK and breaks lines.
 cd /d %~dp0\..
 
 if not exist .venv\Scripts\python.exe (
-    echo [dev] 未找到 .venv，执行 uv sync ...
+    echo [dev] .venv not found, running uv sync ...
     uv sync
     if errorlevel 1 exit /b 1
 )
 
-echo [dev] 启动后端 :8765 ...
-start "veluxia-backend" .venv\Scripts\python.exe -m src.backend.server --port 8765
-
-echo [dev] 启动前端 ...
-.venv\Scripts\python.exe src\main.py
+echo [dev] starting frontend ...
+REM Run as a module so absolute src.* imports resolve from the project root.
+.venv\Scripts\python.exe -m src.main

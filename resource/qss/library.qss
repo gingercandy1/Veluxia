@@ -192,20 +192,7 @@ QLabel#card_badge[status="done"] {
     background-color: rgba(78, 201, 148, 0.12);
 }
 
-QProgressBar#card_progress {
-    background-color: rgba(255, 255, 255, 0.06);
-    border: none;
-    border-radius: 1px;
-}
-
-QProgressBar#card_progress::chunk {
-    background-color: #7B9DBC;
-    border-radius: 1px;
-}
-
-QProgressBar#card_progress[status="done"]::chunk { background-color: #4ec994; }
-QProgressBar#card_progress[status="review"]::chunk { background-color: #e5c07b; }
-QProgressBar#card_progress[status="error"]::chunk { background-color: #f87171; }
+/* 卡片进度条是自绘的 ProgressStrip（activity.py），执行中要画流光，qss 做不到 */
 
 /* 新建卡片的虚线框在 AddCard.paintEvent 里画，qss 的 dashed 不抗锯齿 */
 QLabel#add_card_label {

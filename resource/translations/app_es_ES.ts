@@ -1264,11 +1264,6 @@
         <translation>Biblioteca</translation>
     </message>
     <message>
-        <location line="+61"/>
-        <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
-        <translation>Una fila por recurso. Pega varias líneas (columnas separadas por tabulador) para añadir filas.</translation>
-    </message>
-    <message>
         <location line="+34"/>
         <source>Create</source>
         <translation>Crear</translation>

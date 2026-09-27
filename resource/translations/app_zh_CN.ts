@@ -1262,11 +1262,6 @@
         <translation>资料库</translation>
     </message>
     <message>
-        <location line="+61"/>
-        <source>One row per asset. Paste multiple lines (tab-separated for columns) to add rows.</source>
-        <translation>每行一个素材。粘贴多行文本（列之间用 Tab 分隔）可批量添加。</translation>
-    </message>
-    <message>
         <location line="+34"/>
         <source>Create</source>
         <translation>创建</translation>
