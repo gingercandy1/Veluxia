@@ -67,6 +67,20 @@ def test_character_gender_must_be_chosen_and_leads_the_voice_prompt():
     assert voice.format_map(character.field_values("a knight", items[0].fields)).startswith("男性，")
 
 
+def test_parse_aligns_length_with_segment_count():
+    scene = load_template("scene_background")
+    items = parse_drafts(json.dumps({"items": [
+        {"prompt": "forest", "length": "2", "segment_desc": "森林 | 村庄 | 城堡"},
+        {"prompt": "cave", "segment_desc": "a|b|c|d|e"},
+        {"prompt": "town", "length": "3"},
+    ]}, ensure_ascii=False), scene)
+    # 以分段描述为准改长度；没有 5 屏的选项就丢掉分段描述；没写分段描述的不动
+    assert [i.fields.get("length") for i in items] == ["3", None, "3"]
+    assert "segment_desc" not in items[1].fields
+    for item in items:
+        scene.check_item_fields(item.fields)
+
+
 def test_parse_drops_empty_duplicate_and_excluded_items():
     reply = json.dumps({"items": [
         {"prompt": "Mossy Rock"}, {"prompt": ""}, "junk", {"prompt": "a fern"}, {"prompt": "A Fern"},
