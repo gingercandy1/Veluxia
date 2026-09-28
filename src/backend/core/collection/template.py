@@ -106,12 +106,26 @@ class Template:
             if "segment_prompts" not in step.params or "segments" not in step.params:
                 continue
             rendered = render_params(step.params, values)
-            prompts = [part.strip() for part in str(rendered["segment_prompts"]).replace("｜", "|").split("|")
-                      if part.strip()]
+            count = count_segments(rendered["segment_prompts"])
             segments = rendered["segments"]
-            if prompts and len(prompts) != int(segments):
-                raise ValueError(f"分段描述有 {len(prompts)} 段，但长度选的是 "
+            if count and count != int(segments):
+                raise ValueError(f"分段描述有 {count} 段，但长度选的是 "
                                  f"{segments} 屏，两者要一致")
+
+    def segment_fields(self) -> list[tuple[str, str]]:
+        """步骤参数直接引用的（屏数字段, 分段描述字段）对，AI 起草时据此把两者对齐。"""
+        pairs = []
+        for step in self.steps:
+            segments = _placeholders(step.params.get("segments"))
+            prompts = _placeholders(step.params.get("segment_prompts"))
+            if len(segments) == 1 and len(prompts) == 1:
+                pairs.append((segments.pop(), prompts.pop()))
+        return pairs
+
+
+def count_segments(value: Any) -> int:
+    """与 Z-Image 的 parse_segment_prompts 同样的切分规则：全角竖线也算分隔，空段不计。"""
+    return sum(1 for part in str(value).replace("｜", "|").split("|") if part.strip())
 
 
 def render_params(params: dict[str, Any], values: dict[str, str]) -> dict[str, Any]:
