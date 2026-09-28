@@ -5,7 +5,8 @@
 import os
 from pathlib import Path
 
-ROOT = Path(os.path.abspath(SPECPATH)).parent.parent
+# SPECPATH 是 spec 所在目录（app/），不是 spec 文件本身，上一级才是项目根
+ROOT = Path(os.path.abspath(SPECPATH)).parent
 
 a = Analysis(
     [str(ROOT / "src" / "main.py")],
