@@ -89,6 +89,13 @@ def client(tmp_path, monkeypatch):
         "id": "motion", "type": "character", "source": "character",
         "steps": [{"id": "video", "type": "test.inputs", "inputs": ["@source"]}],
     }), encoding="utf-8")
+    (templates / "panorama.json").write_text(json.dumps({
+        "id": "panorama", "type": "scene",
+        "fields": [{"id": "length", "label": "长度", "default": "1"},
+                  {"id": "segment_desc", "label": "分段描述"}],
+        "steps": [{"id": "write", "type": "test.echo",
+                  "params": {"segments": "{length}", "segment_prompts": "{segment_desc}"}}],
+    }), encoding="utf-8")
     monkeypatch.setattr(model_utils, "get_media_root", lambda: media)
     monkeypatch.setattr(library, "get_media_root", lambda: media)
     monkeypatch.setattr(template, "TEMPLATE_DIR", templates)
@@ -298,6 +305,16 @@ def test_item_fields_are_validated_and_stored(client):
     assert manifest["items"][0]["fields"] == {"voice": "低沉"}
     unknown = [{"prompt": "knight", "fields": {"color": "red"}}]
     assert _create(client, template="cast", items=unknown).status_code == 400
+
+
+def test_segment_prompts_count_must_match_segments(client):
+    matched = [{"prompt": "forest", "fields": {"length": "2", "segment_desc": "村庄 | 城堡"}}]
+    assert _create(client, template="panorama", items=matched).status_code == 200
+
+    mismatched = [{"prompt": "forest", "fields": {"length": "2", "segment_desc": "森林 | 村庄 | 城堡"}}]
+    response = _create(client, template="panorama", items=mismatched)
+    assert response.status_code == 400
+    assert "3 段" in response.json()["detail"] and "2 屏" in response.json()["detail"]
 
 
 def test_dialogue_cast_is_validated(client):

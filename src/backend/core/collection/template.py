@@ -94,6 +94,24 @@ class Template:
             allowed = [value for value, _ in spec.options]
             if allowed and fields.get(spec.id) and fields[spec.id] not in allowed:
                 raise ValueError(f"字段 {spec.label or spec.id} 的取值不在可选范围内：{fields[spec.id]}")
+        self._check_segments(fields)
+
+    def _check_segments(self, fields: dict[str, str]) -> None:
+        """分段描述的段数要和屏数一致，否则要跑到生成那一步才报错，条目多时很难定位是哪条填错了。
+
+        按执行器实际用的方式（render_params）解析占位符，保证这里的判断和生成时一致。
+        """
+        values = self.field_values("", fields)
+        for step in self.steps:
+            if "segment_prompts" not in step.params or "segments" not in step.params:
+                continue
+            rendered = render_params(step.params, values)
+            prompts = [part.strip() for part in str(rendered["segment_prompts"]).replace("｜", "|").split("|")
+                      if part.strip()]
+            segments = rendered["segments"]
+            if prompts and len(prompts) != int(segments):
+                raise ValueError(f"分段描述有 {len(prompts)} 段，但长度选的是 "
+                                 f"{segments} 屏，两者要一致")
 
 
 def render_params(params: dict[str, Any], values: dict[str, str]) -> dict[str, Any]:
