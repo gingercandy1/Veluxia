@@ -36,7 +36,7 @@ from src.app.ui.library.pack_status import (
     step_fraction,
 )
 from src.app.ui.message.image_preview import ImagePreviewOverlay
-from src.shared.schemas import PackResponse, TemplateInfo, TemplateStepInfo
+from src.shared.schemas import PackResponse, StylePreset, TemplateInfo, TemplateStepInfo
 
 TREE_WIDTH = 220
 # 树节点上标记"正在执行"：由委托在名字后面画跳动的三个点
@@ -70,6 +70,8 @@ class PackDetail(BaseWidget):
     run_requested = Signal()
     stop_requested = Signal()
     delete_requested = Signal()
+    style_sync_requested = Signal()
+    source_refresh_requested = Signal()
     asset_selected = Signal(str, str)              # item id, step id
     asset_opened = Signal(str, str)
 
@@ -83,6 +85,7 @@ class PackDetail(BaseWidget):
         self._layout_key: list = []
         self._tree_items: dict[str, QTreeWidgetItem] = {}
         self._tree_key: list = []
+        self._styles: list[StylePreset] = []
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -156,6 +159,40 @@ class PackDetail(BaseWidget):
         for button in (self.run_btn, self.stop_btn, self.delete_btn):
             header.addWidget(button)
         layout.addLayout(header)
+
+        # 建包时选的风格预设之后被改过：提示一下，是否同步由用户决定（ADR 0006）
+        self.style_notice = QWidget()
+        notice = QHBoxLayout(self.style_notice)
+        notice.setContentsMargins(0, 0, 0, 0)
+        self.style_notice_label = QLabel()
+        self.style_notice_label.setObjectName("detail_muted")
+        self.style_notice_label.setWordWrap(True)
+        notice.addWidget(self.style_notice_label, 1)
+        self.sync_style_btn = QPushButton(self.tr("Use new style"))
+        self.sync_style_btn.setToolTip(self.tr(
+            "Replace this pack's style lock with the preset. "
+            "Existing outputs are kept; redo the steps you want in the new style."))
+        self.sync_style_btn.clicked.connect(self.style_sync_requested)
+        notice.addWidget(self.sync_style_btn)
+        self.style_notice.hide()
+        layout.addWidget(self.style_notice)
+
+        # 来源角色的立绘重做过：已做的动作 / 视角还是旧立绘的样子，是否重做由用户决定（ADR 0006）
+        self.source_notice = QWidget()
+        notice = QHBoxLayout(self.source_notice)
+        notice.setContentsMargins(0, 0, 0, 0)
+        self.source_notice_label = QLabel(self.tr(
+            "The source character's portrait has changed since these assets were made."))
+        self.source_notice_label.setObjectName("detail_muted")
+        self.source_notice_label.setWordWrap(True)
+        notice.addWidget(self.source_notice_label, 1)
+        self.refresh_source_btn = QPushButton(self.tr("Redo with new portrait"))
+        self.refresh_source_btn.setToolTip(self.tr(
+            "Redo the steps made from the old portrait, and everything after them."))
+        self.refresh_source_btn.clicked.connect(self.source_refresh_requested)
+        notice.addWidget(self.refresh_source_btn)
+        self.source_notice.hide()
+        layout.addWidget(self.source_notice)
 
         self.error_label = QLabel()
         self.error_label.setObjectName("library_error")
@@ -243,9 +280,27 @@ class PackDetail(BaseWidget):
         self.summary_label.setText("  ·  ".join(summary))
         self.progress_strip.set_progress(step_fraction(manifest, template), progress.status,
                                          active=pack.running)
+        self._update_style_notice()
+        self.source_notice.setVisible(pack.source_changed)
         self._select_tree_item()
         self._show_assets()
         return self.refresh_detail(busy)
+
+    def set_styles(self, styles: list[StylePreset]):
+        self._styles = styles
+        self._update_style_notice()
+
+    def _update_style_notice(self):
+        manifest = self.pack.manifest if self.pack is not None else None
+        preset = next((s for s in self._styles
+                       if manifest is not None and s.id == manifest.style_preset), None)
+        # 预设被删了就不提示：包里存的是副本，照常可用
+        changed = preset is not None and preset.style() != manifest.style
+        if changed:
+            self.style_notice_label.setText(
+                self.tr("Style preset \"{0}\" has changed since this pack was created.")
+                .format(preset.name))
+        self.style_notice.setVisible(changed)
 
     def refresh_detail(self, busy: bool) -> bool:
         if self.selected is None or self.pack is None:
@@ -266,6 +321,9 @@ class PackDetail(BaseWidget):
         self.stop_btn.setVisible(running)
         self.stop_btn.setEnabled(running)
         self.delete_btn.setEnabled(not running)
+        # 执行中改风格锁会让同一个包前后两半风格不一致，后端也会因包被占用而拒绝
+        self.sync_style_btn.setEnabled(not running)
+        self.refresh_source_btn.setEnabled(not running)
         # 确认剧本、重做只改本包的 manifest，别的包在跑也能改，改完等那边结束再执行
         self.detail.set_busy(running)
 

@@ -13,6 +13,27 @@ from src.backend.core.model_utils import ensure_snapshot, get_temp_dir
 from src.shared.settings import PROJECT_ROOT
 
 
+def lightning_scheduler():
+    """lightx2v Lightning LoRA 要求的调度器配置；文生图和编辑（2509）的 Lightning 都用这一套。"""
+    from diffusers import FlowMatchEulerDiscreteScheduler
+    return FlowMatchEulerDiscreteScheduler.from_config({
+        "base_image_seq_len": 256,
+        "base_shift": math.log(3),
+        "invert_sigmas": False,
+        "max_image_seq_len": 8192,
+        "max_shift": math.log(3),
+        "num_train_timesteps": 1000,
+        "shift": 1.0,
+        "shift_terminal": None,
+        "stochastic_sampling": False,
+        "time_shift_type": "exponential",
+        "use_beta_sigmas": False,
+        "use_dynamic_shifting": True,
+        "use_exponential_sigmas": False,
+        "use_karras_sigmas": False,
+    })
+
+
 class QwenImageLightningGenerator(BaseImageGenerator):
     """Qwen-Image-Lightning（Apache-2.0，可商用）。
 
@@ -39,26 +60,6 @@ class QwenImageLightningGenerator(BaseImageGenerator):
         ensure_snapshot(self.model_id, self.base_local)
         ensure_loras(self.loras)
 
-    @staticmethod
-    def _lightning_scheduler():
-        from diffusers import FlowMatchEulerDiscreteScheduler
-        return FlowMatchEulerDiscreteScheduler.from_config({
-            "base_image_seq_len": 256,
-            "base_shift": math.log(3),
-            "invert_sigmas": False,
-            "max_image_seq_len": 8192,
-            "max_shift": math.log(3),
-            "num_train_timesteps": 1000,
-            "shift": 1.0,
-            "shift_terminal": None,
-            "stochastic_sampling": False,
-            "time_shift_type": "exponential",
-            "use_beta_sigmas": False,
-            "use_dynamic_shifting": True,
-            "use_exponential_sigmas": False,
-            "use_karras_sigmas": False,
-        })
-
     def _load_model(self):
         if self.pipe is not None:
             return
@@ -73,7 +74,7 @@ class QwenImageLightningGenerator(BaseImageGenerator):
         dtype = self.torch.bfloat16
         self.pipe = QwenImagePipeline.from_pretrained(
             str(self.base_local),
-            scheduler=self._lightning_scheduler(),
+            scheduler=lightning_scheduler(),
             torch_dtype=dtype,
             local_files_only=True,
         )

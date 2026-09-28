@@ -68,7 +68,8 @@ def status_text(status: str) -> str:
 def media_kind(step_type: str) -> str:
     """步骤类型前缀决定产物是什么媒体；未知类型当文本，至少能在详情里看到文件。"""
     prefix = step_type.split(".", 1)[0]
-    if prefix == "image":
+    # 序列帧步骤的产物是 PNG 帧 / 精灵图，按图片展示
+    if prefix in ("image", "frames"):
         return "image"
     if prefix == "animation":
         return "video"

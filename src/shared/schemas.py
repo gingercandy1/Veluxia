@@ -142,7 +142,11 @@ class Manifest(BaseModel):
     template: str
     template_version: int = 1
     style: CollectionStyle = Field(default_factory=CollectionStyle)
+    # 建包时选的项目级风格预设 id：style 是复制过来的内容，预设之后被改也不影响已生成的包
+    style_preset: str = ""
     cast: List[CastMember] = Field(default_factory=list)
+    # 模板声明了 source 时绑定的来源角色（ADR 0006），如动作包的角色，格式同 CastMember.character
+    source: str = ""
     items: List[CollectionItem] = Field(default_factory=list)
 
 
@@ -156,8 +160,25 @@ class CreatePackRequest(BaseModel):
     name: str = ""
     template: str
     style: CollectionStyle = Field(default_factory=CollectionStyle)
+    style_preset: str = Field("", description="风格预设 id；style 须已填成该预设的内容")
     cast: List[CastMember] = Field(default_factory=list)
+    source: str = Field("", description="来源角色 <资源包 id>/<条目 id>；只有模板声明了 source 才需要")
     items: List[NewCollectionItem] = Field(default_factory=list)
+
+
+class StylePreset(BaseModel):
+    """项目级风格预设（ADR 0006）：存在资料库目录里，建包时选用，保证不同资源包画风统一。"""
+    id: str = Field("", description="留空表示新建")
+    name: str
+    prompt: str = ""
+    negative: str = ""
+
+    def style(self) -> CollectionStyle:
+        return CollectionStyle(prompt=self.prompt, negative=self.negative)
+
+
+class StyleListResponse(BaseResponse):
+    styles: List[StylePreset] = Field(default_factory=list)
 
 
 class DraftItemsRequest(BaseModel):
@@ -222,6 +243,7 @@ class TemplateInfo(BaseModel):
     description: str = ""
     prompt_label: str = Field("", description="条目主提示词在界面上的名称，如“外观描述”“台词”")
     cover: str = Field("", description="用作封面缩略图的步骤 id，空表示没有图片产物")
+    source: str = Field("", description="需要绑定的来源资源包类型，如 character；空表示不需要")
     fields: List[TemplateFieldInfo] = Field(default_factory=list)
     steps: List[str] = Field(default_factory=list, description="步骤 id，按执行顺序")
     step_details: List[TemplateStepInfo] = Field(default_factory=list)
@@ -236,6 +258,8 @@ class PackResponse(BaseResponse):
     media_base: str = Field("", description="资源包目录的媒体 URL，拼上产物相对路径即可访问")
     # 程序中途被关掉时 manifest 里可能残留 running，界面以这个字段判断是否真的在执行
     running: bool = False
+    # 绑定的来源角色立绘在做完产物后被重做过（ADR 0006）
+    source_changed: bool = False
 
 
 class PackListResponse(BaseResponse):

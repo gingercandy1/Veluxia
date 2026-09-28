@@ -1,0 +1,17 @@
+{
+  "id": "character_turnaround",
+  "version": 1,
+  "type": "character",
+  "source": "character",
+  "name": "角色转面",
+  "description": "绑定角色包里的一个角色，每个条目从立绘转出一个视角，输出透明底的转面图。视角指令示例：将镜头向左旋转45度、将镜头向左旋转90度、将镜头向右旋转45度、将镜头向左旋转180度（背面）。先集中理解立绘、再集中出图，切换模型各约 3 分钟。",
+  "prompt_label": "视角指令",
+  "cover": "trim",
+  "fields": [],
+  "steps": [
+    {"id": "encode", "type": "image.edit_encode", "label": "理解立绘", "inputs": ["@source"], "params": {"model_name": "Qwen-Image-Edit-2509", "scale": 0.85, "prompt_suffix": "保持角色的外观、服装和画风不变，全身，纯白背景"}},
+    {"id": "turn", "type": "image.edit", "label": "生成视角", "inputs": ["encode"], "params": {"model_name": "Qwen-Image-Edit-2509", "num_inference_steps": 4}},
+    {"id": "remove_bg", "type": "image.remove_bg", "label": "去背景", "inputs": ["turn"], "params": {"model_name": "rembg-birefnet"}},
+    {"id": "trim", "type": "image.trim", "label": "裁边", "deliverable": true, "inputs": ["remove_bg"]}
+  ]
+}

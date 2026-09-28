@@ -37,6 +37,8 @@ from src.shared.schemas import (
     PackListResponse,
     PackResponse,
     ResetStepRequest,
+    StyleListResponse,
+    StylePreset,
     TemplateInfo,
     TemplateListResponse,
 )
@@ -95,6 +97,10 @@ class LibraryPage(BaseWidget):
         self.form.back_requested.connect(self._show_garden)
         self.form.create_requested.connect(self._create_pack)
         self.form.draft_requested.connect(self._draft_items)
+        self.form.style_save_requested.connect(self._save_style)
+        self.form.style_delete_requested.connect(self._delete_style)
+        self.detail.style_sync_requested.connect(self._sync_style)
+        self.detail.source_refresh_requested.connect(self._refresh_source)
         self.detail.back_requested.connect(self._show_garden)
         self.detail.pack_selected.connect(self._open_pack)
         self.detail.run_requested.connect(self._run_current)
@@ -109,6 +115,8 @@ class LibraryPage(BaseWidget):
     def activate(self):
         """每次进入页面时刷新：资源包可能在别处被改动（例如手动删了文件夹）。"""
         self._start(self._client.list_templates, on_ok=self._on_templates)
+        self._start(self._client.list_styles, on_ok=self._on_styles,
+                    on_error=lambda message: self._on_styles(StyleListResponse.from_error(message)))
 
     def shutdown(self):
         """关窗口时调用：停止执行并等 worker 退出，否则运行中的 QThread 被回收会直接崩溃。"""
@@ -186,7 +194,8 @@ class LibraryPage(BaseWidget):
     def _character_options(self) -> list[tuple[str, str]]:
         options = []
         for pack in self._packs:
-            if pack.manifest.type != CHARACTER_TYPE:
+            # 动作包也归在角色分类下，但它的条目是动作，不能再被当成角色绑定
+            if pack.manifest.type != CHARACTER_TYPE or pack.manifest.source:
                 continue
             for item in pack.manifest.items:
                 label = f"{pack.manifest.name or pack.manifest.id} / {item_title(item)}"
@@ -316,6 +325,36 @@ class LibraryPage(BaseWidget):
         self._show_garden()
         self._refresh_packs()
 
+    # ---- 风格预设 ----
+    def _save_style(self, preset: StylePreset):
+        self._start(self._client.save_style, preset,
+                    on_ok=lambda response: self._on_styles(response, select_name=preset.name),
+                    on_error=lambda message: self._on_styles(StyleListResponse.from_error(message)))
+
+    def _delete_style(self, style_id: str):
+        self._start(self._client.delete_style, style_id, on_ok=self._on_styles,
+                    on_error=lambda message: self._on_styles(StyleListResponse.from_error(message)))
+
+    def _on_styles(self, response: StyleListResponse, select_name: str = ""):
+        if not response.ok:
+            self.form.set_error(self.tr("Style presets: {0}").format(response.error))
+            return
+        self.form.set_styles(response.styles, select_name)
+        self.detail.set_styles(response.styles)
+
+    def _sync_style(self):
+        pack = self.detail.pack
+        if pack is None:
+            return
+
+        def handle(response: PackResponse):
+            if not response.ok:
+                self.detail.set_error(response.error or "")
+                return
+            self._refresh_packs()
+        self._start(self._client.sync_pack_style, pack.manifest.id, on_ok=handle,
+                    on_error=lambda message: handle(PackResponse.from_error(message)))
+
     # ---- 审阅 / 重做 ----
     def _approve_step(self, item_id: str, step_id: str, content: str | None):
         pack = self.detail.pack
@@ -323,6 +362,13 @@ class LibraryPage(BaseWidget):
             return
         request = ApproveStepRequest(item_id=item_id, step_id=step_id, content=content)
         self._start(self._client.approve_step, pack.manifest.id, request,
+                    on_ok=self._after_update(pack.manifest.id))
+
+    def _refresh_source(self):
+        pack = self.detail.pack
+        if pack is None:
+            return
+        self._start(self._client.refresh_pack_source, pack.manifest.id,
                     on_ok=self._after_update(pack.manifest.id))
 
     def _reset_step(self, item_id: str, step_id: str):

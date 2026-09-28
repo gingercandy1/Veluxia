@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QHeaderView,
+    QInputDialog,
     QLabel,
     QLineEdit,
     QPlainTextEdit,
@@ -28,6 +29,7 @@ from src.shared.schemas import (
     CreatePackRequest,
     DraftItemsRequest,
     NewCollectionItem,
+    StylePreset,
     TemplateFieldInfo,
     TemplateInfo,
 )
@@ -87,6 +89,8 @@ class PackForm(BaseWidget):
     对话包另填出场角色，可以绑定已有角色包的声线。"""
     create_requested = Signal(object)  # CreatePackRequest
     draft_requested = Signal(object)  # DraftItemsRequest
+    style_save_requested = Signal(object)  # StylePreset
+    style_delete_requested = Signal(str)  # 预设 id
     back_requested = Signal()
 
     def __init__(self, parent=None):
@@ -94,6 +98,7 @@ class PackForm(BaseWidget):
         self.setObjectName("pack_form")
         self._templates: list[TemplateInfo] = []
         self._characters: list[tuple[str, str]] = []  # (显示名, "<资源包 id>/<条目 id>")
+        self._styles: list[StylePreset] = []
         self._fields: list[TemplateFieldInfo] = []
         # 上次 AI 起草填进去的行内容：再次起草时，没被用户改过的这些行会被换掉
         self._drafted_rows: set[tuple[str, ...]] = set()
@@ -154,7 +159,31 @@ class PackForm(BaseWidget):
         self.style_edit.setPlaceholderText(
             self.tr("Style lock, appended to every item, e.g. hand-painted, dark teal tones"))
         self.style_edit.setFixedHeight(64)
-        form.addLayout(self._field(self.tr("Style"), self.style_edit), 3, 0, 1, 2)
+        # 项目级风格预设（ADR 0006）：选中后把内容填进风格锁，不同资源包的画风才统一
+        preset_row = QWidget()
+        preset_layout = QHBoxLayout(preset_row)
+        preset_layout.setContentsMargins(0, 0, 0, 0)
+        self.preset_combo = QComboBox()
+        # 只响应用户手动选择；刷新列表时不要覆盖用户已经改过的风格锁
+        self.preset_combo.activated.connect(self._on_preset_chosen)
+        preset_layout.addWidget(self.preset_combo, 1)
+        self.save_preset_btn = QPushButton(self.tr("Save as preset"))
+        self.save_preset_btn.setToolTip(self.tr(
+            "Save the style and negative above as a project preset. "
+            "Using an existing name overwrites that preset."))
+        self.save_preset_btn.clicked.connect(self._on_save_preset)
+        preset_layout.addWidget(self.save_preset_btn)
+        self.delete_preset_btn = QPushButton(self.tr("Delete preset"))
+        self.delete_preset_btn.clicked.connect(self._on_delete_preset)
+        preset_layout.addWidget(self.delete_preset_btn)
+        form.addLayout(self._field(self.tr("Style preset"), preset_row), 3, 0, 1, 2)
+        form.addLayout(self._field(self.tr("Style"), self.style_edit), 4, 0, 1, 2)
+        # 动作包等模板要绑定角色包里的一个角色（ADR 0006），用它的立绘做参考图
+        self.source_section = QWidget()
+        self.source_combo = QComboBox()
+        self.source_section.setLayout(self._field(self.tr("Character"), self.source_combo))
+        self.source_section.layout().setContentsMargins(0, 0, 0, 0)
+        form.addWidget(self.source_section, 5, 0)
         layout.addLayout(form)
 
         self.cast_section = QWidget()
@@ -212,6 +241,8 @@ class PackForm(BaseWidget):
         buttons.addWidget(self.create_btn)
         layout.addLayout(buttons)
         self.cast_section.hide()
+        self.source_section.hide()
+        self.set_styles([])
 
     # ---- 对外 ----
     def set_templates(self, templates: list[TemplateInfo]):
@@ -236,6 +267,23 @@ class PackForm(BaseWidget):
             value = combo.currentData()
             self._fill_character_combo(combo)
             combo.setCurrentIndex(max(combo.findData(value), 0))
+        value = self.source_combo.currentData()
+        self.source_combo.clear()
+        for label, reference in characters:
+            self.source_combo.addItem(label, reference)
+        self.source_combo.setCurrentIndex(max(self.source_combo.findData(value), 0))
+
+    def set_styles(self, styles: list[StylePreset], select_name: str = ""):
+        """select_name：刚保存的预设，列表刷新后选中它。"""
+        self._styles = styles
+        value = self.preset_combo.currentData()
+        self.preset_combo.clear()
+        self.preset_combo.addItem(self.tr("(No preset)"), "")
+        for style in styles:
+            self.preset_combo.addItem(style.name, style.id)
+        selected = next((s.id for s in styles if s.name == select_name), value)
+        self.preset_combo.setCurrentIndex(max(self.preset_combo.findData(selected), 0))
+        self._update_preset_buttons()
 
     def preselect_category(self, pack_type: str):
         index = self.category_combo.findData(pack_type)
@@ -246,6 +294,8 @@ class PackForm(BaseWidget):
         self.name_edit.clear()
         self.style_edit.clear()
         self.negative_edit.clear()
+        self.preset_combo.setCurrentIndex(0)
+        self._update_preset_buttons()
         self.cast_table.setRowCount(0)
         self._on_template_changed()
         self.set_error("")
@@ -299,18 +349,64 @@ class PackForm(BaseWidget):
                                            fields={k: v for k, v in fields.items() if v}))
         if not items:
             raise ValueError(self.tr("Add at least one item."))
+        source = (self.source_combo.currentData() or "") if template.source else ""
+        if template.source and not source:
+            raise ValueError(self.tr("Create a character pack first, then pick a character here."))
+        style = CollectionStyle(prompt=self.style_edit.toPlainText().strip(),
+                                negative=self.negative_edit.text().strip())
+        preset = self._selected_preset()
         return CreatePackRequest(
             name=self.name_edit.text().strip(),
             template=template.id,
-            style=CollectionStyle(prompt=self.style_edit.toPlainText().strip(),
-                                  negative=self.negative_edit.text().strip()),
+            style=style,
+            # 选了预设后又手动改过风格锁，就不再算用了这个预设，否则详情页会一直提示"预设已更新"
+            style_preset=preset.id if preset is not None and preset.style() == style else "",
             cast=self._cast() if template.type == DIALOGUE_TYPE else [],
+            source=source,
             items=items,
         )
 
     def current_template(self) -> TemplateInfo | None:
         template_id = self.template_combo.currentData()
         return next((t for t in self._templates if t.id == template_id), None)
+
+    # ---- 风格预设 ----
+    def _selected_preset(self) -> StylePreset | None:
+        style_id = self.preset_combo.currentData()
+        return next((s for s in self._styles if s.id == style_id), None)
+
+    def _update_preset_buttons(self):
+        self.delete_preset_btn.setEnabled(self._selected_preset() is not None)
+
+    def _on_preset_chosen(self):
+        preset = self._selected_preset()
+        if preset is not None:
+            self.style_edit.setPlainText(preset.prompt)
+            self.negative_edit.setText(preset.negative)
+        self._update_preset_buttons()
+
+    def _on_save_preset(self):
+        prompt = self.style_edit.toPlainText().strip()
+        negative = self.negative_edit.text().strip()
+        if not prompt and not negative:
+            self.set_error(self.tr("Fill in the style or negative before saving a preset."))
+            return
+        current = self._selected_preset()
+        name, ok = QInputDialog.getText(self, self.tr("Save as preset"), self.tr("Preset name"),
+                                        text=current.name if current else "")
+        name = name.strip()
+        if not ok or not name:
+            return
+        # 同名即覆盖：带上已有预设的 id，后端按 id 修改而不是报重名
+        existing = next((s for s in self._styles if s.name == name), None)
+        self.set_error("")
+        self.style_save_requested.emit(StylePreset(
+            id=existing.id if existing else "", name=name, prompt=prompt, negative=negative))
+
+    def _on_delete_preset(self):
+        preset = self._selected_preset()
+        if preset is not None:
+            self.style_delete_requested.emit(preset.id)
 
     # ---- 模板切换 ----
     def _fill_template_combo(self):
@@ -341,6 +437,7 @@ class PackForm(BaseWidget):
         self.cast_section.setVisible(is_dialogue)
         if is_dialogue and self.cast_table.rowCount() == 0:
             self._add_cast_row()
+        self.source_section.setVisible(template is not None and bool(template.source))
 
     # ---- 行 ----
     def _add_item_row(self):

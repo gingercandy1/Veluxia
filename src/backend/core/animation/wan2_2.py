@@ -170,7 +170,7 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
                 negative_prompt=self._NEGATIVE_PROMPT,
                 height=self.height,
                 width=self.width,
-                num_frames=self.num_frames,
+                num_frames=num_frames,
                 num_inference_steps=self.num_inference_steps,
                 guidance_scale=self.guidance_scale,
                 generator=self.generator,
@@ -223,6 +223,11 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
 
         self.width, self.height = self._RESOLUTIONS.get(
             raw.get("resolution", ""), (self._DEFAULT_WIDTH, self._DEFAULT_HEIGHT))
+        # 资源包按素材比例直接指定尺寸（如竖版角色动作），优先于预设档位
+        if "width" in raw and "height" in raw:
+            self.width, self.height = int(raw["width"]), int(raw["height"])
+            if self.width % 32 or self.height % 32:
+                raise ValueError(f"Wan2.2 的宽高必须是 32 的倍数：{self.width}×{self.height}")
         self.num_frames = raw.get("num_frames", 25)
         self.prompt = raw.get("content")
 

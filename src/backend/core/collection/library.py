@@ -1,7 +1,9 @@
 """资料库服务（ADR 0004）：资源包的创建、列出、读取、删除和执行。
 
 每个资源包是 get_media_root()/library/<id>/ 下的一个文件夹，状态全部记在 manifest.json 里。
+项目级风格预设存在同目录的 styles.json（ADR 0006），拷走资料库目录时预设一起带走。
 """
+import os
 import re
 import shutil
 import threading
@@ -10,10 +12,16 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from src.backend.core.collection.executor import CollectionExecutor
+from pydantic import TypeAdapter
+
+from src.backend.core.collection.executor import (
+    SOURCE_META,
+    CollectionExecutor,
+    file_signature,
+)
 from src.backend.core.collection.manifest import MANIFEST_NAME, load_manifest, save_manifest
 from src.backend.core.collection.steps import CastVoice, registered_runners
-from src.backend.core.collection.template import Template, load_template
+from src.backend.core.collection.template import SOURCE_INPUT, Template, load_template
 from src.backend.core.model_utils import get_media_root
 from src.shared.schemas import (
     ApproveStepRequest,
@@ -23,6 +31,7 @@ from src.shared.schemas import (
     Manifest,
     ResetStepRequest,
     StepState,
+    StylePreset,
 )
 
 LIBRARY_DIR_NAME = "library"
@@ -31,9 +40,15 @@ _ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
 # 角色包模板里产出声线样本的步骤 id：对话包按它找角色的声音
 CHARACTER_VOICE_STEP = "voice"
 CHARACTER_VOICE_FIELD = "voice"
+# 角色包里产出裁边立绘的步骤 id：动作包等绑定来源角色的包从它取立绘（ADR 0006）
+CHARACTER_PORTRAIT_STEP = "trim"
+
+STYLES_NAME = "styles.json"
+_STYLE_LIST = TypeAdapter(list[StylePreset])
 
 _running: set[str] = set()
 _running_lock = threading.Lock()
+_styles_lock = threading.Lock()
 
 
 class PackBusyError(Exception):
@@ -93,6 +108,9 @@ def create_pack(request: CreatePackRequest) -> Manifest:
     if duplicated:
         raise ValueError(f"条目 id 重复：{', '.join(duplicated)}")
     _check_cast(template, request.cast)
+    _check_source(template, request.source)
+    if request.style_preset:
+        _find_style(list_styles(), request.style_preset)
 
     manifest = Manifest(
         id=uuid.uuid4().hex[:12],
@@ -101,7 +119,9 @@ def create_pack(request: CreatePackRequest) -> Manifest:
         template=template.id,
         template_version=template.version,
         style=request.style,
+        style_preset=request.style_preset,
         cast=request.cast,
+        source=request.source,
         items=items,
     )
     directory = pack_dir(manifest.id)
@@ -129,8 +149,9 @@ def run_pack(pack_id: str, cancel_event: threading.Event) -> Manifest:
     with _claim(pack_id):
         # 每次执行时现解析：角色包的声线可能是创建对话包之后才生成或重做的
         cast = [_resolve_cast_member(member) for member in manifest.cast]
+        source = _source_portrait(manifest.source) if template.source else None
         return CollectionExecutor(directory, template, cancel_event=cancel_event,
-                                  cast=cast).run()
+                                  cast=cast, source=source).run()
 
 
 def approve_step(pack_id: str, request: ApproveStepRequest) -> Manifest:
@@ -170,6 +191,112 @@ def reset_step(pack_id: str, request: ResetStepRequest) -> Manifest:
         _reset_downstream(template, item, step.id)
         save_manifest(directory, manifest)
         return manifest
+
+
+def source_changed(manifest: Manifest) -> bool:
+    """来源角色的立绘在做完这些产物之后被重做过。
+    立绘暂时不在（被删、正在重做）时不提示：那时重做也拿不到新立绘，执行会直接报错说明原因。"""
+    return bool(_stale_source_steps(manifest))
+
+
+def refresh_source(pack_id: str) -> Manifest:
+    """把用旧立绘做的步骤（连同下游）标记为待重做，下次执行时按新立绘重新生成。"""
+    directory = pack_dir(pack_id)
+    with _claim(pack_id):
+        manifest = load_manifest(directory)
+        stale = _stale_source_steps(manifest)
+        if not stale:
+            raise ValueError("来源角色的立绘没有变化，不需要重做")
+        template = load_template(manifest.template)
+        for item, step_id in stale:
+            item.steps[step_id] = StepState()
+            _reset_downstream(template, item, step_id)
+        save_manifest(directory, manifest)
+        return manifest
+
+
+def _stale_source_steps(manifest: Manifest) -> list[tuple[CollectionItem, str]]:
+    if not manifest.source:
+        return []
+    try:
+        current = file_signature(_source_portrait(manifest.source))
+        template = load_template(manifest.template)
+    except (ValueError, FileNotFoundError):
+        return []
+    steps = [step.id for step in template.steps if SOURCE_INPUT in step.inputs]
+    stale = []
+    for item in manifest.items:
+        for step_id in steps:
+            state = item.steps.get(step_id)
+            # 没记录版本的（ADR 0006 之前做的）无从比较，不提示
+            recorded = state.meta.get(SOURCE_META) if state else None
+            if state and state.status == "done" and recorded and recorded != current:
+                stale.append((item, step_id))
+    return stale
+
+
+def sync_style(pack_id: str) -> Manifest:
+    """把资源包的风格锁更新成它所选预设的当前内容。
+    已生成的产物不动：要不要按新风格重做由用户逐项决定。"""
+    directory = pack_dir(pack_id)
+    with _claim(pack_id):
+        manifest = load_manifest(directory)
+        if not manifest.style_preset:
+            raise ValueError("这个资源包没有使用风格预设")
+        manifest.style = _find_style(list_styles(), manifest.style_preset).style()
+        save_manifest(directory, manifest)
+        return manifest
+
+
+def list_styles() -> list[StylePreset]:
+    path = library_root() / STYLES_NAME
+    if not path.is_file():
+        return []
+    return _STYLE_LIST.validate_json(path.read_text(encoding="utf-8"))
+
+
+def save_style(preset: StylePreset) -> list[StylePreset]:
+    """新建（id 为空）或修改预设，返回全部预设。"""
+    name = preset.name.strip()
+    if not name:
+        raise ValueError("风格预设需要名字")
+    with _styles_lock:
+        styles = list_styles()
+        if any(s.name == name and s.id != preset.id for s in styles):
+            raise ValueError(f"已有同名的风格预设：{name}")
+        saved = preset.model_copy(update={"name": name, "id": preset.id or uuid.uuid4().hex[:8]})
+        if preset.id:
+            index = styles.index(_find_style(styles, preset.id))
+            styles[index] = saved
+        else:
+            styles.append(saved)
+        _write_styles(styles)
+        return styles
+
+
+def delete_style(style_id: str) -> list[StylePreset]:
+    """删除预设不影响已用它建好的资源包：包里存的是风格内容的副本。"""
+    with _styles_lock:
+        styles = list_styles()
+        remaining = [s for s in styles if s.id != style_id]
+        if len(remaining) == len(styles):
+            raise FileNotFoundError(f"风格预设不存在：{style_id}")
+        _write_styles(remaining)
+        return remaining
+
+
+def _find_style(styles: list[StylePreset], style_id: str) -> StylePreset:
+    for style in styles:
+        if style.id == style_id:
+            return style
+    raise ValueError(f"风格预设不存在：{style_id}")
+
+
+def _write_styles(styles: list[StylePreset]) -> None:
+    path = library_root() / STYLES_NAME
+    temp = path.with_suffix(".json.tmp")
+    temp.write_bytes(_STYLE_LIST.dump_json(styles, indent=2))
+    os.replace(temp, path)
 
 
 def _reset_downstream(template: Template, item: CollectionItem, step_id: str) -> None:
@@ -213,9 +340,32 @@ def _character_item(reference: str) -> tuple[Path, CollectionItem]:
     except FileNotFoundError as exc:
         # 引用的角色包被删了属于请求内容有误，不是对话包本身不存在
         raise ValueError(f"找不到角色包：{pack_id}") from exc
-    if manifest.type != "character":
+    # 动作包也归在角色分类下，但它的条目是动作而不是角色，不能再被引用
+    if manifest.type != "character" or manifest.source:
         raise ValueError(f"资源包 {manifest.name or pack_id} 不是角色包")
     return directory, _find_item(manifest, item_id)
+
+
+def _check_source(template: Template, source: str) -> None:
+    if not template.source:
+        if source:
+            raise ValueError(f"模板 {template.id} 不需要绑定来源角色")
+        return
+    if not source:
+        raise ValueError("这类资源包需要先选择一个角色")
+    _character_item(source)
+
+
+def _source_portrait(reference: str) -> Path:
+    """执行时现取来源角色的立绘：立绘可能是建包之后才生成或重做的。
+    还没生成时直接报错提示用户，而不是让整个包静默地停在待执行。"""
+    directory, item = _character_item(reference)
+    state = item.steps.get(CHARACTER_PORTRAIT_STEP)
+    if state and state.status == "done" and state.outputs:
+        portrait = directory / state.outputs[-1]
+        if portrait.is_file():
+            return portrait
+    raise ValueError(f"角色 {item.prompt[:20] or item.id} 的立绘还没有生成，请先执行角色包")
 
 
 def _resolve_cast_member(member: CastMember) -> CastVoice:

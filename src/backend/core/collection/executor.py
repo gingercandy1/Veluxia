@@ -17,13 +17,26 @@ from src.backend.core.collection.steps import (
     StepRunner,
     registered_runners,
 )
-from src.backend.core.collection.template import StepSpec, Template, render_params
+from src.backend.core.collection.template import (
+    SOURCE_INPUT,
+    StepSpec,
+    Template,
+    render_params,
+)
 from src.backend.core.exceptions import GenerationCancelled, GeneratorBusyError
 from src.shared.schemas import CollectionItem, Manifest, StepState
+
+SOURCE_META = "source"
 
 
 def compose_prompt(prompt: str, style_prompt: str) -> str:
     return ", ".join(part.strip() for part in (prompt, style_prompt) if part.strip())
+
+
+def file_signature(path: Path) -> str:
+    """修改时间 + 大小：立绘重做会重写文件，两者至少变一个；比算哈希便宜，列表轮询时也能用。"""
+    stat = Path(path).stat()
+    return f"{stat.st_mtime_ns}:{stat.st_size}"
 
 
 class CollectionExecutor:
@@ -31,10 +44,13 @@ class CollectionExecutor:
                  runners: Mapping[str, StepRunner] | None = None,
                  cancel_event: threading.Event | None = None,
                  busy_wait_seconds: float = 5.0,
-                 cast: list[CastVoice] | None = None):
+                 cast: list[CastVoice] | None = None,
+                 source: Path | None = None):
         self.pack_dir = Path(pack_dir)
         self.template = template
         self.cast = list(cast or [])
+        # 来源角色的立绘（ADR 0006），供 inputs 里写了 "@source" 的步骤使用
+        self.source = Path(source) if source else None
         self.runners = dict(runners) if runners is not None else registered_runners()
         self.cancel_event = cancel_event or threading.Event()
         self.busy_wait_seconds = busy_wait_seconds
@@ -42,6 +58,9 @@ class CollectionExecutor:
         missing = [s.type for s in template.steps if s.type not in self.runners]
         if missing:
             raise ValueError(f"模板 {template.id} 用到了未注册的步骤类型：{', '.join(missing)}")
+        uses_source = any(SOURCE_INPUT in s.inputs for s in template.steps)
+        if uses_source and (self.source is None or not self.source.is_file()):
+            raise ValueError(f"模板 {template.id} 需要来源角色的立绘，但没有找到：{self.source}")
 
     def run(self) -> Manifest:
         manifest = load_manifest(self.pack_dir)
@@ -65,6 +84,8 @@ class CollectionExecutor:
         """上游全部完成、且本步没有完整产物时才执行；上游失败的条目留在 pending。
         需要审阅的上游还要等用户确认，避免在没确认的内容上跑耗时的下游。"""
         for source in step.inputs:
+            if source == SOURCE_INPUT:
+                continue
             source_state = self._state(item, source)
             if source_state.status != "done":
                 return False
@@ -89,8 +110,7 @@ class CollectionExecutor:
             item=item,
             prompt=compose_prompt(item.prompt, manifest.style.prompt),
             negative_prompt=manifest.style.negative,
-            inputs=[self.pack_dir / p for source in step.inputs
-                    for p in self._state(item, source).outputs],
+            inputs=self._inputs(item, step),
             params=render_params(step.params, values),
             out_dir=out_dir,
             step_id=step.id,
@@ -100,12 +120,17 @@ class CollectionExecutor:
             style_prompt=manifest.style.prompt,
         )
         started = time.monotonic()
+        # 在生成之前取：生成期间来源立绘被重做的话，记下的是旧版本，界面照样会提示已变化
+        source = file_signature(self.source) if SOURCE_INPUT in step.inputs else None
         try:
             outputs = self.runners[step.type].run(ctx)
             if not outputs:
                 raise RuntimeError("步骤没有产出任何文件")
             state.outputs = [self._relative(path) for path in outputs]
             state.meta = {**ctx.meta, "elapsed": round(time.monotonic() - started, 1)}
+            if source is not None:
+                # 用哪一版来源立绘做的，来源重做后界面据此提示（library.source_changed）
+                state.meta[SOURCE_META] = source
             state.status = "done"
             # 本步重新生成后，下游的旧产物已过期，要跟着重跑
             for downstream in self.template.downstream_of(step.id):
@@ -120,6 +145,15 @@ class CollectionExecutor:
             print(f"❌ 资源包 {manifest.id} 条目 {item.id} 步骤 {step.id} 失败：{state.error}")
         finally:
             save_manifest(self.pack_dir, manifest)
+
+    def _inputs(self, item: CollectionItem, step: StepSpec) -> list[Path]:
+        paths: list[Path] = []
+        for source in step.inputs:
+            if source == SOURCE_INPUT:
+                paths.append(self.source)
+            else:
+                paths.extend(self.pack_dir / p for p in self._state(item, source).outputs)
+        return paths
 
     def _open_with_retry(self, step: StepSpec) -> ExitStack:
         """遇到别的任务占用模型时等待重试：不判失败，也不抢占正在运行的任务。"""

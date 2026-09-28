@@ -1,6 +1,7 @@
 """资料库界面：进度与分类计算、花园卡片、新建表单、剧本审阅、详情与执行状态。不连后端。"""
 import json
 
+import pytest
 from PySide6.QtCore import QEvent
 from PySide6.QtWidgets import QTableWidgetItem
 
@@ -21,12 +22,14 @@ from src.app.ui.library.pack_status import (
 from src.shared.schemas import (
     CastMember,
     CollectionItem,
+    CollectionStyle,
     FieldOption,
     Manifest,
     NewCollectionItem,
     PackListResponse,
     PackResponse,
     StepState,
+    StylePreset,
     TemplateFieldInfo,
     TemplateInfo,
     TemplateStepInfo,
@@ -209,6 +212,107 @@ def test_form_dialogue_cast_links_character(qapp):
 
 
 # ---- 剧本审阅 ----
+MOTION = TemplateInfo(
+    id="character_motion", type="character", source="character", cover="sheet",
+    steps=["video", "sheet"],
+    step_details=[
+        TemplateStepInfo(id="video", type="animation.generate", inputs=["@source"]),
+        TemplateStepInfo(id="sheet", type="frames.sheet", deliverable=True, inputs=["video"]),
+    ])
+
+
+def test_form_motion_template_requires_source_character(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER, MOTION])
+    form.preselect_category("character")
+    form.template_combo.setCurrentIndex(form.template_combo.findData("character_motion"))
+    assert not form.source_section.isHidden()
+    form.items_table.paste_rows("walk to the right")
+    with pytest.raises(ValueError):
+        form.build_request()  # 还没有可绑定的角色
+    form.set_characters([("主角 / 亚瑟", "c1/hero")])
+    assert form.build_request().source == "c1/hero"
+
+    form.template_combo.setCurrentIndex(form.template_combo.findData("character_basic"))
+    assert form.source_section.isHidden()
+    form.items_table.paste_rows("a knight\t亚瑟")
+    assert form.build_request().source == ""
+
+
+def test_media_kind_shows_frames_as_images():
+    assert media_kind("frames.sheet") == "image"
+
+
+def test_page_does_not_offer_motion_packs_as_characters(qapp):
+    page = _page(qapp)
+    motion = Manifest(id="m1", type="character", template="character_motion", source="c1/hero",
+                      items=[CollectionItem(id="walk", prompt="walk")])
+    page._packs = [_character_pack(), PackResponse(manifest=motion)]
+    assert [value for _, value in page._character_options()] == ["c1/hero", "c1/mage"]
+
+
+def test_form_preset_fills_style_and_is_dropped_after_manual_edit(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER])
+    preset = StylePreset(id="s1", name="手绘", prompt="hand-painted", negative="3d")
+    form.set_styles([preset])
+    assert not form.delete_preset_btn.isEnabled()
+    form.preset_combo.setCurrentIndex(1)
+    form.preset_combo.activated.emit(1)
+    assert form.style_edit.toPlainText() == "hand-painted" and form.negative_edit.text() == "3d"
+    assert form.delete_preset_btn.isEnabled()
+    form.items_table.paste_rows("a knight\t亚瑟")
+    assert form.build_request().style_preset == "s1"
+    form.style_edit.setPlainText("hand-painted, gloomy")
+    assert form.build_request().style_preset == ""
+
+    # 刷新列表时选中刚保存的预设
+    form.set_styles([preset, StylePreset(id="s2", name="水彩")], select_name="水彩")
+    assert form.preset_combo.currentData() == "s2"
+
+
+def test_form_save_preset_with_existing_name_overwrites(qapp, monkeypatch):
+    form = PackForm()
+    form.set_styles([StylePreset(id="s1", name="手绘", prompt="old")])
+    form.style_edit.setPlainText("new")
+    monkeypatch.setattr("src.app.ui.library.pack_form.QInputDialog.getText",
+                        lambda *args, **kwargs: ("手绘", True))
+    emitted = []
+    form.style_save_requested.connect(emitted.append)
+    form.save_preset_btn.click()
+    assert emitted == [StylePreset(id="s1", name="手绘", prompt="new")]
+
+
+def test_pack_detail_notices_changed_preset(qapp):
+    detail = PackDetail()
+    pack = _character_pack()
+    pack.manifest.style_preset = "s1"
+    pack.manifest.style = CollectionStyle(prompt="hand-painted")
+    detail.show_pack(pack, CHARACTER, busy=False)
+    detail.set_styles([StylePreset(id="s1", name="手绘", prompt="hand-painted")])
+    assert detail.style_notice.isHidden()
+    detail.set_styles([StylePreset(id="s1", name="手绘", prompt="watercolor")])
+    assert not detail.style_notice.isHidden() and "手绘" in detail.style_notice_label.text()
+    detail.set_styles([])  # 预设删了：包里是副本，不提示
+    assert detail.style_notice.isHidden()
+
+
+def test_pack_detail_notices_changed_source(qapp):
+    detail = PackDetail()
+    pack = _character_pack()
+    detail.show_pack(pack, CHARACTER, busy=False)
+    assert detail.source_notice.isHidden()
+    requested = []
+    detail.source_refresh_requested.connect(lambda: requested.append(True))
+    detail.show_pack(pack.model_copy(update={"source_changed": True}), CHARACTER, busy=False)
+    assert not detail.source_notice.isHidden()
+    detail.set_running(True, other_running=False)
+    assert not detail.refresh_source_btn.isEnabled()
+    detail.set_running(False, other_running=False)
+    detail.refresh_source_btn.click()
+    assert requested == [True]
+
+
 def test_script_editor_sends_none_when_unchanged(qapp):
     text = json.dumps({"lines": [{"speaker": "亚瑟", "text": "你好", "emotion": "平静"}]})
     editor = ScriptEditor(text, ["亚瑟", "梅林"], approved=False)
