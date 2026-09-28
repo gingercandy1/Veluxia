@@ -26,6 +26,7 @@ dependencies = [
     "soundfile>=0.12.0",
     "deep-translator>=1.11.0",
     "torchsde>=0.2.6",  # Stable Audio Open 默认调度器 CosineDPMSolverMultistepScheduler 需要
+    "onnxruntime-gpu>=1.23.2",  # rembg 去背景走 CUDA；CPU 版 onnxruntime 在根 pyproject 里 override 掉
     "sherpa-onnx>=1.13.8",  # 语音识别（SenseVoice / Parakeet / Whisper，纯 CPU），见 ADR 0003
     "torch",
     "torchvision",

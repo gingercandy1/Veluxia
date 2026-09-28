@@ -23,6 +23,7 @@ dependencies = [
     "numpy>=1.26.0",
     "mediapy>=1.2.0",
     "rembg>=2.0.0",
+    "onnxruntime-gpu>=1.23.2", 
     "spandrel>=0.4.0",
 
     # Text / LLM
@@ -95,6 +96,9 @@ members = ["app", "backend"]
 # 否则 ACE-Step 的 linux-aarch64 cu130 钉死版会与 cu128 冲突。
 [tool.uv]
 environments = ["sys_platform == 'win32'"]
+# qwen-tts 依赖 CPU 版 onnxruntime，它和 onnxruntime-gpu 装的是同一个 onnxruntime 目录，
+# 同时装会互相覆盖文件；用永不成立的标记把 CPU 版去掉，由 onnxruntime-gpu 提供（它也带 CPU 后端）
+override-dependencies = ["onnxruntime; sys_platform == 'never'"]
 
 [build-system]
 requires = ["hatchling"]
