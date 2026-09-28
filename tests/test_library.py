@@ -48,6 +48,16 @@ class _DraftRunner(StepRunner):
         return content.strip()
 
 
+class _InputsRunner(StepRunner):
+    """把输入文件的路径写成产物，用来确认 "@source" 解析到了角色立绘。"""
+    type_name = "test.inputs"
+
+    def run(self, ctx: StepContext):
+        path = ctx.out_dir / f"{ctx.step_id}.txt"
+        path.write_text("\n".join(str(p) for p in ctx.inputs), encoding="utf-8")
+        return [path]
+
+
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     media = tmp_path / "media"
@@ -71,11 +81,20 @@ def client(tmp_path, monkeypatch):
         "id": "talk", "type": "dialogue",
         "steps": [{"id": "write", "type": "test.echo"}],
     }), encoding="utf-8")
+    (templates / "portrait.json").write_text(json.dumps({
+        "id": "portrait", "type": "character",
+        "steps": [{"id": library.CHARACTER_PORTRAIT_STEP, "type": "test.echo"}],
+    }), encoding="utf-8")
+    (templates / "motion.json").write_text(json.dumps({
+        "id": "motion", "type": "character", "source": "character",
+        "steps": [{"id": "video", "type": "test.inputs", "inputs": ["@source"]}],
+    }), encoding="utf-8")
     monkeypatch.setattr(model_utils, "get_media_root", lambda: media)
     monkeypatch.setattr(library, "get_media_root", lambda: media)
     monkeypatch.setattr(template, "TEMPLATE_DIR", templates)
     steps.register_runner(_EchoRunner())
     steps.register_runner(_DraftRunner())
+    steps.register_runner(_InputsRunner())
     _EchoRunner.gate.set()
     _EchoRunner.started.clear()
 
@@ -86,6 +105,7 @@ def client(tmp_path, monkeypatch):
     _EchoRunner.gate.set()
     steps._RUNNERS.pop(_EchoRunner.type_name, None)
     steps._RUNNERS.pop(_DraftRunner.type_name, None)
+    steps._RUNNERS.pop(_InputsRunner.type_name, None)
 
 
 def _create(client, **overrides):
@@ -324,8 +344,112 @@ def test_cast_resolves_character_voice_sample(client):
     assert voice.sample_text == "你好"
 
 
+def test_source_character_is_validated_on_create(client):
+    character = _create(client, template="portrait", items=[{"id": "hero", "prompt": "knight"}]
+                        ).json()["manifest"]["id"]
+    scene = _create(client).json()["manifest"]["id"]
+    motion = {"template": "motion", "items": [{"id": "walk", "prompt": "walk"}]}
+
+    created = _create(client, **motion, source=f"{character}/hero")
+    assert created.status_code == 200
+    assert created.json()["manifest"]["source"] == f"{character}/hero"
+    motion_pack = created.json()["manifest"]["id"]
+    for source in ("", f"{character}/nobody", f"{scene}/mushroom", "missing/hero",
+                   f"{motion_pack}/walk"):  # 动作包本身不能再当角色引用
+        assert _create(client, **motion, source=source).status_code == 400, source
+    # 不需要来源的模板不能带 source
+    assert _create(client, source=f"{character}/hero").status_code == 400
+
+
+def test_source_portrait_is_resolved_at_run_time(client):
+    character = _create(client, template="portrait", items=[{"id": "hero", "prompt": "knight"}]
+                        ).json()["manifest"]["id"]
+    motion = _create(client, template="motion", source=f"{character}/hero",
+                     items=[{"id": "walk", "prompt": "walk"}]).json()["manifest"]["id"]
+
+    # 角色立绘还没生成：直接报错提示，而不是静默停在待执行
+    job = client.post("/library/run/submit", json={"pack_id": motion}).json()
+    failed = _wait_job(client, job["job_id"])
+    assert failed["status"] == "error" and "立绘还没有生成" in failed["error"]
+
+    _run(client, character)
+    manifest = _run(client, motion)
+    written = (library.pack_dir(motion) / _steps(manifest)["video"]["outputs"][0]).read_text(
+        encoding="utf-8")
+    portrait = library.pack_dir(character) / "hero" / f"{library.CHARACTER_PORTRAIT_STEP}.txt"
+    assert written == str(portrait)
+
+
+def test_redone_source_portrait_is_noticed_and_refreshed(client):
+    character = _create(client, template="portrait", items=[{"id": "hero", "prompt": "knight"}]
+                        ).json()["manifest"]["id"]
+    motion = _create(client, template="motion", source=f"{character}/hero",
+                     items=[{"id": "walk", "prompt": "walk"}]).json()["manifest"]["id"]
+    _run(client, character)
+    manifest = _run(client, motion)
+    assert _steps(manifest)["video"]["meta"]["source"]
+    assert client.get(f"/library/packs/{motion}").json()["source_changed"] is False
+    # 立绘没变时不需要重做
+    assert client.post(f"/library/packs/{motion}/refresh_source").status_code == 400
+
+    # 立绘重做：文件被重写，大小也不同
+    portrait = library.pack_dir(character) / "hero" / f"{library.CHARACTER_PORTRAIT_STEP}.txt"
+    portrait.write_text("knight, redone", encoding="utf-8")
+    assert client.get(f"/library/packs/{motion}").json()["source_changed"] is True
+
+    refreshed = client.post(f"/library/packs/{motion}/refresh_source").json()
+    assert refreshed["source_changed"] is False
+    assert _steps(refreshed["manifest"])["video"]["status"] == "pending"
+    manifest = _run(client, motion)
+    assert _steps(manifest)["video"]["status"] == "done"
+    assert client.get(f"/library/packs/{motion}").json()["source_changed"] is False
+
+
+def test_style_presets_crud(client):
+    assert client.get("/library/styles").json()["styles"] == []
+    styles = client.post("/library/styles", json={"name": " 手绘 ", "prompt": "hand-painted"}
+                         ).json()["styles"]
+    assert [(s["name"], s["prompt"]) for s in styles] == [("手绘", "hand-painted")]
+    style_id = styles[0]["id"]
+    assert (library.library_root() / library.STYLES_NAME).is_file()
+
+    # 带 id 是修改；新建同名预设被拒绝
+    updated = client.post("/library/styles", json={"id": style_id, "name": "手绘", "prompt": "ink"})
+    assert updated.json()["styles"][0]["prompt"] == "ink"
+    assert client.post("/library/styles", json={"name": "手绘"}).status_code == 400
+    assert client.post("/library/styles", json={"name": "  "}).status_code == 400
+    assert client.post("/library/styles", json={"id": "nope", "name": "x"}).status_code == 400
+
+    assert client.delete(f"/library/styles/{style_id}").json()["styles"] == []
+    assert client.delete(f"/library/styles/{style_id}").status_code == 404
+
+
+def test_pack_records_preset_and_syncs_to_its_latest_content(client):
+    style = client.post("/library/styles", json={"name": "手绘", "prompt": "hand-painted"}
+                        ).json()["styles"][0]
+    assert _create(client, style_preset="missing").status_code == 400
+    created = _create(client, style={"prompt": "hand-painted"}, style_preset=style["id"])
+    manifest = created.json()["manifest"]
+    assert manifest["style_preset"] == style["id"]
+    pack_id = manifest["id"]
+
+    client.post("/library/styles", json={**style, "prompt": "watercolor", "negative": "3d"})
+    # 改预设不会悄悄改掉已建好的包，要用户确认同步
+    assert client.get(f"/library/packs/{pack_id}").json()["manifest"]["style"]["prompt"] == \
+        "hand-painted"
+    synced = client.post(f"/library/packs/{pack_id}/sync_style").json()["manifest"]
+    assert synced["style"] == {"prompt": "watercolor", "negative": "3d"}
+
+    plain = _create(client).json()["manifest"]["id"]
+    assert client.post(f"/library/packs/{plain}/sync_style").status_code == 400
+    client.delete(f"/library/styles/{style['id']}")
+    assert client.post(f"/library/packs/{pack_id}/sync_style").status_code == 400
+    assert client.get(f"/library/packs/{pack_id}").status_code == 200
+
+
 def test_templates_route_exposes_fields_and_steps(client):
     templates = {t["id"]: t for t in client.get("/library/templates").json()["templates"]}
+    assert templates["motion"]["source"] == "character"
     assert templates["cast"]["fields"][0]["id"] == "voice"
     assert templates["reviewed"]["steps"] == ["draft", "final"]
     assert templates["reviewed"]["step_details"][0]["review"] is True

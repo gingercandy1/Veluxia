@@ -21,6 +21,8 @@ from src.shared.schemas import (
     PackResponse,
     ResetStepRequest,
     RunPackRequest,
+    StyleListResponse,
+    StylePreset,
     TemplateFieldInfo,
     TemplateInfo,
     TemplateListResponse,
@@ -101,9 +103,46 @@ class LibraryRouter(BaseRouter):
         async def reset_step(pack_id: str, req: ResetStepRequest) -> PackResponse:
             return await self._update_pack(library.reset_step, pack_id, req)
 
-    async def _update_pack(self, action, pack_id: str, req) -> PackResponse:
+        @self.router.post("/packs/{pack_id}/sync_style", response_model=PackResponse,
+                          summary="风格锁同步为预设的最新内容")
+        async def sync_style(pack_id: str) -> PackResponse:
+            return await self._update_pack(library.sync_style, pack_id)
+
+        @self.router.post("/packs/{pack_id}/refresh_source", response_model=PackResponse,
+                          summary="来源立绘重做后，把用旧立绘做的步骤标记为待重做")
+        async def refresh_source(pack_id: str) -> PackResponse:
+            return await self._update_pack(library.refresh_source, pack_id)
+
+        @self.router.get("/styles", response_model=StyleListResponse, summary="风格预设")
+        async def list_styles() -> StyleListResponse:
+            try:
+                styles = await asyncio.to_thread(library.list_styles)
+            except ValueError as exc:
+                raise HTTPException(status_code=500, detail=f"styles.json 无法解析：{exc}") from exc
+            return StyleListResponse(styles=styles)
+
+        @self.router.post("/styles", response_model=StyleListResponse, summary="新建或修改风格预设")
+        async def save_style(req: StylePreset) -> StyleListResponse:
+            try:
+                styles = await asyncio.to_thread(library.save_style, req)
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            return StyleListResponse(styles=styles)
+
+        @self.router.delete("/styles/{style_id}", response_model=StyleListResponse,
+                            summary="删除风格预设")
+        async def delete_style(style_id: str) -> StyleListResponse:
+            try:
+                styles = await asyncio.to_thread(library.delete_style, style_id)
+            except FileNotFoundError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            return StyleListResponse(styles=styles)
+
+    async def _update_pack(self, action, pack_id: str, *args) -> PackResponse:
         try:
-            manifest = await asyncio.to_thread(action, pack_id, req)
+            manifest = await asyncio.to_thread(action, pack_id, *args)
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except library.PackBusyError as exc:
@@ -126,6 +165,7 @@ class LibraryRouter(BaseRouter):
             description=template.description,
             prompt_label=template.prompt_label,
             cover=template.cover,
+            source=template.source,
             fields=[
                 TemplateFieldInfo(
                     id=spec.id, label=spec.label, required=spec.required, default=spec.default,
@@ -148,4 +188,5 @@ class LibraryRouter(BaseRouter):
             manifest=manifest,
             media_base=to_media_url(library.pack_dir(manifest.id)),
             running=library.is_running(manifest.id),
+            source_changed=library.source_changed(manifest),
         )

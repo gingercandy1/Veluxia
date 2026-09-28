@@ -11,7 +11,8 @@ from PySide6.QtCore import QCoreApplication
 from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, AnimationResponse, SpeechResponse, \
     ModelInfoResponse, TranslateResponse, RefineResponse, SpriteSheetResponse, TranscriptionResponse, \
     CreatePackRequest, PackListResponse, PackResponse, TemplateListResponse, \
-    ApproveStepRequest, ResetStepRequest, DraftItemsRequest, DraftItemsResponse
+    ApproveStepRequest, ResetStepRequest, DraftItemsRequest, DraftItemsResponse, \
+    StyleListResponse, StylePreset
 
 _DEFAULT_LIMITS = httpx.Limits(
     max_connections=10,
@@ -416,6 +417,21 @@ class ApiClient:
 
     def reset_step(self, pack_id: str, request: ResetStepRequest) -> PackResponse:
         return self._post(f"/library/packs/{pack_id}/reset", request.model_dump(), PackResponse)
+
+    def sync_pack_style(self, pack_id: str) -> PackResponse:
+        return self._post(f"/library/packs/{pack_id}/sync_style", {}, PackResponse)
+
+    def refresh_pack_source(self, pack_id: str) -> PackResponse:
+        return self._post(f"/library/packs/{pack_id}/refresh_source", {}, PackResponse)
+
+    def list_styles(self) -> StyleListResponse:
+        return self._get("/library/styles", response_cls=StyleListResponse)
+
+    def save_style(self, preset: StylePreset) -> StyleListResponse:
+        return self._post("/library/styles", preset.model_dump(), StyleListResponse)
+
+    def delete_style(self, style_id: str) -> StyleListResponse:
+        return self._delete(f"/library/styles/{style_id}", StyleListResponse)
 
     def fetch_media(self, media_url: str) -> bytes:
         """直接取媒体字节，不走 download_media 的按文件名缓存：

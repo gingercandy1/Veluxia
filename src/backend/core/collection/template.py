@@ -17,6 +17,8 @@ from src.shared.schemas import PACK_TYPES
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 # 主提示词也能在参数里引用：语音步骤要的是条目原文，而不是拼了风格锁的出图提示词
 PROMPT_FIELD = "prompt"
+# 步骤输入里的特殊引用：来源角色的立绘（ADR 0006），只有声明了 source 的模板能用
+SOURCE_INPUT = "@source"
 
 
 @dataclass(frozen=True)
@@ -51,6 +53,8 @@ class Template:
     prompt_label: str = ""
     cover: str = ""
     fields: tuple[FieldSpec, ...] = ()
+    # 需要绑定的来源资源包类型，如 "character"；空表示不绑定
+    source: str = ""
 
     def step_ids(self) -> list[str]:
         return [step.id for step in self.steps]
@@ -128,6 +132,9 @@ def parse_template(data: dict) -> Template:
         if spec.options and spec.default not in [value for value, _ in spec.options]:
             raise ValueError(f"模板 {template_id} 的字段 {spec.id} 默认值不在可选范围内")
     known_fields = {spec.id for spec in fields} | {PROMPT_FIELD}
+    source = data.get("source", "")
+    if source and source not in PACK_TYPES:
+        raise ValueError(f"模板 {template_id} 的来源类型不支持：{source}")
 
     seen: set[str] = set()
     steps = []
@@ -138,9 +145,12 @@ def parse_template(data: dict) -> Template:
         if step_id in seen:
             raise ValueError(f"模板 {template_id} 的步骤 id 重复：{step_id}")
         inputs = tuple(raw.get("inputs", []))
-        for source in inputs:
-            if source not in seen:
-                raise ValueError(f"模板 {template_id} 的步骤 {step_id} 引用了未在它之前定义的步骤：{source}")
+        for name in inputs:
+            if name == SOURCE_INPUT:
+                if not source:
+                    raise ValueError(f"模板 {template_id} 没有声明 source，步骤 {step_id} 不能引用 {SOURCE_INPUT}")
+            elif name not in seen:
+                raise ValueError(f"模板 {template_id} 的步骤 {step_id} 引用了未在它之前定义的步骤：{name}")
         params = dict(raw.get("params", {}))
         unknown = set().union(*(_placeholders(v) for v in params.values())) - known_fields
         if unknown:
@@ -164,6 +174,7 @@ def parse_template(data: dict) -> Template:
         prompt_label=data.get("prompt_label", ""),
         cover=cover,
         fields=fields,
+        source=source,
     )
 
 

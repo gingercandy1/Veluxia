@@ -16,7 +16,8 @@ from src.backend.core.model_base import GeneratorFactory
 from src.shared.enum_type import FactoryType
 
 # 这些参数是本机路径，写进 meta 没有参考价值，还会暴露目录结构
-_PATH_PARAMS = ("input_path", "reference_audio_path", "output_dir")
+_PATH_PARAMS = ("input_path", "reference_audio_path", "output_dir",
+                "reference_image", "reference_image_path", "prompt_embeds_path")
 
 
 class GeneratorStepRunner(StepRunner):

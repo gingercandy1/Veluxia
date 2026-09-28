@@ -258,6 +258,26 @@
       ],
       "tag": "fast"
     },
+    "Qwen-Image-Edit-2509": {
+      "generator": "image.qwen_edit:QwenImageEditPlusGenerator",
+      "repo_id": "Qwen/Qwen-Image-Edit-2509",
+      "filename": "Qwen-Image-Edit-2509-Q4_K_M.gguf",
+      "gguf_repo_id": "QuantStack/Qwen-Image-Edit-2509-GGUF",
+      "loras": [
+        {
+          "repo_id": "lightx2v/Qwen-Image-Lightning",
+          "weight_name": "Qwen-Image-Edit-2509/Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors",
+          "name": "lightning"
+        },
+        {
+          "repo_id": "dx8152/Qwen-Edit-2509-Multiple-angles",
+          "weight_name": "镜头转换.safetensors",
+          "name": "camera"
+        }
+      ],
+      "tag": "edit",
+      "note": "按指令改图 / 转面图，需要参考图；GGUF Q4_K_M + Lightning 4 步 + 镜头转换 LoRA，显存约 2GB，内存峰值约 17GB"
+    },
     "rembg-u2net": {
       "generator": "image.bg_removal:BgRemovalGenerator",
       "tag": "edit"

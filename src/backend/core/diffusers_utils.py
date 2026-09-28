@@ -44,9 +44,13 @@ class LoraSpec:
     weight_name: str
     name: str
     scale: float = 1.0
+    # 只给某个底座用的 LoRA 可以和底座放在一起；None 表示按来源仓库放进 LORA_ROOT
+    local_dir: Path | None = None
 
     @property
     def repo_dir(self) -> Path:
+        if self.local_dir is not None:
+            return self.local_dir
         return LORA_ROOT / self.repo_id.replace("/", "--")
 
     @property
@@ -54,8 +58,9 @@ class LoraSpec:
         return self.repo_dir / self.weight_name
 
 
-def parse_loras(model_extra: dict | None) -> list[LoraSpec]:
-    """读取 models.json 里的 "loras" 列表；字段缺失直接报错，免得加载到一半才发现配错。"""
+def parse_loras(model_extra: dict | None, local_dir: Path | None = None) -> list[LoraSpec]:
+    """读取 models.json 里的 "loras" 列表；字段缺失直接报错，免得加载到一半才发现配错。
+    local_dir 不为空时所有 LoRA 都存到这个目录下。"""
     specs = []
     for index, item in enumerate((model_extra or {}).get("loras", [])):
         missing = [key for key in ("repo_id", "weight_name") if not item.get(key)]
@@ -67,6 +72,7 @@ def parse_loras(model_extra: dict | None) -> list[LoraSpec]:
             # set_adapters 按名字区分多个 LoRA，没写名字时用序号保证不重名
             name=item.get("name") or f"lora_{index}",
             scale=float(item.get("scale", 1.0)),
+            local_dir=local_dir,
         ))
     return specs
 

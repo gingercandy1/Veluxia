@@ -74,8 +74,14 @@ def registered_runners() -> dict[str, StepRunner]:
 
 def _register_builtin_runners() -> None:
     # 延迟导入：内置 runner 模块反过来依赖本模块，放在顶部会循环导入
-    from src.backend.core.collection import audio_steps, dialogue_steps, image_steps
+    from src.backend.core.collection import (
+        audio_steps,
+        dialogue_steps,
+        edit_steps,
+        frame_steps,
+        image_steps,
+    )
 
-    for module in (image_steps, audio_steps, dialogue_steps):
+    for module in (image_steps, audio_steps, dialogue_steps, frame_steps, edit_steps):
         for runner in module.BUILTIN_RUNNERS:
             _RUNNERS.setdefault(runner.type_name, runner)
