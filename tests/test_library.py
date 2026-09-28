@@ -74,7 +74,7 @@ def client(tmp_path, monkeypatch):
     }), encoding="utf-8")
     (templates / "cast.json").write_text(json.dumps({
         "id": "cast", "type": "character",
-        "fields": [{"id": "voice", "label": "音色"}],
+        "fields": [{"id": "voice", "label": "音色"}, {"id": "gender", "label": "性别"}],
         "steps": [{"id": "voice", "type": "test.echo"}],
     }), encoding="utf-8")
     (templates / "talk.json").write_text(json.dumps({
@@ -323,12 +323,13 @@ def test_dialogue_cast_is_validated(client):
 
 def test_cast_resolves_character_voice_sample(client):
     character = _create(client, template="cast", items=[
-        {"id": "hero", "prompt": "knight", "fields": {"voice": "低沉"}}]).json()["manifest"]["id"]
+        {"id": "hero", "prompt": "knight", "fields": {"gender": "男性", "voice": "低沉"}}]
+                        ).json()["manifest"]["id"]
     member = library.CastMember(name="骑士", character=f"{character}/hero")
 
-    # 还没生成声线时退回按描述设计
+    # 还没生成声线时退回按描述设计，性别要带上
     voice = library._resolve_cast_member(member)
-    assert voice.sample_audio is None and voice.voice_prompt == "低沉"
+    assert voice.sample_audio is None and voice.voice_prompt == "男性，低沉"
     assert voice.description == "knight"
 
     manifest = _run(client, character)

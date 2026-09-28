@@ -46,6 +46,7 @@ class ZImageGenerator(BaseImageGenerator):
         if not self.model_id:
             self.model_id = "Tongyi-MAI/Z-Image-Turbo"
         self.gguf_local = Path(PROJECT_ROOT) / "models" / "image" / "z-image-turbo-gguf"
+
         # GGUF 链路的骨架不含 transformer 权重，和全量权重分目录存，免得误当成完整模型
         base_dir = "z-image-turbo-base" if self.gguf_filename else self.model_dir
         self.base_local = Path(PROJECT_ROOT) / "models" / "image" / base_dir
@@ -150,6 +151,7 @@ class ZImageGenerator(BaseImageGenerator):
 
     def _generate_single(self) -> Image.Image:
         self._apply_tile_mode()
+        # 平铺时每步按轴循环平移多次前向（单轴 2 次、双轴 4 次），生成耗时相应翻倍
         tiling = (circular_transformer(self.pipe.transformer, self.tile_mode)
                   if self.tile_mode != "off" else nullcontext())
         # 单屏时分段描述只有一段，和多屏一样排在整体描述前面
@@ -175,7 +177,7 @@ class ZImageGenerator(BaseImageGenerator):
         vae = self.pipe.vae
         apply_tile_mode((vae,), "off")
         vae.enable_tiling()
-        # 横向首尾由窗口绕圈衔接，纵向仍靠循环补边
+        # 横向首尾由窗口绕圈衔接，纵向由 circular_transformer 循环平移
         vertical = (circular_transformer(self.pipe.transformer, "vertical")
                     if wrap_h else nullcontext())
         window = self.width // self.pipe.vae_scale_factor

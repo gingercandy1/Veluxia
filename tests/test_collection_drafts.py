@@ -51,6 +51,22 @@ def test_parse_keeps_declared_fields_and_maps_option_labels():
     ]
 
 
+def test_character_gender_must_be_chosen_and_leads_the_voice_prompt():
+    character = load_template("character_basic")
+    system, _ = (m["content"] for m in build_draft_messages(character, _request()))
+    # "请选择"占位不是可选答案，不能出现在给模型的可选值里
+    assert "男性（男）、女性（女）" in system and "请选择" not in system
+    items = parse_drafts(json.dumps({"items": [
+        {"prompt": "a knight", "name": "亚瑟", "gender": "男"},
+        {"prompt": "a witch", "name": "莉莉", "gender": "请选择"},
+    ]}, ensure_ascii=False), character)
+    assert items[0].fields["gender"] == "男性" and "gender" not in items[1].fields
+    with pytest.raises(ValueError, match="性别"):
+        character.check_item_fields(items[1].fields)
+    voice = character.step("voice").params["voice_prompt"]
+    assert voice.format_map(character.field_values("a knight", items[0].fields)).startswith("男性，")
+
+
 def test_parse_drops_empty_duplicate_and_excluded_items():
     reply = json.dumps({"items": [
         {"prompt": "Mossy Rock"}, {"prompt": ""}, "junk", {"prompt": "a fern"}, {"prompt": "A Fern"},

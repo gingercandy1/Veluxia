@@ -75,7 +75,7 @@ def test_panorama_composes_with_vertical_circular():
     latents = [torch.rand(4, 1, 8, 40)]
     timestep, feats = torch.tensor([0.5]), [torch.rand(5, 8)]
     expected = model(latents, timestep, feats)[0][0]
-    with circular_transformer(model, "vertical", context=2), \
+    with circular_transformer(model, "vertical"), \
             panorama_transformer(model, window=12, wrap=True):
         out = model(latents, timestep, feats)[0][0]
     assert out.shape == expected.shape
