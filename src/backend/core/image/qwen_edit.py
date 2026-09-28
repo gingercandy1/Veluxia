@@ -9,6 +9,7 @@
 """
 import gc
 import hashlib
+import math
 import random
 import uuid
 from pathlib import Path
@@ -32,6 +33,17 @@ from src.shared.settings import PROJECT_ROOT
 CONDITION_IMAGE_SIZE = 384 * 384
 # 内存缓存的编码结果每条约几 MB，超过这个数就清空重来
 _EMBEDS_CACHE_LIMIT = 32
+
+
+def _calculate_dimensions(target_area: float, ratio: float) -> tuple[int, int]:
+    """按目标面积和宽高比求宽高，各自取 32 的倍数：和管线内部 resize 用的算法保持一致。
+
+    照抄自 diffusers.pipelines.qwenimage.pipeline_qwenimage_edit_plus.calculate_dimensions，
+    这里本地重写一份，免得只为这几行数学运算就要求测试环境装上整个 diffusers。
+    """
+    width = math.sqrt(target_area * ratio)
+    height = width / ratio
+    return round(width / 32) * 32, round(height / 32) * 32
 
 
 class QwenImageEditPlusGenerator(BaseImageGenerator):
@@ -125,12 +137,8 @@ class QwenImageEditPlusGenerator(BaseImageGenerator):
             return self._embeds_cache[key]
         self.check_cancelled()
         self._use_encoder()
-        from diffusers.pipelines.qwenimage.pipeline_qwenimage_edit_plus import (
-            calculate_dimensions,
-        )
-
-        width, height = calculate_dimensions(CONDITION_IMAGE_SIZE,
-                                             reference.width / reference.height)
+        width, height = _calculate_dimensions(CONDITION_IMAGE_SIZE,
+                                              reference.width / reference.height)
         condition = self.encoder_pipe.image_processor.resize(reference, height, width)
         with self.torch.inference_mode():
             # 参考图以列表传入，和管线内部拼出的 "Picture 1: ..." 模板一致
