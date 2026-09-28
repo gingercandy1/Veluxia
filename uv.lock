@@ -17,6 +17,7 @@ members = [
     "veluxia-app",
     "veluxia-backend",
 ]
+overrides = [{ name = "onnxruntime", marker = "sys_platform == 'never'" }]
 
 [[package]]
 name = "absl-py"
@@ -1237,7 +1238,7 @@ wheels = [
 ]
 
 [[package]]
-name = "onnxruntime"
+name = "onnxruntime-gpu"
 version = "1.30.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
@@ -1247,12 +1248,9 @@ dependencies = [
     { name = "protobuf", marker = "sys_platform == 'win32'" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a6/13/0f1699f6de549c9324bc9112a2a85b14c517904cd11b562a654643b755a1/onnxruntime-1.30.0-cp312-cp312-win_amd64.whl", hash = "sha256:f3501472571f1b1eee50e017851e7929f5ea37312d2d8c2494a19e8fc58b4a38", size = 14311470, upload-time = "2026-09-10T16:31:31.273Z" },
-    { url = "https://files.pythonhosted.org/packages/a2/17/02b13e5f51461f0453b18ab854e2d0bc1b6ec353241b05a2ee6b79e35d87/onnxruntime-1.30.0-cp312-cp312-win_arm64.whl", hash = "sha256:dc4c706f1935ebb62356e6a095b047859badd854482c40560888e95c328ed262", size = 14175072, upload-time = "2026-09-10T16:31:34.541Z" },
-    { url = "https://files.pythonhosted.org/packages/3c/dd/c57c529dbc6dd55eca24b12cfbeab1b6a690de72083824eca689085f55b0/onnxruntime-1.30.0-cp313-cp313-win_amd64.whl", hash = "sha256:4b63041bd623a9a9ac5e353948436c6fa7f43edd12d6b4a4ebc340bca959ba93", size = 14311378, upload-time = "2026-09-10T16:31:48.034Z" },
-    { url = "https://files.pythonhosted.org/packages/11/2f/ef00b45b911e7f2115273a24ed1b43e73c8c6c9ec17f9bfa13f8492581f8/onnxruntime-1.30.0-cp313-cp313-win_arm64.whl", hash = "sha256:c389b6887fc95e0fcb80e89b156bc2cb18e662c29df55e9326fe64140e7d7b4f", size = 14175134, upload-time = "2026-09-10T16:31:50.799Z" },
-    { url = "https://files.pythonhosted.org/packages/4d/0a/748b86000fbf9518b5dfc5bdc1b924eeaca976203740fd9d30649e568ee6/onnxruntime-1.30.0-cp314-cp314-win_amd64.whl", hash = "sha256:3bdd1752a8502ac1a7ccc6e878d16db6943df574d54ed7f01058a6806ae05be4", size = 14675319, upload-time = "2026-09-10T16:32:07.5Z" },
-    { url = "https://files.pythonhosted.org/packages/2f/db/db8e4c0cf6f70f1311060560630fd21763648e01dfbba5195a2592c052ef/onnxruntime-1.30.0-cp314-cp314-win_arm64.whl", hash = "sha256:83d543843cbd352cfa9996a6c7b92f8a480f114a18f95ff2a1acaf6921e85b6d", size = 14569360, upload-time = "2026-09-10T16:32:09.896Z" },
+    { url = "https://files.pythonhosted.org/packages/19/ef/e15db03ea1fce9bc60349add2604df8c39abac10d28d4eef27b621845139/onnxruntime_gpu-1.30.0-cp312-cp312-win_amd64.whl", hash = "sha256:882da66f936e1f560b155118c5953dc45268cd92893abb8d31a940f4d1effb36", size = 160478594, upload-time = "2026-09-10T15:56:21.443Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/d3/50fba71f4174f25f1e677ffe4b2ebc9f6c2a2aa8093c12e82c93792fd4e8/onnxruntime_gpu-1.30.0-cp313-cp313-win_amd64.whl", hash = "sha256:cf494da233f3fc02bbeb2a3178e3ace7361b6b4fef7031b19c1e5aed5e9328ce", size = 160479611, upload-time = "2026-09-10T15:56:28.799Z" },
+    { url = "https://files.pythonhosted.org/packages/50/fe/ed63f743d546fd089f98cfd415790b231ae8d3dba2208df8d22811f788a5/onnxruntime_gpu-1.30.0-cp314-cp314-win_amd64.whl", hash = "sha256:794fc118cdbf340ed02b44c7527e557ea51746002d48105d493ea41f0c9a60d0", size = 161124661, upload-time = "2026-09-10T15:56:36.489Z" },
 ]
 
 [[package]]
@@ -1774,7 +1772,6 @@ dependencies = [
     { name = "einops", marker = "sys_platform == 'win32'" },
     { name = "gradio", marker = "sys_platform == 'win32'" },
     { name = "librosa", marker = "sys_platform == 'win32'" },
-    { name = "onnxruntime", marker = "sys_platform == 'win32'" },
     { name = "soundfile", marker = "sys_platform == 'win32'" },
     { name = "sox", marker = "sys_platform == 'win32'" },
     { name = "torchaudio", marker = "sys_platform == 'win32'" },
@@ -2537,6 +2534,7 @@ dependencies = [
     { name = "markdown-it-py", marker = "sys_platform == 'win32'" },
     { name = "mediapy", marker = "sys_platform == 'win32'" },
     { name = "numpy", marker = "sys_platform == 'win32'" },
+    { name = "onnxruntime-gpu", marker = "sys_platform == 'win32'" },
     { name = "pillow", marker = "sys_platform == 'win32'" },
     { name = "pygments", marker = "sys_platform == 'win32'" },
     { name = "pyside6", marker = "sys_platform == 'win32'" },
@@ -2584,6 +2582,7 @@ requires-dist = [
     { name = "markdown-it-py", specifier = ">=3.0.0" },
     { name = "mediapy", specifier = ">=1.2.0" },
     { name = "numpy", specifier = ">=1.26.0" },
+    { name = "onnxruntime-gpu", specifier = ">=1.23.2" },
     { name = "pillow", specifier = ">=10.0.0" },
     { name = "pygments", specifier = ">=2.17.0" },
     { name = "pyside6", specifier = ">=6.6.0" },
@@ -2650,6 +2649,7 @@ dependencies = [
     { name = "llama-cpp-python", marker = "sys_platform == 'win32'" },
     { name = "mediapy", marker = "sys_platform == 'win32'" },
     { name = "numpy", marker = "sys_platform == 'win32'" },
+    { name = "onnxruntime-gpu", marker = "sys_platform == 'win32'" },
     { name = "pillow", marker = "sys_platform == 'win32'" },
     { name = "pydantic", marker = "sys_platform == 'win32'" },
     { name = "qdrant-client", marker = "sys_platform == 'win32'" },
@@ -2682,6 +2682,7 @@ requires-dist = [
     { name = "llama-cpp-python", url = "https://github.com/gingercandy1/llama-cpp-whl/releases/download/v0.3.22-cu132/llama_cpp_python-0.3.22-py3-none-win_amd64.whl" },
     { name = "mediapy", specifier = ">=1.2.0" },
     { name = "numpy", specifier = ">=1.26.0" },
+    { name = "onnxruntime-gpu", specifier = ">=1.23.2" },
     { name = "pillow", specifier = ">=10.0.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "qdrant-client", specifier = ">=1.9.0" },

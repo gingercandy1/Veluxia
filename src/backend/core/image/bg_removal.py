@@ -26,9 +26,25 @@ class BgRemovalGenerator(BaseImageGenerator):
     def _load_model(self):
         if self.session is not None:
             return
+        import onnxruntime as ort
         from rembg import new_session
         print(f"🔧 正在加载 rembg-{self.session_name}（首次会自动下载 onnx 权重）...")
-        self.session = new_session(self.session_name)
+        kwargs = {}
+        if "CUDAExecutionProvider" in ort.get_available_providers():
+            # onnxruntime-gpu 不自带 cuDNN；torch 在 Windows 上 import 时会载入 torch/lib 下的
+            # cudnn64_9.dll 等，之后 onnxruntime 按名字就能找到。不先载入，卷积节点逐帧报错
+            _ = self.torch
+            # BiRefNet fp32 在 1024² 下要吃掉接近 8GB 显存。默认的内存复用规划和按倍数扩容的显存池
+            # 会让第二帧起溢出到共享内存，单帧从 1 秒多退化到 20 秒；按需分配 + 启发式选卷积算法
+            # 不再预留大块 workspace，实测稳定在 1.2 秒左右
+            sess_opts = ort.SessionOptions()
+            sess_opts.enable_mem_pattern = False
+            cuda = {"arena_extend_strategy": "kSameAsRequested",
+                    "cudnn_conv_algo_search": "HEURISTIC"}
+            kwargs = {"sess_opts": sess_opts,
+                      "providers": [("CUDAExecutionProvider", cuda), "CPUExecutionProvider"]}
+        self.session = new_session(self.session_name, **kwargs)
+        print(f"✅ rembg-{self.session_name} 推理后端：{self.session.inner_session.get_providers()[0]}")
 
     async def generate(self) -> Optional[Path | None]:
         self.ensure_model_loaded()
