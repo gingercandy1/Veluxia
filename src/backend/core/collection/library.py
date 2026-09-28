@@ -40,6 +40,7 @@ _ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
 # 角色包模板里产出声线样本的步骤 id：对话包按它找角色的声音
 CHARACTER_VOICE_STEP = "voice"
 CHARACTER_VOICE_FIELD = "voice"
+CHARACTER_GENDER_FIELD = "gender"
 # 角色包里产出裁边立绘的步骤 id：动作包等绑定来源角色的包从它取立绘（ADR 0006）
 CHARACTER_PORTRAIT_STEP = "trim"
 
@@ -373,7 +374,9 @@ def _resolve_cast_member(member: CastMember) -> CastVoice:
         return CastVoice(name=member.name, description=member.description)
     directory, item = _character_item(member.character)
     description = member.description or item.prompt
-    voice_prompt = item.fields.get(CHARACTER_VOICE_FIELD, "")
+    # 性别不写进描述时，现场设计出的声音性别是随机的
+    voice_prompt = "，".join(filter(None, (item.fields.get(CHARACTER_GENDER_FIELD, ""),
+                                          item.fields.get(CHARACTER_VOICE_FIELD, ""))))
     state = item.steps.get(CHARACTER_VOICE_STEP)
     sample_text = state.meta.get("prompt", "") if state else ""
     # 克隆需要样本音频和它念的文本；角色的声线还没生成时退回按描述现场设计

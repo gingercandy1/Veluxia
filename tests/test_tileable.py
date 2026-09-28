@@ -63,24 +63,55 @@ class _FakeDiT(torch.nn.Module):
                  for latent in latents],)
 
 
-def test_circular_transformer_is_shift_equivariant_and_restores_shape():
+class _PointwiseDiT(torch.nn.Module):
+    """逐像素的假 transformer：平移前向再移回应和一次前向完全一致，用来检验平移、加权合并没错位。"""
+
+    def __init__(self):
+        super().__init__()
+        self.shapes = []
+
+    def forward(self, latents, timestep, prompt_embeds):
+        self.shapes.append(latents[0].shape)
+        return ([latent * 2 + 1 for latent in latents],)
+
+
+@pytest.mark.parametrize(("mode", "passes"), [("horizontal", 2), ("vertical", 2), ("both", 4)])
+def test_circular_transformer_merges_without_duplicating_tokens(mode, passes):
+    # 每次前向都是原尺寸：不补边，首尾 token 不会在序列里出现两次
+    model = _PointwiseDiT()
+    latents = [torch.rand(3, 1, 16, 20), torch.rand(3, 1, 16, 20)]
+    expected = [latent * 2 + 1 for latent in latents]
+    with circular_transformer(model, mode):
+        merged = model(latents, None, None)[0]
+    assert model.shapes == [latents[0].shape] * passes
+    for out, ref in zip(merged, expected, strict=True):
+        assert torch.allclose(out, ref, atol=1e-5)
+
+
+def test_circular_transformer_heals_the_seam():
+    # 零填充卷积在首尾各错一圈；平移合并后应接近真正首尾相接（循环卷积）的结果
     model = _FakeDiT().eval()
     x = torch.rand(3, 1, 16, 20)
-    with torch.no_grad(), circular_transformer(model, "horizontal", context=4):
-        out = model([x], None, None)[0][0]
-        shifted = model([torch.roll(x, 7, dims=-1)], None, None)[0][0]
-    assert out.shape == x.shape
-    assert torch.allclose(shifted, torch.roll(out, 7, dims=-1), atol=1e-5)
+    torus = _FakeDiT().eval()
+    apply_tile_mode([torus.conv], "horizontal")
+    with torch.no_grad():
+        reference = torus([x], None, None)[0][0]
+        baseline = model([x], None, None)[0][0]
+        with circular_transformer(model, "horizontal"):
+            out = model([x], None, None)[0][0]
+    seam = [0, 1, -2, -1]
+    assert (out - reference)[..., seam].abs().max() < 0.5 * (baseline - reference)[..., seam].abs().max()
 
 
-def test_circular_transformer_removes_hooks_on_exit():
+def test_circular_transformer_restores_forward_on_exit():
     model = _FakeDiT().eval()
     x = torch.rand(3, 1, 16, 20)
     with torch.no_grad():
         baseline = model([x], None, None)[0][0]
-        with circular_transformer(model, "both", context=4):
+        with circular_transformer(model, "both"):
             model([x], None, None)
         restored = model([x], None, None)[0][0]
+    assert "forward" not in model.__dict__
     assert torch.equal(baseline, restored)
 
 

@@ -27,8 +27,9 @@ def build_draft_messages(template: Template, req: DraftItemsRequest) -> list[dic
     for spec in template.fields:
         line = f'- "{spec.id}"（{spec.label or spec.id}）'
         if spec.options:
+            # 空值是"请选择"占位，不是可选答案
             choices = "、".join(f"{value}（{label}）" if label else value
-                               for value, label in spec.options)
+                               for value, label in spec.options if value)
             line += f"：只能取以下值之一 {choices}"
         elif spec.default:
             line += f"：参考写法「{spec.default}」"

@@ -78,7 +78,7 @@ def panorama_transformer(transformer: torch.nn.Module, window: int,
     必须逐窗前向而不是拼成一批：一批 4 个窗口的激活会撑爆 8GB，溢出到共享内存后慢到不可用。
     钩子做不到"一次调用拆成多次前向"，所以临时包一层实例 forward；包的是 cpu offload
     已经包过的那个 forward，逐窗调用它仍会走 offload，退出时原样还原。
-    circular_transformer 的钩子在 forward 外层，两者可叠用：先循环补高、再切窗。
+    可和 circular_transformer 叠用：先进入 circular_transformer，它包在里层，每个窗口再按高循环平移。
     """
     weight = window_weight(window, overlap)
     had_own_forward = "forward" in transformer.__dict__
