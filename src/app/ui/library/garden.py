@@ -1,6 +1,14 @@
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.app.ui.base.widget import BaseWidget
 from src.app.ui.library.cards import PACK_THUMB, AddCard, Card
@@ -24,6 +32,10 @@ class GardenView(BaseWidget):
         self.setObjectName("library_garden")
         self._cards: dict[str, Card] = {}
         self._layout_key: list = []
+        # 每个资源包可被搜到的文字：包名、模板名、分类，以及各条目的描述和字段
+        self._search_text: dict[str, str] = {}
+        # 分类 → (分块, 标题, 新建占位卡, 该分类下的资源包 id)，过滤时原地显隐，不重建
+        self._section_parts: dict[str, tuple[QWidget, QLabel, QWidget, list[str]]] = {}
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 16, 24, 0)
@@ -34,6 +46,13 @@ class GardenView(BaseWidget):
         title.setObjectName("library_title")
         header.addWidget(title)
         header.addStretch()
+        self.search_edit = QLineEdit()
+        self.search_edit.setObjectName("library_search")
+        self.search_edit.setPlaceholderText(self.tr("Search packs and items"))
+        self.search_edit.setClearButtonEnabled(True)
+        self.search_edit.setFixedWidth(240)
+        self.search_edit.textChanged.connect(self._apply_filter)
+        header.addWidget(self.search_edit)
         self.new_btn = QPushButton(self.tr("New pack"))
         self.new_btn.setObjectName("library_primary_btn")
         self.new_btn.clicked.connect(lambda: self.new_requested.emit(""))
@@ -45,6 +64,11 @@ class GardenView(BaseWidget):
         self.error_label.setWordWrap(True)
         self.error_label.hide()
         layout.addWidget(self.error_label)
+
+        self.empty_label = QLabel(self.tr("No packs match your search."))
+        self.empty_label.setObjectName("detail_muted")
+        self.empty_label.hide()
+        layout.addWidget(self.empty_label)
 
         scroll = QScrollArea()
         scroll.setObjectName("library_scroll")
@@ -73,6 +97,7 @@ class GardenView(BaseWidget):
             for pack in packs:
                 self._update_card(self._cards[pack.manifest.id], pack,
                                   templates[pack.manifest.template])
+            self._apply_filter()
             return
         self._layout_key = layout_key
         self._clear_sections()
@@ -83,7 +108,7 @@ class GardenView(BaseWidget):
             section_layout = QVBoxLayout(section)
             section_layout.setContentsMargins(0, 0, 0, 0)
             section_layout.setSpacing(10)
-            heading = QLabel(f"{category_text(pack_type)}  ·  {len(group)}")
+            heading = QLabel()
             heading.setObjectName("library_section_title")
             section_layout.addWidget(heading)
 
@@ -96,7 +121,26 @@ class GardenView(BaseWidget):
             flow.addWidget(add)
             section_layout.addLayout(flow)
             self._sections.addWidget(section)
+            self._section_parts[pack_type] = (section, heading, add,
+                                              [p.manifest.id for p in group])
         self._sections.addStretch()
+        self._apply_filter()
+
+    def _apply_filter(self):
+        """按空格分词，每个词都要命中（不分大小写）。搜索时隐藏新建占位卡和没有命中的分类。"""
+        words = self.search_edit.text().lower().split()
+        any_match = False
+        for pack_type, (section, heading, add, ids) in self._section_parts.items():
+            matched = [pack_id for pack_id in ids
+                       if all(word in self._search_text.get(pack_id, "") for word in words)]
+            for pack_id in ids:
+                self._cards[pack_id].setVisible(pack_id in matched)
+            add.setVisible(not words)
+            section.setVisible(not words or bool(matched))
+            count = f"{len(matched)}/{len(ids)}" if words else f"{len(ids)}"
+            heading.setText(f"{category_text(pack_type)}  ·  {count}")
+            any_match = any_match or bool(matched)
+        self.empty_label.setVisible(bool(words) and not any_match)
 
     def card(self, pack_id: str) -> Card | None:
         return self._cards.get(pack_id)
@@ -114,16 +158,22 @@ class GardenView(BaseWidget):
         self._cards[manifest.id] = card
         return card
 
-    @staticmethod
-    def _update_card(card: Card, pack: PackResponse, template: TemplateInfo):
+    def _update_card(self, card: Card, pack: PackResponse, template: TemplateInfo):
         manifest = pack.manifest
         card.set_name(manifest.name or template.name or manifest.id)
+        parts = [manifest.name, template.name, manifest.id, category_text(manifest.type),
+                 manifest.style.prompt]
+        for item in manifest.items:
+            parts.extend([item.id, item.prompt, *item.fields.values()])
+        self._search_text[manifest.id] = "\n".join(parts).lower()
         progress = pack_progress(manifest, template, running=pack.running)
         card.set_progress(progress, f"{progress.done}/{progress.total}",
                           percent=step_fraction(manifest, template), active=pack.running)
 
     def _clear_sections(self):
         self._cards.clear()
+        self._search_text.clear()
+        self._section_parts.clear()
         while self._sections.count():
             entry = self._sections.takeAt(0)
             if entry.widget() is not None:

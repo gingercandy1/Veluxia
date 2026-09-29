@@ -43,7 +43,8 @@ class FlowLayout(QLayout):
     def minimumSize(self) -> QSize:
         size = QSize()
         for item in self._items:
-            size = size.expandedTo(item.minimumSize())
+            if not item.isEmpty():
+                size = size.expandedTo(item.minimumSize())
         margins: QMargins = self.contentsMargins()
         return size + QSize(margins.left() + margins.right(), margins.top() + margins.bottom())
 
@@ -60,6 +61,9 @@ class FlowLayout(QLayout):
         area = rect.adjusted(margins.left(), margins.top(), -margins.right(), -margins.bottom())
         x, y, line_height = area.x(), area.y(), 0
         for item in self._items:
+            # 隐藏的卡片（搜索过滤掉的）不占位置，否则会留下空洞
+            if item.isEmpty():
+                continue
             hint = item.sizeHint()
             if x + hint.width() > area.right() + 1 and line_height > 0:
                 x, y = area.x(), y + line_height + self._spacing

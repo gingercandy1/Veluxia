@@ -129,6 +129,48 @@ def test_garden_updates_cards_in_place(qapp):
     assert not card.progress.is_active()
 
 
+def _garden_with_two_packs(qapp) -> GardenView:
+    garden = GardenView()
+    villain = _character_pack()
+    villain.manifest.id, villain.manifest.name = "c2", "反派"
+    villain.manifest.items = [CollectionItem(id="lich", prompt="an undead Lich king",
+                                             fields={"name": "巫妖"})]
+    garden.set_packs([_character_pack(), villain], {"character_basic": CHARACTER})
+    return garden
+
+
+def test_garden_search_matches_names_items_and_fields(qapp):
+    garden = _garden_with_two_packs(qapp)
+    section, heading, add, _ids = garden._section_parts["character"]
+
+    garden.search_edit.setText("lich")          # 条目描述，不分大小写
+    assert garden._cards["c1"].isHidden() and not garden._cards["c2"].isHidden()
+    assert add.isHidden() and heading.text().endswith("1/2")
+    garden.search_edit.setText("亚瑟")           # 条目字段
+    assert not garden._cards["c1"].isHidden() and garden._cards["c2"].isHidden()
+    garden.search_edit.setText("主角 knight")    # 多个词都要命中
+    assert not garden._cards["c1"].isHidden()
+    garden.search_edit.setText("主角 lich")
+    assert section.isHidden() and not garden.empty_label.isHidden()
+
+    garden.search_edit.clear()
+    assert not any(card.isHidden() for card in garden._cards.values())
+    assert not add.isHidden() and heading.text().endswith("2") and garden.empty_label.isHidden()
+
+
+def test_garden_search_survives_polling_refresh(qapp):
+    garden = _garden_with_two_packs(qapp)
+    card = garden._cards["c2"]
+    garden.search_edit.setText("巫妖")
+    renamed = _character_pack()
+    renamed.manifest.name = "巫妖的仆从"         # 轮询时名字变了，过滤跟着更新
+    villain = _character_pack()
+    villain.manifest.id, villain.manifest.items = "c2", []
+    garden.set_packs([renamed, villain], {"character_basic": CHARACTER})
+    assert garden._cards["c2"] is card          # 没有重建，缩略图不丢
+    assert not garden._cards["c1"].isHidden() and card.isHidden()
+
+
 # ---- 新建表单 ----
 def test_form_builds_request_with_fields_and_paste(qapp):
     form = PackForm()
