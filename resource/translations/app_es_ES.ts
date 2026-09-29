@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+316"/>
+        <location line="+323"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>No se puede conectar con el backend. Comprueba que el servicio esté en ejecución.</translation>
     </message>
     <message>
-        <location line="-447"/>
+        <location line="-454"/>
         <source>Connection timed out.</source>
         <translation>Se agotó el tiempo de conexión.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>No se puede conectar con el backend: {0}</translation>
     </message>
     <message>
-        <location line="+212"/>
+        <location line="+219"/>
         <source>An install task is already running...</source>
         <translation>Ya hay una instalación en curso…</translation>
     </message>
@@ -525,17 +525,27 @@
 <context>
     <name>GardenView</name>
     <message>
-        <location filename="../../src/app/ui/library/garden.py" line="+33"/>
+        <location filename="../../src/app/ui/library/garden.py" line="+45"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+6"/>
+        <source>Search packs and items</source>
+        <translation>Buscar paquetes y elementos</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>New pack</source>
         <translation>Nuevo paquete</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+12"/>
+        <source>No packs match your search.</source>
+        <translation>Ningún paquete coincide con la búsqueda.</translation>
+    </message>
+    <message>
+        <location line="+51"/>
         <source>New {0} pack</source>
         <translation>Nuevo paquete de {0}</translation>
     </message>
@@ -1612,7 +1622,7 @@
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="+236"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="+240"/>
         <source>Backend settings changed</source>
         <translation>Ajustes del backend modificados</translation>
     </message>
@@ -1686,6 +1696,134 @@
         <location line="+3"/>
         <source>seed</source>
         <translation>Semilla</translation>
+    </message>
+</context>
+<context>
+    <name>StoragePage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+52"/>
+        <source>Model Storage</source>
+        <translation>Almacenamiento de modelos</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Disk space used by downloaded model weights. A deleted model downloads again the next time you use it.</source>
+        <translation>Espacio en disco ocupado por los pesos de modelos descargados. Un modelo eliminado se vuelve a descargar la próxima vez que lo uses.</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Refresh</source>
+        <translation>Actualizar</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Type</source>
+        <translation>Tipo</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Name</source>
+        <translation>Nombre</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Size</source>
+        <translation>Tamaño</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Calculating…</source>
+        <translation>Calculando…</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Delete &quot;{0}&quot; ({1})?</source>
+        <translation>¿Eliminar «{0}» ({1})?</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>This model is NOT downloaded automatically. You will have to put the files back by hand before frame interpolation works again.</source>
+        <translation>Este modelo NO se descarga automáticamente. Tendrás que volver a colocar los archivos a mano para que la interpolación de fotogramas funcione.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>It downloads again the next time you use it.</source>
+        <translation>Se volverá a descargar la próxima vez que lo uses.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Delete model files</source>
+        <translation>Eliminar archivos del modelo</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Deleting {0}…</source>
+        <translation>Eliminando {0}…</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Total: {0} in {1} items</source>
+        <translation>Total: {0} en {1} elementos</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Delete</source>
+        <translation>Eliminar</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Music (ACE-Step)</source>
+        <translation>Música (ACE-Step)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Background removal</source>
+        <translation>Eliminación de fondo</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Text</source>
+        <translation>Texto</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Image</source>
+        <translation>Imagen</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Voice and audio</source>
+        <translation>Voz y audio</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Animation</source>
+        <translation>Animación</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Frame interpolation</source>
+        <translation>Interpolación de fotogramas</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Speech-to-text</source>
+        <translation>Voz a texto</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Upscaling</source>
+        <translation>Escalado</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Prompt optimizer</source>
+        <translation>Optimizador de prompts</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Other</source>
+        <translation>Otros</translation>
     </message>
 </context>
 <context>
@@ -2007,7 +2145,7 @@
 <context>
     <name>_BottomBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-145"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-147"/>
         <source>Save</source>
         <translation>Guardar</translation>
     </message>
@@ -2082,7 +2220,7 @@
 <context>
     <name>_NavBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-73"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-74"/>
         <source>General</source>
         <translation>General</translation>
     </message>
@@ -2100,6 +2238,11 @@
         <location line="+1"/>
         <source>Model</source>
         <translation>Modelos</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Storage</source>
+        <translation>Almacenamiento</translation>
     </message>
     <message>
         <location line="+1"/>

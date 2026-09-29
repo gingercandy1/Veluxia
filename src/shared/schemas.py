@@ -264,3 +264,22 @@ class PackResponse(BaseResponse):
 
 class PackListResponse(BaseResponse):
     packs: List[PackResponse] = Field(default_factory=list)
+
+
+# 模型权重的磁盘占用与清理
+class ModelStorageEntry(BaseModel):
+    id: str = Field(..., description="删除时按它定位，如 models/image/sdxl-base")
+    root: str = Field("", description="存放位置：models / ace_step / rembg")
+    category: str = Field("", description="models 下的模态目录，如 image、text")
+    name: str
+    size: int = Field(0, description="字节")
+    manual: bool = Field(False, description="删了不会自动重新下载，需要手动放回")
+
+
+class ModelStorageResponse(BaseResponse):
+    entries: List[ModelStorageEntry] = Field(default_factory=list, description="按占用从大到小")
+    total: int = 0
+
+
+class DeleteModelStorageRequest(BaseModel):
+    id: str
