@@ -424,6 +424,32 @@ class ApiClient:
     def refresh_pack_source(self, pack_id: str) -> PackResponse:
         return self._post(f"/library/packs/{pack_id}/refresh_source", {}, PackResponse)
 
+    def export_pack(self, pack_id: str, target: Path) -> BaseResponse:
+        """下载成品 zip 到 target。先写临时文件，下载中断时不会留下一个残缺的 zip。"""
+        partial = target.with_name(target.name + ".part")
+        try:
+            with self._session.stream("GET", f"{self.base_url}/library/packs/{pack_id}/export",
+                                      timeout=self._timeout) as resp:
+                if resp.is_error:
+                    resp.read()
+                    try:
+                        detail = resp.json().get("detail", resp.text)
+                    except Exception:
+                        detail = resp.text
+                    return BaseResponse.from_error(detail)
+                with partial.open("wb") as file:
+                    for chunk in resp.iter_bytes():
+                        file.write(chunk)
+            partial.replace(target)
+            return BaseResponse(ok=True)
+        except httpx.ConnectError:
+            return BaseResponse.from_error(
+                QCoreApplication.translate("ApiClient", "Cannot connect to the backend."))
+        except Exception as exc:
+            return BaseResponse.from_error(str(exc))
+        finally:
+            partial.unlink(missing_ok=True)
+
     def list_styles(self) -> StyleListResponse:
         return self._get("/library/styles", response_cls=StyleListResponse)
 

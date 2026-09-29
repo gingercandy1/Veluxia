@@ -70,6 +70,7 @@ class PackDetail(BaseWidget):
     run_requested = Signal()
     stop_requested = Signal()
     delete_requested = Signal()
+    export_requested = Signal()
     style_sync_requested = Signal()
     source_refresh_requested = Signal()
     asset_selected = Signal(str, str)              # item id, step id
@@ -86,6 +87,8 @@ class PackDetail(BaseWidget):
         self._tree_items: dict[str, QTreeWidgetItem] = {}
         self._tree_key: list = []
         self._styles: list[StylePreset] = []
+        self._has_output = False
+        self._exporting = False
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -151,12 +154,17 @@ class PackDetail(BaseWidget):
         self.run_btn = QPushButton(self.tr("Run"))
         self.run_btn.setObjectName("library_primary_btn")
         self.stop_btn = QPushButton(self.tr("Stop"))
+        self.export_btn = QPushButton(self.tr("Export"))
+        self.export_btn.setToolTip(self.tr(
+            "Save the finished assets as a zip, one folder per item, "
+            "without drafts and intermediate files."))
         self.delete_btn = QPushButton(self.tr("Delete"))
         self.delete_btn.setObjectName("library_danger_btn")
         self.run_btn.clicked.connect(self.run_requested)
         self.stop_btn.clicked.connect(self.stop_requested)
+        self.export_btn.clicked.connect(self.export_requested)
         self.delete_btn.clicked.connect(self.delete_requested)
-        for button in (self.run_btn, self.stop_btn, self.delete_btn):
+        for button in (self.run_btn, self.stop_btn, self.export_btn, self.delete_btn):
             header.addWidget(button)
         layout.addLayout(header)
 
@@ -282,9 +290,21 @@ class PackDetail(BaseWidget):
                                          active=pack.running)
         self._update_style_notice()
         self.source_notice.setVisible(pack.source_changed)
+        self._has_output = any(
+            (state := item.steps.get(step.id)) is not None and state.status == "done"
+            for item in manifest.items for step in deliverables(template))
+        self._update_export_btn()
         self._select_tree_item()
         self._show_assets()
         return self.refresh_detail(busy)
+
+    def set_exporting(self, exporting: bool):
+        self._exporting = exporting
+        self._update_export_btn()
+
+    def _update_export_btn(self):
+        self.export_btn.setEnabled(self._has_output and not self._exporting)
+        self.export_btn.setText(self.tr("Exporting…") if self._exporting else self.tr("Export"))
 
     def set_styles(self, styles: list[StylePreset]):
         self._styles = styles

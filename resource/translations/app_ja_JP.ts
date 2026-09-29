@@ -40,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+100"/>
+        <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+275"/>
+        <location line="+316"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>バックエンドに接続できません。サービスが起動しているか確認してください。</translation>
     </message>
     <message>
-        <location line="-406"/>
+        <location line="-447"/>
         <source>Connection timed out.</source>
         <translation>接続がタイムアウトしました。</translation>
     </message>
@@ -58,11 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
+        <location line="+314"/>
         <source>Cannot connect to the backend.</source>
         <translation>バックエンドに接続できません。</translation>
     </message>
     <message>
-        <location line="+116"/>
+        <location line="-198"/>
         <source>Generation stopped.</source>
         <translation>生成を停止しました。</translation>
     </message>
@@ -97,7 +98,7 @@
         <translation>バックエンドに接続できません：{0}</translation>
     </message>
     <message>
-        <location line="+171"/>
+        <location line="+212"/>
         <source>An install task is already running...</source>
         <translation>インストールタスクはすでに実行中です…</translation>
     </message>
@@ -892,7 +893,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+166"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+182"/>
         <source>Failed to load packs: {0}</source>
         <translation>パック一覧の読み込みに失敗しました：{0}</translation>
     </message>
@@ -902,7 +903,7 @@
         <translation>テンプレートの読み込みに失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+126"/>
+        <location line="+127"/>
         <source>Failed to create pack: {0}</source>
         <translation>パックの作成に失敗しました：{0}</translation>
     </message>
@@ -927,9 +928,40 @@
         <translation>パック「{0}」と生成されたすべてのファイルを削除しますか？この操作は元に戻せません。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+18"/>
+        <location line="+18"/>
+        <source>Export pack</source>
+        <translation>パックをエクスポート</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <source>Zip archive (*.zip)</source>
+        <translation>Zip アーカイブ (*.zip)</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Export failed: {0}</source>
+        <translation>エクスポートに失敗しました：{0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Saved to {0}</source>
+        <translation>{0} に保存しました</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show in folder</source>
+        <translation>フォルダーで表示</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Failed to delete pack: {0}</source>
         <translation>パックの削除に失敗しました：{0}</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Style presets: {0}</source>
+        <translation>スタイルプリセット：{0}</translation>
     </message>
 </context>
 <context>
@@ -1102,12 +1134,12 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+79"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+111"/>
         <source>Library</source>
         <translation>ライブラリ</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+43"/>
         <source>Run</source>
         <translation>実行</translation>
     </message>
@@ -1118,19 +1150,65 @@
     </message>
     <message>
         <location line="+1"/>
+        <location line="+150"/>
+        <source>Export</source>
+        <translation>書き出し</translation>
+    </message>
+    <message>
+        <location line="-148"/>
+        <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
+        <translation>完成したアセットを zip で保存します。アイテムごとに 1 フォルダーで、下書きや中間ファイルは含みません。</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Delete</source>
         <translation>削除</translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+18"/>
+        <source>Use new style</source>
+        <translation>新しいスタイルを使う</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Replace this pack&apos;s style lock with the preset. Existing outputs are kept; redo the steps you want in the new style.</source>
+        <translation>このパックのスタイル固定をプリセットで置き換えます。既存の出力は残るので、新しいスタイルにしたいステップをやり直してください。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The source character&apos;s portrait has changed since these assets were made.</source>
+        <translation>これらのアセットを作成した後で、元のキャラクターの立ち絵が変更されました。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Redo with new portrait</source>
+        <translation>新しい立ち絵でやり直す</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Redo the steps made from the old portrait, and everything after them.</source>
+        <translation>古い立ち絵から作ったステップと、それ以降のすべてをやり直します。</translation>
+    </message>
+    <message>
+        <location line="+86"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 完了</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Exporting…</source>
+        <translation>エクスポート中…</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Style preset &quot;{0}&quot; has changed since this pack was created.</source>
+        <translation>スタイルプリセット「{0}」はこのパックの作成後に変更されました。</translation>
     </message>
 </context>
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+120"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+127"/>
         <source>New pack</source>
         <translation>新しいパック</translation>
     </message>
@@ -1141,12 +1219,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+20"/>
+        <location line="+44"/>
         <source>Name</source>
         <translation>名前</translation>
     </message>
     <message>
-        <location line="-28"/>
+        <location line="-52"/>
         <source>Template</source>
         <translation>テンプレート</translation>
     </message>
@@ -1161,12 +1239,12 @@
         <translation>スタイル固定。各アイテムのプロンプトに追加されます。例：hand-painted, dark teal tones</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+20"/>
         <source>Style</source>
         <translation>スタイル</translation>
     </message>
     <message>
-        <location line="-7"/>
+        <location line="-25"/>
         <source>Optional</source>
         <translation>任意</translation>
     </message>
@@ -1176,7 +1254,33 @@
         <translation>ネガティブ</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+14"/>
+        <location line="+225"/>
+        <source>Save as preset</source>
+        <translation>プリセットとして保存</translation>
+    </message>
+    <message>
+        <location line="-223"/>
+        <source>Save the style and negative above as a project preset. Using an existing name overwrites that preset.</source>
+        <translation>上のスタイルとネガティブをプロジェクトのプリセットとして保存します。既存の名前を使うとそのプリセットを上書きします。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Delete preset</source>
+        <translation>プリセットを削除</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Style preset</source>
+        <translation>スタイルプリセット</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Character</source>
+        <translation>キャラクター</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Cast</source>
         <translation>登場人物</translation>
     </message>
@@ -1196,7 +1300,7 @@
         <translation>声の説明</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+11"/>
         <source>AI draft theme, e.g. ground details for a glowing forest</source>
         <translation>AI 下書きのテーマ（例：光る森の地面のディテール）</translation>
     </message>
@@ -1207,27 +1311,47 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+71"/>
+        <location line="+92"/>
         <source>AI draft</source>
         <translation>AI 下書き</translation>
     </message>
     <message>
-        <location line="-69"/>
+        <location line="-90"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>空の行と未編集の AI 行を置き換えます。入力・編集した行は残ります。初回はテキストモデルの読み込みに約 1 分かかります。</translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+63"/>
+        <source>(No preset)</source>
+        <translation>（プリセットなし）</translation>
+    </message>
+    <message>
+        <location line="+27"/>
         <source>Drafting...</source>
         <translation>下書き中...</translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+46"/>
+        <source>Create a character pack first, then pick a character here.</source>
+        <translation>先にキャラクターパックを作成してから、ここでキャラクターを選んでください。</translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <source>Fill in the style or negative before saving a preset.</source>
+        <translation>プリセットを保存する前に、スタイルまたはネガティブを入力してください。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Preset name</source>
+        <translation>プリセット名</translation>
+    </message>
+    <message>
+        <location line="+32"/>
         <source>Prompt</source>
         <translation>プロンプト</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+29"/>
         <source>Default: {0}</source>
         <translation>既定値：{0}</translation>
     </message>
@@ -1247,33 +1371,33 @@
         <translation>行を削除</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+75"/>
         <source>Enter a theme for the AI to draft items from.</source>
         <translation>AI が項目を下書きするためのテーマを入力してください。</translation>
     </message>
     <message>
-        <location line="-288"/>
+        <location line="-373"/>
         <source>Items</source>
         <translation>アイテム</translation>
     </message>
     <message>
-        <location line="-59"/>
+        <location line="-83"/>
         <source>Library</source>
         <translation>ライブラリ</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+117"/>
         <source>Create</source>
         <translation>作成</translation>
     </message>
     <message>
-        <location line="+79"/>
-        <location line="+169"/>
+        <location line="+100"/>
+        <location line="+235"/>
         <source>No template available. Is the backend running?</source>
         <translation>利用できるテンプレートがありません。バックエンドは起動していますか？</translation>
     </message>
     <message>
-        <location line="-156"/>
+        <location line="-222"/>
         <source>Add at least one item.</source>
         <translation>アイテムを 1 つ以上追加してください。</translation>
     </message>
@@ -1281,7 +1405,7 @@
 <context>
     <name>PackStatus</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_status.py" line="+22"/>
+        <location filename="../../src/app/ui/library/pack_status.py" line="+16"/>
         <source>Scenes</source>
         <translation>シーン</translation>
     </message>
@@ -1362,6 +1486,24 @@
         <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="+106"/>
         <source>language</source>
         <translation>言語</translation>
+    </message>
+</context>
+<context>
+    <name>QwenImageEditPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="+46"/>
+        <source>number</source>
+        <translation>枚数</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>num_inference_steps</source>
+        <translation>推論ステップ数</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>seed</source>
+        <translation>シード</translation>
     </message>
 </context>
 <context>
@@ -1758,7 +1900,7 @@
 <context>
     <name>UpscalePanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="+30"/>
+        <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="-21"/>
         <source>outscale (0 = native x4)</source>
         <translation>拡大倍率（0 = ネイティブ x4）</translation>
     </message>

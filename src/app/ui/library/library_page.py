@@ -1,13 +1,14 @@
 import hashlib
 import json
+import re
 import threading
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QSize, Qt, QTimer
-from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QStackedWidget
+from PySide6.QtCore import QSize, QStandardPaths, Qt, QTimer, QUrl
+from PySide6.QtGui import QDesktopServices, QImage, QPixmap
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox, QStackedWidget
 
 from src.app.client import ApiClient
 from src.app.ui.base.widget import BaseWidget
@@ -61,6 +62,12 @@ def state_signature(item: CollectionItem, step_ids: list[str]) -> str:
     return "|".join(parts)
 
 
+def export_file_name(name: str) -> str:
+    """资源包名当默认文件名：换掉 Windows 文件名里不允许的字符。"""
+    cleaned = re.sub(r'[\\/:*?"<>|\x00-\x1f]', "_", name).strip(" .")
+    return cleaned or "pack"
+
+
 class LibraryPage(BaseWidget):
     """资料库：花园（分类卡片墙）→ 打开资源包（树 + 素材卡片 + 详情），另有新建表单。
     全部请求都在 LibraryTaskWorker 里执行；执行中每两秒拉一次资源包列表，所有视图都从它刷新。"""
@@ -106,6 +113,7 @@ class LibraryPage(BaseWidget):
         self.detail.run_requested.connect(self._run_current)
         self.detail.stop_requested.connect(self._stop_run)
         self.detail.delete_requested.connect(self._delete_current)
+        self.detail.export_requested.connect(self._export_current)
         self.detail.asset_selected.connect(self._on_asset_selected)
         self.detail.asset_opened.connect(self._on_asset_opened)
         self.detail.detail.reset_requested.connect(self._reset_step)
@@ -317,6 +325,41 @@ class LibraryPage(BaseWidget):
         if reply != QMessageBox.StandardButton.Yes:
             return
         self._start(self._client.delete_pack, manifest.id, on_ok=self._on_deleted)
+
+    # ---- 导出 ----
+    def _export_current(self):
+        pack = self.detail.pack
+        if pack is None:
+            return
+        manifest = pack.manifest
+        folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation)
+        default = Path(folder or Path.home()) / f"{export_file_name(manifest.name or manifest.id)}.zip"
+        path, _ = QFileDialog.getSaveFileName(
+            self, self.tr("Export pack"), str(default), self.tr("Zip archive (*.zip)"))
+        if not path:
+            return
+        target = Path(path)
+        if target.suffix.lower() != ".zip":
+            target = target.with_name(target.name + ".zip")
+        self.detail.set_error("")
+        self.detail.set_exporting(True)
+        self._start(self._client.export_pack, manifest.id, target,
+                    on_ok=lambda response: self._on_exported(response, target),
+                    on_error=lambda message: self._on_exported(
+                        PackResponse.from_error(message), target))
+
+    def _on_exported(self, response, target: Path):
+        self.detail.set_exporting(False)
+        if not response.ok:
+            self.detail.set_error(self.tr("Export failed: {0}").format(response.error))
+            return
+        box = QMessageBox(QMessageBox.Icon.Information, self.tr("Export pack"),
+                          self.tr("Saved to {0}").format(target), parent=self)
+        open_btn = box.addButton(self.tr("Show in folder"), QMessageBox.ButtonRole.ActionRole)
+        box.addButton(QMessageBox.StandardButton.Ok)
+        box.exec()
+        if box.clickedButton() is open_btn:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(target.parent)))
 
     def _on_deleted(self, response):
         if not response.ok:

@@ -40,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+100"/>
+        <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+275"/>
+        <location line="+316"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>无法连接后端，请确认服务是否已启动。</translation>
     </message>
     <message>
-        <location line="-406"/>
+        <location line="-447"/>
         <source>Connection timed out.</source>
         <translation>连接超时。</translation>
     </message>
@@ -58,11 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
+        <location line="+314"/>
         <source>Cannot connect to the backend.</source>
         <translation>无法连接后端。</translation>
     </message>
     <message>
-        <location line="+116"/>
+        <location line="-198"/>
         <source>Generation stopped.</source>
         <translation>已停止生成。</translation>
     </message>
@@ -97,7 +98,7 @@
         <translation>无法连接后端：{0}</translation>
     </message>
     <message>
-        <location line="+171"/>
+        <location line="+212"/>
         <source>An install task is already running...</source>
         <translation>安装任务已在运行中…</translation>
     </message>
@@ -892,7 +893,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+166"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+182"/>
         <source>Failed to load packs: {0}</source>
         <translation>加载资源包列表失败：{0}</translation>
     </message>
@@ -902,7 +903,7 @@
         <translation>加载模板失败：{0}</translation>
     </message>
     <message>
-        <location line="+126"/>
+        <location line="+127"/>
         <source>Failed to create pack: {0}</source>
         <translation>创建资源包失败：{0}</translation>
     </message>
@@ -927,9 +928,40 @@
         <translation>删除资源包“{0}”及其所有生成文件？此操作无法撤销。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+18"/>
+        <location line="+18"/>
+        <source>Export pack</source>
+        <translation>导出资源包</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <source>Zip archive (*.zip)</source>
+        <translation>Zip 压缩包 (*.zip)</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Export failed: {0}</source>
+        <translation>导出失败：{0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Saved to {0}</source>
+        <translation>已保存到 {0}</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show in folder</source>
+        <translation>在文件夹中显示</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Failed to delete pack: {0}</source>
         <translation>删除资源包失败：{0}</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Style presets: {0}</source>
+        <translation>风格预设：{0}</translation>
     </message>
 </context>
 <context>
@@ -1102,12 +1134,12 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+79"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+111"/>
         <source>Library</source>
         <translation>资料库</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+43"/>
         <source>Run</source>
         <translation>执行</translation>
     </message>
@@ -1118,19 +1150,65 @@
     </message>
     <message>
         <location line="+1"/>
+        <location line="+150"/>
+        <source>Export</source>
+        <translation>导出</translation>
+    </message>
+    <message>
+        <location line="-148"/>
+        <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
+        <translation>把成品保存为 zip，每个条目一个文件夹，不含草稿和中间文件。</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Delete</source>
         <translation>删除</translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+18"/>
+        <source>Use new style</source>
+        <translation>使用新风格</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Replace this pack&apos;s style lock with the preset. Existing outputs are kept; redo the steps you want in the new style.</source>
+        <translation>用预设替换本资源包的风格锁。已有产物会保留，想用新风格的步骤请重做。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The source character&apos;s portrait has changed since these assets were made.</source>
+        <translation>来源角色的立绘在这些素材生成之后被改过。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Redo with new portrait</source>
+        <translation>用新立绘重做</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Redo the steps made from the old portrait, and everything after them.</source>
+        <translation>重做用旧立绘生成的步骤及其后续步骤。</translation>
+    </message>
+    <message>
+        <location line="+86"/>
         <source>{0}/{1} done</source>
         <translation>已完成 {0}/{1}</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Exporting…</source>
+        <translation>正在导出…</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Style preset &quot;{0}&quot; has changed since this pack was created.</source>
+        <translation>风格预设“{0}”在建包之后被修改过。</translation>
     </message>
 </context>
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+120"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+127"/>
         <source>New pack</source>
         <translation>新建资源包</translation>
     </message>
@@ -1141,12 +1219,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+20"/>
+        <location line="+44"/>
         <source>Name</source>
         <translation>名称</translation>
     </message>
     <message>
-        <location line="-28"/>
+        <location line="-52"/>
         <source>Template</source>
         <translation>模板</translation>
     </message>
@@ -1161,12 +1239,12 @@
         <translation>风格锁，会追加到每个条目的提示词后，例如 hand-painted, dark teal tones</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+20"/>
         <source>Style</source>
         <translation>风格</translation>
     </message>
     <message>
-        <location line="-7"/>
+        <location line="-25"/>
         <source>Optional</source>
         <translation>可选</translation>
     </message>
@@ -1176,7 +1254,33 @@
         <translation>反向提示词</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+14"/>
+        <location line="+225"/>
+        <source>Save as preset</source>
+        <translation>存为预设</translation>
+    </message>
+    <message>
+        <location line="-223"/>
+        <source>Save the style and negative above as a project preset. Using an existing name overwrites that preset.</source>
+        <translation>把上面的风格和反向提示词存为项目预设。使用已有名称会覆盖该预设。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Delete preset</source>
+        <translation>删除预设</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Style preset</source>
+        <translation>风格预设</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Character</source>
+        <translation>角色</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Cast</source>
         <translation>出场角色</translation>
     </message>
@@ -1196,7 +1300,7 @@
         <translation>音色描述</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+11"/>
         <source>AI draft theme, e.g. ground details for a glowing forest</source>
         <translation>AI 起草主题，例如：发光森林的地面细节</translation>
     </message>
@@ -1207,27 +1311,47 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+71"/>
+        <location line="+92"/>
         <source>AI draft</source>
         <translation>AI 起草</translation>
     </message>
     <message>
-        <location line="-69"/>
+        <location line="-90"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>替换空行和未改动过的 AI 条目；你手动输入或修改过的行会保留。首次运行需加载文本模型，约一分钟。</translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+63"/>
+        <source>(No preset)</source>
+        <translation>（不使用预设）</translation>
+    </message>
+    <message>
+        <location line="+27"/>
         <source>Drafting...</source>
         <translation>起草中...</translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+46"/>
+        <source>Create a character pack first, then pick a character here.</source>
+        <translation>请先创建角色包，再在这里选择角色。</translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <source>Fill in the style or negative before saving a preset.</source>
+        <translation>保存预设前请先填写风格或反向提示词。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Preset name</source>
+        <translation>预设名称</translation>
+    </message>
+    <message>
+        <location line="+32"/>
         <source>Prompt</source>
         <translation>提示词</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+29"/>
         <source>Default: {0}</source>
         <translation>默认：{0}</translation>
     </message>
@@ -1247,33 +1371,33 @@
         <translation>删除行</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+75"/>
         <source>Enter a theme for the AI to draft items from.</source>
         <translation>请先填写主题，AI 会据此起草条目。</translation>
     </message>
     <message>
-        <location line="-288"/>
+        <location line="-373"/>
         <source>Items</source>
         <translation>条目</translation>
     </message>
     <message>
-        <location line="-59"/>
+        <location line="-83"/>
         <source>Library</source>
         <translation>资料库</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+117"/>
         <source>Create</source>
         <translation>创建</translation>
     </message>
     <message>
-        <location line="+79"/>
-        <location line="+169"/>
+        <location line="+100"/>
+        <location line="+235"/>
         <source>No template available. Is the backend running?</source>
         <translation>没有可用的模板，后端是否已启动？</translation>
     </message>
     <message>
-        <location line="-156"/>
+        <location line="-222"/>
         <source>Add at least one item.</source>
         <translation>请至少添加一个条目。</translation>
     </message>
@@ -1281,7 +1405,7 @@
 <context>
     <name>PackStatus</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_status.py" line="+22"/>
+        <location filename="../../src/app/ui/library/pack_status.py" line="+16"/>
         <source>Scenes</source>
         <translation>场景</translation>
     </message>
@@ -1362,6 +1486,24 @@
         <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="+106"/>
         <source>language</source>
         <translation>语言</translation>
+    </message>
+</context>
+<context>
+    <name>QwenImageEditPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="+46"/>
+        <source>number</source>
+        <translation>数量</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>num_inference_steps</source>
+        <translation>推理步数</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>seed</source>
+        <translation>种子</translation>
     </message>
 </context>
 <context>
@@ -1758,7 +1900,7 @@
 <context>
     <name>UpscalePanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="+30"/>
+        <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="-21"/>
         <source>outscale (0 = native x4)</source>
         <translation>放大倍数（0 = 原生 x4）</translation>
     </message>

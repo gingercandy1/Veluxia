@@ -40,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+100"/>
+        <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+275"/>
+        <location line="+316"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>No se puede conectar con el backend. Comprueba que el servicio esté en ejecución.</translation>
     </message>
     <message>
-        <location line="-406"/>
+        <location line="-447"/>
         <source>Connection timed out.</source>
         <translation>Se agotó el tiempo de conexión.</translation>
     </message>
@@ -58,11 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
+        <location line="+314"/>
         <source>Cannot connect to the backend.</source>
         <translation>No se puede conectar con el backend.</translation>
     </message>
     <message>
-        <location line="+116"/>
+        <location line="-198"/>
         <source>Generation stopped.</source>
         <translation>Generación detenida.</translation>
     </message>
@@ -97,7 +98,7 @@
         <translation>No se puede conectar con el backend: {0}</translation>
     </message>
     <message>
-        <location line="+171"/>
+        <location line="+212"/>
         <source>An install task is already running...</source>
         <translation>Ya hay una instalación en curso…</translation>
     </message>
@@ -894,7 +895,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+166"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+182"/>
         <source>Failed to load packs: {0}</source>
         <translation>No se pudieron cargar los paquetes: {0}</translation>
     </message>
@@ -904,7 +905,7 @@
         <translation>No se pudieron cargar las plantillas: {0}</translation>
     </message>
     <message>
-        <location line="+126"/>
+        <location line="+127"/>
         <source>Failed to create pack: {0}</source>
         <translation>No se pudo crear el paquete: {0}</translation>
     </message>
@@ -929,9 +930,40 @@
         <translation>¿Eliminar el paquete &quot;{0}&quot; y todos sus archivos generados? No se puede deshacer.</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+18"/>
+        <location line="+18"/>
+        <source>Export pack</source>
+        <translation>Exportar paquete</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <source>Zip archive (*.zip)</source>
+        <translation>Archivo Zip (*.zip)</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Export failed: {0}</source>
+        <translation>Error al exportar: {0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Saved to {0}</source>
+        <translation>Guardado en {0}</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Show in folder</source>
+        <translation>Mostrar en la carpeta</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Failed to delete pack: {0}</source>
         <translation>No se pudo eliminar el paquete: {0}</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Style presets: {0}</source>
+        <translation>Ajustes de estilo: {0}</translation>
     </message>
 </context>
 <context>
@@ -1104,12 +1136,12 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+79"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+111"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+43"/>
         <source>Run</source>
         <translation>Ejecutar</translation>
     </message>
@@ -1120,19 +1152,65 @@
     </message>
     <message>
         <location line="+1"/>
+        <location line="+150"/>
+        <source>Export</source>
+        <translation>Exportar</translation>
+    </message>
+    <message>
+        <location line="-148"/>
+        <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
+        <translation>Guarda los recursos terminados en un zip, una carpeta por elemento, sin borradores ni archivos intermedios.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Delete</source>
         <translation>Eliminar</translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+18"/>
+        <source>Use new style</source>
+        <translation>Usar el nuevo estilo</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Replace this pack&apos;s style lock with the preset. Existing outputs are kept; redo the steps you want in the new style.</source>
+        <translation>Sustituye el estilo fijo del paquete por el ajuste. Los resultados existentes se conservan; rehaz los pasos que quieras con el nuevo estilo.</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The source character&apos;s portrait has changed since these assets were made.</source>
+        <translation>El retrato del personaje de origen ha cambiado desde que se crearon estos recursos.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Redo with new portrait</source>
+        <translation>Rehacer con el nuevo retrato</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Redo the steps made from the old portrait, and everything after them.</source>
+        <translation>Rehace los pasos creados con el retrato anterior y todo lo que viene después.</translation>
+    </message>
+    <message>
+        <location line="+86"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} listos</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Exporting…</source>
+        <translation>Exportando…</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Style preset &quot;{0}&quot; has changed since this pack was created.</source>
+        <translation>El ajuste de estilo «{0}» ha cambiado desde que se creó este paquete.</translation>
     </message>
 </context>
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+120"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+127"/>
         <source>New pack</source>
         <translation>Nuevo paquete</translation>
     </message>
@@ -1143,12 +1221,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+20"/>
+        <location line="+44"/>
         <source>Name</source>
         <translation>Nombre</translation>
     </message>
     <message>
-        <location line="-28"/>
+        <location line="-52"/>
         <source>Template</source>
         <translation>Plantilla</translation>
     </message>
@@ -1163,12 +1241,12 @@
         <translation>Estilo fijo, se añade a cada elemento, p. ej., hand-painted, dark teal tones</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+20"/>
         <source>Style</source>
         <translation>Estilo</translation>
     </message>
     <message>
-        <location line="-7"/>
+        <location line="-25"/>
         <source>Optional</source>
         <translation>Opcional</translation>
     </message>
@@ -1178,7 +1256,33 @@
         <translation>Negativo</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+14"/>
+        <location line="+225"/>
+        <source>Save as preset</source>
+        <translation>Guardar como ajuste</translation>
+    </message>
+    <message>
+        <location line="-223"/>
+        <source>Save the style and negative above as a project preset. Using an existing name overwrites that preset.</source>
+        <translation>Guarda el estilo y el negativo de arriba como ajuste del proyecto. Un nombre existente sobrescribe ese ajuste.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Delete preset</source>
+        <translation>Eliminar ajuste</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Style preset</source>
+        <translation>Ajuste de estilo</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Character</source>
+        <translation>Personaje</translation>
+    </message>
+    <message>
+        <location line="+8"/>
         <source>Cast</source>
         <translation>Reparto</translation>
     </message>
@@ -1198,7 +1302,7 @@
         <translation>Descripción de la voz</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+11"/>
         <source>AI draft theme, e.g. ground details for a glowing forest</source>
         <translation>Tema para la IA, p. ej.: detalles del suelo de un bosque luminoso</translation>
     </message>
@@ -1209,27 +1313,47 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+71"/>
+        <location line="+92"/>
         <source>AI draft</source>
         <translation>Borrador IA</translation>
     </message>
     <message>
-        <location line="-69"/>
+        <location line="-90"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>Reemplaza las filas vacías y las filas de IA sin tocar; las filas que escribiste o editaste se conservan. La primera vez carga el modelo de texto y tarda cerca de un minuto.</translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+63"/>
+        <source>(No preset)</source>
+        <translation>(Sin ajuste)</translation>
+    </message>
+    <message>
+        <location line="+27"/>
         <source>Drafting...</source>
         <translation>Redactando...</translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+46"/>
+        <source>Create a character pack first, then pick a character here.</source>
+        <translation>Crea primero un paquete de personajes y luego elige un personaje aquí.</translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <source>Fill in the style or negative before saving a preset.</source>
+        <translation>Rellena el estilo o el negativo antes de guardar un ajuste.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Preset name</source>
+        <translation>Nombre del ajuste</translation>
+    </message>
+    <message>
+        <location line="+32"/>
         <source>Prompt</source>
         <translation>Prompt</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+29"/>
         <source>Default: {0}</source>
         <translation>Predeterminado: {0}</translation>
     </message>
@@ -1249,33 +1373,33 @@
         <translation>Quitar fila</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+75"/>
         <source>Enter a theme for the AI to draft items from.</source>
         <translation>Introduce un tema para que la IA redacte los elementos.</translation>
     </message>
     <message>
-        <location line="-288"/>
+        <location line="-373"/>
         <source>Items</source>
         <translation>Elementos</translation>
     </message>
     <message>
-        <location line="-59"/>
+        <location line="-83"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+117"/>
         <source>Create</source>
         <translation>Crear</translation>
     </message>
     <message>
-        <location line="+79"/>
-        <location line="+169"/>
+        <location line="+100"/>
+        <location line="+235"/>
         <source>No template available. Is the backend running?</source>
         <translation>No hay plantillas disponibles. ¿Está el backend en ejecución?</translation>
     </message>
     <message>
-        <location line="-156"/>
+        <location line="-222"/>
         <source>Add at least one item.</source>
         <translation>Añade al menos un elemento.</translation>
     </message>
@@ -1283,7 +1407,7 @@
 <context>
     <name>PackStatus</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_status.py" line="+22"/>
+        <location filename="../../src/app/ui/library/pack_status.py" line="+16"/>
         <source>Scenes</source>
         <translation>Escenas</translation>
     </message>
@@ -1364,6 +1488,24 @@
         <location filename="../../src/app/ui/param/core/speech/qwen3_tts_panel.py" line="+106"/>
         <source>language</source>
         <translation>Idioma</translation>
+    </message>
+</context>
+<context>
+    <name>QwenImageEditPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="+46"/>
+        <source>number</source>
+        <translation>Cantidad</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>num_inference_steps</source>
+        <translation>Pasos de inferencia</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>seed</source>
+        <translation>Semilla</translation>
     </message>
 </context>
 <context>
@@ -1760,7 +1902,7 @@
 <context>
     <name>UpscalePanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="+30"/>
+        <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="-21"/>
         <source>outscale (0 = native x4)</source>
         <translation>Factor de escalado (0 = x4 nativo)</translation>
     </message>
