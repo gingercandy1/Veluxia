@@ -6,7 +6,12 @@
 import json
 import random
 
-from src.backend.core.collection.template import PROMPT_FIELD, Template, load_template
+from src.backend.core.collection.template import (
+    PROMPT_FIELD,
+    Template,
+    count_segments,
+    load_template,
+)
 from src.backend.core.model_base import GeneratorFactory
 from src.shared.enum_type import FactoryType
 from src.shared.schemas import DraftItemsRequest, NewCollectionItem
@@ -95,6 +100,21 @@ def _extract_items(text: str) -> list:
     return raw_items
 
 
+def _align_segments(template: Template, fields: dict[str, str]) -> None:
+    """小模型常把长度和分段描述写得对不上，建包时会被拒。以分段描述为准改长度（写的内容更具体），
+    长度选项里没有这个段数时丢掉分段描述，退回整张统一描述。"""
+    for segments_id, prompts_id in template.segment_fields():
+        count = count_segments(fields.get(prompts_id, ""))
+        if not count:
+            continue
+        spec = next((spec for spec in template.fields if spec.id == segments_id), None)
+        allowed = [value for value, _ in spec.options] if spec else []
+        if not allowed or str(count) in allowed:
+            fields[segments_id] = str(count)
+        else:
+            fields.pop(prompts_id)
+
+
 def parse_drafts(text: str, template: Template, exclude: list[str] = ()) -> list[NewCollectionItem]:
     """解析模型输出并按模板校验：未声明的键丢掉，下拉字段的取值不合法时留空走默认值。"""
     raw_items = _extract_items(text)
@@ -116,6 +136,7 @@ def parse_drafts(text: str, template: Template, exclude: list[str] = ()) -> list
                 value = next((v for v, label in spec.options if value in (v, label)), "")
             if value:
                 fields[spec.id] = value
+        _align_segments(template, fields)
         items.append(NewCollectionItem(prompt=prompt, fields=fields))
     if not items:
         raise ValueError("模型没有给出可用的条目，请换个主题描述再试")
