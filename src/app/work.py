@@ -252,11 +252,50 @@ class BackendInstallWorker(QThread):
             self.error.emit(str(e) or e.__class__.__name__)
 
 
+def startup_log(message: str) -> None:
+    """启动阶段打到控制台的进度，带上距进程启动的秒数：黑窗口里能看出卡在哪一步、各花了多久。"""
+    elapsed = time.time() - psutil.Process().create_time()
+    print(f"[startup +{elapsed:.1f}s] {message}", flush=True)
+
+
+def wait_until_healthy(port: int, health: Callable[[], bool], timeout: float,
+                       proc: Optional[subprocess.Popen] = None, interval: float = 0.25) -> bool:
+    """等本机服务能响应 /health。
+
+    不直接反复请求 /health：Windows 上连一个还没人监听的本机端口要约 2 秒才会被拒绝，
+    每轮都白等 2 秒，服务起来了也要过一阵才发现。所以先用绑定试探端口有没有人在监听（瞬间返回），
+    监听了再请求；为防绑定试探在少见的网卡配置下判断不准，每隔一会儿也直接请求一次兜底。
+    按总时长而不是次数判断超时，快慢机器上的等待上限一致。进程已经退出就不再空等。
+    """
+    deadline = time.monotonic() + timeout
+    next_fallback = time.monotonic() + 3.0
+    while time.monotonic() < deadline:
+        if proc is not None and proc.poll() is not None:
+            print(f"⚠️ 端口 {port} 的服务进程已退出（退出码 {proc.returncode}）")
+            return False
+        listening = BaseProcess.is_port_in_use(port)
+        if listening or time.monotonic() >= next_fallback:
+            if health():
+                return True
+            next_fallback = time.monotonic() + 3.0
+        time.sleep(interval)
+    return False
+
+
 class BaseProcess:
     @staticmethod
     def is_port_in_use(port: int) -> bool:
+        """试着绑定来判断有没有人在监听，而不是去连接：Windows 上连一个空端口要约 2 秒才被拒绝。"""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            return s.connect_ex(("127.0.0.1", port)) == 0
+            if sys.platform != "win32":
+                # 否则上次运行留下的 TIME_WAIT 也算"占用"，会白白去清理端口、多等 1 秒；
+                # Windows 上这个选项反而允许抢占正在监听的端口，所以不设
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                s.bind(("127.0.0.1", port))
+            except OSError:
+                return True
+            return False
 
     @staticmethod
     def kill_port(port: int) -> None:
@@ -287,12 +326,11 @@ class ApiProcess(BaseProcess):
         return proc
 
     @staticmethod
-    def wait_for_backend(retries: int = 30, interval: float = 0.5) -> bool:
-        for _ in range(retries):
-            if ApiClient.instance().health():
-                print("✅ Backend 已就绪")
-                return True
-            time.sleep(interval)
+    def wait_for_backend(timeout: float = 90.0, proc: Optional[subprocess.Popen] = None,
+                         port: int = 8765) -> bool:
+        if wait_until_healthy(port, ApiClient.instance().health, timeout, proc):
+            startup_log("✅ 后端已就绪")
+            return True
         print("⚠️  Backend 启动超时，继续运行（可能部分功能不可用）")
         return False
 
@@ -301,7 +339,7 @@ class ApiProcess(BaseProcess):
         """/health 只代表进程活着，模型注册在后台线程异步进行，这里单独等 /ready。"""
         for _ in range(retries):
             if ApiClient.instance().ready():
-                print("✅ 模型已注册完成")
+                startup_log("✅ 模型清单已加载")
                 return True
             time.sleep(interval)
         print("⚠️  模型注册超时，继续运行（模型列表可能不完整）")
@@ -333,13 +371,12 @@ class ApiGuardProcess(BaseProcess):
         return proc
 
     @staticmethod
-    def wait_for_backend(retries: int = 30, interval: float = 0.5) -> bool:
-        for _ in range(retries):
-            if ApiGuardClient.instance().health():
-                print("✅ Backend 已就绪")
-                return True
-            time.sleep(interval)
-        print("⚠️  Backend 启动超时，继续运行（可能部分功能不可用）")
+    def wait_for_backend(timeout: float = 60.0, proc: Optional[subprocess.Popen] = None,
+                         port: int = 8756) -> bool:
+        if wait_until_healthy(port, ApiGuardClient.instance().health, timeout, proc):
+            startup_log("✅ 守护服务已就绪")
+            return True
+        print("⚠️  守护服务启动超时，继续运行（显卡检测、安装等功能可能不可用）")
         return False
 
 class BackendStartupWorker(QThread):
@@ -349,7 +386,7 @@ class BackendStartupWorker(QThread):
     failed  = Signal(str)     # 需要用户去设置页处理（未安装 / 地址或 token 不对）
 
     # 安装版后端冷启动要导入 torch 等重型依赖，比源码模式慢得多
-    INSTALLED_START_RETRIES = 240
+    INSTALLED_START_TIMEOUT = 180.0
     REMOTE_CONNECT_RETRIES = 10
 
     def __init__(self, port: int = 8765, guard_port: int = 8756):
@@ -396,15 +433,14 @@ class BackendStartupWorker(QThread):
     def _start_from_source(self):
         """源码运行：用当前解释器拉起后端和守护进程（开发流程）。"""
         self.log.emit("⏳ " + self.tr("Starting backend..."))
+        # 两个服务互不依赖，同时拉起：以前等后端起来再启动守护进程，加载页要多等一轮
         self._proc = ApiProcess.start_backend(self._port)
-        main_result = ApiProcess.wait_for_backend()
-        if not main_result:
+        self._guard_proc = ApiGuardProcess.start_backend(port=self._guard_port)
+        startup_log("正在启动后端和守护服务…")
+        if not ApiProcess.wait_for_backend(proc=self._proc, port=self._port):
             self.timeout.emit()
             return
-
-        self._guard_proc = ApiGuardProcess.start_backend(port=self._guard_port)
-        guard_result = ApiGuardProcess.wait_for_backend()
-        if not guard_result:
+        if not ApiGuardProcess.wait_for_backend(proc=self._guard_proc, port=self._guard_port):
             self.timeout.emit()
             return
 
@@ -420,7 +456,9 @@ class BackendStartupWorker(QThread):
             return
         self.log.emit("⏳ " + self.tr("Starting backend..."))
         self._proc = local_backend.start(root, self._port)
-        if not ApiProcess.wait_for_backend(retries=self.INSTALLED_START_RETRIES):
+        startup_log("正在启动后端…")
+        if not ApiProcess.wait_for_backend(timeout=self.INSTALLED_START_TIMEOUT, proc=self._proc,
+                                           port=self._port):
             self.timeout.emit()
             return
         self._wait_models_and_ready()
@@ -458,4 +496,4 @@ if __name__ == '__main__':
     _client = ApiClient()
     ApiProcess.start_backend()
 
-    ApiProcess.wait_for_backend(_client, retries=20)
+    ApiProcess.wait_for_backend(timeout=10)

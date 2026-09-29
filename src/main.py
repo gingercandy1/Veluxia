@@ -11,6 +11,7 @@ from src.app.i18n import DEFAULT_LANGUAGE, install_language
 from src.app.ui.window import MainWindow
 from src.app.ui.mark import build_app_icon
 from src.app.ui.setting.page.log_page import log_info, log_error
+from src.app.work import startup_log
 from src.shared.settings import ConfigManager
 
 
@@ -150,4 +151,5 @@ if __name__ == "__main__":
     window = MainWindow()
     window.setWindowIcon(app_icon)
     window.show()
+    startup_log("窗口已显示，后端在后台启动")
     sys.exit(app.exec())
