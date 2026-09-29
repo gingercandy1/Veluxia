@@ -1,7 +1,15 @@
+import faulthandler
 import os
 import sys
 from pathlib import Path
 from typing import List
+
+# 放在界面库导入之前：导入 PySide6 等本身就要几秒，这行能让人知道程序已经在动了
+if __name__ == "__main__":
+    print("[startup] 正在加载界面模块…", flush=True)
+    # 30 秒窗口还没出来就把每个线程卡在哪一行打到控制台，卡住时直接看得出原因
+    STARTUP_HANG_DUMP_SECONDS = 30
+    faulthandler.dump_traceback_later(STARTUP_HANG_DUMP_SECONDS)
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QFontDatabase
@@ -143,13 +151,16 @@ if __name__ == "__main__":
         sys.path.insert(0, PROJECT_ROOT)
 
     os.environ["CUDA_PATH"] = "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.8"
+    startup_log("界面模块已加载")
 
     app = Application(sys.argv)
     app_icon = build_app_icon()
     app.setWindowIcon(app_icon)
 
+    startup_log("正在创建主窗口…")
     window = MainWindow()
     window.setWindowIcon(app_icon)
     window.show()
+    faulthandler.cancel_dump_traceback_later()
     startup_log("窗口已显示，后端在后台启动")
     sys.exit(app.exec())
