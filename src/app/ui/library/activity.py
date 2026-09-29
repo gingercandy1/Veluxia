@@ -115,3 +115,56 @@ class ProgressStrip(BaseWidget):
                 glow.setAlpha(alpha)
                 gradient.setColorAt(stop, glow)
             painter.fillRect(QRectF(left, rect.top(), band, rect.height()), gradient)
+
+
+class Shimmer(QWidget):
+    """加载占位的微光：盖在还没拿到内容的区域上，一道光带从左扫到右。
+
+    缩略图、预览要从后端取，远程后端或大图时会空白一会儿；有光带扫过，用户知道是在加载而不是没有内容。
+    """
+    _PERIOD = 1.4
+    RADIUS = 6
+
+    def __init__(self, parent: QWidget):
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self._ticker = FrameTicker(self)
+        self.hide()
+
+    def set_running(self, running: bool):
+        if running:
+            self.setGeometry(self.parentWidget().rect())
+            self.raise_()
+        self.setVisible(running)
+        self._ticker.set_running(running)
+
+    def is_running(self) -> bool:
+        return self._ticker.is_running()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = QRectF(self.rect())
+        clip = QPainterPath()
+        clip.addRoundedRect(rect, self.RADIUS, self.RADIUS)
+        painter.setClipPath(clip)
+        band = max(rect.width() * 0.6, 40.0)
+        phase = (time.monotonic() / self._PERIOD) % 1.0
+        left = -band + (rect.width() + band) * phase
+        gradient = QLinearGradient(left, 0, left + band, 0)
+        glow = QColor(255, 255, 255)
+        for stop, alpha in ((0.0, 0), (0.5, 22), (1.0, 0)):
+            glow.setAlpha(alpha)
+            gradient.setColorAt(stop, glow)
+        painter.fillRect(QRectF(left, rect.top(), band, rect.height()), gradient)
+
+
+class LoadingStrip(ProgressStrip):
+    """不知道总量的加载：没有填充，只有流光来回扫。"""
+
+    def __init__(self, height: int = 3, parent=None):
+        super().__init__(height, parent)
+
+    def set_loading(self, loading: bool):
+        self.setVisible(loading)
+        self.set_progress(0, "pending", active=loading)

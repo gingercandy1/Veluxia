@@ -261,7 +261,7 @@
         <translation>初回インストールでは PyTorch（約 3 GB）をダウンロードするため、インターネット接続が必要です。</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+20"/>
         <source>Enter an address first.</source>
         <translation>先にアドレスを入力してください。</translation>
     </message>
@@ -306,7 +306,17 @@
         <translation>バックエンドパッケージを選択</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+8"/>
+        <source>Preparing to install into {0}…</source>
+        <translation>{0} へのインストールを準備中…</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Installation complete</source>
+        <translation>インストールが完了しました</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Backend installed</source>
         <translation>バックエンドをインストールしました</translation>
     </message>
@@ -374,13 +384,13 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+183"/>
-        <location line="+54"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+184"/>
+        <location line="+60"/>
         <source>Select an asset to see how it was made</source>
         <translation>素材を選ぶと生成の過程を確認できます</translation>
     </message>
     <message>
-        <location line="-40"/>
+        <location line="-46"/>
         <source>Prompt</source>
         <translation>プロンプト</translation>
     </message>
@@ -393,6 +403,11 @@
         <location line="+30"/>
         <source>Not generated yet</source>
         <translation>まだ生成されていません</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Loading preview…</source>
+        <translation>プレビューを読み込み中…</translation>
     </message>
     <message>
         <location line="+26"/>
@@ -525,7 +540,7 @@
 <context>
     <name>GardenView</name>
     <message>
-        <location filename="../../src/app/ui/library/garden.py" line="+45"/>
+        <location filename="../../src/app/ui/library/garden.py" line="+46"/>
         <source>Library</source>
         <translation>ライブラリ</translation>
     </message>
@@ -540,12 +555,17 @@
         <translation>新しいパック</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+15"/>
+        <source>Loading packs…</source>
+        <translation>パックを読み込み中…</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>No packs match your search.</source>
         <translation>検索に一致するパックはありません。</translation>
     </message>
     <message>
-        <location line="+51"/>
+        <location line="+57"/>
         <source>New {0} pack</source>
         <translation>{0}パックを新規作成</translation>
     </message>
@@ -623,7 +643,7 @@
 <context>
     <name>GpuPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+64"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+65"/>
         <source>GPU Settings</source>
         <translation>GPU 設定</translation>
     </message>
@@ -663,12 +683,7 @@
         <translation>適用してインストール</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>Install log</source>
-        <translation>インストールログ</translation>
-    </message>
-    <message>
-        <location line="+22"/>
+        <location line="+23"/>
         <source>Unknown</source>
         <translation>不明</translation>
     </message>
@@ -688,7 +703,7 @@
         <translation>状態の取得に失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+6"/>
         <source>Installing the {0} backend...</source>
         <translation>{0} バックエンドをインストールしています…</translation>
     </message>
@@ -903,17 +918,17 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+182"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+187"/>
         <source>Failed to load packs: {0}</source>
         <translation>パック一覧の読み込みに失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location line="-19"/>
         <source>Failed to load templates: {0}</source>
         <translation>テンプレートの読み込みに失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+127"/>
+        <location line="+128"/>
         <source>Failed to create pack: {0}</source>
         <translation>パックの作成に失敗しました：{0}</translation>
     </message>
@@ -1582,7 +1597,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-265"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-271"/>
         <source>Speaker</source>
         <translation>話者</translation>
     </message>
@@ -1699,7 +1714,7 @@
 <context>
     <name>StoragePage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+52"/>
+        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+53"/>
         <source>Model Storage</source>
         <translation>モデルのストレージ</translation>
     </message>
@@ -1729,7 +1744,7 @@
         <translation>サイズ</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+23"/>
         <source>Calculating…</source>
         <translation>計算中…</translation>
     </message>
@@ -1764,12 +1779,12 @@
         <translation>合計：{0}（{1} 件）</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Delete</source>
         <translation>削除</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+15"/>
         <source>Music (ACE-Step)</source>
         <translation>音楽（ACE-Step）</translation>
     </message>
@@ -2210,7 +2225,7 @@
 <context>
     <name>_InstallWorker</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-122"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-112"/>
         <source>Installation complete</source>
         <translation>インストールが完了しました</translation>
     </message>

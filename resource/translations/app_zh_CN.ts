@@ -261,7 +261,7 @@
         <translation>首次安装会下载 PyTorch（约 3 GB），需要联网。</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+20"/>
         <source>Enter an address first.</source>
         <translation>请先填写地址。</translation>
     </message>
@@ -306,7 +306,17 @@
         <translation>选择后端安装包</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+8"/>
+        <source>Preparing to install into {0}…</source>
+        <translation>正在准备安装到 {0}…</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Installation complete</source>
+        <translation>安装完成</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Backend installed</source>
         <translation>后端已安装</translation>
     </message>
@@ -374,13 +384,13 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+183"/>
-        <location line="+54"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+184"/>
+        <location line="+60"/>
         <source>Select an asset to see how it was made</source>
         <translation>选择一个素材，查看它是怎么生成的</translation>
     </message>
     <message>
-        <location line="-40"/>
+        <location line="-46"/>
         <source>Prompt</source>
         <translation>提示词</translation>
     </message>
@@ -393,6 +403,11 @@
         <location line="+30"/>
         <source>Not generated yet</source>
         <translation>尚未生成</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Loading preview…</source>
+        <translation>正在加载预览…</translation>
     </message>
     <message>
         <location line="+26"/>
@@ -525,7 +540,7 @@
 <context>
     <name>GardenView</name>
     <message>
-        <location filename="../../src/app/ui/library/garden.py" line="+45"/>
+        <location filename="../../src/app/ui/library/garden.py" line="+46"/>
         <source>Library</source>
         <translation>资料库</translation>
     </message>
@@ -540,12 +555,17 @@
         <translation>新建资源包</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+15"/>
+        <source>Loading packs…</source>
+        <translation>正在加载资源包…</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>No packs match your search.</source>
         <translation>没有符合搜索条件的资源包。</translation>
     </message>
     <message>
-        <location line="+51"/>
+        <location line="+57"/>
         <source>New {0} pack</source>
         <translation>新建{0}包</translation>
     </message>
@@ -623,7 +643,7 @@
 <context>
     <name>GpuPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+64"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+65"/>
         <source>GPU Settings</source>
         <translation>显卡设置</translation>
     </message>
@@ -663,12 +683,7 @@
         <translation>应用并安装</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>Install log</source>
-        <translation>安装日志</translation>
-    </message>
-    <message>
-        <location line="+22"/>
+        <location line="+23"/>
         <source>Unknown</source>
         <translation>未知</translation>
     </message>
@@ -688,7 +703,7 @@
         <translation>状态获取失败：{0}</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+6"/>
         <source>Installing the {0} backend...</source>
         <translation>开始安装 {0} 后端…</translation>
     </message>
@@ -903,17 +918,17 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+182"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+187"/>
         <source>Failed to load packs: {0}</source>
         <translation>加载资源包列表失败：{0}</translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location line="-19"/>
         <source>Failed to load templates: {0}</source>
         <translation>加载模板失败：{0}</translation>
     </message>
     <message>
-        <location line="+127"/>
+        <location line="+128"/>
         <source>Failed to create pack: {0}</source>
         <translation>创建资源包失败：{0}</translation>
     </message>
@@ -1582,7 +1597,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-265"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-271"/>
         <source>Speaker</source>
         <translation>说话人</translation>
     </message>
@@ -1699,7 +1714,7 @@
 <context>
     <name>StoragePage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+52"/>
+        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+53"/>
         <source>Model Storage</source>
         <translation>模型存储</translation>
     </message>
@@ -1729,7 +1744,7 @@
         <translation>大小</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+23"/>
         <source>Calculating…</source>
         <translation>正在统计…</translation>
     </message>
@@ -1764,12 +1779,12 @@
         <translation>共 {0}，{1} 项</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Delete</source>
         <translation>删除</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+15"/>
         <source>Music (ACE-Step)</source>
         <translation>音乐（ACE-Step）</translation>
     </message>
@@ -2210,7 +2225,7 @@
 <context>
     <name>_InstallWorker</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-122"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-112"/>
         <source>Installation complete</source>
         <translation>安装完成</translation>
     </message>

@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.ui.base.widget import BaseWidget
+from src.app.ui.library.activity import LoadingStrip
 from src.app.ui.library.cards import PACK_THUMB, AddCard, Card
 from src.app.ui.library.flow_layout import FlowLayout
 from src.app.ui.library.pack_status import (
@@ -65,6 +66,16 @@ class GardenView(BaseWidget):
         self.error_label.hide()
         layout.addWidget(self.error_label)
 
+        # 首次进入要先后取模板和资源包列表，远程后端时会空白一两秒
+        self.loading_strip = LoadingStrip(height=3)
+        self.loading_strip.setMaximumWidth(360)
+        self.loading_label = QLabel(self.tr("Loading packs…"))
+        self.loading_label.setObjectName("detail_muted")
+        layout.addWidget(self.loading_strip)
+        layout.addWidget(self.loading_label)
+        self.loading_strip.set_loading(False)
+        self.loading_label.hide()
+
         self.empty_label = QLabel(self.tr("No packs match your search."))
         self.empty_label.setObjectName("detail_muted")
         self.empty_label.hide()
@@ -84,6 +95,12 @@ class GardenView(BaseWidget):
     def set_error(self, message: str):
         self.error_label.setText(message)
         self.error_label.setVisible(bool(message))
+
+    def set_loading(self, loading: bool):
+        """已经显示着卡片时（再次进入页面刷新）不打扰，只在还是空白时显示加载条。"""
+        show = loading and not self._cards
+        self.loading_strip.set_loading(show)
+        self.loading_label.setVisible(show)
 
     def set_packs(self, packs: list[PackResponse], templates: dict[str, TemplateInfo]):
         """资源包没增删时只原地刷新进度（执行中每两秒轮询一次，重建会闪、会丢缩略图）；

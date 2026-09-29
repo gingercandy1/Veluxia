@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.ui.base.widget import BaseWidget
+from src.app.ui.library.activity import LoadingStrip
 from src.app.ui.library.cards import repolish
 from src.app.ui.library.pack_status import (
     item_title,
@@ -230,6 +231,12 @@ class DetailPanel(BaseWidget):
             state = item.steps.get(step.id) or StepState()
             if state.status != "done":
                 self._add_preview(self._muted(self.tr("Not generated yet")))
+            else:
+                # 预览要从后端取，取到之前先占位，set_image / set_audio / set_text 会替换掉
+                strip = LoadingStrip(height=3)
+                strip.set_loading(True)
+                self._add_preview(strip)
+                self._add_preview(self._muted(self.tr("Loading preview…")))
         return changed
 
     def clear(self):
