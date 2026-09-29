@@ -150,43 +150,36 @@ QLabel#gpu_status_label {
     padding: 4px 0px;
 }
 
-QRadioButton {
-    color: rgba(255, 255, 255, 0.70);
-    font-size: 13px;
-    spacing: 8px;
-    padding: 4px 0px;
-}
-
-QRadioButton:hover {
-    color: #DCDCDC;
-}
-
-QRadioButton::indicator {
-    width: 14px;
-    height: 14px;
-    border-radius: 7px;
-    border: 1.5px solid rgba(255, 255, 255, 0.25);
-    background-color: transparent;
-}
-
-QRadioButton::indicator:hover {
-    border-color: rgba(123, 157, 188, 0.60);
-}
-
-QRadioButton::indicator:checked {
-    background-color: #7B9DBC;
-    border-color: #7B9DBC;
-}
-
-/* 安装日志 */
-QTextEdit#install_log {
+/* 安装进度与日志（后端页、显卡页） */
+QPlainTextEdit#install_log {
     background-color: #0d1117;
     border: 0.5px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
-    padding: 6px 10px;
     color: #98c379;
     font-family: "Consolas", "Courier New", monospace;
     font-size: 12px;
+    selection-background-color: rgba(123, 157, 188, 0.35);
+}
+
+QLabel#install_status {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+QLabel#install_status[state="done"] { color: #4ec994; }
+QLabel#install_status[state="error"] { color: #e06c75; }
+
+/* 设置页说明文字（和 page_hint 一致，不抢主内容） */
+QLabel#setting_hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.40);
+}
+
+/* 设置页滚动区：透明，沿用页面底色 */
+QScrollArea#setting_scroll,
+QWidget#setting_scroll_content {
+    background-color: transparent;
+    border: none;
 }
 
 /* ────────────────────────────────────────────────────────────

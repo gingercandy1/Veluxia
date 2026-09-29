@@ -2,10 +2,11 @@ from PySide6.QtCore import Qt, Signal, QObject, QThread
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QGroupBox, QLabel, QPushButton,
-    QRadioButton, QButtonGroup, QTextEdit
+    QRadioButton, QButtonGroup
 )
 
 from src.app.client import ApiGuardClient
+from src.app.ui.setting.page.install_progress import InstallProgress, scrollable_layout
 from src.app.ui.setting.page.log_page import log_error, log_success
 from src.shared.settings import ConfigManager
 
@@ -55,7 +56,7 @@ class GpuPage(QWidget):
         self._refresh_status()
 
     def _build_ui(self):
-        layout = QVBoxLayout(self)
+        layout = scrollable_layout(self)
         layout.setContentsMargins(32, 24, 32, 24)
         layout.setSpacing(20)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -106,20 +107,11 @@ class GpuPage(QWidget):
         btn_row.addStretch()
         backend_layout.addLayout(btn_row)
 
+        # 安装进度和日志：没安装过时不显示
+        self._progress = InstallProgress()
+        backend_layout.addWidget(self._progress)
+
         layout.addWidget(backend_group)
-
-        # 安装日志
-        log_group = QGroupBox(self.tr("Install log"))
-        log_group.setObjectName("setting_group")
-        log_layout = QVBoxLayout(log_group)
-
-        self._install_log = QTextEdit()
-        self._install_log.setReadOnly(True)
-        self._install_log.setFixedHeight(150)
-        self._install_log.setObjectName("install_log")
-        log_layout.addWidget(self._install_log)
-
-        layout.addWidget(log_group)
         layout.addStretch()
 
         # 监听选择变化
@@ -146,31 +138,25 @@ class GpuPage(QWidget):
 
     def _on_install(self):
         backend = "cuda" if self._cuda_radio.isChecked() else "cpu"
-        self._install_log.clear()
         self._install_btn.setEnabled(False)
-        self._append_log(self.tr("Installing the {0} backend...").format(backend.upper()))
+        self._progress.start(self.tr("Installing the {0} backend...").format(backend.upper()))
 
         try:
             self._worker = _InstallWorker(backend, ApiGuardClient.instance())
-            self._worker.signals.progress.connect(self._append_log)
+            self._worker.signals.progress.connect(self._progress.append)
             self._worker.signals.done.connect(self._on_install_done)
             self._worker.start()
         except Exception as e:
-            self._append_log(self.tr("Error: {0}").format(e))
+            self._progress.finish(False, self.tr("Error: {0}").format(e))
             self._install_btn.setEnabled(True)
-
-    def _append_log(self, line: str):
-        self._install_log.insertPlainText(line + "\n")
-        self._install_log.ensureCursorVisible()
 
     def _on_install_done(self, success: bool, msg: str):
         self._install_btn.setEnabled(True)
+        self._progress.finish(success, msg)
         if success:
-            self._append_log(f"✓ {msg}")
             log_success(f"后端安装完成: {msg}")
             self._refresh_status()
         else:
-            self._append_log(f"✗ {msg}")
             log_error(f"后端安装失败: {msg}")
 
     def _on_backend_changed(self):

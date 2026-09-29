@@ -12,13 +12,13 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QRadioButton,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from src.app import local_backend
 from src.app.client import BackendStatus, probe_backend
+from src.app.ui.setting.page.install_progress import InstallProgress, scrollable_layout
 from src.app.ui.setting.page.log_page import log_error, log_success
 from src.app.work import BackendInstallWorker, LibraryTaskWorker
 from src.shared.settings import ConfigManager
@@ -44,7 +44,7 @@ class BackendPage(QWidget):
         self._refresh_install_status()
 
     def _build_ui(self):
-        layout = QVBoxLayout(self)
+        layout = scrollable_layout(self)
         layout.setContentsMargins(32, 24, 32, 24)
         layout.setSpacing(20)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -137,11 +137,8 @@ class BackendPage(QWidget):
         note.setWordWrap(True)
         group_layout.addWidget(note)
 
-        self._install_log = QTextEdit()
-        self._install_log.setReadOnly(True)
-        self._install_log.setFixedHeight(150)
-        self._install_log.setObjectName("install_log")
-        group_layout.addWidget(self._install_log)
+        self._progress = InstallProgress()
+        group_layout.addWidget(self._progress)
         return self._local_box
 
     # ── 连接方式 ──
@@ -215,9 +212,9 @@ class BackendPage(QWidget):
         self.collect()
         self.install.emit()
         self._set_install_enabled(False)
-        self._install_log.clear()
+        self._progress.start(self.tr("Preparing to install into {0}…").format(self._install_root()))
         self._install_worker = BackendInstallWorker(self._install_root(), archive)
-        self._install_worker.progress.connect(self._append_log)
+        self._install_worker.progress.connect(self._progress.append)
         self._install_worker.finished_ok.connect(self._on_install_done)
         self._install_worker.error.connect(self._on_install_error)
         self._install_worker.start()
@@ -227,12 +224,9 @@ class BackendPage(QWidget):
         self._zip_btn.setEnabled(enabled)
         self._dir_edit.setEnabled(enabled)
 
-    def _append_log(self, line: str):
-        self._install_log.append(line)
-        self._install_log.ensureCursorVisible()
-
     def _on_install_done(self):
         self._set_install_enabled(True)
+        self._progress.finish(True, self.tr("Installation complete"))
         self._refresh_install_status()
         self._config.save()  # 安装目录要落盘，重启后启动流程才找得到
         log_success(f"本机后端安装完成: {self._install_root()}")
@@ -245,7 +239,7 @@ class BackendPage(QWidget):
     def _on_install_error(self, msg: str):
         self._set_install_enabled(True)
         self._refresh_install_status()
-        self._append_log(f"✗ {msg}")
+        self._progress.finish(False, msg)
         log_error(f"本机后端安装失败: {msg}")
 
     # ── 配置读写 ──
