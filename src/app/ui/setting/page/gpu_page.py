@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.client import ApiGuardClient
+from src.app.work import LibraryTaskWorker
 from src.app.ui.setting.page.install_progress import InstallProgress, scrollable_layout
 from src.app.ui.setting.page.log_page import log_error, log_success
 from src.shared.settings import ConfigManager
@@ -48,11 +49,14 @@ class GpuPage(QWidget):
         self.setObjectName("gpu_page")
         self._config = ConfigManager()
         self._worker = None
+        self._detect_worker = None
         self._build_ui()
         self.load()
 
     def showEvent(self, event):
         super().showEvent(event)
+        # 只在打开这一页时检测：主窗口构造时守护服务还没起来，同步请求必然失败，
+        # 而 Windows 上连一个没人监听的端口要卡约 2 秒，窗口会晚出来
         self._refresh_status()
 
     def _build_ui(self):
@@ -118,8 +122,32 @@ class GpuPage(QWidget):
         self._btn_group.buttonClicked.connect(self._on_backend_changed)
 
     def _refresh_status(self):
+        """在后台线程里请求守护服务，界面不等它。"""
+        if self._detect_worker is not None:
+            return
+        self._refresh_btn.setEnabled(False)
+        self._status_label.setStyleSheet("")
+        self._status_label.setText(self.tr("Detecting..."))
+        self._detect_worker = LibraryTaskWorker(ApiGuardClient.instance().detect_device)
+        self._detect_worker.finished_ok.connect(self._show_status)
+        self._detect_worker.error.connect(lambda message: self._show_status(None, message))
+        self._detect_worker.finished.connect(self._on_detect_finished)
+        self._detect_worker.start()
+
+    def _on_detect_finished(self):
+        self._detect_worker = None
+        self._refresh_btn.setEnabled(True)
+
+    def _show_status(self, info: dict | None, error: str = ""):
         try:
-            info = ApiGuardClient.instance().detect_device()
+            if info is None:
+                raise RuntimeError(error)
+            if not info:
+                # detect_device 连不上时返回空字典：多半是刚启动、守护服务还没起来，别误报成"没有显卡"
+                self._status_label.setText(self.tr(
+                    "The local service is not ready yet. Click Refresh in a moment."))
+                self._status_label.setStyleSheet("color: #e5c07b;")
+                return
             if info.get("cuda_available"):
                 gpus = info.get("gpus", [{}])[-1]
                 print(gpus)
@@ -168,7 +196,6 @@ class GpuPage(QWidget):
             self._cuda_radio.setChecked(True)
         else:
             self._cpu_radio.setChecked(True)
-        self._refresh_status()
 
     def collect(self):
         backend = "cuda" if self._cuda_radio.isChecked() else "cpu"

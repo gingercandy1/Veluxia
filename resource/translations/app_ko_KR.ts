@@ -329,8 +329,8 @@
 <context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+264"/>
-        <location line="+23"/>
+        <location filename="../../src/app/work.py" line="+301"/>
+        <location line="+22"/>
         <source>Starting backend...</source>
         <translation>백엔드를 시작하는 중…</translation>
     </message>
@@ -340,7 +340,7 @@
         <translation>로컬 백엔드가 설치되지 않았습니다. 설정 → 백엔드에서 설치하거나 원격 주소를 설정하세요.</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+15"/>
         <source>The remote backend address is empty. Set it in Settings → Backend.</source>
         <translation>원격 백엔드 주소가 비어 있습니다. 설정 → 백엔드에서 설정하세요.</translation>
     </message>
@@ -643,7 +643,7 @@
 <context>
     <name>GpuPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+65"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+69"/>
         <source>GPU Settings</source>
         <translation>GPU 설정</translation>
     </message>
@@ -654,11 +654,12 @@
     </message>
     <message>
         <location line="+4"/>
+        <location line="+52"/>
         <source>Detecting...</source>
         <translation>감지 중…</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-47"/>
         <source>Refresh</source>
         <translation>새로 고침</translation>
     </message>
@@ -683,7 +684,12 @@
         <translation>적용 및 설치</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+41"/>
+        <source>The local service is not ready yet. Click Refresh in a moment.</source>
+        <translation>로컬 서비스가 아직 준비되지 않았습니다. 잠시 후 새로 고침을 눌러 주세요.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Unknown</source>
         <translation>알 수 없음</translation>
     </message>
@@ -2225,7 +2231,7 @@
 <context>
     <name>_InstallWorker</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-112"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-139"/>
         <source>Installation complete</source>
         <translation>설치 완료</translation>
     </message>

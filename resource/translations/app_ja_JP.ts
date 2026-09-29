@@ -329,8 +329,8 @@
 <context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+264"/>
-        <location line="+23"/>
+        <location filename="../../src/app/work.py" line="+301"/>
+        <location line="+22"/>
         <source>Starting backend...</source>
         <translation>バックエンドを起動しています…</translation>
     </message>
@@ -340,7 +340,7 @@
         <translation>ローカルバックエンドがインストールされていません。設定 → バックエンド でインストールするか、リモートアドレスを設定してください。</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+15"/>
         <source>The remote backend address is empty. Set it in Settings → Backend.</source>
         <translation>リモートバックエンドのアドレスが空です。設定 → バックエンド で設定してください。</translation>
     </message>
@@ -643,7 +643,7 @@
 <context>
     <name>GpuPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+65"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+69"/>
         <source>GPU Settings</source>
         <translation>GPU 設定</translation>
     </message>
@@ -654,11 +654,12 @@
     </message>
     <message>
         <location line="+4"/>
+        <location line="+52"/>
         <source>Detecting...</source>
         <translation>検出中…</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-47"/>
         <source>Refresh</source>
         <translation>更新</translation>
     </message>
@@ -683,7 +684,12 @@
         <translation>適用してインストール</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+41"/>
+        <source>The local service is not ready yet. Click Refresh in a moment.</source>
+        <translation>ローカルサービスの準備がまだできていません。少し待ってから「更新」を押してください。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Unknown</source>
         <translation>不明</translation>
     </message>
@@ -2225,7 +2231,7 @@
 <context>
     <name>_InstallWorker</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-112"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-139"/>
         <source>Installation complete</source>
         <translation>インストールが完了しました</translation>
     </message>

@@ -329,8 +329,8 @@
 <context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+264"/>
-        <location line="+23"/>
+        <location filename="../../src/app/work.py" line="+301"/>
+        <location line="+22"/>
         <source>Starting backend...</source>
         <translation>正在启动后端…</translation>
     </message>
@@ -340,7 +340,7 @@
         <translation>本机后端尚未安装。请在 设置 → 后端 中安装，或填写远程地址。</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+15"/>
         <source>The remote backend address is empty. Set it in Settings → Backend.</source>
         <translation>远程后端地址为空，请在 设置 → 后端 中填写。</translation>
     </message>
@@ -643,7 +643,7 @@
 <context>
     <name>GpuPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+65"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+69"/>
         <source>GPU Settings</source>
         <translation>显卡设置</translation>
     </message>
@@ -654,11 +654,12 @@
     </message>
     <message>
         <location line="+4"/>
+        <location line="+52"/>
         <source>Detecting...</source>
         <translation>检测中…</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-47"/>
         <source>Refresh</source>
         <translation>刷新状态</translation>
     </message>
@@ -683,7 +684,12 @@
         <translation>应用并安装</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+41"/>
+        <source>The local service is not ready yet. Click Refresh in a moment.</source>
+        <translation>本机服务还没准备好，请稍后点击“刷新状态”。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Unknown</source>
         <translation>未知</translation>
     </message>
@@ -2225,7 +2231,7 @@
 <context>
     <name>_InstallWorker</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-112"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-139"/>
         <source>Installation complete</source>
         <translation>安装完成</translation>
     </message>

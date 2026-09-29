@@ -329,8 +329,8 @@
 <context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+264"/>
-        <location line="+23"/>
+        <location filename="../../src/app/work.py" line="+301"/>
+        <location line="+22"/>
         <source>Starting backend...</source>
         <translation>Starting backend...</translation>
     </message>
@@ -340,7 +340,7 @@
         <translation>The local backend is not installed. Install it or set a remote address in Settings → Backend.</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+15"/>
         <source>The remote backend address is empty. Set it in Settings → Backend.</source>
         <translation>The remote backend address is empty. Set it in Settings → Backend.</translation>
     </message>
@@ -645,7 +645,7 @@
 <context>
     <name>GpuPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+65"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+69"/>
         <source>GPU Settings</source>
         <translation>GPU Settings</translation>
     </message>
@@ -656,11 +656,12 @@
     </message>
     <message>
         <location line="+4"/>
+        <location line="+52"/>
         <source>Detecting...</source>
         <translation>Detecting...</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-47"/>
         <source>Refresh</source>
         <translation>Refresh</translation>
     </message>
@@ -685,7 +686,12 @@
         <translation>Apply and install</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+41"/>
+        <source>The local service is not ready yet. Click Refresh in a moment.</source>
+        <translation>The local service is not ready yet. Click Refresh in a moment.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Unknown</source>
         <translation>Unknown</translation>
     </message>
@@ -2227,7 +2233,7 @@
 <context>
     <name>_InstallWorker</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-112"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-139"/>
         <source>Installation complete</source>
         <translation>Installation complete</translation>
     </message>
