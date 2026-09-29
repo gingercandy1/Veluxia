@@ -218,6 +218,83 @@ QTextEdit:disabled {
 }
 
 /* ────────────────────────────────────────────────────────────
+   QRadioButton / QCheckBox
+   选中态：单选是外圈 + 实心圆点（径向渐变画出来，不用图片），复选是填色 + 对勾
+   ──────────────────────────────────────────────────────────── */
+QRadioButton,
+QCheckBox {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 13px;
+    spacing: 8px;
+    padding: 4px 0px;
+}
+
+QRadioButton:hover,
+QCheckBox:hover {
+    color: #DCDCDC;
+}
+
+QRadioButton:disabled,
+QCheckBox:disabled {
+    color: rgba(255, 255, 255, 0.28);
+}
+
+QRadioButton::indicator,
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+QRadioButton::indicator {
+    border-radius: 9px;
+}
+
+QCheckBox::indicator {
+    border-radius: 4px;
+}
+
+QRadioButton::indicator:hover,
+QCheckBox::indicator:hover {
+    border-color: rgba(123, 157, 188, 0.75);
+    background-color: rgba(123, 157, 188, 0.08);
+}
+
+QRadioButton::indicator:checked {
+    border-color: #7B9DBC;
+    background-color: qradialgradient(cx: 0.5, cy: 0.5, radius: 0.5, fx: 0.5, fy: 0.5,
+        stop: 0 #9AC5EC, stop: 0.38 #7B9DBC, stop: 0.46 rgba(123, 157, 188, 0.14),
+        stop: 1 rgba(123, 157, 188, 0.14));
+}
+
+QCheckBox::indicator:checked {
+    border-color: #7B9DBC;
+    background-color: #7B9DBC;
+    image: url(:/svg/check.svg);
+}
+
+QCheckBox::indicator:checked:hover {
+    background-color: #8fb0cc;
+}
+
+QRadioButton::indicator:disabled,
+QCheckBox::indicator:disabled {
+    border-color: rgba(255, 255, 255, 0.10);
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+QRadioButton::indicator:checked:disabled {
+    background-color: qradialgradient(cx: 0.5, cy: 0.5, radius: 0.5, fx: 0.5, fy: 0.5,
+        stop: 0 rgba(123, 157, 188, 0.45), stop: 0.38 rgba(123, 157, 188, 0.45),
+        stop: 0.46 transparent, stop: 1 transparent);
+}
+
+QCheckBox::indicator:checked:disabled {
+    background-color: rgba(123, 157, 188, 0.35);
+}
+
+/* ────────────────────────────────────────────────────────────
    QSpinBox / QDoubleSpinBox
    ──────────────────────────────────────────────────────────── */
 QSpinBox,
