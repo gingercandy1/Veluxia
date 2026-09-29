@@ -9,6 +9,7 @@ from src.app.ui.setting.page.general_page import GeneralPage
 from src.app.ui.setting.page.gpu_page import GpuPage
 from src.app.ui.setting.page.backend_page import BackendPage
 from src.app.ui.setting.page.model_page import ModelPage
+from src.app.ui.setting.page.storage_page import StoragePage
 from src.app.ui.setting.page.translation_page import TranslationPage
 from src.app.ui.setting.page.about_page import AboutPage
 from src.app.ui.setting.page.log_page import LogPanel, log_success
@@ -38,9 +39,10 @@ class _NavBar(QWidget):
         (QT_TRANSLATE_NOOP("_NavBar", "Graphics Card"), ":/svg/gpu.svg",          1),
         (QT_TRANSLATE_NOOP("_NavBar", "Backend"),       ":/svg/server.svg",       2),
         (QT_TRANSLATE_NOOP("_NavBar", "Model"),         ":/svg/model.svg",        3),
-        (QT_TRANSLATE_NOOP("_NavBar", "Translation"),   ":/svg/translate.svg",    4),
-        (QT_TRANSLATE_NOOP("_NavBar", "Journal"),       ":/svg/log.svg",          5),
-        (QT_TRANSLATE_NOOP("_NavBar", "About"),         ":/svg/about.svg",        6),
+        (QT_TRANSLATE_NOOP("_NavBar", "Storage"),       ":/svg/storage.svg",      4),
+        (QT_TRANSLATE_NOOP("_NavBar", "Translation"),   ":/svg/translate.svg",    5),
+        (QT_TRANSLATE_NOOP("_NavBar", "Journal"),       ":/svg/log.svg",          6),
+        (QT_TRANSLATE_NOOP("_NavBar", "About"),         ":/svg/about.svg",        7),
     ]
     BACKEND_INDEX = 2
 
@@ -178,6 +180,7 @@ class SettingPage(QWidget):
         self._gpu_page         = GpuPage()
         self._backend_page     = BackendPage()
         self._model_page       = ModelPage()
+        self._storage_page     = StoragePage()
         self._translation_page = TranslationPage()
         self._log_panel        = LogPanel()
         self._about_page       = AboutPage()
@@ -187,6 +190,7 @@ class SettingPage(QWidget):
             self._gpu_page,
             self._backend_page,
             self._model_page,
+            self._storage_page,
             self._translation_page,
             self._log_panel,
             self._about_page,

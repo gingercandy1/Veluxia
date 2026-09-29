@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+316"/>
+        <location line="+323"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>无法连接后端，请确认服务是否已启动。</translation>
     </message>
     <message>
-        <location line="-447"/>
+        <location line="-454"/>
         <source>Connection timed out.</source>
         <translation>连接超时。</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>无法连接后端：{0}</translation>
     </message>
     <message>
-        <location line="+212"/>
+        <location line="+219"/>
         <source>An install task is already running...</source>
         <translation>安装任务已在运行中…</translation>
     </message>
@@ -525,17 +525,27 @@
 <context>
     <name>GardenView</name>
     <message>
-        <location filename="../../src/app/ui/library/garden.py" line="+33"/>
+        <location filename="../../src/app/ui/library/garden.py" line="+45"/>
         <source>Library</source>
         <translation>资料库</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+6"/>
+        <source>Search packs and items</source>
+        <translation>搜索资源包和条目</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>New pack</source>
         <translation>新建资源包</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+12"/>
+        <source>No packs match your search.</source>
+        <translation>没有符合搜索条件的资源包。</translation>
+    </message>
+    <message>
+        <location line="+51"/>
         <source>New {0} pack</source>
         <translation>新建{0}包</translation>
     </message>
@@ -1610,7 +1620,7 @@
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="+236"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="+240"/>
         <source>Backend settings changed</source>
         <translation>后端设置已更改</translation>
     </message>
@@ -1684,6 +1694,134 @@
         <location line="+3"/>
         <source>seed</source>
         <translation>种子</translation>
+    </message>
+</context>
+<context>
+    <name>StoragePage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+52"/>
+        <source>Model Storage</source>
+        <translation>模型存储</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Disk space used by downloaded model weights. A deleted model downloads again the next time you use it.</source>
+        <translation>已下载的模型权重占用的磁盘空间。删除后，下次使用该模型时会重新下载。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Refresh</source>
+        <translation>刷新</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Type</source>
+        <translation>类型</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Size</source>
+        <translation>大小</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Calculating…</source>
+        <translation>正在统计…</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Delete &quot;{0}&quot; ({1})?</source>
+        <translation>删除“{0}”（{1}）？</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>This model is NOT downloaded automatically. You will have to put the files back by hand before frame interpolation works again.</source>
+        <translation>这个模型不会自动下载。删除后需要手动把文件放回去，插帧功能才能再次使用。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>It downloads again the next time you use it.</source>
+        <translation>下次使用时会重新下载。</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Delete model files</source>
+        <translation>删除模型文件</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Deleting {0}…</source>
+        <translation>正在删除 {0}…</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Total: {0} in {1} items</source>
+        <translation>共 {0}，{1} 项</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Music (ACE-Step)</source>
+        <translation>音乐（ACE-Step）</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Background removal</source>
+        <translation>去背景</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Text</source>
+        <translation>文本</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Image</source>
+        <translation>图片</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Voice and audio</source>
+        <translation>语音与音频</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Animation</source>
+        <translation>动画</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Frame interpolation</source>
+        <translation>插帧</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Speech-to-text</source>
+        <translation>语音转文字</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Upscaling</source>
+        <translation>放大</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Prompt optimizer</source>
+        <translation>提示词优化</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Other</source>
+        <translation>其他</translation>
     </message>
 </context>
 <context>
@@ -2005,7 +2143,7 @@
 <context>
     <name>_BottomBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-145"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-147"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
@@ -2080,7 +2218,7 @@
 <context>
     <name>_NavBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-73"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-74"/>
         <source>General</source>
         <translation>通用</translation>
     </message>
@@ -2098,6 +2236,11 @@
         <location line="+1"/>
         <source>Model</source>
         <translation>模型</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Storage</source>
+        <translation>存储空间</translation>
     </message>
     <message>
         <location line="+1"/>

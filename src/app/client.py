@@ -12,7 +12,7 @@ from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, Animat
     ModelInfoResponse, TranslateResponse, RefineResponse, SpriteSheetResponse, TranscriptionResponse, \
     CreatePackRequest, PackListResponse, PackResponse, TemplateListResponse, \
     ApproveStepRequest, ResetStepRequest, DraftItemsRequest, DraftItemsResponse, \
-    StyleListResponse, StylePreset
+    StyleListResponse, StylePreset, ModelStorageResponse
 
 _DEFAULT_LIMITS = httpx.Limits(
     max_connections=10,
@@ -449,6 +449,13 @@ class ApiClient:
             return BaseResponse.from_error(str(exc))
         finally:
             partial.unlink(missing_ok=True)
+
+    # 模型文件占用
+    def list_model_storage(self) -> ModelStorageResponse:
+        return self._get("/storage/models", response_cls=ModelStorageResponse)
+
+    def delete_model_storage(self, entry_id: str) -> ModelStorageResponse:
+        return self._post("/storage/models/delete", {"id": entry_id}, ModelStorageResponse)
 
     def list_styles(self) -> StyleListResponse:
         return self._get("/library/styles", response_cls=StyleListResponse)

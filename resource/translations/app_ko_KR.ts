@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+316"/>
+        <location line="+323"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>백엔드에 연결할 수 없습니다. 서비스가 실행 중인지 확인하세요.</translation>
     </message>
     <message>
-        <location line="-447"/>
+        <location line="-454"/>
         <source>Connection timed out.</source>
         <translation>연결 시간이 초과되었습니다.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>백엔드에 연결할 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location line="+212"/>
+        <location line="+219"/>
         <source>An install task is already running...</source>
         <translation>설치 작업이 이미 실행 중입니다…</translation>
     </message>
@@ -525,17 +525,27 @@
 <context>
     <name>GardenView</name>
     <message>
-        <location filename="../../src/app/ui/library/garden.py" line="+33"/>
+        <location filename="../../src/app/ui/library/garden.py" line="+45"/>
         <source>Library</source>
         <translation>라이브러리</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+6"/>
+        <source>Search packs and items</source>
+        <translation>팩과 항목 검색</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>New pack</source>
         <translation>새 팩</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+12"/>
+        <source>No packs match your search.</source>
+        <translation>검색과 일치하는 팩이 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+51"/>
         <source>New {0} pack</source>
         <translation>새 {0} 팩</translation>
     </message>
@@ -1610,7 +1620,7 @@
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="+236"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="+240"/>
         <source>Backend settings changed</source>
         <translation>백엔드 설정이 변경됨</translation>
     </message>
@@ -1684,6 +1694,134 @@
         <location line="+3"/>
         <source>seed</source>
         <translation>시드</translation>
+    </message>
+</context>
+<context>
+    <name>StoragePage</name>
+    <message>
+        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+52"/>
+        <source>Model Storage</source>
+        <translation>모델 저장 공간</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Disk space used by downloaded model weights. A deleted model downloads again the next time you use it.</source>
+        <translation>다운로드한 모델 가중치가 차지하는 디스크 공간입니다. 삭제한 모델은 다음에 사용할 때 다시 다운로드됩니다.</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Refresh</source>
+        <translation>새로 고침</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Type</source>
+        <translation>유형</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Name</source>
+        <translation>이름</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Size</source>
+        <translation>크기</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Calculating…</source>
+        <translation>계산 중…</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Delete &quot;{0}&quot; ({1})?</source>
+        <translation>&quot;{0}&quot;({1})을(를) 삭제할까요?</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>This model is NOT downloaded automatically. You will have to put the files back by hand before frame interpolation works again.</source>
+        <translation>이 모델은 자동으로 다운로드되지 않습니다. 프레임 보간을 다시 쓰려면 파일을 직접 다시 넣어야 합니다.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>It downloads again the next time you use it.</source>
+        <translation>다음에 사용할 때 다시 다운로드됩니다.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Delete model files</source>
+        <translation>모델 파일 삭제</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Deleting {0}…</source>
+        <translation>{0} 삭제 중…</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Total: {0} in {1} items</source>
+        <translation>합계: {0}, {1}개 항목</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Delete</source>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Music (ACE-Step)</source>
+        <translation>음악(ACE-Step)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Background removal</source>
+        <translation>배경 제거</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Text</source>
+        <translation>텍스트</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Image</source>
+        <translation>이미지</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Voice and audio</source>
+        <translation>음성 및 오디오</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Animation</source>
+        <translation>애니메이션</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Frame interpolation</source>
+        <translation>프레임 보간</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Speech-to-text</source>
+        <translation>음성 인식</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Upscaling</source>
+        <translation>업스케일</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Prompt optimizer</source>
+        <translation>프롬프트 최적화</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Other</source>
+        <translation>기타</translation>
     </message>
 </context>
 <context>
@@ -2005,7 +2143,7 @@
 <context>
     <name>_BottomBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-145"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-147"/>
         <source>Save</source>
         <translation>저장</translation>
     </message>
@@ -2080,7 +2218,7 @@
 <context>
     <name>_NavBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-73"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-74"/>
         <source>General</source>
         <translation>일반</translation>
     </message>
@@ -2098,6 +2236,11 @@
         <location line="+1"/>
         <source>Model</source>
         <translation>모델</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Storage</source>
+        <translation>저장 공간</translation>
     </message>
     <message>
         <location line="+1"/>
