@@ -7,7 +7,8 @@ from PySide6.QtWidgets import QTableWidgetItem
 
 from src.app.ui.library.detail_panel import DetailPanel, ScriptEditor
 from src.app.ui.library.garden import GardenView
-from src.app.ui.library.library_page import LibraryPage
+from src.app.ui.library import library_page
+from src.app.ui.library.library_page import LibraryPage, export_file_name
 from src.app.ui.library.pack_detail import RUNNING_ROLE, PackDetail
 from src.app.ui.library.pack_form import PackForm
 from src.app.ui.library.pack_status import (
@@ -20,6 +21,7 @@ from src.app.ui.library.pack_status import (
     step_chain,
 )
 from src.shared.schemas import (
+    BaseResponse,
     CastMember,
     CollectionItem,
     CollectionStyle,
@@ -421,6 +423,43 @@ def test_page_reloads_thumbnails_for_rebuilt_cards(qapp):
     page._open_pack("c2")
     page._open_pack("c1")
     assert fetched.count(hero_thumb) == 3
+
+
+def test_export_button_needs_a_finished_deliverable(qapp):
+    view = PackDetail()
+    empty = _character_pack()
+    empty.manifest.items[0].steps["trim"] = StepState(status="pending")
+    view.show_pack(empty, CHARACTER, busy=False)
+    assert not view.export_btn.isEnabled()  # 只有中间产物（generate）做完了不算
+    view.show_pack(_character_pack(), CHARACTER, busy=False)
+    assert view.export_btn.isEnabled()
+    view.set_exporting(True)
+    assert not view.export_btn.isEnabled()
+    view.set_exporting(False)
+    assert view.export_btn.isEnabled()
+
+
+def test_export_file_name_strips_illegal_characters():
+    assert export_file_name('主角:第1版/草稿?') == "主角_第1版_草稿_"
+    assert export_file_name(" ... ") == "pack"
+
+
+def test_page_exports_to_chosen_zip(qapp, monkeypatch, tmp_path):
+    page = _page(qapp)
+    page._on_packs(PackListResponse(packs=[_character_pack()]))
+    page._open_pack("c1")
+    monkeypatch.setattr(library_page.QFileDialog, "getSaveFileName",
+                        lambda *args: (str(tmp_path / "hero"), ""))
+    started = []
+    page._start = lambda fn, *args, **kwargs: started.append((fn, args, kwargs))
+    page._export_current()
+    fn, args, kwargs = started[0]
+    assert fn == page._client.export_pack and args == ("c1", tmp_path / "hero.zip")
+    assert not page.detail.export_btn.isEnabled()
+
+    kwargs["on_ok"](BaseResponse.from_error("这个资源包还没有可导出的成品"))
+    assert page.detail.export_btn.isEnabled()
+    assert "还没有可导出的成品" in page.detail.error_label.text()
 
 
 def test_page_runs_after_approve_when_idle(qapp):

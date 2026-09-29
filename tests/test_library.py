@@ -3,13 +3,17 @@
 用临时模板目录 + 假 runner，无权重、无 GPU 也可跑。
 """
 import json
+import tempfile
 import threading
 import time
+import zipfile
+from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from src.app.client import ApiClient
 from src.backend.core import model_utils
 from src.backend.core.collection import library, steps, template
 from src.backend.core.collection.steps import StepContext, StepRunner
@@ -88,6 +92,11 @@ def client(tmp_path, monkeypatch):
     (templates / "motion.json").write_text(json.dumps({
         "id": "motion", "type": "character", "source": "character",
         "steps": [{"id": "video", "type": "test.inputs", "inputs": ["@source"]}],
+    }), encoding="utf-8")
+    (templates / "deliver.json").write_text(json.dumps({
+        "id": "deliver", "type": "item",
+        "steps": [{"id": "draft", "type": "test.echo"},
+                  {"id": "final", "type": "test.echo", "deliverable": True, "inputs": ["draft"]}],
     }), encoding="utf-8")
     (templates / "panorama.json").write_text(json.dumps({
         "id": "panorama", "type": "scene",
@@ -234,6 +243,61 @@ def _run(client, pack_id):
 
 def _steps(manifest):
     return manifest["items"][0]["steps"]
+
+
+def test_export_zips_only_deliverables_with_index(client, tmp_path):
+    items = [{"id": "sword", "prompt": "sword", "fields": {}}, {"id": "shield", "prompt": "shield"}]
+    pack_id = _create(client, name="武器", template="deliver", items=items).json()["manifest"]["id"]
+    assert client.get(f"/library/packs/{pack_id}/export").status_code == 400  # 还没有成品
+    _run(client, pack_id)
+
+    response = client.get(f"/library/packs/{pack_id}/export")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/zip"
+    archive = tmp_path / "export.zip"
+    archive.write_bytes(response.content)
+    with zipfile.ZipFile(archive) as zipped:
+        # 中间产物（draft）不带，只带成品和索引
+        assert sorted(zipped.namelist()) == ["pack.json", "shield/final.txt", "sword/final.txt"]
+        assert zipped.read("sword/final.txt").decode("utf-8") == "sword, teal"
+        index = json.loads(zipped.read("pack.json"))
+    assert index["name"] == "武器" and index["type"] == "item"
+    assert [i["id"] for i in index["items"]] == ["sword", "shield"]
+    assert index["items"][0]["files"] == {"final": ["sword/final.txt"]}
+    # 临时 zip 发送完就删掉，不在服务器上堆积
+    assert not list(Path(tempfile.gettempdir()).glob("veluxia_export_*.zip"))
+
+
+def test_client_downloads_export_and_reports_errors(client, tmp_path, monkeypatch):
+    api = ApiClient.instance()
+    monkeypatch.setattr(api, "_session", client)
+    monkeypatch.setattr(api, "base_url", "http://testserver")
+    pack_id = _create(client, template="deliver", items=[{"id": "a", "prompt": "a"}]
+                      ).json()["manifest"]["id"]
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    target = downloads / "out.zip"
+
+    failed = api.export_pack(pack_id, target)
+    assert not failed.ok and "还没有可导出的成品" in failed.error
+    assert not list(downloads.iterdir())  # 不留残缺文件
+
+    _run(client, pack_id)
+    assert api.export_pack(pack_id, target).ok
+    with zipfile.ZipFile(target) as zipped:
+        assert "a/final.txt" in zipped.namelist()
+    assert [p.name for p in downloads.iterdir()] == ["out.zip"]
+
+
+def test_export_skips_missing_files_and_unknown_packs(client):
+    pack_id = _create(client, template="deliver",
+                      items=[{"id": "a", "prompt": "a"}, {"id": "b", "prompt": "b"}]
+                      ).json()["manifest"]["id"]
+    _run(client, pack_id)
+    (library.pack_dir(pack_id) / "a" / "final.txt").unlink()
+    assert library.export_pack(pack_id, library.pack_dir(pack_id).parent / "out.zip") == 1
+    assert client.get("/library/packs/nothere/export").status_code == 404
+    assert client.get("/library/packs/..%5Cconfig/export").status_code == 400
 
 
 def test_review_step_blocks_downstream_until_approved(client):

@@ -1,6 +1,11 @@
 import asyncio
+import os
+import tempfile
+from pathlib import Path
 
 from fastapi import HTTPException
+from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 
 from src.backend.core.collection import library
 from src.backend.core.collection.drafts import draft_items
@@ -92,6 +97,24 @@ class LibraryRouter(BaseRouter):
             except ValueError as exc:
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
             return BaseResponse(ok=True)
+
+        @self.router.get("/packs/{pack_id}/export", summary="把成品打包成 zip 下载",
+                         response_class=FileResponse)
+        async def export_pack(pack_id: str) -> FileResponse:
+            # 走 HTTP 下载而不是让前端直接读包目录：远程后端时前端看不到后端的文件系统
+            fd, name = tempfile.mkstemp(suffix=".zip", prefix="veluxia_export_")
+            os.close(fd)
+            target = Path(name)
+            try:
+                await asyncio.to_thread(library.export_pack, pack_id, target)
+            except FileNotFoundError as exc:
+                target.unlink(missing_ok=True)
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+            except ValueError as exc:
+                target.unlink(missing_ok=True)
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            return FileResponse(target, media_type="application/zip", filename=f"{pack_id}.zip",
+                                background=BackgroundTask(target.unlink, missing_ok=True))
 
         @self.router.post("/packs/{pack_id}/approve", response_model=PackResponse,
                           summary="确认待审阅的步骤")

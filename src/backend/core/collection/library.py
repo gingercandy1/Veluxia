@@ -3,11 +3,13 @@
 每个资源包是 get_media_root()/library/<id>/ 下的一个文件夹，状态全部记在 manifest.json 里。
 项目级风格预设存在同目录的 styles.json（ADR 0006），拷走资料库目录时预设一起带走。
 """
+import json
 import os
 import re
 import shutil
 import threading
 import uuid
+import zipfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -45,6 +47,8 @@ CHARACTER_GENDER_FIELD = "gender"
 CHARACTER_PORTRAIT_STEP = "trim"
 
 STYLES_NAME = "styles.json"
+# 导出 zip 里的条目索引
+EXPORT_INDEX = "pack.json"
 _STYLE_LIST = TypeAdapter(list[StylePreset])
 
 _running: set[str] = set()
@@ -140,6 +144,49 @@ def delete_pack(pack_id: str) -> None:
         if pack_id in _running:
             raise PackBusyError(f"资源包 {pack_id} 正在执行，先停止再删除")
         shutil.rmtree(directory)
+
+
+def export_pack(pack_id: str, target: Path) -> int:
+    """把模板里标了 deliverable 的步骤产物打成 zip，写到 target，返回收进去的文件数。
+
+    包目录里混着草稿、编码缓存、放大前的原图等中间产物，拖进引擎的只该是成品。
+    zip 里保持 <条目 id>/<文件名> 的结构（和包目录一致，文件名天然不重名），
+    另附 EXPORT_INDEX 列出每个条目的描述、字段和成品文件，方便导入脚本按条目处理。
+    没完成或文件已丢失的产物跳过，一件成品都没有时报错。
+    """
+    directory = pack_dir(pack_id)
+    manifest = load_manifest(directory)
+    template = load_template(manifest.template)
+    deliverable_steps = [step for step in template.steps if step.deliverable]
+
+    index_items = []
+    files: list[str] = []
+    for item in manifest.items:
+        outputs: dict[str, list[str]] = {}
+        for step in deliverable_steps:
+            state = item.steps.get(step.id)
+            if state is None or state.status != "done":
+                continue
+            existing = [p for p in state.outputs if (directory / p).is_file()]
+            if existing:
+                outputs[step.id] = existing
+                files.extend(existing)
+        if outputs:
+            index_items.append({"id": item.id, "prompt": item.prompt,
+                                "fields": item.fields, "files": outputs})
+    if not files:
+        raise ValueError("这个资源包还没有可导出的成品，先执行生成")
+
+    index = {"id": manifest.id, "name": manifest.name, "type": manifest.type,
+             "template": manifest.template, "style": manifest.style.prompt,
+             "items": index_items}
+    # 图片、音频本身已压缩，再压一遍只费时间；索引是文本，照常压缩
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_STORED) as archive:
+        for relative in dict.fromkeys(files):
+            archive.write(directory / relative, relative)
+        archive.writestr(EXPORT_INDEX, json.dumps(index, ensure_ascii=False, indent=2),
+                         compress_type=zipfile.ZIP_DEFLATED)
+    return len(set(files))
 
 
 def run_pack(pack_id: str, cancel_event: threading.Event) -> Manifest:
