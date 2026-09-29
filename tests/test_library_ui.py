@@ -3,8 +3,10 @@ import json
 
 import pytest
 from PySide6.QtCore import QEvent
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QTableWidgetItem
 
+from src.app.ui.library.activity import LoadingStrip
 from src.app.ui.library.detail_panel import DetailPanel, ScriptEditor
 from src.app.ui.library.garden import GardenView
 from src.app.ui.library import library_page
@@ -169,6 +171,49 @@ def test_garden_search_survives_polling_refresh(qapp):
     garden.set_packs([renamed, villain], {"character_basic": CHARACTER})
     assert garden._cards["c2"] is card          # 没有重建，缩略图不丢
     assert not garden._cards["c1"].isHidden() and card.isHidden()
+
+
+def test_garden_shows_loading_only_while_empty(qapp):
+    garden = GardenView()
+    garden.set_loading(True)
+    assert not garden.loading_strip.isHidden() and garden.loading_strip.is_active()
+    assert not garden.loading_label.isHidden()
+    garden.set_packs([_character_pack()], {"character_basic": CHARACTER})
+    garden.set_loading(False)
+    assert garden.loading_strip.isHidden() and not garden.loading_strip.is_active()
+    garden.set_loading(True)               # 再次进入页面刷新：已有卡片，不闪加载条
+    assert garden.loading_strip.isHidden()
+
+
+def test_page_marks_thumbnails_loading_until_they_arrive(qapp):
+    page = LibraryPage()
+    page._template_list = [CHARACTER]
+    started = []
+    page._start = lambda fn, *args, **kwargs: started.append(kwargs)
+    page._on_packs(PackListResponse(packs=[_character_pack()]))
+    card = page.garden.card("c1")
+    assert card.is_loading()
+    started[-1]["on_error"]("boom")
+    assert not card.is_loading()
+    card.set_loading(True)
+    card.set_thumbnail(QPixmap(10, 10))
+    assert not card.is_loading()
+
+
+def test_detail_panel_shows_loading_for_finished_asset(qapp):
+    panel = DetailPanel()
+    pack = _character_pack()
+    item = pack.manifest.items[0]
+    panel.show_asset(pack, CHARACTER, item, CHARACTER.step_details[1], busy=False)  # trim 已完成
+    strips = panel.findChildren(LoadingStrip)
+    assert strips and strips[0].is_active()
+    panel.set_image(panel.key, QPixmap(20, 20))
+    qapp.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    assert not panel.findChildren(LoadingStrip)
+    # 没生成的素材不显示加载，只说还没生成
+    panel.show_asset(pack, CHARACTER, item, CHARACTER.step_details[2], busy=False)
+    qapp.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    assert not panel.findChildren(LoadingStrip)
 
 
 # ---- 新建表单 ----

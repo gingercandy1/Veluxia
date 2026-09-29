@@ -261,7 +261,7 @@
         <translation>При первой установке загружается PyTorch (около 3 ГБ), нужно подключение к интернету.</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+20"/>
         <source>Enter an address first.</source>
         <translation>Сначала введите адрес.</translation>
     </message>
@@ -306,7 +306,17 @@
         <translation>Выберите пакет бэкенда</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+8"/>
+        <source>Preparing to install into {0}…</source>
+        <translation>Подготовка к установке в {0}…</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Installation complete</source>
+        <translation>Установка завершена</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Backend installed</source>
         <translation>Бэкенд установлен</translation>
     </message>
@@ -374,13 +384,13 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+183"/>
-        <location line="+54"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+184"/>
+        <location line="+60"/>
         <source>Select an asset to see how it was made</source>
         <translation>Выберите ассет, чтобы увидеть, как он создан</translation>
     </message>
     <message>
-        <location line="-40"/>
+        <location line="-46"/>
         <source>Prompt</source>
         <translation>Промпт</translation>
     </message>
@@ -393,6 +403,11 @@
         <location line="+30"/>
         <source>Not generated yet</source>
         <translation>Ещё не создано</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Loading preview…</source>
+        <translation>Загрузка превью…</translation>
     </message>
     <message>
         <location line="+26"/>
@@ -525,7 +540,7 @@
 <context>
     <name>GardenView</name>
     <message>
-        <location filename="../../src/app/ui/library/garden.py" line="+45"/>
+        <location filename="../../src/app/ui/library/garden.py" line="+46"/>
         <source>Library</source>
         <translation>Библиотека</translation>
     </message>
@@ -540,12 +555,17 @@
         <translation>Новый пакет</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+15"/>
+        <source>Loading packs…</source>
+        <translation>Загрузка пакетов…</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>No packs match your search.</source>
         <translation>Нет пакетов, подходящих под запрос.</translation>
     </message>
     <message>
-        <location line="+51"/>
+        <location line="+57"/>
         <source>New {0} pack</source>
         <translation>Новый пакет: {0}</translation>
     </message>
@@ -627,7 +647,7 @@
 <context>
     <name>GpuPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+64"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+65"/>
         <source>GPU Settings</source>
         <translation>Настройки GPU</translation>
     </message>
@@ -667,12 +687,7 @@
         <translation>Применить и установить</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>Install log</source>
-        <translation>Журнал установки</translation>
-    </message>
-    <message>
-        <location line="+22"/>
+        <location line="+23"/>
         <source>Unknown</source>
         <translation>Неизвестно</translation>
     </message>
@@ -692,7 +707,7 @@
         <translation>Не удалось получить состояние: {0}</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+6"/>
         <source>Installing the {0} backend...</source>
         <translation>Установка движка {0}…</translation>
     </message>
@@ -907,17 +922,17 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+182"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+187"/>
         <source>Failed to load packs: {0}</source>
         <translation>Не удалось загрузить пакеты: {0}</translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location line="-19"/>
         <source>Failed to load templates: {0}</source>
         <translation>Не удалось загрузить шаблоны: {0}</translation>
     </message>
     <message>
-        <location line="+127"/>
+        <location line="+128"/>
         <source>Failed to create pack: {0}</source>
         <translation>Не удалось создать пакет: {0}</translation>
     </message>
@@ -1586,7 +1601,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-265"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-271"/>
         <source>Speaker</source>
         <translation>Говорящий</translation>
     </message>
@@ -1703,7 +1718,7 @@
 <context>
     <name>StoragePage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+52"/>
+        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+53"/>
         <source>Model Storage</source>
         <translation>Хранилище моделей</translation>
     </message>
@@ -1733,7 +1748,7 @@
         <translation>Размер</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+23"/>
         <source>Calculating…</source>
         <translation>Подсчёт…</translation>
     </message>
@@ -1768,12 +1783,12 @@
         <translation>Всего: {0}, элементов: {1}</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+15"/>
         <source>Music (ACE-Step)</source>
         <translation>Музыка (ACE-Step)</translation>
     </message>
@@ -2214,7 +2229,7 @@
 <context>
     <name>_InstallWorker</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-122"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-112"/>
         <source>Installation complete</source>
         <translation>Установка завершена</translation>
     </message>

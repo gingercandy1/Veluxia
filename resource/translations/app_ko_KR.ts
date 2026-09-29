@@ -261,7 +261,7 @@
         <translation>처음 설치할 때 PyTorch(약 3 GB)를 다운로드하므로 인터넷 연결이 필요합니다.</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+20"/>
         <source>Enter an address first.</source>
         <translation>먼저 주소를 입력하세요.</translation>
     </message>
@@ -306,7 +306,17 @@
         <translation>백엔드 패키지 선택</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+8"/>
+        <source>Preparing to install into {0}…</source>
+        <translation>{0}에 설치 준비 중…</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Installation complete</source>
+        <translation>설치 완료</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Backend installed</source>
         <translation>백엔드 설치 완료</translation>
     </message>
@@ -374,13 +384,13 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+183"/>
-        <location line="+54"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+184"/>
+        <location line="+60"/>
         <source>Select an asset to see how it was made</source>
         <translation>소재를 선택하면 생성 과정을 볼 수 있습니다</translation>
     </message>
     <message>
-        <location line="-40"/>
+        <location line="-46"/>
         <source>Prompt</source>
         <translation>프롬프트</translation>
     </message>
@@ -393,6 +403,11 @@
         <location line="+30"/>
         <source>Not generated yet</source>
         <translation>아직 생성되지 않음</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Loading preview…</source>
+        <translation>미리보기 불러오는 중…</translation>
     </message>
     <message>
         <location line="+26"/>
@@ -525,7 +540,7 @@
 <context>
     <name>GardenView</name>
     <message>
-        <location filename="../../src/app/ui/library/garden.py" line="+45"/>
+        <location filename="../../src/app/ui/library/garden.py" line="+46"/>
         <source>Library</source>
         <translation>라이브러리</translation>
     </message>
@@ -540,12 +555,17 @@
         <translation>새 팩</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+15"/>
+        <source>Loading packs…</source>
+        <translation>팩 불러오는 중…</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>No packs match your search.</source>
         <translation>검색과 일치하는 팩이 없습니다.</translation>
     </message>
     <message>
-        <location line="+51"/>
+        <location line="+57"/>
         <source>New {0} pack</source>
         <translation>새 {0} 팩</translation>
     </message>
@@ -623,7 +643,7 @@
 <context>
     <name>GpuPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+64"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="+65"/>
         <source>GPU Settings</source>
         <translation>GPU 설정</translation>
     </message>
@@ -663,12 +683,7 @@
         <translation>적용 및 설치</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>Install log</source>
-        <translation>설치 로그</translation>
-    </message>
-    <message>
-        <location line="+22"/>
+        <location line="+23"/>
         <source>Unknown</source>
         <translation>알 수 없음</translation>
     </message>
@@ -688,7 +703,7 @@
         <translation>상태를 가져오지 못했습니다: {0}</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+6"/>
         <source>Installing the {0} backend...</source>
         <translation>{0} 백엔드를 설치하는 중…</translation>
     </message>
@@ -903,17 +918,17 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+182"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+187"/>
         <source>Failed to load packs: {0}</source>
         <translation>팩 목록을 불러오지 못했습니다: {0}</translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location line="-19"/>
         <source>Failed to load templates: {0}</source>
         <translation>템플릿을 불러오지 못했습니다: {0}</translation>
     </message>
     <message>
-        <location line="+127"/>
+        <location line="+128"/>
         <source>Failed to create pack: {0}</source>
         <translation>팩을 만들지 못했습니다: {0}</translation>
     </message>
@@ -1582,7 +1597,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-265"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-271"/>
         <source>Speaker</source>
         <translation>화자</translation>
     </message>
@@ -1699,7 +1714,7 @@
 <context>
     <name>StoragePage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+52"/>
+        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+53"/>
         <source>Model Storage</source>
         <translation>모델 저장 공간</translation>
     </message>
@@ -1729,7 +1744,7 @@
         <translation>크기</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+23"/>
         <source>Calculating…</source>
         <translation>계산 중…</translation>
     </message>
@@ -1764,12 +1779,12 @@
         <translation>합계: {0}, {1}개 항목</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Delete</source>
         <translation>삭제</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+15"/>
         <source>Music (ACE-Step)</source>
         <translation>음악(ACE-Step)</translation>
     </message>
@@ -2210,7 +2225,7 @@
 <context>
     <name>_InstallWorker</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-122"/>
+        <location filename="../../src/app/ui/setting/page/gpu_page.py" line="-112"/>
         <source>Installation complete</source>
         <translation>설치 완료</translation>
     </message>

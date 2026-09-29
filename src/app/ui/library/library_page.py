@@ -122,7 +122,10 @@ class LibraryPage(BaseWidget):
     # ---- 对外 ----
     def activate(self):
         """每次进入页面时刷新：资源包可能在别处被改动（例如手动删了文件夹）。"""
-        self._start(self._client.list_templates, on_ok=self._on_templates)
+        self.garden.set_loading(True)
+        self._start(self._client.list_templates, on_ok=self._on_templates,
+                    on_error=lambda message: self._on_templates(
+                        TemplateListResponse.from_error(message)))
         self._start(self._client.list_styles, on_ok=self._on_styles,
                     on_error=lambda message: self._on_styles(StyleListResponse.from_error(message)))
 
@@ -161,6 +164,7 @@ class LibraryPage(BaseWidget):
     # ---- 数据刷新 ----
     def _on_templates(self, response: TemplateListResponse):
         if not response.ok:
+            self.garden.set_loading(False)
             self.garden.set_error(self.tr("Failed to load templates: {0}").format(response.error))
             return
         self._template_list = response.templates
@@ -178,6 +182,7 @@ class LibraryPage(BaseWidget):
 
     def _on_packs(self, response: PackListResponse):
         self._refreshing = False
+        self.garden.set_loading(False)
         if not response.ok:
             self.garden.set_error(self.tr("Failed to load packs: {0}").format(response.error))
             self._update_polling()
@@ -473,9 +478,13 @@ class LibraryPage(BaseWidget):
             return
         # 先记下再加载：失败也不会每次轮询都重试同一张坏图
         card.thumb_token = token
+        card.set_loading(True)
+
+        def failed(message: str):
+            card.set_loading(False)
+            print(f"⚠️ 缩略图加载失败：{message}")
         self._start(self._fetch_image, url, size,
-                    on_ok=lambda image: apply(QPixmap.fromImage(image)),
-                    on_error=lambda message: print(f"⚠️ 缩略图加载失败：{message}"))
+                    on_ok=lambda image: apply(QPixmap.fromImage(image)), on_error=failed)
 
     def _fetch_image(self, url: str, size: QSize) -> QImage:
         # 在 worker 线程里解码和缩放：原图可能有几千像素，放主线程会卡界面

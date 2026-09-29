@@ -3,7 +3,7 @@ from PySide6.QtGui import QColor, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from src.app.ui.base.widget import BaseWidget
-from src.app.ui.library.activity import ProgressStrip
+from src.app.ui.library.activity import ProgressStrip, Shimmer
 from src.app.ui.library.pack_status import Progress, status_text
 
 PACK_THUMB = QSize(184, 124)
@@ -40,6 +40,7 @@ class Card(BaseWidget):
         self.thumb.setFixedSize(thumb_size)
         self.thumb.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.thumb)
+        self._shimmer = Shimmer(self.thumb)
 
         self.name_label = QLabel()
         self.name_label.setObjectName("card_name")
@@ -83,9 +84,17 @@ class Card(BaseWidget):
         repolish(self.badge)
 
     def set_thumbnail(self, pixmap: QPixmap):
+        self.set_loading(False)
         self.thumb.setPixmap(pixmap.scaled(
             self._thumb_size, Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation))
+
+    def set_loading(self, loading: bool):
+        """缩略图在路上：占位上扫一道微光。"""
+        self._shimmer.set_running(loading)
+
+    def is_loading(self) -> bool:
+        return self._shimmer.is_running()
 
     def set_selected(self, selected: bool):
         self.setProperty("selected", selected)
