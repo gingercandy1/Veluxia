@@ -2,8 +2,8 @@
   "id": "scene_background",
   "version": 1,
   "type": "scene",
-  "name": "场景背景",
-  "description": "整张场景背景图，可选横版侧视、俯视、等距或正面 CG 视角，生成宽幅图后放大。可选左右或四向无缝，生成时就首尾相接，引擎里可直接平铺。长度选多屏时一次生成几屏宽的长卷，各段内容不同但生成时就自然衔接；填了分段描述（如\"幽暗森林 | 林间村庄 | 山顶城堡\"）时逐段变换场景。",
+  "name": "场景",
+  "description": "整张场景图，可选横版侧视、俯视、等距或正面 CG 视角，生成宽幅图后放大。可选左右或四向无缝，生成时就首尾相接，引擎里可直接平铺。长度选多屏时一次生成几屏宽的长卷，各段内容不同但生成时就自然衔接；填了分段描述（如\"幽暗森林 | 林间村庄 | 山顶城堡\"）时逐段变换场景。分层选了层数时，再把整张图拆成从底到顶的透明图层（背景会补全被前景挡住的部分），每层放大后交付，可直接做视差滚动；分层只支持单屏，很慢，一张约 15～25 分钟。",
   "prompt_label": "场景描述",
   "cover": "upscale",
   "fields": [
@@ -24,10 +24,19 @@
       {"value": "3", "label": "3 屏宽（自动衔接）"},
       {"value": "4", "label": "4 屏宽（自动衔接）"}
     ]},
-    {"id": "segment_desc", "label": "分段描述（用 | 分隔，段数同长度）"}
+    {"id": "segment_desc", "label": "分段描述（用 | 分隔，段数同长度）"},
+    {"id": "layers", "label": "分层（只支持单屏）", "default": "0", "draft": false, "options": [
+      {"value": "0", "label": "不分层"},
+      {"value": "3", "label": "3 层（很慢，约 15 分钟）"},
+      {"value": "4", "label": "4 层（很慢，约 18 分钟）"},
+      {"value": "6", "label": "6 层（很慢，约 25 分钟）"}
+    ]}
   ],
   "steps": [
     {"id": "generate", "type": "image.generate", "label": "生成", "params": {"model_name": "Z-Image-Turbo", "width": 1344, "height": 768, "tile_mode": "{tile}", "segments": "{length}", "segment_prompts": "{segment_desc}", "prompt_suffix": "{view}, no characters, no text"}},
-    {"id": "upscale", "type": "image.upscale", "label": "放大", "deliverable": true, "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2, "tile_mode": "{tile}"}, "inputs": ["generate"]}
+    {"id": "upscale", "type": "image.upscale", "label": "整图", "deliverable": true, "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2, "tile_mode": "{tile}"}, "inputs": ["generate"]},
+    {"id": "layer_encode", "type": "image.layer_encode", "label": "分层编码", "when": "layers", "params": {"model_name": "Qwen-Image-Layered", "prompt_suffix": "{view}, no characters, no text"}},
+    {"id": "layer", "type": "image.layer", "label": "分层", "when": "layers", "params": {"model_name": "Qwen-Image-Layered", "layers": "{layers}"}, "inputs": ["generate", "layer_encode"]},
+    {"id": "layers", "type": "image.upscale", "label": "图层", "deliverable": true, "when": "layers", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2, "tile_mode": "{tile}"}, "inputs": ["layer"]}
   ]
 }
