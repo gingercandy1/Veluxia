@@ -38,6 +38,31 @@ def load_gguf_transformer(model_cls, gguf_path: Path, base_dir: Path):
     )
 
 
+def dequantize_gguf_embeddings(module, dequantize=None) -> list[str]:
+    """把仍是 GGUF 量化字节的 nn.Embedding 权重就地解压成 bf16，返回处理过的模块名。
+
+    diffusers 的 GGUF 只在 Linear 前向时即时解压；Embedding 直接按行取权重，
+    拿到的是压缩字节，形状也不对。Qwen-Image-Layered 独有的
+    time_text_embed.addition_t_embedding 就是这样，第一步就报 3072 对不上 6144。
+    Embedding 通常很小，解压成 bf16 常驻也不占多少内存。
+    dequantize 只在单测里替换，正常使用 diffusers 自带的解压函数。
+    """
+    import torch
+
+    if dequantize is None:
+        from diffusers.quantizers.gguf.utils import dequantize_gguf_tensor
+        dequantize = dequantize_gguf_tensor
+    fixed = []
+    for name, child in module.named_modules():
+        weight = getattr(child, "weight", None)
+        quantized = getattr(weight, "quant_type", None) is not None
+        if isinstance(child, torch.nn.Embedding) and quantized:
+            child.weight = torch.nn.Parameter(dequantize(weight).to(torch.bfloat16),
+                                              requires_grad=False)
+            fixed.append(name)
+    return fixed
+
+
 @dataclass(frozen=True)
 class LoraSpec:
     repo_id: str
@@ -94,22 +119,31 @@ def apply_loras(pipe, loras: list[LoraSpec]):
                       adapter_weights=[lora.scale for lora in loras])
 
 
-def apply_offload(pipe, mode: str = "model", device: str = "cuda"):
+def apply_offload(pipe, mode: str = "model", device: str = "cuda", group: dict | None = None):
     """显存卸载策略，同时打开 VAE 分片 / 分块解码（8GB 下高分辨率解码的峰值主要在 VAE）。
 
     - model：整模块在 CPU / GPU 间搬运，最快；但它靠存储指针互换，和 torchao 量化
       tensor 子类不兼容（报 "storage of a tensor on device cuda:0 ..."）。
-    - group：按叶子层搬运参数，量化权重可用，显存最省但更慢。
+    - group：按层搬运参数，量化权重可用，显存最省但更慢。默认按叶子层；
+      group 可改成 {"type": "block_level", "blocks_per_group": N, "use_stream": true}：
+      一次搬一组块、用 CUDA 流让搬运和计算重叠，显存用得多一些，速度快不少。
     - sequential：逐层搬运，最慢，只在前两者都放不下时用。
     """
     if mode == "model":
         pipe.enable_model_cpu_offload()
     elif mode == "group":
         import torch
+        options = group or {}
+        offload_type = options.get("type", "leaf_level")
+        kwargs = {}
+        if offload_type == "block_level":
+            kwargs["num_blocks_per_group"] = int(options.get("blocks_per_group", 1))
         pipe.enable_group_offload(
             onload_device=torch.device(device),
             offload_device=torch.device("cpu"),
-            offload_type="leaf_level",
+            offload_type=offload_type,
+            use_stream=bool(options.get("use_stream", False)),
+            **kwargs,
         )
     elif mode == "sequential":
         pipe.enable_sequential_cpu_offload()

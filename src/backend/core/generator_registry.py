@@ -6,7 +6,7 @@ _DEFAULT_KEY = "_generator"
 
 
 def _iter_models():
-    """产出 (类型, 模型名, tag, GeneratorSpec)；缺少 generator 的条目会被跳过并提示。"""
+    """产出 (类型, 模型名, 条目配置, GeneratorSpec)；缺少 generator 的条目会被跳过并提示。"""
     config = load_models_config()
     for ty in FactoryType:
         group = config.get(FactoryType.convert_to_text(ty))
@@ -20,14 +20,19 @@ def _iter_models():
             if not path:
                 print(f"⚠️ models.json: {ty.name}/{name} 未指定 generator，已跳过")
                 continue
-            yield ty, name, str(info.get("tag", "")), GeneratorSpec.parse(path)
+            yield ty, name, info, GeneratorSpec.parse(path)
 
 
 def register_all() -> None:
-    """只读 models.json，不 import 任何生成器模块，毫秒级完成。"""
-    for ty, name, tag, spec in _iter_models():
+    """只读 models.json，不 import 任何生成器模块，毫秒级完成。
+
+    library_only 的模型（如一次产出多张图层的分层模型）只给资料库步骤用：照常注册生成器，
+    但不进模型清单，聊天页的下拉里选不到——聊天的图片接口只接收一张图。
+    """
+    for ty, name, info, spec in _iter_models():
         GeneratorFactory.register_generator(ty, name, spec)
-        GeneratorFactory.register_model_info(ty, tag, name)
+        if not info.get("library_only"):
+            GeneratorFactory.register_model_info(ty, str(info.get("tag", "")), name)
 
 
 def warmup() -> None:

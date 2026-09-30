@@ -278,6 +278,29 @@
       "tag": "edit",
       "note": "按指令改图 / 转面图，需要参考图；GGUF Q4_K_M + Lightning 4 步 + 镜头转换 LoRA，显存约 2GB，内存峰值约 17GB"
     },
+    "Qwen-Image-Layered": {
+      "generator": "image.qwen_layered:QwenImageLayeredGenerator",
+      "repo_id": "Qwen/Qwen-Image-Layered",
+      "filename": "qwen-image-layered-Q4_K_M.gguf",
+      "gguf_repo_id": "unsloth/Qwen-Image-Layered-GGUF",
+      "text_encoder": {
+        "repo_id": "Qwen/Qwen-Image-Edit-2509",
+        "dir": "qwen-image-edit-2509"
+      },
+      "offload": {
+        "type": "leaf_level",
+        "blocks_per_group": 1,
+        "use_stream": false
+      },
+      "defaults": {
+        "num_inference_steps": 20,
+        "true_cfg_scale": 4.0,
+        "resolution": 640
+      },
+      "library_only": true,
+      "tag": "edit",
+      "note": "把一张图拆成透明图层，只在资料库的场景资源包里用；文本编码器与 Edit-2509 共用。实测 8GB 显存 / 32GB 内存、640 档 4 层 20 步：编码约 4 分钟（内存峰值 14.3GB），加载 GGUF 约 2.6 分钟，去噪约 11.5 分钟（内存峰值 16.8GB，显存约 1GB），合计约 18 分钟"
+    },
     "rembg-u2net": {
       "generator": "image.bg_removal:BgRemovalGenerator",
       "tag": "edit"
