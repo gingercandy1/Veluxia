@@ -9,6 +9,7 @@ from src.shared.schemas import (
     StepState,
     TemplateInfo,
     TemplateStepInfo,
+    condition_met,
 )
 
 _CONTEXT = "PackStatus"
@@ -42,6 +43,7 @@ STATUS_TEXT = {
     "error": QT_TRANSLATE_NOOP("PackStatus", "Failed"),
     "done": QT_TRANSLATE_NOOP("PackStatus", "Done"),
     "pending": QT_TRANSLATE_NOOP("PackStatus", "Pending"),
+    "skipped": QT_TRANSLATE_NOOP("PackStatus", "Skipped"),
 }
 _STATUS_PRIORITY = ("review", "running", "error", "pending", "done")
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp")
@@ -117,11 +119,33 @@ def _state(item: CollectionItem, step_id: str) -> StepState:
     return item.steps.get(step_id) or StepState()
 
 
-def _step_status(item: CollectionItem, step: TemplateStepInfo) -> str:
+def step_skipped(item: CollectionItem, step: TemplateStepInfo, template: TemplateInfo) -> bool:
+    """这一步在该条目上不执行（如"不分层"时的分层步骤）。
+
+    除了看后端标的 skipped，还按模板条件现算：刚建好、还没执行过的包里这些步骤仍是 pending，
+    不现算的话"不分层"的条目也会先冒出一排空的图层卡片。
+    """
+    if _state(item, step.id).status == "skipped":
+        return True
+    if not step.when:
+        return False
+    default = next((f.default for f in template.fields if f.id == step.when), "")
+    return not condition_met(item.fields.get(step.when) or default)
+
+
+def _finished(item: CollectionItem, step: TemplateStepInfo, template: TemplateInfo) -> bool:
+    return _state(item, step.id).status == "done" or step_skipped(item, step, template)
+
+
+def _step_status(item: CollectionItem, step: TemplateStepInfo,
+                 template: TemplateInfo | None = None) -> str:
+    # 跳过的步骤对进度来说等同完成：不然"不分层"的包永远停在"待执行"
+    if template is not None and step_skipped(item, step, template):
+        return "done"
     state = _state(item, step.id)
     if step.review and state.status == "done" and not state.approved:
         return "review"
-    return state.status
+    return "done" if state.status == "skipped" else state.status
 
 
 def merge_status(statuses: list[str]) -> str:
@@ -145,7 +169,7 @@ class Progress:
 
 def asset_progress(item: CollectionItem, chain: list[TemplateStepInfo]) -> Progress:
     statuses = [_step_status(item, step) for step in chain]
-    done = sum(1 for step in chain if _state(item, step.id).status == "done")
+    done = sum(1 for status in statuses if status == "done")
     return Progress(done, len(chain), merge_status(statuses) if statuses else "pending")
 
 
@@ -153,8 +177,8 @@ def pack_progress(manifest: Manifest, template: TemplateInfo, running: bool = Fa
     """卡片外层进度：done/total 数的是全部交付物都做完的条目；状态取全部步骤里最需要关注的那个。"""
     targets = deliverables(template)
     finished = sum(1 for item in manifest.items
-                   if all(_state(item, step.id).status == "done" for step in targets))
-    statuses = [_step_status(item, step) for item in manifest.items
+                   if all(_finished(item, step, template) for step in targets))
+    statuses = [_step_status(item, step, template) for item in manifest.items
                 for step in template.step_details]
     status = merge_status(statuses) if statuses else "pending"
     if running and status != "review":
@@ -166,18 +190,22 @@ def step_fraction(manifest: Manifest, template: TemplateInfo) -> int:
     """进度条用步骤完成比例，比"完成条目数"更平滑：长任务里也能看到它在动。"""
     total = len(manifest.items) * len(template.step_details)
     done = sum(1 for item in manifest.items for step in template.step_details
-               if _state(item, step.id).status == "done")
+               if _finished(item, step, template))
     return round(done * 100 / total) if total else 0
 
 
 def latest_image(item: CollectionItem, chain: list[TemplateStepInfo]) -> str:
-    """流程里最靠后的已完成图片：成品还没出来时，卡片先显示中间结果。"""
+    """流程里最靠后的已完成图片：成品还没出来时，卡片先显示中间结果。
+
+    一步产出多张图时取第一张：分层的第一张是最底层（补全过的完整背景），
+    最上层往往只剩几片透明的前景，做缩略图认不出是什么。
+    """
     for step in reversed(chain):
         state = _state(item, step.id)
         if state.status == "done":
             images = [p for p in state.outputs if p.lower().endswith(IMAGE_SUFFIXES)]
             if images:
-                return images[-1]
+                return images[0]
     return ""
 
 

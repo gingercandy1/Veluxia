@@ -42,6 +42,7 @@ from src.shared.schemas import (
     StylePreset,
     TemplateInfo,
     TemplateListResponse,
+    UpdateItemFieldsRequest,
 )
 from src.shared.settings import PROJECT_ROOT
 
@@ -118,6 +119,7 @@ class LibraryPage(BaseWidget):
         self.detail.asset_opened.connect(self._on_asset_opened)
         self.detail.detail.reset_requested.connect(self._reset_step)
         self.detail.detail.approve_requested.connect(self._approve_step)
+        self.detail.detail.fields_update_requested.connect(self._update_fields)
 
     # ---- 对外 ----
     def activate(self):
@@ -419,6 +421,15 @@ class LibraryPage(BaseWidget):
         self._start(self._client.refresh_pack_source, pack.manifest.id,
                     on_ok=self._after_update(pack.manifest.id))
 
+    def _update_fields(self, item_id: str, fields: dict):
+        """事后改选项（如补做分层）：后端只把受影响的步骤标成待重做，改完直接接着执行。"""
+        pack = self.detail.pack
+        if pack is None:
+            return
+        request = UpdateItemFieldsRequest(item_id=item_id, fields=fields)
+        self._start(self._client.update_item_fields, pack.manifest.id, request,
+                    on_ok=self._after_update(pack.manifest.id))
+
     def _reset_step(self, item_id: str, step_id: str):
         pack = self.detail.pack
         if pack is None:
@@ -509,7 +520,7 @@ class LibraryPage(BaseWidget):
         if not images:
             return  # 音频、剧本单击就在详情里看，双击不另开
         key = self.detail.detail.key
-        self._start(self._download, pack, images[-1], key.signature,
+        self._start(self._download, pack, images[0], key.signature,
                     on_ok=lambda path: self.detail.show_image(str(path)),
                     on_error=self.detail.set_error)
 
@@ -536,7 +547,14 @@ class LibraryPage(BaseWidget):
 
         images = [o for o in outputs if o.lower().endswith(IMAGE_SUFFIXES)]
         audio = [o for o in outputs if o.lower().endswith(AUDIO_SUFFIXES)]
-        if images:
+        if len(images) > 1:
+            urls = [f"{pack.media_base}/{image}" for image in images]
+            size = QSize(PREVIEW_WIDTH, PREVIEW_WIDTH * 2)
+            self._start(lambda: [self._fetch_image(url, size) for url in urls],
+                        on_ok=lambda loaded: panel.set_images(
+                            key, [QPixmap.fromImage(image) for image in loaded]),
+                        on_error=on_error)
+        elif images:
             self._start(self._fetch_image, f"{pack.media_base}/{images[-1]}",
                         QSize(PREVIEW_WIDTH, PREVIEW_WIDTH * 2),
                         on_ok=lambda image: panel.set_image(key, QPixmap.fromImage(image)),

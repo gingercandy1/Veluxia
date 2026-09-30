@@ -4,12 +4,12 @@ import json
 import pytest
 from PySide6.QtCore import QEvent
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QTableWidgetItem
+from PySide6.QtWidgets import QLabel, QTableWidgetItem
 
+from src.app.ui.library import library_page
 from src.app.ui.library.activity import LoadingStrip
 from src.app.ui.library.detail_panel import DetailPanel, ScriptEditor
 from src.app.ui.library.garden import GardenView
-from src.app.ui.library import library_page
 from src.app.ui.library.library_page import LibraryPage, export_file_name
 from src.app.ui.library.pack_detail import RUNNING_ROLE, PackDetail
 from src.app.ui.library.pack_form import PackForm
@@ -21,6 +21,8 @@ from src.app.ui.library.pack_status import (
     pack_cover,
     pack_progress,
     step_chain,
+    step_fraction,
+    step_skipped,
 )
 from src.shared.schemas import (
     BaseResponse,
@@ -561,3 +563,131 @@ def test_page_runs_after_approve_when_idle(qapp):
     page._refresh_packs = lambda: None
     page._after_update("c1")(_character_pack())
     assert started == ["c1"]
+
+
+# ---- 场景：条件步骤（分层）----
+SCENE = TemplateInfo(
+    id="scene_background", type="scene", name="场景", cover="upscale",
+    fields=[TemplateFieldInfo(id="length", default="1",
+                              options=[FieldOption(value="1"), FieldOption(value="2")]),
+            TemplateFieldInfo(id="layers", label="分层", default="0",
+                              options=[FieldOption(value="0", label="不分层"),
+                                       FieldOption(value="3", label="3 层"),
+                                       FieldOption(value="4", label="4 层")])],
+    steps=["generate", "upscale", "layer_encode", "layer", "layers"],
+    step_details=[
+        TemplateStepInfo(id="generate", type="image.generate"),
+        TemplateStepInfo(id="upscale", type="image.upscale", deliverable=True,
+                         inputs=["generate"]),
+        TemplateStepInfo(id="layer_encode", type="image.layer_encode", when="layers"),
+        TemplateStepInfo(id="layer", type="image.layer", when="layers",
+                         inputs=["generate", "layer_encode"]),
+        TemplateStepInfo(id="layers", type="image.upscale", deliverable=True, when="layers",
+                         inputs=["layer"]),
+    ])
+
+
+def _scene_pack(layers: str = "", layered: bool = False) -> PackResponse:
+    fields = {"layers": layers} if layers else {}
+    steps = {"generate": StepState(status="done", outputs=["01/generate.png"]),
+             "upscale": StepState(status="done", outputs=["01/upscale.png"])}
+    if layered:
+        steps["layer_encode"] = StepState(status="done", outputs=["01/layer_encode.pt"])
+        steps["layer"] = StepState(status="done", outputs=["01/layer_1.png", "01/layer_2.png"])
+        steps["layers"] = StepState(status="done", outputs=[
+            "01/layers_1.png", "01/layers_2.png", "01/layers_3.png"])
+    elif not layers:
+        steps.update({s: StepState(status="skipped") for s in ("layer_encode", "layer", "layers")})
+    item = CollectionItem(id="01", prompt="forest", fields=fields, steps=steps)
+    manifest = Manifest(id="s1", name="森林", type="scene", template="scene_background",
+                        items=[item])
+    return PackResponse(manifest=manifest, media_base="/media/library/s1")
+
+
+def test_skipped_steps_count_as_finished():
+    pack = _scene_pack()
+    item = pack.manifest.items[0]
+    layers_step = SCENE.step_details[4]
+    assert step_skipped(item, layers_step, SCENE)
+    progress = pack_progress(pack.manifest, SCENE)
+    # "不分层"的包做完整图就是完成，不能一直停在"待执行"
+    assert (progress.done, progress.total, progress.status) == (1, 1, "done")
+    assert step_fraction(pack.manifest, SCENE) == 100
+
+
+def test_condition_is_checked_before_the_pack_ever_ran():
+    # 刚建好还没执行：状态都是 pending，按字段默认值现算，也不该冒出图层卡片
+    item = CollectionItem(id="01", prompt="forest")
+    assert step_skipped(item, SCENE.step_details[4], SCENE)
+    item.fields["layers"] = "4"
+    assert not step_skipped(item, SCENE.step_details[4], SCENE)
+
+
+def test_layer_thumbnail_is_the_bottom_layer():
+    item = _scene_pack(layers="3", layered=True).manifest.items[0]
+    assert latest_image(item, step_chain(SCENE, "layers")) == "01/layers_1.png"
+
+
+def test_scene_detail_shows_layer_cards_only_when_layering(qapp):
+    view = PackDetail()
+    view.show_pack(_scene_pack(), SCENE, busy=False)
+    assert set(view._cards) == {("01", "upscale")}
+    view.show_pack(_scene_pack(layers="3", layered=True), SCENE, busy=False)
+    assert set(view._cards) == {("01", "upscale"), ("01", "layers")}
+
+
+def test_cover_offers_layering_afterwards(qapp):
+    panel = DetailPanel()
+    pack = _scene_pack()
+    item = pack.manifest.items[0]
+    requested = []
+    panel.fields_update_requested.connect(
+        lambda item_id, fields: requested.append((item_id, fields)))
+    panel.show_asset(pack, SCENE, item, SCENE.step_details[1], busy=False)
+    [(apply_btn, combo, current)] = panel._option_rows
+    assert current == "0" and not apply_btn.isEnabled()  # 没改就不能点
+    combo.setCurrentIndex(combo.findData("4"))
+    assert apply_btn.isEnabled()
+    # 轮询刷新同一个素材时不重建下拉，用户正在选的值不会被冲掉
+    panel.show_asset(pack, SCENE, item, SCENE.step_details[1], busy=False)
+    assert panel._option_rows[0][1] is combo and combo.currentData() == "4"
+    panel.set_busy(True)
+    assert not apply_btn.isEnabled()
+    panel.set_busy(False)
+    apply_btn.click()
+    assert requested == [("01", {"layers": "4"})]
+
+
+def test_layer_assets_have_no_layering_option(qapp):
+    panel = DetailPanel()
+    pack = _scene_pack(layers="3", layered=True)
+    panel.show_asset(pack, SCENE, pack.manifest.items[0], SCENE.step_details[4], busy=False)
+    assert panel._option_rows == []
+
+
+def test_multi_image_preview_lists_layers_bottom_to_top(qapp):
+    panel = DetailPanel()
+    pack = _scene_pack(layers="3", layered=True)
+    panel.show_asset(pack, SCENE, pack.manifest.items[0], SCENE.step_details[4], busy=False)
+    panel.set_images(panel.key, [QPixmap(20, 10), QPixmap(20, 10), QPixmap(20, 10)])
+    texts = [panel._preview.itemAt(i).widget().text() for i in range(panel._preview.count())
+             if isinstance(panel._preview.itemAt(i).widget(), QLabel)
+             and panel._preview.itemAt(i).widget().text()]
+    assert texts[0] == "1 (bottom)" and "3 (top)" in texts and "2" in texts
+
+
+def test_page_updates_fields_then_runs(qapp):
+    page = _page(qapp)
+    page._template_list = [SCENE]
+    page._on_packs(PackListResponse(packs=[_scene_pack()]))
+    page._open_pack("s1")
+    started = []
+    page._start = lambda fn, *args, **kwargs: started.append((fn, args, kwargs))
+    page.detail.detail.fields_update_requested.emit("01", {"layers": "3"})
+    fn, (pack_id, request), kwargs = started[0]
+    assert fn == page._client.update_item_fields and pack_id == "s1"
+    assert request.item_id == "01" and request.fields == {"layers": "3"}
+    ran = []
+    page._run_pack = ran.append
+    kwargs["on_ok"](_scene_pack(layers="3"))
+    assert ran == ["s1"]

@@ -153,6 +153,7 @@ class DetailPanel(BaseWidget):
     """素材详情侧栏：预览、提示词与字段、执行流程（每一步的模型、参数、耗时，可单步重做）。"""
     reset_requested = Signal(str, str)              # item id, step id
     approve_requested = Signal(str, str, object)    # item id, step id, 修改后的内容或 None
+    fields_update_requested = Signal(str, dict)     # item id, 要改的字段（如事后补做分层）
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -165,6 +166,9 @@ class DetailPanel(BaseWidget):
         self._approved = False
         self._busy = False
         self._redo_buttons: list[QPushButton] = []
+        # (应用按钮, 下拉, 当前值)；_options_key 没变就不重建，免得轮询刷新把用户正在选的值冲掉
+        self._option_rows: list[tuple[QPushButton, QComboBox, str]] = []
+        self._options_key: tuple | None = None
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -199,6 +203,10 @@ class DetailPanel(BaseWidget):
         self._layout.addWidget(self._prompt_heading)
         self._layout.addWidget(self.prompt_label)
         self._layout.addWidget(self.fields_label)
+        # 事后可改的选项（如给已生成的整图补做分层）：只在模板封面（整图）上出现
+        self._options = QVBoxLayout()
+        self._options.setSpacing(6)
+        self._layout.addLayout(self._options)
 
         self._flow_heading = self._heading(self.tr("Flow"))
         self._layout.addWidget(self._flow_heading)
@@ -226,6 +234,7 @@ class DetailPanel(BaseWidget):
         self.fields_label.setVisible(bool(self.fields_label.text()))
         self._set_sections_visible(True)
         self._rebuild_flow(item, step_chain(template, step.id))
+        self._rebuild_options(template, item, step)
         if changed:
             self._clear_preview()
             state = item.steps.get(step.id) or StepState()
@@ -245,13 +254,21 @@ class DetailPanel(BaseWidget):
         self.subtitle_label.clear()
         self._clear_preview()
         self._clear_layout(self._flow)
+        self._clear_layout(self._options)
         self._redo_buttons = []
+        self._option_rows = []
+        self._options_key = None
         self._set_sections_visible(False)
 
     def set_busy(self, busy: bool):
         self._busy = busy
         for button in self._redo_buttons:
             button.setEnabled(not busy)
+        self._refresh_option_buttons()
+
+    def _refresh_option_buttons(self):
+        for button, combo, current in self._option_rows:
+            button.setEnabled(not self._busy and combo.currentData() != current)
 
     def set_image(self, key: AssetKey, pixmap: QPixmap):
         if key != self.key:
@@ -266,6 +283,25 @@ class DetailPanel(BaseWidget):
         self._add_preview(label)
         if self._step is not None and pixmap.width():
             self._add_preview(self._muted(f"{pixmap.width()} × {pixmap.height()}"))
+
+    def set_images(self, key: AssetKey, pixmaps: list[QPixmap]):
+        """一个产物里有多张图（如分层的各个图层）：从第一张到最后一张竖着排，第一张是最底层。"""
+        if key != self.key:
+            return
+        self._clear_preview()
+        last = len(pixmaps)
+        for index, pixmap in enumerate(pixmaps, start=1):
+            caption = (self.tr("{0} (bottom)") if index == 1 else
+                       self.tr("{0} (top)") if index == last else "{0}").format(index)
+            self._add_preview(self._muted(caption))
+            label = QLabel()
+            label.setObjectName("detail_image")
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setPixmap(pixmap.scaledToWidth(min(PREVIEW_WIDTH, pixmap.width()),
+                                                 Qt.TransformationMode.SmoothTransformation))
+            self._add_preview(label)
+        if pixmaps and pixmaps[0].width():
+            self._add_preview(self._muted(f"{pixmaps[0].width()} × {pixmaps[0].height()}"))
 
     def set_audio(self, key: AssetKey, tracks: list[tuple[str, Path]]):
         """tracks：(说明文字, 本地文件)。对话配音每句一条，说明是"说话人：台词"。"""
@@ -305,6 +341,52 @@ class DetailPanel(BaseWidget):
         if key == self.key:
             self._clear_preview()
             self._add_preview(self._error(message))
+
+    # ---- 事后可改的选项 ----
+    def _rebuild_options(self, template: TemplateInfo, item: CollectionItem,
+                         step: TemplateStepInfo):
+        """模板里决定某些步骤做不做的下拉字段（如分层），在封面素材上给出修改入口。
+
+        改了之后后端只把依赖这个字段的步骤标记为待重做，已生成的整图不动。
+        """
+        conditional = {s.when for s in template.step_details if s.when}
+        options_key = (self.key.pack_id if self.key else "", item.id, step.id,
+                       tuple((f, item.fields.get(f, "")) for f in sorted(conditional)))
+        if options_key == self._options_key:
+            return
+        self._options_key = options_key
+        self._clear_layout(self._options)
+        self._option_rows = []
+        if step.id != template.cover:
+            return
+        for spec in template.fields:
+            if spec.id not in conditional or not spec.options:
+                continue
+            current = item.fields.get(spec.id) or spec.default
+            row = QWidget()
+            layout = QHBoxLayout(row)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(6)
+            label = QLabel(spec.label or spec.id)
+            label.setObjectName("detail_muted")
+            combo = QComboBox()
+            for option in spec.options:
+                combo.addItem(option.label or option.value, option.value)
+            combo.setCurrentIndex(max(combo.findData(current), 0))
+            apply_btn = QPushButton(self.tr("Apply"))
+            apply_btn.setObjectName("library_primary_btn")
+            apply_btn.setToolTip(self.tr(
+                "Redo only the steps that depend on this option; the image itself is kept."))
+            combo.currentIndexChanged.connect(self._refresh_option_buttons)
+            apply_btn.clicked.connect(
+                lambda _=False, c=combo, field_id=spec.id, item_id=item.id:
+                self.fields_update_requested.emit(item_id, {field_id: c.currentData()}))
+            layout.addWidget(label)
+            layout.addWidget(combo, 1)
+            layout.addWidget(apply_btn)
+            self._options.addWidget(row)
+            self._option_rows.append((apply_btn, combo, current))
+        self._refresh_option_buttons()
 
     # ---- 执行流程 ----
     def _rebuild_flow(self, item: CollectionItem, chain: list[TemplateStepInfo]):

@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+323"/>
+        <location line="+326"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>バックエンドに接続できません。サービスが起動しているか確認してください。</translation>
     </message>
     <message>
-        <location line="-454"/>
+        <location line="-457"/>
         <source>Connection timed out.</source>
         <translation>接続がタイムアウトしました。</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+314"/>
+        <location line="+317"/>
         <source>Cannot connect to the backend.</source>
         <translation>バックエンドに接続できません。</translation>
     </message>
     <message>
-        <location line="-198"/>
+        <location line="-201"/>
         <source>Generation stopped.</source>
         <translation>生成を停止しました。</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>バックエンドに接続できません：{0}</translation>
     </message>
     <message>
-        <location line="+219"/>
+        <location line="+222"/>
         <source>An install task is already running...</source>
         <translation>インストールタスクはすでに実行中です…</translation>
     </message>
@@ -384,23 +384,23 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+184"/>
-        <location line="+60"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+188"/>
+        <location line="+65"/>
         <source>Select an asset to see how it was made</source>
         <translation>素材を選ぶと生成の過程を確認できます</translation>
     </message>
     <message>
-        <location line="-46"/>
+        <location line="-51"/>
         <source>Prompt</source>
         <translation>プロンプト</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+9"/>
         <source>Flow</source>
         <translation>実行フロー</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+31"/>
         <source>Not generated yet</source>
         <translation>まだ生成されていません</translation>
     </message>
@@ -410,17 +410,37 @@
         <translation>プレビューを読み込み中…</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+34"/>
         <source>Double-click the card to enlarge</source>
         <translation>カードをダブルクリックで拡大</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+12"/>
+        <source>{0} (bottom)</source>
+        <translation>{0}（最下層）</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>{0} (top)</source>
+        <translation>{0}（最上層）</translation>
+    </message>
+    <message>
+        <location line="+32"/>
         <source>Cannot read script: {0}</source>
         <translation>台本を読み込めません：{0}</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+49"/>
+        <source>Apply</source>
+        <translation>適用</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Redo only the steps that depend on this option; the image itself is kept.</source>
+        <translation>このオプションに依存するステップだけをやり直します。画像そのものはそのまま残ります。</translation>
+    </message>
+    <message>
+        <location line="+44"/>
         <source>Redo</source>
         <translation>やり直す</translation>
     </message>
@@ -924,7 +944,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+187"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+189"/>
         <source>Failed to load packs: {0}</source>
         <translation>パック一覧の読み込みに失敗しました：{0}</translation>
     </message>
@@ -1165,7 +1185,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+111"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+118"/>
         <source>Library</source>
         <translation>ライブラリ</translation>
     </message>
@@ -1436,7 +1456,7 @@
 <context>
     <name>PackStatus</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_status.py" line="+16"/>
+        <location filename="../../src/app/ui/library/pack_status.py" line="+17"/>
         <source>Scenes</source>
         <translation>シーン</translation>
     </message>
@@ -1509,6 +1529,11 @@
         <location line="+1"/>
         <source>Pending</source>
         <translation>待機中</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Skipped</source>
+        <translation>スキップ</translation>
     </message>
 </context>
 <context>
@@ -1603,7 +1628,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-271"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-353"/>
         <source>Speaker</source>
         <translation>話者</translation>
     </message>

@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+323"/>
+        <location line="+326"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>Не удаётся подключиться к серверу. Проверьте, запущена ли служба.</translation>
     </message>
     <message>
-        <location line="-454"/>
+        <location line="-457"/>
         <source>Connection timed out.</source>
         <translation>Время ожидания подключения истекло.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+314"/>
+        <location line="+317"/>
         <source>Cannot connect to the backend.</source>
         <translation>Не удаётся подключиться к серверу.</translation>
     </message>
     <message>
-        <location line="-198"/>
+        <location line="-201"/>
         <source>Generation stopped.</source>
         <translation>Генерация остановлена.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>Не удаётся подключиться к серверу: {0}</translation>
     </message>
     <message>
-        <location line="+219"/>
+        <location line="+222"/>
         <source>An install task is already running...</source>
         <translation>Установка уже выполняется…</translation>
     </message>
@@ -384,23 +384,23 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+184"/>
-        <location line="+60"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+188"/>
+        <location line="+65"/>
         <source>Select an asset to see how it was made</source>
         <translation>Выберите ассет, чтобы увидеть, как он создан</translation>
     </message>
     <message>
-        <location line="-46"/>
+        <location line="-51"/>
         <source>Prompt</source>
         <translation>Промпт</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+9"/>
         <source>Flow</source>
         <translation>Процесс</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+31"/>
         <source>Not generated yet</source>
         <translation>Ещё не создано</translation>
     </message>
@@ -410,17 +410,37 @@
         <translation>Загрузка превью…</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+34"/>
         <source>Double-click the card to enlarge</source>
         <translation>Дважды щёлкните карточку, чтобы увеличить</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+12"/>
+        <source>{0} (bottom)</source>
+        <translation>{0} (нижний)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>{0} (top)</source>
+        <translation>{0} (верхний)</translation>
+    </message>
+    <message>
+        <location line="+32"/>
         <source>Cannot read script: {0}</source>
         <translation>Не удалось прочитать сценарий: {0}</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+49"/>
+        <source>Apply</source>
+        <translation>Применить</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Redo only the steps that depend on this option; the image itself is kept.</source>
+        <translation>Переделать только шаги, зависящие от этого параметра; само изображение сохраняется.</translation>
+    </message>
+    <message>
+        <location line="+44"/>
         <source>Redo</source>
         <translation>Переделать</translation>
     </message>
@@ -928,7 +948,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+187"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+189"/>
         <source>Failed to load packs: {0}</source>
         <translation>Не удалось загрузить пакеты: {0}</translation>
     </message>
@@ -1169,7 +1189,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+111"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+118"/>
         <source>Library</source>
         <translation>Библиотека</translation>
     </message>
@@ -1440,7 +1460,7 @@
 <context>
     <name>PackStatus</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_status.py" line="+16"/>
+        <location filename="../../src/app/ui/library/pack_status.py" line="+17"/>
         <source>Scenes</source>
         <translation>Сцены</translation>
     </message>
@@ -1513,6 +1533,11 @@
         <location line="+1"/>
         <source>Pending</source>
         <translation>Ожидает</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Skipped</source>
+        <translation>Пропущено</translation>
     </message>
 </context>
 <context>
@@ -1607,7 +1632,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-271"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-353"/>
         <source>Speaker</source>
         <translation>Говорящий</translation>
     </message>
