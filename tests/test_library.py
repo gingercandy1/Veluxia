@@ -98,6 +98,15 @@ def client(tmp_path, monkeypatch):
         "steps": [{"id": "draft", "type": "test.echo"},
                   {"id": "final", "type": "test.echo", "deliverable": True, "inputs": ["draft"]}],
     }), encoding="utf-8")
+    (templates / "layered.json").write_text(json.dumps({
+        "id": "layered", "type": "scene",
+        "fields": [{"id": "layers", "default": "0",
+                    "options": [{"value": "0"}, {"value": "3"}, {"value": "4"}]},
+                   {"id": "note"}],
+        "steps": [{"id": "base", "type": "test.echo", "deliverable": True},
+                  {"id": "split", "type": "test.echo", "when": "layers", "inputs": ["base"]},
+                  {"id": "parts", "type": "test.echo", "deliverable": True, "inputs": ["split"]}],
+    }), encoding="utf-8")
     (templates / "panorama.json").write_text(json.dumps({
         "id": "panorama", "type": "scene",
         "fields": [{"id": "length", "label": "长度", "default": "1"},
@@ -243,6 +252,58 @@ def _run(client, pack_id):
 
 def _steps(manifest):
     return manifest["items"][0]["steps"]
+
+
+def test_conditional_steps_are_skipped_and_can_be_turned_on_later(client):
+    pack_id = _create(client, template="layered", items=[{"id": "a", "prompt": "forest"}]
+                      ).json()["manifest"]["id"]
+    states = _steps(_run(client, pack_id))
+    # 条件不满足的步骤和依赖它的下游都是 skipped，不会一直停在 pending
+    assert states["base"]["status"] == "done"
+    assert states["split"]["status"] == "skipped" and states["parts"]["status"] == "skipped"
+    base_file = library.pack_dir(pack_id) / "a" / "base.txt"
+    base_mtime = base_file.stat().st_mtime_ns
+
+    updated = client.post(f"/library/packs/{pack_id}/fields",
+                          json={"item_id": "a", "fields": {"layers": "3"}})
+    assert updated.status_code == 200
+    states = _steps(updated.json()["manifest"])
+    assert states["split"]["status"] == "pending" and states["parts"]["status"] == "pending"
+    assert states["base"]["status"] == "done"
+
+    states = _steps(_run(client, pack_id))
+    assert all(states[s]["status"] == "done" for s in ("base", "split", "parts"))
+    # 事后补跑只跑受影响的步骤，已经生成好的不重做
+    assert base_file.stat().st_mtime_ns == base_mtime
+
+    off = client.post(f"/library/packs/{pack_id}/fields",
+                      json={"item_id": "a", "fields": {"layers": "0"}}).json()["manifest"]
+    assert _steps(off)["split"]["status"] == "skipped"
+    assert off["items"][0]["fields"] == {"layers": "0"}
+
+
+def test_update_fields_only_touches_conditional_fields(client):
+    pack_id = _create(client, template="layered", items=[{"id": "a", "prompt": "forest"}]
+                      ).json()["manifest"]["id"]
+    url = f"/library/packs/{pack_id}/fields"
+    assert client.post(url, json={"item_id": "a", "fields": {"note": "x"}}).status_code == 400
+    assert client.post(url, json={"item_id": "a", "fields": {"layers": "9"}}).status_code == 400
+    assert client.post(url, json={"item_id": "zz", "fields": {"layers": "3"}}).status_code == 400
+    assert client.post("/library/packs/nothere/fields",
+                       json={"item_id": "a", "fields": {"layers": "3"}}).status_code == 404
+
+
+def test_template_condition_must_reference_a_declared_field():
+    with pytest.raises(ValueError, match="条件引用了未声明的字段"):
+        template.parse_template({"id": "bad", "steps": [
+            {"id": "a", "type": "test.echo", "when": "missing"}]})
+
+
+def test_template_info_exposes_step_conditions(client):
+    info = next(t for t in client.get("/library/templates").json()["templates"]
+                if t["id"] == "layered")
+    assert {s["id"]: s["when"] for s in info["step_details"]} == {
+        "base": "", "split": "layers", "parts": ""}
 
 
 def test_export_zips_only_deliverables_with_index(client, tmp_path):

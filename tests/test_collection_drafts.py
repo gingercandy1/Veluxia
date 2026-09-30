@@ -174,3 +174,14 @@ def test_draft_items_is_rejected_while_a_generator_is_busy(fake_llm):
         pytest.raises(GeneratorBusyError),
     ):
         draft_items(_request(model_name="fake-llm"))
+
+
+def test_expensive_fields_are_left_to_the_user():
+    # 分层一张十几分钟：模型既不会被要求填它，填了也会被丢掉，保持默认的"不分层"
+    template = load_template("scene_background")
+    request = DraftItemsRequest(template="scene_background", theme="森林", count=1)
+    system = build_draft_messages(template, request)[0]["content"]
+    assert '"layers"' not in system and '"length"' in system
+    reply = json.dumps({"items": [{"prompt": "a misty forest", "layers": "4", "length": "1"}]})
+    [item] = parse_drafts(reply, template)
+    assert "layers" not in item.fields and item.fields["length"] == "1"

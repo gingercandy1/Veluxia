@@ -64,10 +64,16 @@ class CollectionExecutor:
 
     def run(self) -> Manifest:
         manifest = load_manifest(self.pack_dir)
-        # 先给每个条目补齐全部步骤的状态，界面一开始就能画出完整的进度表格
+        # 先给每个条目补齐全部步骤的状态，界面一开始就能画出完整的进度表格；
+        # 条件不满足的步骤标成 skipped，条件后来满足了（如事后补做分层）再退回 pending
         for item in manifest.items:
             for step_id in self.template.step_ids():
-                self._state(item, step_id)
+                state = self._state(item, step_id)
+                active = self.template.step_active(step_id, item.fields)
+                if not active and state.status != "skipped":
+                    item.steps[step_id] = StepState(status="skipped")
+                elif active and state.status == "skipped":
+                    item.steps[step_id] = StepState()
         save_manifest(self.pack_dir, manifest)
 
         for step in self.template.steps:
@@ -83,6 +89,8 @@ class CollectionExecutor:
     def _needs_run(self, item: CollectionItem, step: StepSpec) -> bool:
         """上游全部完成、且本步没有完整产物时才执行；上游失败的条目留在 pending。
         需要审阅的上游还要等用户确认，避免在没确认的内容上跑耗时的下游。"""
+        if not self.template.step_active(step.id, item.fields):
+            return False
         for source in step.inputs:
             if source == SOURCE_INPUT:
                 continue
@@ -92,6 +100,8 @@ class CollectionExecutor:
             if self.template.step(source).review and not source_state.approved:
                 return False
         state = self._state(item, step.id)
+        if state.status == "skipped":
+            return False
         if state.status != "done":
             return True
         return not state.outputs or not all((self.pack_dir / p).exists() for p in state.outputs)
@@ -134,7 +144,8 @@ class CollectionExecutor:
             state.status = "done"
             # 本步重新生成后，下游的旧产物已过期，要跟着重跑
             for downstream in self.template.downstream_of(step.id):
-                item.steps[downstream] = StepState()
+                active = self.template.step_active(downstream, item.fields)
+                item.steps[downstream] = StepState(status="pending" if active else "skipped")
         except GenerationCancelled:
             state.status = "pending"
             raise

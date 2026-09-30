@@ -34,6 +34,7 @@ from src.shared.schemas import (
     ResetStepRequest,
     StepState,
     StylePreset,
+    UpdateItemFieldsRequest,
 )
 
 LIBRARY_DIR_NAME = "library"
@@ -235,8 +236,34 @@ def reset_step(pack_id: str, request: ResetStepRequest) -> Manifest:
         template = load_template(manifest.template)
         step = template.step(request.step_id)
         item = _find_item(manifest, request.item_id)
-        item.steps[step.id] = StepState()
+        item.steps[step.id] = _fresh_state(template, item, step.id)
         _reset_downstream(template, item, step.id)
+        save_manifest(directory, manifest)
+        return manifest
+
+
+def update_item_fields(pack_id: str, request: UpdateItemFieldsRequest) -> Manifest:
+    """事后改条目的字段，如给已生成的场景补做分层：条件依赖这些字段的步骤连同下游标记为待重做，
+    其余步骤（如已经生成好的整图）保持不动，下次执行只补跑受影响的部分。
+
+    只允许改被步骤条件引用的字段：改提示词类字段等于整条重做，应该新建条目而不是在这里改。
+    """
+    directory = pack_dir(pack_id)
+    with _claim(pack_id):
+        manifest = load_manifest(directory)
+        template = load_template(manifest.template)
+        item = _find_item(manifest, request.item_id)
+        conditional = {step.when for step in template.steps if step.when}
+        not_allowed = sorted(set(request.fields) - conditional)
+        if not_allowed:
+            raise ValueError(f"这些字段不能事后修改：{', '.join(not_allowed)}")
+        fields = {**item.fields, **{k: v.strip() for k, v in request.fields.items()}}
+        fields = {k: v for k, v in fields.items() if v}
+        template.check_item_fields(fields)
+        changed = {k for k in request.fields if fields.get(k, "") != item.fields.get(k, "")}
+        item.fields = fields
+        for step_id in template.steps_depending_on(changed):
+            item.steps[step_id] = _fresh_state(template, item, step_id)
         save_manifest(directory, manifest)
         return manifest
 
@@ -257,7 +284,7 @@ def refresh_source(pack_id: str) -> Manifest:
             raise ValueError("来源角色的立绘没有变化，不需要重做")
         template = load_template(manifest.template)
         for item, step_id in stale:
-            item.steps[step_id] = StepState()
+            item.steps[step_id] = _fresh_state(template, item, step_id)
             _reset_downstream(template, item, step_id)
         save_manifest(directory, manifest)
         return manifest
@@ -349,7 +376,12 @@ def _write_styles(styles: list[StylePreset]) -> None:
 
 def _reset_downstream(template: Template, item: CollectionItem, step_id: str) -> None:
     for downstream in template.downstream_of(step_id):
-        item.steps[downstream] = StepState()
+        item.steps[downstream] = _fresh_state(template, item, downstream)
+
+
+def _fresh_state(template: Template, item: CollectionItem, step_id: str) -> StepState:
+    """待重做的状态：条件不满足的步骤直接是 skipped，不在界面上显示成"待执行"。"""
+    return StepState(status="pending" if template.step_active(step_id, item.fields) else "skipped")
 
 
 def _find_item(manifest: Manifest, item_id: str) -> CollectionItem:
