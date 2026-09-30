@@ -1,10 +1,10 @@
-"""图片类步骤的 runner（ADR 0004）：文生图、去背景、放大、裁透明边、统一尺寸、色调对齐、空气透视、横向无缝、图层合成。"""
+"""图片类步骤的 runner（ADR 0004）：文生图、去背景、放大、裁透明边、统一尺寸。"""
 from pathlib import Path
 from typing import Any
 
 from PIL import Image
 
-from src.backend.core.collection.generator_runner import GeneratorStepRunner
+from src.backend.core.collection.generator_runner import GeneratorStepRunner, move_into
 from src.backend.core.collection.steps import StepContext, StepRunner
 
 
@@ -33,15 +33,31 @@ class ImageGenerateRunner(GeneratorStepRunner):
 
 
 class ImageInputRunner(GeneratorStepRunner):
-    """以上游产物为输入的图片步骤（去背景、放大）。"""
+    """以上游产物为输入的图片步骤（去背景、放大）。
+
+    上游产出多张图时（如分层的 N 个图层）逐张处理，产物按输入顺序命名为 <步骤>_1.png …；
+    只有一张时仍叫 <步骤>.png，已有资源包里的文件名不变。
+    """
 
     def build_params(self, ctx: StepContext) -> dict[str, Any]:
+        return self._params(ctx, single_input(self.type_name, ctx))
+
+    def _params(self, ctx: StepContext, source: Path) -> dict[str, Any]:
         params = {k: v for k, v in ctx.params.items() if k != "model_name"}
-        params["input_path"] = str(single_input(self.type_name, ctx))
+        params["input_path"] = str(source)
         return params
 
     def run(self, ctx: StepContext) -> list[Path]:
-        paths = super().run(ctx)
+        if len(ctx.inputs) <= 1:
+            paths = super().run(ctx)
+        else:
+            paths = []
+            for index, source in enumerate(ctx.inputs, start=1):
+                params = self._params(ctx, source)
+                path = self.generate_once(params)
+                target = ctx.out_dir / f"{ctx.step_id}_{index}{self.output_suffix}"
+                paths.append(move_into(path, target))
+            ctx.meta.update(self.describe(params))
         ctx.meta.update(describe_image(paths[0]))
         return paths
 
@@ -84,134 +100,6 @@ class ResizeRunner(StepRunner):
         return [path]
 
 
-class ColorMatchRunner(StepRunner):
-    """把第一张输入的色调对齐到第二张参考图（纯 CPU）：视差各层分开生成，色温、色相各不相同，
-    叠在一起就穿帮。
-
-    只迁移 LAB 的 a/b 色彩通道、不动亮度 L：近景本该比远景暗、对比强，连亮度一起对齐会把景深压平。
-    """
-    type_name = "image.color_match"
-
-    def run(self, ctx: StepContext) -> list[Path]:
-        if len(ctx.inputs) != 2:
-            raise ValueError(f"{self.type_name} 需要目标图和参考图两张输入，实际 {len(ctx.inputs)} 张")
-        strength = float(ctx.params.get("strength", 0.7))
-        if not 0 <= strength <= 1:
-            raise ValueError(f"{self.type_name} 的 strength 必须在 0 到 1 之间：{strength}")
-        target_path, reference_path = ctx.inputs
-        with Image.open(target_path) as target, Image.open(reference_path) as reference:
-            matched = match_color(target.convert("RGBA"), reference.convert("RGBA"), strength)
-        path = ctx.out_dir / f"{ctx.step_id}.png"
-        matched.save(path)
-        ctx.meta.update(describe_image(path))
-        return [path]
-
-
-class AtmosphereRunner(StepRunner):
-    """空气透视（纯 CPU）：把图层颜色往远景的雾色推，越远推得越多。
-
-    色调对齐只让各层"同一种光"，但对比度、饱和度一样，叠起来远近拉不开、显得平。
-    真实远处物体因大气散射会变淡、变灰、趋向天空色；混向远景平均色一步就同时压低了
-    对比和饱和度。第一张输入是图层，第二张是远景参考；haze 是混合比例（0 不变，1 全成雾色）。
-    """
-    type_name = "image.atmosphere"
-
-    def run(self, ctx: StepContext) -> list[Path]:
-        if len(ctx.inputs) != 2:
-            raise ValueError(f"{self.type_name} 需要图层和远景参考两张输入，实际 {len(ctx.inputs)} 张")
-        haze = float(ctx.params.get("haze", 0.25))
-        if not 0 <= haze <= 1:
-            raise ValueError(f"{self.type_name} 的 haze 必须在 0 到 1 之间：{haze}")
-        layer_path, reference_path = ctx.inputs
-        with Image.open(layer_path) as layer, Image.open(reference_path) as reference:
-            result = apply_haze(layer.convert("RGBA"), reference.convert("RGBA"), haze)
-        path = ctx.out_dir / f"{ctx.step_id}.png"
-        result.save(path)
-        ctx.meta.update(describe_image(path))
-        return [path]
-
-
-class TileHorizontalRunner(StepRunner):
-    """把图片左右边缘做成无缝衔接（纯 CPU）：视差背景层在引擎里横向平铺滚动，接缝不能露出来。
-
-    做法同 audio.loop：右端 overlap 宽度淡出、叠到左端的淡入上，再去掉右端这段，
-    平铺时右边缘接着的正是"被叠进左端的那段右端"，两侧都连续。
-    """
-    type_name = "image.tile_x"
-
-    def run(self, ctx: StepContext) -> list[Path]:
-        overlap_ratio = float(ctx.params.get("overlap", 0.125))
-        with Image.open(single_input(self.type_name, ctx)) as image:
-            if not 0 < overlap_ratio < 0.5:
-                raise ValueError(f"{self.type_name} 的 overlap 必须在 0 到 0.5 之间：{overlap_ratio}")
-            tiled = tile_horizontal(image.convert("RGBA"), round(image.width * overlap_ratio))
-        path = ctx.out_dir / f"{ctx.step_id}.png"
-        tiled.save(path)
-        ctx.meta.update(describe_image(path))
-        return [path]
-
-
-class GroundBlendRunner(StepRunner):
-    """在背景上沿地面顶线烘焙雾带和接地暗带（纯 CPU）：背景和地面分开生成，直接叠上去
-    背景里的景物被地面一刀切断，交界处发硬。
-
-    第一张输入是背景，第二张是贴底放置的地面条带。两种效果都只随高度变化、左右均匀，
-    所以不破坏左右无缝，背景在引擎里做视差滚动时也不会和地面错位。
-    fog / shadow 是强度（0~1），fog_height / shadow_height 是从顶线往上延伸的高度（占背景高度的比例）。
-    """
-    type_name = "image.ground_blend"
-
-    def run(self, ctx: StepContext) -> list[Path]:
-        if len(ctx.inputs) != 2:
-            raise ValueError(f"{self.type_name} 需要背景和地面两张输入，实际 {len(ctx.inputs)} 张")
-        values = {key: float(ctx.params.get(key, default)) for key, default in
-                  (("fog", 0.35), ("fog_height", 0.15), ("shadow", 0.35), ("shadow_height", 0.04))}
-        for key, value in values.items():
-            if not 0 <= value <= 1:
-                raise ValueError(f"{self.type_name} 的 {key} 必须在 0 到 1 之间：{value}")
-        background_path, ground_path = ctx.inputs
-        with Image.open(background_path) as background, Image.open(ground_path) as ground:
-            line = ground_line(background.height, ground.convert("RGBA"))
-            result = blend_ground_line(background.convert("RGBA"), line, **values)
-        path = ctx.out_dir / f"{ctx.step_id}.png"
-        result.save(path)
-        ctx.meta.update({**describe_image(path), "ground_line": line})
-        return [path]
-
-
-class CompositeRunner(StepRunner):
-    """按输入顺序从后往前叠图层（纯 CPU）：分层背景看不出整体效果，合成一张预览当封面。
-
-    align="bottom" 时图层不缩放、贴底居中：地面条带裁过透明边后比背景矮，引擎里也是贴着画面底部放。
-    """
-    type_name = "image.composite"
-
-    def run(self, ctx: StepContext) -> list[Path]:
-        if len(ctx.inputs) < 2:
-            raise ValueError(f"{self.type_name} 至少需要两张输入图，实际 {len(ctx.inputs)} 张")
-        align = ctx.params.get("align", "stretch")
-        if align not in ("stretch", "bottom"):
-            raise ValueError(f"{self.type_name} 的 align 只能是 stretch 或 bottom：{align}")
-        with Image.open(ctx.inputs[0]) as base_image:
-            result = base_image.convert("RGBA")
-        for layer_path in ctx.inputs[1:]:
-            with Image.open(layer_path) as layer:
-                layer = layer.convert("RGBA")
-                if align == "bottom":
-                    canvas = Image.new("RGBA", result.size, (0, 0, 0, 0))
-                    canvas.paste(layer, ((result.width - layer.width) // 2,
-                                         result.height - layer.height))
-                    layer = canvas
-                else:
-                    # 各层分别生成放大，尺寸按理一致；万一不同就拉到底图尺寸，不让预览失败
-                    layer = layer.resize(result.size, Image.Resampling.LANCZOS)
-                result = Image.alpha_composite(result, layer)
-        path = ctx.out_dir / f"{ctx.step_id}.png"
-        result.save(path)
-        ctx.meta.update(describe_image(path))
-        return [path]
-
-
 def single_input(type_name: str, ctx: StepContext) -> Path:
     if len(ctx.inputs) != 1:
         raise ValueError(f"{type_name} 需要恰好一张输入图，实际 {len(ctx.inputs)} 张")
@@ -236,118 +124,6 @@ def fit_square(image: Image.Image, size: int) -> Image.Image:
     return canvas
 
 
-def match_color(image: Image.Image, reference: Image.Image, strength: float) -> Image.Image:
-    import numpy as np
-    from PIL import ImageCms
-
-    srgb, lab = ImageCms.createProfile("sRGB"), ImageCms.createProfile("LAB")
-    to_lab = ImageCms.buildTransform(srgb, lab, "RGB", "LAB")
-    to_rgb = ImageCms.buildTransform(lab, srgb, "LAB", "RGB")
-
-    def lab_pixels(source: Image.Image):
-        pixels = np.asarray(ImageCms.applyTransform(source.convert("RGB"), to_lab), dtype=np.float32)
-        # 只统计不透明像素：去背景后大片透明区域的底色不属于画面，会把均值拉偏
-        opaque = np.asarray(source.getchannel("A")) > 127
-        if not opaque.any():
-            raise ValueError("图片完全透明，无法统计色调")
-        return pixels, pixels[opaque]
-
-    pixels, target_opaque = lab_pixels(image)
-    _, reference_opaque = lab_pixels(reference)
-    for channel in (1, 2):
-        target_mean, target_std = target_opaque[:, channel].mean(), target_opaque[:, channel].std()
-        reference_mean, reference_std = (reference_opaque[:, channel].mean(),
-                                         reference_opaque[:, channel].std())
-        scale = reference_std / target_std if target_std > 1e-3 else 1.0
-        matched = (pixels[..., channel] - target_mean) * scale + reference_mean
-        pixels[..., channel] += strength * (matched - pixels[..., channel])
-    lab_image = Image.fromarray(np.round(np.clip(pixels, 0, 255)).astype(np.uint8), "LAB")
-    result = ImageCms.applyTransform(lab_image, to_rgb).convert("RGBA")
-    result.putalpha(image.getchannel("A"))
-    return result
-
-
-def apply_haze(image: Image.Image, reference: Image.Image, haze: float) -> Image.Image:
-    import numpy as np
-
-    reference_pixels = np.asarray(reference, dtype=np.float32)
-    opaque = reference_pixels[..., 3] > 127
-    if not opaque.any():
-        raise ValueError("远景参考图完全透明，无法取雾色")
-    haze_color = reference_pixels[..., :3][opaque].mean(axis=0)
-    pixels = np.asarray(image, dtype=np.float32)
-    # 只动 RGB：alpha 不变，轮廓和透明区保持原样
-    rgb = pixels[..., :3] * (1 - haze) + haze_color * haze
-    result = np.concatenate([rgb, pixels[..., 3:]], axis=-1)
-    return Image.fromarray(np.round(np.clip(result, 0, 255)).astype(np.uint8), "RGBA")
-
-
-def ground_line(background_height: int, ground: Image.Image) -> int:
-    """地面贴底放在背景上时，地表顶线落在背景的第几行。
-
-    取"一半以上的列都不透明"的第一行：草丛、碎石尖会冒出地表，按最高点算顶线会偏高。
-    """
-    import numpy as np
-
-    if ground.height > background_height:
-        raise ValueError(f"地面高 {ground.height}px，比背景 {background_height}px 还高")
-    coverage = (np.asarray(ground.getchannel("A")) > 127).mean(axis=1)
-    rows = np.nonzero(coverage >= 0.5)[0]
-    if rows.size == 0:
-        raise ValueError("地面图里找不到连续的地表，去背景可能把地面也去掉了")
-    return background_height - ground.height + int(rows[0])
-
-
-def blend_ground_line(image: Image.Image, line: int, fog: float, fog_height: float,
-                      shadow: float, shadow_height: float) -> Image.Image:
-    import numpy as np
-
-    pixels = np.asarray(image, dtype=np.float32)
-    rgb = pixels[..., :3]
-    # 雾色取画面上部四分之一的平均色：那里多是天空和远景，雾本就趋向天空色；
-    # 取整图均值在森林这类暗场景里会偏暗，雾反而像脏
-    fog_color = rgb[: max(image.height // 4, 1)].reshape(-1, 3).mean(axis=0)
-
-    rows = np.arange(image.height, dtype=np.float32)
-
-    def falloff(height_ratio: float) -> np.ndarray:
-        # 顶线处为 1，往上按平滑曲线衰减到 0；顶线以下被地面挡住，保持 1，
-        # 地表边缘有缺口时透出来的也是雾和暗部而不是突兀的原图
-        height = max(height_ratio * image.height, 1.0)
-        t = np.clip((line - rows) / height, 0.0, 1.0)
-        return (1 - t * t * (3 - 2 * t))[:, None, None]
-
-    rgb = rgb + (fog_color - rgb) * (fog * falloff(fog_height))
-    rgb = rgb * (1 - shadow * falloff(shadow_height))
-    result = np.concatenate([rgb, pixels[..., 3:]], axis=-1)
-    return Image.fromarray(np.round(np.clip(result, 0, 255)).astype(np.uint8), "RGBA")
-
-
-def tile_horizontal(image: Image.Image, overlap: int) -> Image.Image:
-    import numpy as np
-
-    if overlap <= 0 or image.width <= overlap * 2:
-        raise ValueError(f"图片宽 {image.width}px，无法做 {overlap}px 的无缝过渡")
-    pixels = np.asarray(image, dtype=np.float32) / 255.0
-    # 预乘 alpha 再混合：直接混合 RGBA 时，透明像素里的底色会在过渡带渗出一圈杂边
-    alpha = pixels[..., 3:]
-    premultiplied = np.concatenate([pixels[..., :3] * alpha, alpha], axis=-1)
-    weight = np.linspace(0.0, 1.0, overlap, dtype=np.float32)[None, :, None]
-
-    def blend(layer):
-        seam = layer[:, -overlap:] * (1 - weight) + layer[:, :overlap] * weight
-        return np.concatenate([seam, layer[:, overlap:-overlap]], axis=1)
-
-    blended = blend(premultiplied)
-    blended_alpha = blended[..., 3:]
-    # 全透明处保留原 RGB（去背景时已填成外推的前景色）而不是写 0：
-    # 引擎双线性采样会混入透明邻居的 RGB，黑色会在边缘拉出一圈暗边
-    rgb = np.divide(blended[..., :3], blended_alpha, out=blend(pixels[..., :3]),
-                    where=blended_alpha > 0)
-    result = np.concatenate([rgb, blended_alpha], axis=-1)
-    return Image.fromarray(np.round(np.clip(result, 0, 1) * 255).astype(np.uint8), "RGBA")
-
-
 def describe_image(path: Path) -> dict[str, Any]:
     with Image.open(path) as image:
         return {"size": [image.width, image.height]}
@@ -359,9 +135,4 @@ BUILTIN_RUNNERS: tuple[StepRunner, ...] = (
     UpscaleRunner(),
     TrimRunner(),
     ResizeRunner(),
-    ColorMatchRunner(),
-    AtmosphereRunner(),
-    TileHorizontalRunner(),
-    GroundBlendRunner(),
-    CompositeRunner(),
 )
