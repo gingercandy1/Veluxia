@@ -34,9 +34,16 @@ from src.app.ui.library.pack_status import (
     status_text,
     step_chain,
     step_fraction,
+    step_skipped,
 )
 from src.app.ui.message.image_preview import ImagePreviewOverlay
-from src.shared.schemas import PackResponse, StylePreset, TemplateInfo, TemplateStepInfo
+from src.shared.schemas import (
+    CollectionItem,
+    PackResponse,
+    StylePreset,
+    TemplateInfo,
+    TemplateStepInfo,
+)
 
 TREE_WIDTH = 220
 # 树节点上标记"正在执行"：由委托在名字后面画跳动的三个点
@@ -369,15 +376,22 @@ class PackDetail(BaseWidget):
             card.set_selected(True)
 
     # ---- 素材卡片 ----
-    def _asset_groups(self) -> list[tuple[str, list[TemplateStepInfo]]]:
+    def _asset_groups(self) -> list[tuple[str, list[tuple[CollectionItem, TemplateStepInfo]]]]:
+        """按媒体分块的 (条目, 交付步骤)；跳过的步骤（如"不分层"条目的图层）不出卡片。"""
         steps = deliverables(self.template)
-        return [(kind, [s for s in steps if media_kind(s.type) == kind]) for kind in MEDIA_ORDER
-                if any(media_kind(s.type) == kind for s in steps)]
+        groups = []
+        for kind in MEDIA_ORDER:
+            cards = [(item, step) for item in self.pack.manifest.items
+                     for step in steps if media_kind(step.type) == kind
+                     and not step_skipped(item, step, self.template)]
+            if cards:
+                groups.append((kind, cards))
+        return groups
 
     def _show_assets(self):
         groups = self._asset_groups()
         items = self.pack.manifest.items
-        layout_key = [(kind, [s.id for s in steps], [i.id for i in items]) for kind, steps in groups]
+        layout_key = [(kind, [(i.id, s.id) for i, s in cards]) for kind, cards in groups]
         if layout_key != self._layout_key:
             self._layout_key = layout_key
             self._rebuild_assets(groups)
@@ -388,26 +402,27 @@ class PackDetail(BaseWidget):
             card.set_progress(progress, f"{progress.done}/{progress.total}",
                               active=self.pack.running and progress.status == "running")
 
-    def _rebuild_assets(self, groups: list[tuple[str, list[TemplateStepInfo]]]):
+    def _rebuild_assets(
+            self, groups: list[tuple[str, list[tuple[CollectionItem, TemplateStepInfo]]]]):
         self._cards.clear()
         while self._sections.count():
             widget = self._sections.takeAt(0).widget()
             if widget is not None:
                 widget.hide()
                 widget.deleteLater()
-        items = self.pack.manifest.items
-        for kind, steps in groups:
+        for kind, cards in groups:
             section = QWidget()
             section_layout = QVBoxLayout(section)
             section_layout.setContentsMargins(0, 0, 0, 0)
             section_layout.setSpacing(10)
-            heading = QLabel(f"{media_text(kind)}  ·  {len(steps) * len(items)}")
+            heading = QLabel(f"{media_text(kind)}  ·  {len(cards)}")
             heading.setObjectName("library_section_title")
             section_layout.addWidget(heading)
             flow = FlowLayout(spacing=14)
-            for item in items:
-                for step in steps:
-                    flow.addWidget(self._asset_card(kind, item.id, item_title(item), step, len(steps)))
+            steps_in_group = len({step.id for _, step in cards})
+            for item, step in cards:
+                flow.addWidget(self._asset_card(kind, item.id, item_title(item), step,
+                                                steps_in_group))
             section_layout.addLayout(flow)
             self._sections.addWidget(section)
         self._sections.addStretch()

@@ -12,7 +12,7 @@ from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, Animat
     ModelInfoResponse, TranslateResponse, RefineResponse, SpriteSheetResponse, TranscriptionResponse, \
     CreatePackRequest, PackListResponse, PackResponse, TemplateListResponse, \
     ApproveStepRequest, ResetStepRequest, DraftItemsRequest, DraftItemsResponse, \
-    StyleListResponse, StylePreset, ModelStorageResponse
+    StyleListResponse, StylePreset, ModelStorageResponse, UpdateItemFieldsRequest
 
 _DEFAULT_LIMITS = httpx.Limits(
     max_connections=10,
@@ -417,6 +417,9 @@ class ApiClient:
 
     def reset_step(self, pack_id: str, request: ResetStepRequest) -> PackResponse:
         return self._post(f"/library/packs/{pack_id}/reset", request.model_dump(), PackResponse)
+
+    def update_item_fields(self, pack_id: str, request: UpdateItemFieldsRequest) -> PackResponse:
+        return self._post(f"/library/packs/{pack_id}/fields", request.model_dump(), PackResponse)
 
     def sync_pack_style(self, pack_id: str) -> PackResponse:
         return self._post(f"/library/packs/{pack_id}/sync_style", {}, PackResponse)

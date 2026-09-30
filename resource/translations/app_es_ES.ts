@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+323"/>
+        <location line="+326"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>No se puede conectar con el backend. Comprueba que el servicio esté en ejecución.</translation>
     </message>
     <message>
-        <location line="-454"/>
+        <location line="-457"/>
         <source>Connection timed out.</source>
         <translation>Se agotó el tiempo de conexión.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+314"/>
+        <location line="+317"/>
         <source>Cannot connect to the backend.</source>
         <translation>No se puede conectar con el backend.</translation>
     </message>
     <message>
-        <location line="-198"/>
+        <location line="-201"/>
         <source>Generation stopped.</source>
         <translation>Generación detenida.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>No se puede conectar con el backend: {0}</translation>
     </message>
     <message>
-        <location line="+219"/>
+        <location line="+222"/>
         <source>An install task is already running...</source>
         <translation>Ya hay una instalación en curso…</translation>
     </message>
@@ -384,23 +384,23 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+184"/>
-        <location line="+60"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+188"/>
+        <location line="+65"/>
         <source>Select an asset to see how it was made</source>
         <translation>Selecciona un recurso para ver cómo se generó</translation>
     </message>
     <message>
-        <location line="-46"/>
+        <location line="-51"/>
         <source>Prompt</source>
         <translation>Prompt</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+9"/>
         <source>Flow</source>
         <translation>Flujo</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+31"/>
         <source>Not generated yet</source>
         <translation>Aún no generado</translation>
     </message>
@@ -410,17 +410,37 @@
         <translation>Cargando vista previa…</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+34"/>
         <source>Double-click the card to enlarge</source>
         <translation>Doble clic en la tarjeta para ampliar</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+12"/>
+        <source>{0} (bottom)</source>
+        <translation>{0} (inferior)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>{0} (top)</source>
+        <translation>{0} (superior)</translation>
+    </message>
+    <message>
+        <location line="+32"/>
         <source>Cannot read script: {0}</source>
         <translation>No se puede leer el guion: {0}</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+49"/>
+        <source>Apply</source>
+        <translation>Aplicar</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Redo only the steps that depend on this option; the image itself is kept.</source>
+        <translation>Rehace solo los pasos que dependen de esta opción; la imagen se conserva.</translation>
+    </message>
+    <message>
+        <location line="+44"/>
         <source>Redo</source>
         <translation>Rehacer</translation>
     </message>
@@ -926,7 +946,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+187"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+189"/>
         <source>Failed to load packs: {0}</source>
         <translation>No se pudieron cargar los paquetes: {0}</translation>
     </message>
@@ -1167,7 +1187,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+111"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+118"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
@@ -1438,7 +1458,7 @@
 <context>
     <name>PackStatus</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_status.py" line="+16"/>
+        <location filename="../../src/app/ui/library/pack_status.py" line="+17"/>
         <source>Scenes</source>
         <translation>Escenas</translation>
     </message>
@@ -1511,6 +1531,11 @@
         <location line="+1"/>
         <source>Pending</source>
         <translation>Pendiente</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Skipped</source>
+        <translation>Omitido</translation>
     </message>
 </context>
 <context>
@@ -1605,7 +1630,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-271"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-353"/>
         <source>Speaker</source>
         <translation>Hablante</translation>
     </message>

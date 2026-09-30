@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+323"/>
+        <location line="+326"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>백엔드에 연결할 수 없습니다. 서비스가 실행 중인지 확인하세요.</translation>
     </message>
     <message>
-        <location line="-454"/>
+        <location line="-457"/>
         <source>Connection timed out.</source>
         <translation>연결 시간이 초과되었습니다.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+314"/>
+        <location line="+317"/>
         <source>Cannot connect to the backend.</source>
         <translation>백엔드에 연결할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="-198"/>
+        <location line="-201"/>
         <source>Generation stopped.</source>
         <translation>생성을 중지했습니다.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>백엔드에 연결할 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location line="+219"/>
+        <location line="+222"/>
         <source>An install task is already running...</source>
         <translation>설치 작업이 이미 실행 중입니다…</translation>
     </message>
@@ -384,23 +384,23 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+184"/>
-        <location line="+60"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+188"/>
+        <location line="+65"/>
         <source>Select an asset to see how it was made</source>
         <translation>소재를 선택하면 생성 과정을 볼 수 있습니다</translation>
     </message>
     <message>
-        <location line="-46"/>
+        <location line="-51"/>
         <source>Prompt</source>
         <translation>프롬프트</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+9"/>
         <source>Flow</source>
         <translation>실행 흐름</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+31"/>
         <source>Not generated yet</source>
         <translation>아직 생성되지 않음</translation>
     </message>
@@ -410,17 +410,37 @@
         <translation>미리보기 불러오는 중…</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+34"/>
         <source>Double-click the card to enlarge</source>
         <translation>카드를 더블클릭하면 확대됩니다</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+12"/>
+        <source>{0} (bottom)</source>
+        <translation>{0} (맨 아래)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>{0} (top)</source>
+        <translation>{0} (맨 위)</translation>
+    </message>
+    <message>
+        <location line="+32"/>
         <source>Cannot read script: {0}</source>
         <translation>대본을 읽을 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+49"/>
+        <source>Apply</source>
+        <translation>적용</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Redo only the steps that depend on this option; the image itself is kept.</source>
+        <translation>이 옵션에 의존하는 단계만 다시 합니다. 이미지 자체는 그대로 유지됩니다.</translation>
+    </message>
+    <message>
+        <location line="+44"/>
         <source>Redo</source>
         <translation>다시 하기</translation>
     </message>
@@ -924,7 +944,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+187"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+189"/>
         <source>Failed to load packs: {0}</source>
         <translation>팩 목록을 불러오지 못했습니다: {0}</translation>
     </message>
@@ -1165,7 +1185,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+111"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+118"/>
         <source>Library</source>
         <translation>라이브러리</translation>
     </message>
@@ -1436,7 +1456,7 @@
 <context>
     <name>PackStatus</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_status.py" line="+16"/>
+        <location filename="../../src/app/ui/library/pack_status.py" line="+17"/>
         <source>Scenes</source>
         <translation>장면</translation>
     </message>
@@ -1509,6 +1529,11 @@
         <location line="+1"/>
         <source>Pending</source>
         <translation>대기 중</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Skipped</source>
+        <translation>건너뜀</translation>
     </message>
 </context>
 <context>
@@ -1603,7 +1628,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-271"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-353"/>
         <source>Speaker</source>
         <translation>화자</translation>
     </message>
