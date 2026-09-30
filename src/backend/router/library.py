@@ -32,6 +32,7 @@ from src.shared.schemas import (
     TemplateInfo,
     TemplateListResponse,
     TemplateStepInfo,
+    UpdateItemFieldsRequest,
 )
 
 
@@ -126,6 +127,11 @@ class LibraryRouter(BaseRouter):
         async def reset_step(pack_id: str, req: ResetStepRequest) -> PackResponse:
             return await self._update_pack(library.reset_step, pack_id, req)
 
+        @self.router.post("/packs/{pack_id}/fields", response_model=PackResponse,
+                          summary="事后修改条目字段（如补做分层），受影响的步骤标记为待重做")
+        async def update_item_fields(pack_id: str, req: UpdateItemFieldsRequest) -> PackResponse:
+            return await self._update_pack(library.update_item_fields, pack_id, req)
+
         @self.router.post("/packs/{pack_id}/sync_style", response_model=PackResponse,
                           summary="风格锁同步为预设的最新内容")
         async def sync_style(pack_id: str) -> PackResponse:
@@ -200,7 +206,7 @@ class LibraryRouter(BaseRouter):
             step_details=[
                 TemplateStepInfo(id=step.id, type=step.type, label=step.label,
                                  deliverable=step.deliverable, review=step.review,
-                                 inputs=list(step.inputs))
+                                 inputs=list(step.inputs), when=step.when)
                 for step in template.steps
             ],
         )

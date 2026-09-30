@@ -8,6 +8,7 @@ import random
 
 from src.backend.core.collection.template import (
     PROMPT_FIELD,
+    FieldSpec,
     Template,
     count_segments,
     load_template,
@@ -25,11 +26,17 @@ _MAX_TOKENS = 3000
 _TOKENS_PER_TEXT = 60
 
 
+def _draft_fields(template: Template) -> list[FieldSpec]:
+    """交给模型填的字段：标了 draft=false 的（如一张要十几分钟的分层）留给用户自己选，
+    保持默认值。"""
+    return [spec for spec in template.fields if spec.draft]
+
+
 def build_draft_messages(template: Template, req: DraftItemsRequest) -> list[dict]:
     prompt_label = template.prompt_label or "描述"
     keys = [f'- "{PROMPT_FIELD}"（{prompt_label}）：给生成模型用的具体描述，'
             "写清外观、材质、颜色、形状等看得见的特征，一两句话"]
-    for spec in template.fields:
+    for spec in _draft_fields(template):
         line = f'- "{spec.id}"（{spec.label or spec.id}）'
         if spec.options:
             # 空值是"请选择"占位，不是可选答案
@@ -129,7 +136,7 @@ def parse_drafts(text: str, template: Template, exclude: list[str] = ()) -> list
             continue
         seen.add(prompt.lower())
         fields = {}
-        for spec in template.fields:
+        for spec in _draft_fields(template):
             value = str(raw.get(spec.id, "")).strip()
             if spec.options:
                 # 模型有时照抄显示名而不是值，两种都认
@@ -150,7 +157,7 @@ def draft_items(req: DraftItemsRequest) -> list[NewCollectionItem]:
         raise ValueError(f"数量需在 1~{MAX_DRAFT_COUNT} 之间")
     template = load_template(req.template)
     messages = build_draft_messages(template, req)
-    text_fields = sum(1 for spec in template.fields if not spec.options)
+    text_fields = sum(1 for spec in _draft_fields(template) if not spec.options)
     max_tokens = min(_MAX_TOKENS, 200 + req.count * _TOKENS_PER_TEXT * (1 + text_fields))
 
     # 走租约：生成任务在跑时直接拒绝，空闲时会先卸载驻留的生图模型再加载 LLM

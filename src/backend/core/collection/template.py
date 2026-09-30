@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from src.shared.schemas import PACK_TYPES
+from src.shared.schemas import PACK_TYPES, condition_met
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 # 主提示词也能在参数里引用：语音步骤要的是条目原文，而不是拼了风格锁的出图提示词
@@ -29,6 +29,8 @@ class FieldSpec:
     default: str = ""
     # (值, 显示名)：值直接拼进提示词，所以通常是英文构图描述，显示名给界面看
     options: tuple[tuple[str, str], ...] = ()
+    # False 时 AI 起草不填这个字段、保持默认值：如分层一张要十几分钟，不该由模型随手选上
+    draft: bool = True
 
 
 @dataclass(frozen=True)
@@ -40,6 +42,8 @@ class StepSpec:
     label: str = ""
     deliverable: bool = False
     review: bool = False
+    # 条件字段 id：该字段不满足 condition_met 时这一步（连同依赖它的下游）跳过
+    when: str = ""
 
 
 @dataclass(frozen=True)
@@ -75,6 +79,30 @@ class Template:
                 result.append(step.id)
         return result
 
+    def step_active(self, step_id: str, fields: dict[str, str]) -> bool:
+        """这一步在该条目上要不要执行：自身条件满足，且上游没有被跳过。
+
+        上游被跳过时下游拿不到输入，也只能跳过；这样模板里只需给链头写 when，
+        不过写全了也没关系。
+        """
+        values = self.field_values("", fields)
+        active: dict[str, bool] = {}
+        for step in self.steps:
+            ok = not step.when or condition_met(values[step.when])
+            active[step.id] = ok and all(active.get(name, True) for name in step.inputs)
+            if step.id == step_id:
+                return active[step.id]
+        raise ValueError(f"模板 {self.id} 没有步骤：{step_id}")
+
+    def steps_depending_on(self, field_ids: set[str]) -> list[str]:
+        """条件引用了这些字段的步骤及其下游：字段改了，这些步骤是否执行、怎么执行都可能变。"""
+        affected: list[str] = []
+        for step in self.steps:
+            if step.when in field_ids and step.id not in affected:
+                affected.append(step.id)
+                affected.extend(d for d in self.downstream_of(step.id) if d not in affected)
+        return affected
+
     def field_values(self, prompt: str, fields: dict[str, str]) -> dict[str, str]:
         """条目的全部字段值：没填的用模板默认值，供步骤参数里的占位符替换。"""
         values = {spec.id: fields.get(spec.id) or spec.default for spec in self.fields}
@@ -95,6 +123,21 @@ class Template:
             if allowed and fields.get(spec.id) and fields[spec.id] not in allowed:
                 raise ValueError(f"字段 {spec.label or spec.id} 的取值不在可选范围内：{fields[spec.id]}")
         self._check_segments(fields)
+        self._check_layers(fields)
+
+    def _check_layers(self, fields: dict[str, str]) -> None:
+        """分层只支持单屏：多屏长卷拼起来太宽，分层模型只能按约 640 档的分辨率处理整张，
+        拆出来的图层会糊得没法用；与其跑十几分钟得到废图，不如建包时就拒绝。"""
+        values = self.field_values("", fields)
+        layered = any("layers" in step.params and self.step_active(step.id, fields)
+                      for step in self.steps)
+        if not layered:
+            return
+        screens = max((int(render_params(step.params, values)["segments"])
+                       for step in self.steps if "segments" in step.params), default=1)
+        if screens > 1:
+            raise ValueError(f"分层只支持单屏，但长度选的是 {screens} 屏；"
+                             "请把长度改成单屏，或不分层")
 
     def _check_segments(self, fields: dict[str, str]) -> None:
         """分段描述的段数要和屏数一致，否则要跑到生成那一步才报错，条目多时很难定位是哪条填错了。
@@ -155,7 +198,8 @@ def parse_template(data: dict) -> Template:
     fields = tuple(
         FieldSpec(raw["id"], raw.get("label", ""), bool(raw.get("required", False)),
                   raw.get("default", ""),
-                  tuple((opt["value"], opt.get("label", "")) for opt in raw.get("options", [])))
+                  tuple((opt["value"], opt.get("label", "")) for opt in raw.get("options", [])),
+                  bool(raw.get("draft", True)))
         for raw in data.get("fields", [])
     )
     for spec in fields:
@@ -187,10 +231,14 @@ def parse_template(data: dict) -> Template:
         unknown = set().union(*(_placeholders(v) for v in params.values())) - known_fields
         if unknown:
             raise ValueError(f"模板 {template_id} 的步骤 {step_id} 引用了未声明的字段：{', '.join(sorted(unknown))}")
+        when = raw.get("when", "")
+        if when and when not in known_fields - {PROMPT_FIELD}:
+            raise ValueError(
+                f"模板 {template_id} 的步骤 {step_id} 的条件引用了未声明的字段：{when}")
         seen.add(step_id)
         steps.append(StepSpec(step_id, step_type, params, inputs,
                               raw.get("label", ""), bool(raw.get("deliverable", False)),
-                              bool(raw.get("review", False))))
+                              bool(raw.get("review", False)), when))
 
     cover = data.get("cover", "")
     if cover and cover not in seen:

@@ -95,7 +95,16 @@ class JobStatusResponse(BaseModel):
 
 
 # 资料库 / 资源包（ADR 0004）：manifest 是资源包进度的唯一来源，前后端都按这套结构解析
-StepStatus = Literal["pending", "running", "done", "error"]
+# skipped：模板里带条件（when）的步骤在这个条目上不需要执行（如"不分层"时的分层步骤）。
+# 单独成一个状态而不是停在 pending：否则进度永远到不了 100%，界面也会一直显示"待执行"
+StepStatus = Literal["pending", "running", "done", "error", "skipped"]
+# 条件步骤的字段取这些值时视为"不执行"，前后端共用同一个判断
+INACTIVE_FIELD_VALUES: tuple[str, ...] = ("", "0")
+
+
+def condition_met(value: str) -> bool:
+    """模板步骤的 when 条件：引用的字段有值、且不是 "0"（如分层字段选了"不分层"）。"""
+    return value.strip() not in INACTIVE_FIELD_VALUES
 # 资源包分类，界面按这个顺序分区排列：按游戏里的东西分，而不是按文件类型分
 PackType = Literal["scene", "character", "item", "effect", "dialogue", "audio"]
 PACK_TYPES: tuple[str, ...] = ("scene", "character", "item", "effect", "dialogue", "audio")
@@ -213,6 +222,12 @@ class ResetStepRequest(BaseModel):
     step_id: str
 
 
+class UpdateItemFieldsRequest(BaseModel):
+    """事后修改条目的字段（如给已生成的场景补做分层）：依赖这些字段的步骤连同下游会被标记为待重做。"""
+    item_id: str
+    fields: Dict[str, str] = Field(default_factory=dict, description="要改的字段，未列出的保持不变")
+
+
 class FieldOption(BaseModel):
     value: str = Field(..., description="实际拼进参数的值")
     label: str = ""
@@ -234,6 +249,8 @@ class TemplateStepInfo(BaseModel):
     deliverable: bool = Field(False, description="是否为最终交付的素材；否则是中间产物")
     review: bool = Field(False, description="完成后需用户确认，下游步骤才继续")
     inputs: List[str] = Field(default_factory=list, description="上游步骤 id，界面按它算素材的执行流程")
+    when: str = Field("", description="条件字段 id：该字段不满足 condition_met 时这一步跳过；"
+                                        "空表示总是执行")
 
 
 class TemplateInfo(BaseModel):
