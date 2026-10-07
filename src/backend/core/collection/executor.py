@@ -18,6 +18,7 @@ from src.backend.core.collection.steps import (
     registered_runners,
 )
 from src.backend.core.collection.template import (
+    SOURCE_DESCRIPTION_FIELD,
     SOURCE_INPUT,
     StepSpec,
     Template,
@@ -45,12 +46,14 @@ class CollectionExecutor:
                  cancel_event: threading.Event | None = None,
                  busy_wait_seconds: float = 5.0,
                  cast: list[CastVoice] | None = None,
-                 source: Path | None = None):
+                 source: Path | None = None,
+                 source_description: str = ""):
         self.pack_dir = Path(pack_dir)
         self.template = template
         self.cast = list(cast or [])
         # 来源角色的立绘（ADR 0006），供 inputs 里写了 "@source" 的步骤使用
         self.source = Path(source) if source else None
+        self.source_description = source_description.strip()
         self.runners = dict(runners) if runners is not None else registered_runners()
         self.cancel_event = cancel_event or threading.Event()
         self.busy_wait_seconds = busy_wait_seconds
@@ -116,6 +119,8 @@ class CollectionExecutor:
         out_dir = self.pack_dir / item.id
         out_dir.mkdir(parents=True, exist_ok=True)
         values = self.template.field_values(item.prompt, item.fields)
+        if self.source_description:
+            values[SOURCE_DESCRIPTION_FIELD] = self.source_description
         ctx = StepContext(
             item=item,
             prompt=compose_prompt(item.prompt, manifest.style.prompt),

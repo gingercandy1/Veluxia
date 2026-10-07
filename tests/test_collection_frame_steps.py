@@ -256,6 +256,19 @@ def test_animation_runner_uses_action_prompt_and_white_canvas_reference(tmp_path
     assert ctx.meta["frames"] == 3
 
 
+@pytest.mark.parametrize("action, expected", [
+    # 只写动作时先点明主体：视频模型不知道是个球，会按人形做动作长出手脚
+    ("跳跃", "一个被烟雾包裹的圆球, 跳跃, keep shape"),
+    # AI 起草的描述里已经写了主体，不再重复
+    ("一个被烟雾包裹的圆球原地弹跳", "一个被烟雾包裹的圆球原地弹跳, keep shape"),
+])
+def test_animation_runner_names_the_source_subject(tmp_path, action, expected):
+    ctx = _ctx(tmp_path, {"model_name": "fake-video", "prompt_suffix": "keep shape"},
+               step_id="video", prompt=action)
+    ctx.values["source_description"] = "一个被烟雾包裹的圆球"
+    assert AnimationGenerateRunner().build_params(ctx)["content"] == expected
+
+
 def test_animation_runner_builds_reference_at_requested_size(tmp_path, fake_models):
     portrait = tmp_path / "portrait.png"
     Image.new("RGBA", (30, 60), (0, 0, 255, 255)).save(portrait)

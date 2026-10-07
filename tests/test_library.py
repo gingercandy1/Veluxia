@@ -59,6 +59,7 @@ class _InputsRunner(StepRunner):
     def run(self, ctx: StepContext):
         path = ctx.out_dir / f"{ctx.step_id}.txt"
         path.write_text("\n".join(str(p) for p in ctx.inputs), encoding="utf-8")
+        ctx.meta["subject"] = ctx.values.get("source_description", "")
         return [path]
 
 
@@ -521,6 +522,8 @@ def test_source_portrait_is_resolved_at_run_time(client):
         encoding="utf-8")
     portrait = library.pack_dir(character) / "hero" / f"{library.CHARACTER_PORTRAIT_STEP}.txt"
     assert written == str(portrait)
+    # 来源角色的描述也一起交给步骤，视频提示词才知道主体是什么
+    assert _steps(manifest)["video"]["meta"]["subject"] == "knight"
 
 
 def test_redone_source_portrait_is_noticed_and_refreshed(client):

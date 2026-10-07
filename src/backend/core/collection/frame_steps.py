@@ -17,7 +17,7 @@ from src.backend.core.collection.generator_runner import (
 )
 from src.backend.core.collection.image_steps import describe_image, single_input
 from src.backend.core.collection.steps import StepContext, StepRunner
-from src.backend.core.collection.template import PROMPT_FIELD
+from src.backend.core.collection.template import PROMPT_FIELD, SOURCE_DESCRIPTION_FIELD
 from src.backend.core.image_frame.sprite_export import export_sprite_sheet
 from src.shared.enum_type import FactoryType
 
@@ -28,8 +28,9 @@ _SEAM_CHECK_RATIO = 1.5
 class AnimationGenerateRunner(GeneratorStepRunner):
     """立绘铺白底后图生视频，拆成帧序列。
 
-    提示词只用条目原文（动作描述）+ 后缀，不拼风格锁：画风已经由参考图决定，
-    风格词反而会让视频模型改画面而不是做动作。
+    提示词是「来源角色描述 + 条目原文（动作描述）+ 后缀」，不拼风格锁：画风已经由参考图决定，
+    风格词反而会让视频模型改画面而不是做动作。只写「跳跃」时视频模型不知道主体是个球，
+    会按人形去做动作长出手脚，所以先点明主体；AI 起草的动作描述里已经写了主体时不再重复。
     """
     type_name = "animation.generate"
     factory_type = FactoryType.Animation
@@ -37,9 +38,12 @@ class AnimationGenerateRunner(GeneratorStepRunner):
     def build_params(self, ctx: StepContext) -> dict[str, Any]:
         params = {k: v for k, v in ctx.params.items()
                   if k not in ("model_name", "prompt_suffix", "scale")}
-        action = ctx.values.get(PROMPT_FIELD, "")
+        action = ctx.values.get(PROMPT_FIELD, "").strip()
+        subject = ctx.values.get(SOURCE_DESCRIPTION_FIELD, "").strip()
+        if subject and subject.lower() in action.lower():
+            subject = ""
         params["content"] = ", ".join(
-            p.strip() for p in (action, ctx.params.get("prompt_suffix", "")) if p.strip())
+            p.strip() for p in (subject, action, ctx.params.get("prompt_suffix", "")) if p.strip())
         return params
 
     def run(self, ctx: StepContext) -> list[Path]:
