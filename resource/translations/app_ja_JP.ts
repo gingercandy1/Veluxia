@@ -1259,7 +1259,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+127"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+130"/>
         <source>New pack</source>
         <translation>新しいパック</translation>
     </message>
@@ -1306,12 +1306,12 @@
     </message>
     <message>
         <location line="+14"/>
-        <location line="+225"/>
+        <location line="+234"/>
         <source>Save as preset</source>
         <translation>プリセットとして保存</translation>
     </message>
     <message>
-        <location line="-223"/>
+        <location line="-232"/>
         <source>Save the style and negative above as a project preset. Using an existing name overwrites that preset.</source>
         <translation>上のスタイルとネガティブをプロジェクトのプリセットとして保存します。既存の名前を使うとそのプリセットを上書きします。</translation>
     </message>
@@ -1362,32 +1362,43 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+92"/>
+        <location line="+101"/>
         <source>AI draft</source>
         <translation>AI 下書き</translation>
     </message>
     <message>
-        <location line="-90"/>
+        <location line="-99"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>空の行と未編集の AI 行を置き換えます。入力・編集した行は残ります。初回はテキストモデルの読み込みに約 1 分かかります。</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+4"/>
+        <source>Add common motions</source>
+        <translation>よく使う動作を追加</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
+        <translation>選択したキャラクターの待機・移動・ジャンプ・被ダメージ・攻撃・死亡を下書きします。AI がキャラクターの形に合わせて各動作を書くので、パック作成前に確認・修正してください。</translation>
+    </message>
+    <message>
+        <location line="+65"/>
         <source>(No preset)</source>
         <translation>（プリセットなし）</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Drafting...</source>
         <translation>下書き中...</translation>
     </message>
     <message>
         <location line="+46"/>
+        <location line="+236"/>
         <source>Create a character pack first, then pick a character here.</source>
         <translation>先にキャラクターパックを作成してから、ここでキャラクターを選んでください。</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="-198"/>
         <source>Fill in the style or negative before saving a preset.</source>
         <translation>プリセットを保存する前に、スタイルまたはネガティブを入力してください。</translation>
     </message>
@@ -1402,7 +1413,7 @@
         <translation>プロンプト</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+31"/>
         <source>Default: {0}</source>
         <translation>既定値：{0}</translation>
     </message>
@@ -1422,12 +1433,12 @@
         <translation>行を削除</translation>
     </message>
     <message>
-        <location line="+75"/>
+        <location line="+71"/>
         <source>Enter a theme for the AI to draft items from.</source>
         <translation>AI が項目を下書きするためのテーマを入力してください。</translation>
     </message>
     <message>
-        <location line="-373"/>
+        <location line="-380"/>
         <source>Items</source>
         <translation>アイテム</translation>
     </message>
@@ -1437,18 +1448,18 @@
         <translation>ライブラリ</translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+124"/>
         <source>Create</source>
         <translation>作成</translation>
     </message>
     <message>
-        <location line="+100"/>
-        <location line="+235"/>
+        <location line="+102"/>
+        <location line="+247"/>
         <source>No template available. Is the backend running?</source>
         <translation>利用できるテンプレートがありません。バックエンドは起動していますか？</translation>
     </message>
     <message>
-        <location line="-222"/>
+        <location line="-234"/>
         <source>Add at least one item.</source>
         <translation>アイテムを 1 つ以上追加してください。</translation>
     </message>

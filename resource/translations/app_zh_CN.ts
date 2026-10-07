@@ -1259,7 +1259,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+127"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+130"/>
         <source>New pack</source>
         <translation>新建资源包</translation>
     </message>
@@ -1306,12 +1306,12 @@
     </message>
     <message>
         <location line="+14"/>
-        <location line="+225"/>
+        <location line="+234"/>
         <source>Save as preset</source>
         <translation>存为预设</translation>
     </message>
     <message>
-        <location line="-223"/>
+        <location line="-232"/>
         <source>Save the style and negative above as a project preset. Using an existing name overwrites that preset.</source>
         <translation>把上面的风格和反向提示词存为项目预设。使用已有名称会覆盖该预设。</translation>
     </message>
@@ -1362,32 +1362,43 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+92"/>
+        <location line="+101"/>
         <source>AI draft</source>
         <translation>AI 起草</translation>
     </message>
     <message>
-        <location line="-90"/>
+        <location line="-99"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>替换空行和未改动过的 AI 条目；你手动输入或修改过的行会保留。首次运行需加载文本模型，约一分钟。</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+4"/>
+        <source>Add common motions</source>
+        <translation>添加常用动作</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
+        <translation>按选中的角色起草待机、移动、跳跃、受击、攻击、死亡。AI 会按角色的样子写每个动作（没有手脚的物体用弹跳、滚动来表现），建包前请检查并修改。</translation>
+    </message>
+    <message>
+        <location line="+65"/>
         <source>(No preset)</source>
         <translation>（不使用预设）</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Drafting...</source>
         <translation>起草中...</translation>
     </message>
     <message>
         <location line="+46"/>
+        <location line="+236"/>
         <source>Create a character pack first, then pick a character here.</source>
         <translation>请先创建角色包，再在这里选择角色。</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="-198"/>
         <source>Fill in the style or negative before saving a preset.</source>
         <translation>保存预设前请先填写风格或反向提示词。</translation>
     </message>
@@ -1402,7 +1413,7 @@
         <translation>提示词</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+31"/>
         <source>Default: {0}</source>
         <translation>默认：{0}</translation>
     </message>
@@ -1422,12 +1433,12 @@
         <translation>删除行</translation>
     </message>
     <message>
-        <location line="+75"/>
+        <location line="+71"/>
         <source>Enter a theme for the AI to draft items from.</source>
         <translation>请先填写主题，AI 会据此起草条目。</translation>
     </message>
     <message>
-        <location line="-373"/>
+        <location line="-380"/>
         <source>Items</source>
         <translation>条目</translation>
     </message>
@@ -1437,18 +1448,18 @@
         <translation>资料库</translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+124"/>
         <source>Create</source>
         <translation>创建</translation>
     </message>
     <message>
-        <location line="+100"/>
-        <location line="+235"/>
+        <location line="+102"/>
+        <location line="+247"/>
         <source>No template available. Is the backend running?</source>
         <translation>没有可用的模板，后端是否已启动？</translation>
     </message>
     <message>
-        <location line="-222"/>
+        <location line="-234"/>
         <source>Add at least one item.</source>
         <translation>请至少添加一个条目。</translation>
     </message>

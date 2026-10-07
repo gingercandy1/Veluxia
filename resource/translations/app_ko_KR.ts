@@ -1259,7 +1259,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+127"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+130"/>
         <source>New pack</source>
         <translation>새 팩</translation>
     </message>
@@ -1306,12 +1306,12 @@
     </message>
     <message>
         <location line="+14"/>
-        <location line="+225"/>
+        <location line="+234"/>
         <source>Save as preset</source>
         <translation>프리셋으로 저장</translation>
     </message>
     <message>
-        <location line="-223"/>
+        <location line="-232"/>
         <source>Save the style and negative above as a project preset. Using an existing name overwrites that preset.</source>
         <translation>위의 스타일과 네거티브를 프로젝트 프리셋으로 저장합니다. 기존 이름을 쓰면 해당 프리셋을 덮어씁니다.</translation>
     </message>
@@ -1362,32 +1362,43 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+92"/>
+        <location line="+101"/>
         <source>AI draft</source>
         <translation>AI 초안</translation>
     </message>
     <message>
-        <location line="-90"/>
+        <location line="-99"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>빈 행과 수정하지 않은 AI 행을 교체합니다. 직접 입력하거나 수정한 행은 유지됩니다. 첫 실행 시 텍스트 모델을 불러오느라 약 1분 걸립니다.</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+4"/>
+        <source>Add common motions</source>
+        <translation>자주 쓰는 동작 추가</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
+        <translation>선택한 캐릭터의 대기, 이동, 점프, 피격, 공격, 사망 동작을 초안으로 작성합니다. AI가 캐릭터의 모습에 맞게 각 동작을 작성하므로 팩을 만들기 전에 확인하고 수정하세요.</translation>
+    </message>
+    <message>
+        <location line="+65"/>
         <source>(No preset)</source>
         <translation>(프리셋 없음)</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Drafting...</source>
         <translation>작성 중...</translation>
     </message>
     <message>
         <location line="+46"/>
+        <location line="+236"/>
         <source>Create a character pack first, then pick a character here.</source>
         <translation>먼저 캐릭터 팩을 만든 다음 여기에서 캐릭터를 고르세요.</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="-198"/>
         <source>Fill in the style or negative before saving a preset.</source>
         <translation>프리셋을 저장하기 전에 스타일이나 네거티브를 입력하세요.</translation>
     </message>
@@ -1402,7 +1413,7 @@
         <translation>프롬프트</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+31"/>
         <source>Default: {0}</source>
         <translation>기본값: {0}</translation>
     </message>
@@ -1422,12 +1433,12 @@
         <translation>행 삭제</translation>
     </message>
     <message>
-        <location line="+75"/>
+        <location line="+71"/>
         <source>Enter a theme for the AI to draft items from.</source>
         <translation>AI가 항목을 작성할 주제를 입력하세요.</translation>
     </message>
     <message>
-        <location line="-373"/>
+        <location line="-380"/>
         <source>Items</source>
         <translation>항목</translation>
     </message>
@@ -1437,18 +1448,18 @@
         <translation>라이브러리</translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+124"/>
         <source>Create</source>
         <translation>만들기</translation>
     </message>
     <message>
-        <location line="+100"/>
-        <location line="+235"/>
+        <location line="+102"/>
+        <location line="+247"/>
         <source>No template available. Is the backend running?</source>
         <translation>사용 가능한 템플릿이 없습니다. 백엔드가 실행 중인가요?</translation>
     </message>
     <message>
-        <location line="-222"/>
+        <location line="-234"/>
         <source>Add at least one item.</source>
         <translation>항목을 하나 이상 추가하세요.</translation>
     </message>

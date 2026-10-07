@@ -6,6 +6,7 @@
 import json
 import random
 
+from src.backend.core.collection.library import character_description
 from src.backend.core.collection.template import (
     PROMPT_FIELD,
     FieldSpec,
@@ -25,6 +26,18 @@ MAX_DRAFT_COUNT = 20
 _MAX_TOKENS = 3000
 _TOKENS_PER_TEXT = 60
 
+# 动作包（模板声明了 source）的条目是给图生视频模型的动作描述，主体来自绑定的角色。
+# 视频模型不知道主体是什么时会往人形上猜，球、箱子也会长出手脚，所以要把主体和它没有的部位写明
+_MOTION_RULES = (
+    "- 这是动作包：每个条目是一个动作，主体就是用户给的「绑定的物体」。"
+    f'"{PROMPT_FIELD}" 要写成给图生视频模型看的动作描述：先点明主体是什么，再写这个动作具体怎么动。\n'
+    "- 只写主体实际有的部位。球、箱子、史莱姆、道具这类没有四肢、没有脸的物体，"
+    "绝不能出现手、脚、腿、胳膊、脸、走路、挥手这类人形动作，"
+    "要改用弹跳、滚动、挤压拉伸、旋转、摇摆、闪烁来表现（如「跑」写成快速向前滚动并轻微弹起）。\n"
+    "- 动作在原地循环，镜头不动。\n"
+    "- 走、跑、滚动这类周期动作循环方式选 loop；待机、呼吸、漂浮这类小幅动作选 pingpong。"
+)
+
 
 def _draft_fields(template: Template) -> list[FieldSpec]:
     """交给模型填的字段：标了 draft=false 的（如一张要十几分钟的分层）留给用户自己选，
@@ -32,7 +45,8 @@ def _draft_fields(template: Template) -> list[FieldSpec]:
     return [spec for spec in template.fields if spec.draft]
 
 
-def build_draft_messages(template: Template, req: DraftItemsRequest) -> list[dict]:
+def build_draft_messages(template: Template, req: DraftItemsRequest,
+                         source_description: str = "") -> list[dict]:
     prompt_label = template.prompt_label or "描述"
     keys = [f'- "{PROMPT_FIELD}"（{prompt_label}）：给生成模型用的具体描述，'
             "写清外观、材质、颜色、形状等看得见的特征，一两句话"]
@@ -56,8 +70,12 @@ def build_draft_messages(template: Template, req: DraftItemsRequest) -> list[dic
         "- 主题里的风格、氛围词（如发光、某某游戏风格）是整包共有的，不必每条都重复。\n"
         "- 不要写画风、渲染等风格词，风格由资源包统一添加。"
     )
+    if template.source:
+        system += "\n" + _MOTION_RULES
     # 数量在用户消息里再说一遍：小模型更听用户消息，只写在 system 里常常一条就收尾
     user = f"主题：{req.theme.strip()}\n请写 {req.count} 个条目。"
+    if source_description:
+        user += f"\n绑定的物体：{source_description}"
     if req.style.strip():
         user += f"\n整体风格（只作参考，不要写进条目）：{req.style.strip()}"
     if req.cast:
@@ -156,7 +174,12 @@ def draft_items(req: DraftItemsRequest) -> list[NewCollectionItem]:
     if not 1 <= req.count <= MAX_DRAFT_COUNT:
         raise ValueError(f"数量需在 1~{MAX_DRAFT_COUNT} 之间")
     template = load_template(req.template)
-    messages = build_draft_messages(template, req)
+    source_description = ""
+    if template.source:
+        if not req.source:
+            raise ValueError("这类资源包需要先选择一个角色")
+        source_description = character_description(req.source)
+    messages = build_draft_messages(template, req, source_description)
     text_fields = sum(1 for spec in _draft_fields(template) if not spec.options)
     max_tokens = min(_MAX_TOKENS, 200 + req.count * _TOKENS_PER_TEXT * (1 + text_fields))
 

@@ -330,6 +330,29 @@ def test_form_motion_template_requires_source_character(qapp):
     assert form.build_request().source == ""
 
 
+def test_form_common_motions_drafts_for_the_bound_character(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER, MOTION])
+    form.preselect_category("character")
+    assert form.common_motions_btn.isHidden()  # 普通角色包没有绑定的物体
+    form.template_combo.setCurrentIndex(form.template_combo.findData("character_motion"))
+    assert not form.common_motions_btn.isHidden()
+    emitted = []
+    form.draft_requested.connect(emitted.append)
+    form.common_motions_btn.click()
+    assert not emitted and form.error_label.text()  # 还没有可绑定的角色
+
+    form.set_characters([("球 / 红球", "c1/ball")])
+    form.common_motions_btn.click()
+    [request] = emitted
+    assert request.template == "character_motion" and request.source == "c1/ball"
+    assert "待机" in request.theme and request.count == 6
+    # 自己写主题起草时也带上绑定的角色
+    form.draft_theme_edit.setText("战斗动作")
+    form.draft_btn.click()
+    assert emitted[1].source == "c1/ball" and emitted[1].theme == "战斗动作"
+
+
 def test_media_kind_shows_frames_as_images():
     assert media_kind("frames.sheet") == "image"
 

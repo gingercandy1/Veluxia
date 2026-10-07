@@ -411,6 +411,11 @@ def _check_cast(template: Template, cast: list[CastMember]) -> None:
             raise ValueError(f"出场角色 {member.name} 需要选择角色包里的角色，或填写角色描述")
 
 
+def character_description(reference: str) -> str:
+    """来源角色条目的描述（建角色包时写的外观），AI 起草动作时据此判断主体有没有手脚。"""
+    return _character_item(reference)[1].prompt.strip()
+
+
 def _character_item(reference: str) -> tuple[Path, CollectionItem]:
     """解析 "<角色包 id>/<条目 id>"，返回角色包目录和对应条目。"""
     pack_id, _, item_id = reference.partition("/")

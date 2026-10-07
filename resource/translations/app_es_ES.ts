@@ -1261,7 +1261,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+127"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+130"/>
         <source>New pack</source>
         <translation>Nuevo paquete</translation>
     </message>
@@ -1308,12 +1308,12 @@
     </message>
     <message>
         <location line="+14"/>
-        <location line="+225"/>
+        <location line="+234"/>
         <source>Save as preset</source>
         <translation>Guardar como ajuste</translation>
     </message>
     <message>
-        <location line="-223"/>
+        <location line="-232"/>
         <source>Save the style and negative above as a project preset. Using an existing name overwrites that preset.</source>
         <translation>Guarda el estilo y el negativo de arriba como ajuste del proyecto. Un nombre existente sobrescribe ese ajuste.</translation>
     </message>
@@ -1364,32 +1364,43 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+92"/>
+        <location line="+101"/>
         <source>AI draft</source>
         <translation>Borrador IA</translation>
     </message>
     <message>
-        <location line="-90"/>
+        <location line="-99"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>Reemplaza las filas vacías y las filas de IA sin tocar; las filas que escribiste o editaste se conservan. La primera vez carga el modelo de texto y tarda cerca de un minuto.</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+4"/>
+        <source>Add common motions</source>
+        <translation>Añadir movimientos comunes</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
+        <translation>Genera borradores de reposo, movimiento, salto, recibir golpe, ataque y muerte para el personaje elegido. La IA adapta cada movimiento a cómo es el personaje, así que revisa y edita las filas antes de crear el paquete.</translation>
+    </message>
+    <message>
+        <location line="+65"/>
         <source>(No preset)</source>
         <translation>(Sin ajuste)</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Drafting...</source>
         <translation>Redactando...</translation>
     </message>
     <message>
         <location line="+46"/>
+        <location line="+236"/>
         <source>Create a character pack first, then pick a character here.</source>
         <translation>Crea primero un paquete de personajes y luego elige un personaje aquí.</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="-198"/>
         <source>Fill in the style or negative before saving a preset.</source>
         <translation>Rellena el estilo o el negativo antes de guardar un ajuste.</translation>
     </message>
@@ -1404,7 +1415,7 @@
         <translation>Prompt</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+31"/>
         <source>Default: {0}</source>
         <translation>Predeterminado: {0}</translation>
     </message>
@@ -1424,12 +1435,12 @@
         <translation>Quitar fila</translation>
     </message>
     <message>
-        <location line="+75"/>
+        <location line="+71"/>
         <source>Enter a theme for the AI to draft items from.</source>
         <translation>Introduce un tema para que la IA redacte los elementos.</translation>
     </message>
     <message>
-        <location line="-373"/>
+        <location line="-380"/>
         <source>Items</source>
         <translation>Elementos</translation>
     </message>
@@ -1439,18 +1450,18 @@
         <translation>Biblioteca</translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+124"/>
         <source>Create</source>
         <translation>Crear</translation>
     </message>
     <message>
-        <location line="+100"/>
-        <location line="+235"/>
+        <location line="+102"/>
+        <location line="+247"/>
         <source>No template available. Is the backend running?</source>
         <translation>No hay plantillas disponibles. ¿Está el backend en ejecución?</translation>
     </message>
     <message>
-        <location line="-222"/>
+        <location line="-234"/>
         <source>Add at least one item.</source>
         <translation>Añade al menos un elemento.</translation>
     </message>
