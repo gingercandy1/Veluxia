@@ -1263,7 +1263,7 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+127"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+130"/>
         <source>New pack</source>
         <translation>Новый пакет</translation>
     </message>
@@ -1310,12 +1310,12 @@
     </message>
     <message>
         <location line="+14"/>
-        <location line="+225"/>
+        <location line="+234"/>
         <source>Save as preset</source>
         <translation>Сохранить как пресет</translation>
     </message>
     <message>
-        <location line="-223"/>
+        <location line="-232"/>
         <source>Save the style and negative above as a project preset. Using an existing name overwrites that preset.</source>
         <translation>Сохранить стиль и негатив выше как пресет проекта. Существующее имя перезапишет пресет.</translation>
     </message>
@@ -1366,32 +1366,43 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+92"/>
+        <location line="+101"/>
         <source>AI draft</source>
         <translation>Черновик ИИ</translation>
     </message>
     <message>
-        <location line="-90"/>
+        <location line="-99"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>Заменяет пустые строки и нетронутые строки ИИ; введённые или изменённые вами строки сохраняются. Первый запуск загружает текстовую модель и занимает около минуты.</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+4"/>
+        <source>Add common motions</source>
+        <translation>Добавить базовые движения</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
+        <translation>Создаёт черновики движений «ожидание», «перемещение», «прыжок», «получение урона», «атака» и «смерть» для выбранного персонажа. ИИ описывает каждое движение с учётом облика персонажа — проверьте и отредактируйте строки перед созданием пакета.</translation>
+    </message>
+    <message>
+        <location line="+65"/>
         <source>(No preset)</source>
         <translation>(Без пресета)</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Drafting...</source>
         <translation>Составление...</translation>
     </message>
     <message>
         <location line="+46"/>
+        <location line="+236"/>
         <source>Create a character pack first, then pick a character here.</source>
         <translation>Сначала создайте пакет персонажей, затем выберите персонажа здесь.</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="-198"/>
         <source>Fill in the style or negative before saving a preset.</source>
         <translation>Перед сохранением пресета заполните стиль или негатив.</translation>
     </message>
@@ -1406,7 +1417,7 @@
         <translation>Промпт</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+31"/>
         <source>Default: {0}</source>
         <translation>По умолчанию: {0}</translation>
     </message>
@@ -1426,12 +1437,12 @@
         <translation>Удалить строку</translation>
     </message>
     <message>
-        <location line="+75"/>
+        <location line="+71"/>
         <source>Enter a theme for the AI to draft items from.</source>
         <translation>Введите тему, по которой ИИ составит элементы.</translation>
     </message>
     <message>
-        <location line="-373"/>
+        <location line="-380"/>
         <source>Items</source>
         <translation>Элементы</translation>
     </message>
@@ -1441,18 +1452,18 @@
         <translation>Библиотека</translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+124"/>
         <source>Create</source>
         <translation>Создать</translation>
     </message>
     <message>
-        <location line="+100"/>
-        <location line="+235"/>
+        <location line="+102"/>
+        <location line="+247"/>
         <source>No template available. Is the backend running?</source>
         <translation>Нет доступных шаблонов. Бэкенд запущен?</translation>
     </message>
     <message>
-        <location line="-222"/>
+        <location line="-234"/>
         <source>Add at least one item.</source>
         <translation>Добавьте хотя бы один элемент.</translation>
     </message>

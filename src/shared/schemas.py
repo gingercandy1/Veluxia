@@ -198,6 +198,8 @@ class DraftItemsRequest(BaseModel):
     style: str = Field("", description="资源包的风格锁，只作参考")
     cast: List[CastMember] = Field(default_factory=list, description="对话包的出场角色")
     exclude: List[str] = Field(default_factory=list, description="表格里已有的条目，避免重复")
+    source: str = Field("", description="动作包绑定的来源角色，格式同 CreatePackRequest.source；"
+                                        "起草时按它的描述写动作")
     model_name: str = Field("", description="文本模型；空表示用默认模型")
 
 

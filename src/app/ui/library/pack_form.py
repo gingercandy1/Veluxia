@@ -35,6 +35,9 @@ from src.shared.schemas import (
 )
 
 DIALOGUE_TYPE = "dialogue"
+# 动作包「添加常用动作」的固定主题：不用用户想主题，按绑定的角色起草一组基础动作
+COMMON_MOTIONS_THEME = "游戏里最常用的基础动作：待机、移动、跳跃、受击、攻击、死亡"
+COMMON_MOTIONS_COUNT = 6
 # 与后端 drafts.MAX_DRAFT_COUNT 一致：再多 LLM 的 4096 上下文装不下
 MAX_DRAFT_COUNT = 20
 
@@ -219,6 +222,13 @@ class PackForm(BaseWidget):
             "The first run loads the text model and takes about a minute."))
         self.draft_btn.clicked.connect(self._on_draft)
         draft_row.addWidget(self.draft_btn)
+        self.common_motions_btn = QPushButton(self.tr("Add common motions"))
+        self.common_motions_btn.setToolTip(self.tr(
+            "Drafts idle, move, jump, hit, attack and death for the chosen character. "
+            "The AI writes each motion to fit what the character is, so check and edit the rows "
+            "before creating the pack."))
+        self.common_motions_btn.clicked.connect(self._on_common_motions)
+        draft_row.addWidget(self.common_motions_btn)
         layout.addLayout(draft_row)
         self.items_table = PasteTable(0, 1)
         self._setup_table(self.items_table, stretch_column=0)
@@ -242,6 +252,7 @@ class PackForm(BaseWidget):
         layout.addLayout(buttons)
         self.cast_section.hide()
         self.source_section.hide()
+        self.common_motions_btn.hide()
         self.set_styles([])
 
     # ---- 对外 ----
@@ -305,6 +316,7 @@ class PackForm(BaseWidget):
 
     def set_drafting(self, drafting: bool):
         self.draft_btn.setEnabled(not drafting)
+        self.common_motions_btn.setEnabled(not drafting)
         self.draft_btn.setText(self.tr("Drafting...") if drafting else self.tr("AI draft"))
 
     def apply_drafts(self, template_id: str, items: list[NewCollectionItem]):
@@ -437,7 +449,9 @@ class PackForm(BaseWidget):
         self.cast_section.setVisible(is_dialogue)
         if is_dialogue and self.cast_table.rowCount() == 0:
             self._add_cast_row()
-        self.source_section.setVisible(template is not None and bool(template.source))
+        has_source = template is not None and bool(template.source)
+        self.source_section.setVisible(has_source)
+        self.common_motions_btn.setVisible(has_source)
 
     # ---- 行 ----
     def _add_item_row(self):
@@ -568,13 +582,24 @@ class PackForm(BaseWidget):
         return label
 
     def _on_draft(self):
+        theme = self.draft_theme_edit.text().strip()
+        if self.current_template() is not None and not theme:
+            self.set_error(self.tr("Enter a theme for the AI to draft items from."))
+            return
+        self._request_draft(theme, self.draft_count_spin.value())
+
+    def _on_common_motions(self):
+        self._request_draft(COMMON_MOTIONS_THEME, COMMON_MOTIONS_COUNT)
+
+    def _request_draft(self, theme: str, count: int):
         template = self.current_template()
         if template is None:
             self.set_error(self.tr("No template available. Is the backend running?"))
             return
-        theme = self.draft_theme_edit.text().strip()
-        if not theme:
-            self.set_error(self.tr("Enter a theme for the AI to draft items from."))
+        # 动作包要按绑定角色的样子写动作，没选角色就没法起草
+        source = (self.source_combo.currentData() or "") if template.source else ""
+        if template.source and not source:
+            self.set_error(self.tr("Create a character pack first, then pick a character here."))
             return
         # 表格里已有的条目（含上次起草的）都告诉模型，再点一次拿到的是新条目
         existing = [self.items_table.cell_text(row, 0) for row in range(self.items_table.rowCount())]
@@ -582,10 +607,11 @@ class PackForm(BaseWidget):
         self.draft_requested.emit(DraftItemsRequest(
             template=template.id,
             theme=theme,
-            count=self.draft_count_spin.value(),
+            count=count,
             style=self.style_edit.toPlainText().strip(),
             cast=self._cast() if template.type == DIALOGUE_TYPE else [],
             exclude=[prompt for prompt in existing if prompt],
+            source=source,
         ))
 
     def _on_create(self):

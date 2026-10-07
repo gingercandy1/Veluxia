@@ -185,3 +185,47 @@ def test_expensive_fields_are_left_to_the_user():
     reply = json.dumps({"items": [{"prompt": "a misty forest", "layers": "4", "length": "1"}]})
     [item] = parse_drafts(reply, template)
     assert "layers" not in item.fields and item.fields["length"] == "1"
+
+
+# ---- 动作包：按绑定的物体写动作 ----
+def test_motion_messages_carry_the_subject_and_forbid_extra_limbs():
+    motion = load_template("character_motion")
+    request = DraftItemsRequest(template="character_motion", theme="常用动作", count=2,
+                                source="c1/ball")
+    system, user = (m["content"] for m in build_draft_messages(motion, request, "一个红色的球体"))
+    assert "绑定的物体：一个红色的球体" in user
+    # 没有四肢的主体要改用弹跳、滚动表现，不能写手脚
+    assert "手、脚" in system and "弹跳" in system
+    assert "loop（" in system and "pingpong（" in system
+    # 其他模板的提示词不受影响
+    plain_system, plain_user = (m["content"] for m in build_draft_messages(TEMPLATE, _request()))
+    assert "绑定的物体" not in plain_user and "弹跳" not in plain_system
+
+
+def test_motion_draft_looks_up_the_bound_character(fake_llm, monkeypatch):
+    from src.backend.core.collection import drafts
+    looked_up = []
+    monkeypatch.setattr(drafts, "character_description",
+                        lambda ref: looked_up.append(ref) or "一个红色的球体")
+    fake_llm.reply = json.dumps({"items": [
+        {"prompt": "红色球体原地弹跳，落地时压扁、弹起时拉长", "loop_mode": "loop"}]},
+        ensure_ascii=False)
+    [item] = draft_items(DraftItemsRequest(template="character_motion", theme="跳跃", count=1,
+                                           source="c1/ball", model_name="fake-llm"))
+    assert looked_up == ["c1/ball"] and item.fields == {"loop_mode": "loop"}
+    [(messages, _, _)] = fake_llm.calls
+    assert "一个红色的球体" in messages[1]["content"]
+
+
+def test_motion_draft_requires_a_character(fake_llm):
+    with pytest.raises(ValueError, match="角色"):
+        draft_items(DraftItemsRequest(template="character_motion", theme="跳跃", count=1,
+                                      model_name="fake-llm"))
+    assert not fake_llm.calls
+
+
+def test_character_description_reports_missing_pack(tmp_path, monkeypatch):
+    from src.backend.core.collection import library
+    monkeypatch.setattr(library, "get_media_root", lambda: tmp_path)
+    with pytest.raises(ValueError, match="找不到角色包"):
+        library.character_description("missing/ball")
