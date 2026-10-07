@@ -6,7 +6,7 @@ import numpy as np
 import soundfile as sf
 
 from src.backend.core.model_base import BaseSpeechGenerator
-from src.backend.core.model_utils import huggingface_token, get_temp_dir
+from src.backend.core.model_utils import get_temp_dir, huggingface_token, models_root
 from src.shared.settings import PROJECT_ROOT
 
 
@@ -20,7 +20,7 @@ class Qwen3TTSGenerator(BaseSpeechGenerator):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.mode = self.model_extra.get("mode", None)
-        self.model_dir = os.path.join(PROJECT_ROOT, "models", "speech", "qwen3-tts", self.model_name)
+        self.model_dir = str(models_root() / "speech" / "qwen3-tts" / self.model_name)
 
     def _model_missing(self) -> bool:
         return not os.path.exists(self.model_dir)

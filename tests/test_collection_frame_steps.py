@@ -107,28 +107,6 @@ def test_pingpong_plays_forward_then_back_without_repeating_ends(tmp_path):
     assert outputs[3].read_bytes() == frames[3].read_bytes()
 
 
-def test_pingpong_takes_a_short_window_near_the_start(tmp_path):
-    frames = _cyclic_frames(tmp_path, startup=2, period=3, cycles=4)  # 14 帧
-    ctx = _ctx(tmp_path, {"mode": "pingpong", "skip": 8, "pingpong_skip": 1,
-                          "pingpong_len": 4}, frames)
-    outputs = FramesLoopRunner().run(ctx)
-    # 往返只用 1..4：越往后的帧离参考图越远，待机里会出现特效消散、长出肢体
-    assert [p.read_bytes() for p in outputs] == [
-        frames[i].read_bytes() for i in (1, 2, 3, 4, 3, 2)]
-    assert ctx.meta["start"] == 1 and ctx.meta["end"] == 5
-
-
-def test_motion_template_keeps_subject_unchanged():
-    from src.backend.core.collection.template import load_template
-    template = load_template("character_motion")
-    suffix = template.step("video").params["prompt_suffix"]
-    # 后缀不能把主体往人形上引
-    assert not any(word in suffix for word in ("character", "full body", "treadmill", "sprite"))
-    assert "same shape" in suffix
-    loop = template.step("loop").params
-    assert loop["pingpong_skip"] < loop["skip"] and loop["pingpong_len"] > 0
-
-
 def test_loop_runner_rejects_unknown_mode(tmp_path):
     with pytest.raises(ValueError, match="mode"):
         FramesLoopRunner().run(_ctx(tmp_path, {"mode": "bounce"}, _cyclic_frames(tmp_path)))
@@ -256,17 +234,18 @@ def test_animation_runner_uses_action_prompt_and_white_canvas_reference(tmp_path
     assert ctx.meta["frames"] == 3
 
 
-@pytest.mark.parametrize("action, expected", [
-    # 只写动作时先点明主体：视频模型不知道是个球，会按人形做动作长出手脚
-    ("跳跃", "一个被烟雾包裹的圆球, 跳跃, keep shape"),
-    # AI 起草的描述里已经写了主体，不再重复
-    ("一个被烟雾包裹的圆球原地弹跳", "一个被烟雾包裹的圆球原地弹跳, keep shape"),
+@pytest.mark.parametrize(("loop_mode", "expected_loop"), [
+    ("loop", True), ("pingpong", True), ("once", False),
 ])
-def test_animation_runner_names_the_source_subject(tmp_path, action, expected):
-    ctx = _ctx(tmp_path, {"model_name": "fake-video", "prompt_suffix": "keep shape"},
-               step_id="video", prompt=action)
-    ctx.values["source_description"] = "一个被烟雾包裹的圆球"
-    assert AnimationGenerateRunner().build_params(ctx)["content"] == expected
+def test_animation_runner_anchors_cyclic_modes_and_adds_seam_guidance(
+        tmp_path, loop_mode, expected_loop):
+    ctx = _ctx(tmp_path, {"loop_mode": loop_mode}, step_id="video")
+    params = AnimationGenerateRunner().build_params(ctx)
+    assert params["loop"] is expected_loop
+    assert "loop_mode" not in params
+    assert ("seamless repeating motion" in params["content"]) is expected_loop
+    if expected_loop:
+        assert "end in the same pose" in params["content"]
 
 
 def test_animation_runner_builds_reference_at_requested_size(tmp_path, fake_models):

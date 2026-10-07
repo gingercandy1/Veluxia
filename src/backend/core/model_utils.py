@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from src.shared.settings import PROJECT_ROOT
+from src.shared.settings import MODELS_DIR_ENV, PROJECT_ROOT, ConfigManager
 
 # 不在源码里存 token：传 None 时 huggingface_hub 每次下载都会现读 HF_TOKEN 环境变量，
 # 再退回 `huggingface-cli login` 缓存的登录态。这里不能在 import 时快照环境变量，
@@ -19,6 +19,31 @@ def apply_hf_token(token: str) -> None:
     if token:
         os.environ["HF_TOKEN"] = token
         print("✅ 已使用设置中的 Hugging Face token")
+
+def models_root() -> Path:
+    """模型权重根目录：前端传入的环境变量 > 后端自己的设置 > 项目下的 models/。
+
+    每次调用现取、不缓存：生成器都在 __init__ 里拼路径，写成模块级常量会在 import 时
+    就把目录定死，测试和设置改动都覆盖不到。相对路径按项目根解析，与"在项目根运行"的约定一致。
+    """
+    configured = (os.environ.get(MODELS_DIR_ENV) or
+                  ConfigManager().get("models", "dir", "") or "").strip()
+    if not configured:
+        return Path(PROJECT_ROOT) / "models"
+    path = Path(configured).expanduser()
+    return path if path.is_absolute() else Path(PROJECT_ROOT) / path
+
+
+def ensure_models_root() -> Path:
+    """后端启动时确认模型目录可用：盘符不存在或没有写权限时尽早报错，而不是等到下载一半才失败。"""
+    root = models_root()
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise RuntimeError(f"模型目录不可用：{root}（{exc}）。"
+                           "请在 设置 → 模型存储 里改成存在且可写的文件夹") from exc
+    return root
+
 
 project_name = "material_generation"
 

@@ -4,9 +4,11 @@ import json
 from pathlib import Path
 
 from src.backend.core.model_base import GeneratorFactory
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import models_root
 
-_MODEL_DIR = Path(PROJECT_ROOT) / "models" / "prompt_refiner" / "Qwen2.5-1.5B-Instruct"
+
+def _model_dir() -> Path:
+    return models_root() / "prompt_refiner" / "Qwen2.5-1.5B-Instruct"
 
 _STYLES_PATH = Path(__file__).with_name("prompt_styles.json")
 
@@ -92,8 +94,8 @@ class PromptRefiner:
             raise ValueError(f"不支持的提示词优化类型: {mode}")
         if not text.strip():
             return text
-        if not _MODEL_DIR.exists():
-            raise FileNotFoundError(f"提示词优化模型不存在: {_MODEL_DIR}")
+        if not _model_dir().exists():
+            raise FileNotFoundError(f"提示词优化模型不存在: {_model_dir()}")
 
         # 优化器占约 3GB 显存，和驻留的生图模型放不到一起：exclusive() 会先卸载它们，
         # 并在优化期间挡住新的生成请求；同时也串行化了并发的优化请求
@@ -107,8 +109,9 @@ class PromptRefiner:
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         dtype = torch.float16 if device == "cuda" else torch.float32
-        tokenizer = AutoTokenizer.from_pretrained(str(_MODEL_DIR))
-        model = AutoModelForCausalLM.from_pretrained(str(_MODEL_DIR), torch_dtype=dtype).to(device)
+        model_dir = str(_model_dir())
+        tokenizer = AutoTokenizer.from_pretrained(model_dir)
+        model = AutoModelForCausalLM.from_pretrained(model_dir, torch_dtype=dtype).to(device)
         try:
             messages = [{"role": "system", "content": system_prompt}]
             for question, answer in examples:

@@ -6,12 +6,14 @@ torch / diffusers 都在函数内导入，保持本模块可在无 GPU 环境下
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.backend.core.model_utils import ensure_file
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import ensure_file, models_root
 
 OFFLOAD_MODES = ("model", "group", "sequential")
-# LoRA 按来源仓库集中存放：同一仓库常给多个底座出权重（如 Lightning），不必各存一份
-LORA_ROOT = Path(PROJECT_ROOT) / "models" / "lora"
+
+
+def lora_root() -> Path:
+    """LoRA 按来源仓库集中存放：同一仓库常给多个底座出权重（如 Lightning），不必各存一份。"""
+    return models_root() / "lora"
 
 
 def gguf_filename(filename: str | None) -> str | None:
@@ -69,14 +71,14 @@ class LoraSpec:
     weight_name: str
     name: str
     scale: float = 1.0
-    # 只给某个底座用的 LoRA 可以和底座放在一起；None 表示按来源仓库放进 LORA_ROOT
+    # 只给某个底座用的 LoRA 可以和底座放在一起；None 表示按来源仓库放进 lora_root()
     local_dir: Path | None = None
 
     @property
     def repo_dir(self) -> Path:
         if self.local_dir is not None:
             return self.local_dir
-        return LORA_ROOT / self.repo_id.replace("/", "--")
+        return lora_root() / self.repo_id.replace("/", "--")
 
     @property
     def path(self) -> Path:
@@ -127,6 +129,9 @@ def apply_offload(pipe, mode: str = "model", device: str = "cuda", group: dict |
     - group：按层搬运参数，量化权重可用，显存最省但更慢。默认按叶子层；
       group 可改成 {"type": "block_level", "blocks_per_group": N, "use_stream": true}：
       一次搬一组块、用 CUDA 流让搬运和计算重叠，显存用得多一些，速度快不少。
+      block_level 只认组件顶层的 ModuleList，块嵌在子模块里的组件（如 Wan 的 UMT5 文本编码器，
+      块在 encoder.block 下）会被整个当成"未匹配"一次搬上显存，峰值直接到 10GB 以上。
+      这类组件写进 "leaf_components"，单独改用 leaf_level。
     - sequential：逐层搬运，最慢，只在前两者都放不下时用。
     """
     if mode == "model":
@@ -138,13 +143,27 @@ def apply_offload(pipe, mode: str = "model", device: str = "cuda", group: dict |
         kwargs = {}
         if offload_type == "block_level":
             kwargs["num_blocks_per_group"] = int(options.get("blocks_per_group", 1))
-        pipe.enable_group_offload(
-            onload_device=torch.device(device),
-            offload_device=torch.device("cpu"),
-            offload_type=offload_type,
-            use_stream=bool(options.get("use_stream", False)),
-            **kwargs,
-        )
+        common = {
+            "onload_device": torch.device(device),
+            "offload_device": torch.device("cpu"),
+            "use_stream": bool(options.get("use_stream", False)),
+        }
+        leaf_components = set(options.get("leaf_components", []))
+        if leaf_components:
+            # pipe.enable_group_offload 的 exclude_modules 会把被排除的组件直接搬上显存，
+            # 所以这里照它的逻辑自己逐个组件处理
+            from diffusers.hooks import apply_group_offloading
+            for name, component in pipe.components.items():
+                if not isinstance(component, torch.nn.Module):
+                    continue
+                if name in leaf_components:
+                    apply_group_offloading(component, offload_type="leaf_level", **common)
+                elif hasattr(component, "enable_group_offload"):
+                    component.enable_group_offload(offload_type=offload_type, **common, **kwargs)
+                else:
+                    apply_group_offloading(component, offload_type=offload_type, **common, **kwargs)
+        else:
+            pipe.enable_group_offload(offload_type=offload_type, **common, **kwargs)
     elif mode == "sequential":
         pipe.enable_sequential_cpu_offload()
     else:

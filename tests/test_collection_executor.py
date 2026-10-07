@@ -188,7 +188,8 @@ def test_downstream_is_transitive():
 
 def test_builtin_scene_props_template_is_valid():
     template = load_template("scene_props")
-    assert template.step_ids() == ["generate", "remove_bg", "upscale", "trim"]
+    # 单张流程的步骤 id 不能变：已有资源包的 manifest 按这些 id 记录产物
+    assert template.step_ids()[:4] == ["generate", "remove_bg", "upscale", "trim"]
 
 
 def test_compose_prompt_skips_empty_parts():

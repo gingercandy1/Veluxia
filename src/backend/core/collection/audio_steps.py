@@ -5,6 +5,7 @@
 其余参数原样交给生成器的 parse_params。content 缺省时用条目原文——音频不拼风格锁，
 否则风格词会被念出来或写进音效描述。
 """
+import random
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,8 @@ class SpeechGenerateRunner(GeneratorStepRunner):
         params.setdefault("content", ctx.values.get(PROMPT_FIELD, ""))
         if not str(params["content"]).strip():
             raise ValueError(f"{self.type_name} 没有要生成的内容")
+        # 音频生成器默认种子固定：不随机的话音效不满意时重新生成还是同一段。种子会记进 meta
+        params.setdefault("seed", random.randrange(2**31))
         return params
 
     def invoke(self, generator):

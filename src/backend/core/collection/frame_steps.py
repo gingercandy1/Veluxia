@@ -3,7 +3,9 @@
 这些步骤的产物是多个文件（帧序列），统一放在条目目录下以步骤 id 命名的子目录里，
 文件名用 0000.png 递增，manifest 里的顺序就是播放顺序。
 """
+import random
 import shutil
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -17,7 +19,7 @@ from src.backend.core.collection.generator_runner import (
 )
 from src.backend.core.collection.image_steps import describe_image, single_input
 from src.backend.core.collection.steps import StepContext, StepRunner
-from src.backend.core.collection.template import PROMPT_FIELD, SOURCE_DESCRIPTION_FIELD
+from src.backend.core.collection.template import PROMPT_FIELD
 from src.backend.core.image_frame.sprite_export import export_sprite_sheet
 from src.shared.enum_type import FactoryType
 
@@ -28,22 +30,28 @@ _SEAM_CHECK_RATIO = 1.5
 class AnimationGenerateRunner(GeneratorStepRunner):
     """立绘铺白底后图生视频，拆成帧序列。
 
-    提示词是「来源角色描述 + 条目原文（动作描述）+ 后缀」，不拼风格锁：画风已经由参考图决定，
-    风格词反而会让视频模型改画面而不是做动作。只写「跳跃」时视频模型不知道主体是个球，
-    会按人形去做动作长出手脚，所以先点明主体；AI 起草的动作描述里已经写了主体时不再重复。
+    提示词只用条目原文（动作描述）+ 后缀，不拼风格锁：画风已经由参考图决定，
+    风格词反而会让视频模型改画面而不是做动作。
     """
     type_name = "animation.generate"
     factory_type = FactoryType.Animation
 
     def build_params(self, ctx: StepContext) -> dict[str, Any]:
         params = {k: v for k, v in ctx.params.items()
-                  if k not in ("model_name", "prompt_suffix", "scale")}
-        action = ctx.values.get(PROMPT_FIELD, "").strip()
-        subject = ctx.values.get(SOURCE_DESCRIPTION_FIELD, "").strip()
-        if subject and subject.lower() in action.lower():
-            subject = ""
-        params["content"] = ", ".join(
-            p.strip() for p in (subject, action, ctx.params.get("prompt_suffix", "")) if p.strip())
+                  if k not in ("model_name", "prompt_suffix", "scale", "background")}
+        loop_mode = params.pop("loop_mode", "")
+        if loop_mode:
+            if loop_mode not in ("loop", "pingpong", "once"):
+                raise ValueError(f"{self.type_name} 的 loop_mode 无效：{loop_mode}")
+            params["loop"] = loop_mode != "once"
+        action = ctx.values.get(PROMPT_FIELD, "")
+        parts = [action, ctx.params.get("prompt_suffix", "")]
+        if loop_mode in ("loop", "pingpong"):
+            parts.append("seamless repeating motion, end in the same pose as the beginning")
+        params["content"] = ", ".join(p.strip() for p in parts if p.strip())
+        # 视频生成器默认种子固定，不随机的话重新生成得到一模一样的结果；
+        # 动作幅度很依赖种子，用户只能靠重跑换一个。种子会记进 meta，仍可复现
+        params.setdefault("seed", random.randrange(2**31))
         return params
 
     def run(self, ctx: StepContext) -> list[Path]:
@@ -53,7 +61,8 @@ class AnimationGenerateRunner(GeneratorStepRunner):
         # 角色是竖长的，竖版画布让角色在画面里更大，脸和眼睛才有足够的像素不崩
         size = (params["width"], params["height"]) if "width" in params else None
         with Image.open(single_input(self.type_name, ctx)) as portrait:
-            white_canvas(portrait.convert("RGBA"), scale, size).save(reference)
+            background = canvas_background(portrait, ctx.params.get("background", "white"))
+            white_canvas(portrait.convert("RGBA"), scale, size, background).save(reference)
         try:
             params["reference_image_path"] = str(reference)
             frame_paths = self._generate_frames(params)
@@ -88,13 +97,15 @@ class FramesLoopRunner(StepRunner):
     跳过开头 skip 帧后枚举 (i, j)，取帧 i 与帧 j 最像的一对，输出 i..j-1：播放到 j-1
     之后回到 i，就等于接上了原本的 j。
     接缝不够好时照样输出，只在 meta 里标 needs_check，是否接受交给用户。
+    mode 为 once 时不找循环：攻击、死亡这类只播一次的动作，原样输出整段视频。
+    它们本来就该从立绘姿势起步，所以不跳过开头（要跳可以用 once_skip）。
     """
     type_name = "frames.loop"
 
     def run(self, ctx: StepContext) -> list[Path]:
         mode = ctx.params.get("mode", "loop")
-        if mode not in ("loop", "pingpong"):
-            raise ValueError(f"{self.type_name} 的 mode 只能是 loop 或 pingpong：{mode}")
+        if mode not in ("loop", "pingpong", "once"):
+            raise ValueError(f"{self.type_name} 的 mode 只能是 loop、pingpong 或 once：{mode}")
         skip = int(ctx.params.get("skip", 8))
         min_len = int(ctx.params.get("min_len", 8))
         stride = int(ctx.params.get("stride", 1))
@@ -102,20 +113,20 @@ class FramesLoopRunner(StepRunner):
             raise ValueError(f"{self.type_name} 参数不合法：skip={skip} min_len={min_len} stride={stride}")
 
         frames = list(ctx.inputs)
-        if mode == "pingpong":
-            # 待机这类幅度很小的动作找不到明显的周期，正放再倒放一定首尾相接。
-            # 视频越往后离参考图越远（特效消散、长出肢体），往返只需要一小段，取紧挨开头的部分
-            start = int(ctx.params.get("pingpong_skip", skip))
-            length = int(ctx.params.get("pingpong_len", 0))
-            if start < 0 or length < 0:
-                raise ValueError(f"{self.type_name} 参数不合法：pingpong_skip={start} pingpong_len={length}")
-            end = start + length if length else len(frames)
-            forward = frames[start:end][::stride]
-            if len(forward) < 3:
-                raise ValueError(f"只有 {len(frames)} 帧，跳过 {start} 帧后不够做往返循环")
+        if mode == "once":
+            once_skip = int(ctx.params.get("once_skip", 0))
+            if once_skip < 0 or len(frames) - once_skip < 2:
+                raise ValueError(f"只有 {len(frames)} 帧，跳过 {once_skip} 帧后不够做单次播放")
+            selected = frames[once_skip::stride]
+            ctx.meta.update({"mode": mode, "start": once_skip, "frames": len(selected),
+                             "needs_check": False})
+        elif mode == "pingpong":
+            # 待机这类幅度很小的动作找不到明显的周期，正放再倒放一定首尾相接
+            if len(frames) - skip < 3:
+                raise ValueError(f"只有 {len(frames)} 帧，跳过 {skip} 帧后不够做往返循环")
+            forward = frames[skip:][::stride]
             selected = forward + forward[-2:0:-1]
-            ctx.meta.update({"mode": mode, "start": start, "end": min(end, len(frames)),
-                             "frames": len(selected)})
+            ctx.meta.update({"mode": mode, "start": skip, "frames": len(selected)})
         else:
             loop = find_loop(load_signatures(frames), skip, min_len, stride)
             selected = frames[loop.start:loop.end:stride]
@@ -131,6 +142,43 @@ class FramesLoopRunner(StepRunner):
             path = target / f"{index:04d}.png"
             shutil.copyfile(source, path)
             outputs.append(path)
+        return outputs
+
+
+class FramesCrossfadeRunner(StepRunner):
+    """把结尾 frames 帧淡化叠进开头，做成无缝循环（纯 CPU），思路和音乐的 audio.loop 一样。
+
+    末帧锚定后结尾已经接近第一帧，但闪光、粒子这类细节不会正好回到原样，
+    直接跳回第一帧会一闪（实测接缝差异是相邻帧的 4～5 倍）；叠 6 帧后和普通相邻帧一样平滑。
+    输出比输入少 frames 帧：被叠进开头的结尾不再单独播放。
+    frames 为 0 表示单次播放（释放、爆发这类只播一次的特效）：原样输出，不叠化，
+    这样模板用一个字段就能切换播放方式，不必为两种方式各写一套步骤。
+    """
+    type_name = "frames.crossfade"
+
+    def run(self, ctx: StepContext) -> list[Path]:
+        import numpy as np
+
+        overlap = int(ctx.params.get("frames", 6))
+        count = len(ctx.inputs)
+        if overlap < 0 or count <= overlap * 2:
+            raise ValueError(f"{self.type_name} 的叠化帧数 {overlap} 不合适：只有 {count} 帧，"
+                             "不能为负且必须少于一半")
+        frames = []
+        for path in ctx.inputs:
+            with Image.open(path) as image:
+                frames.append(np.asarray(image.convert("RGBA"), dtype=np.float32))
+        target = reset_frame_dir(ctx)
+        outputs = []
+        for index in range(count - overlap):
+            frame = frames[index]
+            if index < overlap:
+                weight = (index + 1) / (overlap + 1)
+                frame = frames[count - overlap + index] * (1 - weight) + frame * weight
+            path = target / f"{index:04d}.png"
+            Image.fromarray(frame.round().astype(np.uint8)).save(path)
+            outputs.append(path)
+        ctx.meta.update({"frames": len(outputs), "crossfade": overlap})
         return outputs
 
 
@@ -151,6 +199,45 @@ class FramesRemoveBgRunner(GeneratorStepRunner):
         return outputs
 
 
+class FramesSwayRunner(StepRunner):
+    """程序化网格摇摆：透明底静态图 → 无缝循环序列帧（纯 CPU，ADR 0008）。
+
+    不加载模型、不占显存租约。算法和参数校验在 image_frame/mesh_warp.py，这里只做文件进出和取消检查。
+    """
+    type_name = "frames.sway"
+
+    def run(self, ctx: StepContext) -> list[Path]:
+        frames = int(ctx.params.get("frames", 24))
+        amplitude = float(ctx.params.get("amplitude", 0.08))
+        power = float(ctx.params.get("power", 1.5))
+        lag = float(ctx.params.get("lag", 0.6))
+        density = int(ctx.params.get("mesh_density", 12))
+        wave = float(ctx.params.get("wave", 1.5))
+        flutter = float(ctx.params.get("flutter", 0.3))
+
+        from src.backend.core.image_frame.mesh_warp import SwayParams, iter_sway_frames
+
+        # 参数范围由 SwayParams 校验
+        params = SwayParams(frames, amplitude, power, lag, density, wave, flutter)
+        with Image.open(single_input(self.type_name, ctx)) as image:
+            rendered = iter_sway_frames(image, params)
+
+        target = reset_frame_dir(ctx)
+        outputs = []
+        # 逐帧渲染，两帧之间检查取消
+        for index, frame in enumerate(rendered):
+            if ctx.cancel_event.is_set():
+                raise RuntimeError(f"{self.type_name} 已取消")
+            path = target / f"{index:04d}.png"
+            frame.save(path)
+            outputs.append(path)
+        ctx.meta.update({
+            "frames": len(outputs), "amplitude": amplitude, "power": power,
+            "lag": lag, "mesh_density": density, "wave": wave, "flutter": flutter,
+        })
+        return outputs
+
+
 class SpriteSheetRunner(StepRunner):
     """按全部帧的并集包围盒统一裁边，拼精灵图 + atlas JSON + GIF 预览（纯 CPU）。
 
@@ -165,23 +252,42 @@ class SpriteSheetRunner(StepRunner):
         fps = int(ctx.params.get("fps", 12))
         if fps <= 0:
             raise ValueError(f"{self.type_name} 的 fps 必须大于 0：{fps}")
+        stride = int(ctx.params.get("stride", 1))
+        size = int(ctx.params.get("size", 0))
+        if stride < 1 or size < 0:
+            raise ValueError(f"{self.type_name} 参数不合法：stride={stride} size={size}")
+        frames = list(ctx.inputs)[::stride]
         # atlas 里的帧名以条目 id 开头（如 walk_0000），导入引擎后按名字就能认出是哪个动作
-        result = export_sprite_sheet(
-            [str(p) for p in ctx.inputs], ctx.out_dir, ctx.item.id,
-            columns=int(ctx.params.get("columns", 0)),
-            padding=int(ctx.params.get("padding", 0)), trim=True, fps=fps)
+        with tempfile.TemporaryDirectory(dir=ctx.out_dir) as scratch:
+            if size:
+                frames = shrink_frames(frames, size, Path(scratch))
+            result = export_sprite_sheet(
+                [str(p) for p in frames], ctx.out_dir, ctx.item.id,
+                columns=int(ctx.params.get("columns", 0)),
+                padding=int(ctx.params.get("padding", 0)), trim=True, fps=fps,
+                loop=_sheet_loop(self.type_name, ctx.params.get("mode")))
         gif_path = ctx.out_dir / f"{ctx.item.id}_preview.gif"
         with Image.open(result.sheet_path) as sheet:
-            cells = sheet_cells(sheet.convert("RGBA"), len(ctx.inputs), result.columns,
+            cells = sheet_cells(sheet.convert("RGBA"), len(frames), result.columns,
                                 result.frame_width, result.frame_height,
                                 int(ctx.params.get("padding", 0)))
         save_gif(cells, gif_path, fps)
         ctx.meta.update({
-            "frames": len(ctx.inputs), "fps": fps,
+            "frames": len(frames), "fps": fps,
             "frame_size": [result.frame_width, result.frame_height],
             "grid": [result.columns, result.rows],
         })
         return [result.sheet_path, result.atlas_path, gif_path]
+
+
+def _sheet_loop(type_name: str, mode: Any) -> bool | None:
+    """精灵图 atlas 里写的"是否循环"：模板把循环方式（frames.loop 的 mode）传过来，
+    没传就不写，沿用以前不带这个字段的 atlas。"""
+    if mode is None or mode == "":
+        return None
+    if mode not in ("loop", "pingpong", "once"):
+        raise ValueError(f"{type_name} 的 mode 只能是 loop、pingpong 或 once：{mode}")
+    return mode != "once"
 
 
 @dataclass(frozen=True)
@@ -251,8 +357,18 @@ def reference_scale(type_name: str, ctx: StepContext, default: float) -> float:
     return scale
 
 
-def white_canvas(image: Image.Image, scale: float,
-                 size: tuple[int, int] | None = None) -> Image.Image:
+def canvas_background(image: Image.Image, mode: str) -> tuple[int, int, int]:
+    """补边用的底色：white 是角色立绘的白底；auto 取左上角像素，
+    特效图标是深色底，补白边会让视频模型把白边当成画面的一部分去动。"""
+    if mode == "white":
+        return (255, 255, 255)
+    if mode == "auto":
+        return image.convert("RGB").getpixel((0, 0))
+    raise ValueError(f"background 只能是 white 或 auto：{mode}")
+
+
+def white_canvas(image: Image.Image, scale: float, size: tuple[int, int] | None = None,
+                 background: tuple[int, int, int] = (255, 255, 255)) -> Image.Image:
     """把透明底立绘等比放进白底画布，size 为空时是正方形。
 
     视频模型对比例不符的输入会补黑边，大片黑边会压住动作；白底和角色包生成立绘时的背景一致，
@@ -262,11 +378,26 @@ def white_canvas(image: Image.Image, scale: float,
     aspect = size[0] / size[1] if size else 1.0
     height = max(round(max(image.width / aspect, image.height) / scale), 1)
     width = max(round(height * aspect), 1)
-    canvas = Image.new("RGBA", (width, height), (255, 255, 255, 255))
+    canvas = Image.new("RGBA", (width, height), (*background, 255))
     canvas.alpha_composite(image, ((width - image.width) // 2, (height - image.height) // 2))
     if size:
         canvas = canvas.resize(size, Image.Resampling.LANCZOS)
     return canvas.convert("RGB")
+
+
+def shrink_frames(frames: list[Path], size: int, target: Path) -> list[Path]:
+    """帧的长边缩到 size 像素：视频模型的原始帧有 700 多像素，几十帧拼成精灵图会大到引擎难以导入。"""
+    shrunk = []
+    for index, source in enumerate(frames):
+        with Image.open(source) as frame:
+            scale = size / max(frame.size)
+            small = frame.resize(
+                (max(round(frame.width * scale), 1), max(round(frame.height * scale), 1)),
+                Image.Resampling.LANCZOS)
+        path = target / f"{index:04d}.png"
+        small.save(path)
+        shrunk.append(path)
+    return shrunk
 
 
 def sheet_cells(sheet: Image.Image, count: int, columns: int, width: int, height: int,
@@ -293,6 +424,8 @@ def save_gif(frames: list[Image.Image], path: Path, fps: int) -> None:
 BUILTIN_RUNNERS: tuple[StepRunner, ...] = (
     AnimationGenerateRunner(),
     FramesLoopRunner(),
+    FramesCrossfadeRunner(),
     FramesRemoveBgRunner(),
+    FramesSwayRunner(),
     SpriteSheetRunner(),
 )

@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+326"/>
+        <location line="+334"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>백엔드에 연결할 수 없습니다. 서비스가 실행 중인지 확인하세요.</translation>
     </message>
     <message>
-        <location line="-457"/>
+        <location line="-465"/>
         <source>Connection timed out.</source>
         <translation>연결 시간이 초과되었습니다.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+317"/>
+        <location line="+323"/>
         <source>Cannot connect to the backend.</source>
         <translation>백엔드에 연결할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="-201"/>
+        <location line="-207"/>
         <source>Generation stopped.</source>
         <translation>생성을 중지했습니다.</translation>
     </message>
@@ -98,12 +98,12 @@
         <translation>백엔드에 연결할 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location line="+222"/>
+        <location line="+228"/>
         <source>An install task is already running...</source>
         <translation>설치 작업이 이미 실행 중입니다…</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+7"/>
         <source>Install request accepted: {0}</source>
         <translation>설치 요청이 접수되었습니다: {0}</translation>
     </message>
@@ -121,7 +121,7 @@
 <context>
     <name>ApiWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+127"/>
+        <location filename="../../src/app/work.py" line="+128"/>
         <source>No frames to export</source>
         <translation>내보낼 프레임이 없습니다</translation>
     </message>
@@ -329,7 +329,7 @@
 <context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+301"/>
+        <location filename="../../src/app/work.py" line="+304"/>
         <location line="+22"/>
         <source>Starting backend...</source>
         <translation>백엔드를 시작하는 중…</translation>
@@ -366,6 +366,29 @@
     </message>
 </context>
 <context>
+    <name>CastChips</name>
+    <message>
+        <location filename="../../src/app/ui/library/form/cast_chips.py" line="+73"/>
+        <source>Add a role</source>
+        <translation>역할 추가</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Unnamed</source>
+        <translation>이름 없음</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Voice from {0}</source>
+        <translation>{0}의 목소리 사용</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Voice designed from description</source>
+        <translation>설명으로 목소리 생성</translation>
+    </message>
+</context>
+<context>
     <name>ChatWidget</name>
     <message>
         <location filename="../../src/app/ui/chat/chat_widget.py" line="+146"/>
@@ -382,15 +405,23 @@
     </message>
 </context>
 <context>
+    <name>DefaultsBar</name>
+    <message>
+        <location filename="../../src/app/ui/library/form/defaults_bar.py" line="+42"/>
+        <source>Character</source>
+        <translation>캐릭터</translation>
+    </message>
+</context>
+<context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+188"/>
-        <location line="+65"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+191"/>
+        <location line="+71"/>
         <source>Select an asset to see how it was made</source>
         <translation>소재를 선택하면 생성 과정을 볼 수 있습니다</translation>
     </message>
     <message>
-        <location line="-51"/>
+        <location line="-57"/>
         <source>Prompt</source>
         <translation>프롬프트</translation>
     </message>
@@ -398,6 +429,11 @@
         <location line="+9"/>
         <source>Flow</source>
         <translation>실행 흐름</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Delete item</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+31"/>
@@ -410,7 +446,12 @@
         <translation>미리보기 불러오는 중…</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+25"/>
+        <source>A pack needs at least one item; delete the whole pack instead</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <source>Double-click the card to enlarge</source>
         <translation>카드를 더블클릭하면 확대됩니다</translation>
     </message>
@@ -866,6 +907,34 @@
     </message>
 </context>
 <context>
+    <name>ItemsTable</name>
+    <message>
+        <location filename="../../src/app/ui/library/form/items_table.py" line="+263"/>
+        <source>Settings for this item only</source>
+        <translation>이 항목만 설정</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Remove</source>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <location line="+98"/>
+        <source>Double-click to choose an image; Delete clears it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Default: {0}</source>
+        <translation>기본값: {0}</translation>
+    </message>
+    <message>
+        <location line="+259"/>
+        <source>Choose an image</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LTX2VideoPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/animation/ltx2_video_panel.py" line="+26"/>
@@ -944,7 +1013,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+189"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+229"/>
         <source>Failed to load packs: {0}</source>
         <translation>팩 목록을 불러오지 못했습니다: {0}</translation>
     </message>
@@ -964,7 +1033,12 @@
         <translation>실행 실패: {0}</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+34"/>
+        <source>Failed to add items: {0}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+21"/>
         <source>AI draft failed: {0}</source>
         <translation>AI 초안 작성 실패: {0}</translation>
     </message>
@@ -980,6 +1054,21 @@
     </message>
     <message>
         <location line="+18"/>
+        <source>Delete item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete item &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Failed to delete item: {0}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <location line="+18"/>
         <source>Export pack</source>
         <translation>팩 내보내기</translation>
@@ -1082,12 +1171,12 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="+82"/>
+        <location filename="../../src/app/ui/window.py" line="+92"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
     <message>
-        <location line="+170"/>
+        <location line="+177"/>
         <source>Generation stopped</source>
         <translation>생성을 중지했습니다</translation>
     </message>
@@ -1097,7 +1186,7 @@
         <translation>생성 실패: {0}</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+65"/>
         <source>Startup timed out. Please check the log and restart the app.</source>
         <translation>시작 시간이 초과되었습니다. 로그를 확인한 후 앱을 다시 시작하세요.</translation>
     </message>
@@ -1183,9 +1272,17 @@
     </message>
 </context>
 <context>
+    <name>OverridePopup</name>
+    <message>
+        <location filename="../../src/app/ui/library/form/items_table.py" line="-434"/>
+        <source>Use pack settings</source>
+        <translation>팩 설정으로 되돌리기</translation>
+    </message>
+</context>
+<context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+118"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+143"/>
         <source>Library</source>
         <translation>라이브러리</translation>
     </message>
@@ -1201,12 +1298,22 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+150"/>
+        <source>Add items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Add more items to this pack with the same template, style and characters. Finished assets are kept; only the new items are generated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+152"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-148"/>
+        <location line="-150"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>완성된 에셋을 zip으로 저장합니다. 항목마다 폴더 하나이며 초안과 중간 파일은 포함하지 않습니다.</translation>
     </message>
@@ -1216,7 +1323,7 @@
         <translation>삭제</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+20"/>
         <source>Use new style</source>
         <translation>새 스타일 사용</translation>
     </message>
@@ -1259,59 +1366,23 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+130"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+194"/>
         <source>New pack</source>
         <translation>새 팩</translation>
     </message>
     <message>
-        <location line="+25"/>
-        <source>e.g. Forest props</source>
-        <translation>예: 숲 소품</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <location line="+44"/>
-        <source>Name</source>
-        <translation>이름</translation>
-    </message>
-    <message>
-        <location line="-52"/>
-        <source>Template</source>
-        <translation>템플릿</translation>
-    </message>
-    <message>
-        <location line="-3"/>
-        <source>Category</source>
-        <translation>분류</translation>
-    </message>
-    <message>
-        <location line="+18"/>
+        <location line="+106"/>
         <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
         <translation>스타일 고정. 모든 항목 프롬프트에 덧붙습니다. 예: hand-painted, dark teal tones</translation>
     </message>
     <message>
-        <location line="+20"/>
-        <source>Style</source>
-        <translation>스타일</translation>
-    </message>
-    <message>
-        <location line="-25"/>
-        <source>Optional</source>
-        <translation>선택 사항</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Negative</source>
-        <translation>네거티브</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <location line="+234"/>
+        <location line="-21"/>
+        <location line="+348"/>
         <source>Save as preset</source>
         <translation>프리셋으로 저장</translation>
     </message>
     <message>
-        <location line="-232"/>
+        <location line="-345"/>
         <source>Save the style and negative above as a project preset. Using an existing name overwrites that preset.</source>
         <translation>위의 스타일과 네거티브를 프로젝트 프리셋으로 저장합니다. 기존 이름을 쓰면 해당 프리셋을 덮어씁니다.</translation>
     </message>
@@ -1321,37 +1392,22 @@
         <translation>프리셋 삭제</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Style preset</source>
-        <translation>스타일 프리셋</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Character</source>
-        <translation>캐릭터</translation>
-    </message>
-    <message>
-        <location line="+8"/>
+        <location line="-144"/>
         <source>Cast</source>
         <translation>등장인물</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>Link a character pack to reuse its voice, or describe the voice for a new role.</source>
         <translation>캐릭터 팩을 연결하면 음성을 재사용합니다. 새 역할은 음색을 설명하세요.</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Character pack</source>
-        <translation>캐릭터 팩</translation>
+        <location line="+69"/>
+        <source>One row per asset. Paste rows from Excel or text, or let AI draft them.</source>
+        <translation>한 행에 소재 하나. Excel이나 텍스트에서 여러 행을 붙여넣거나 AI에게 초안을 맡기세요.</translation>
     </message>
     <message>
-        <location line="+0"/>
-        <source>Voice description</source>
-        <translation>음색 설명</translation>
-    </message>
-    <message>
-        <location line="+11"/>
+        <location line="+27"/>
         <source>AI draft theme, e.g. ground details for a glowing forest</source>
         <translation>AI 초안 주제, 예: 빛나는 숲의 지면 디테일</translation>
     </message>
@@ -1361,44 +1417,94 @@
         <translation>개수 </translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location line="+101"/>
+        <location line="-20"/>
         <source>AI draft</source>
         <translation>AI 초안</translation>
     </message>
     <message>
-        <location line="-99"/>
+        <location line="-26"/>
+        <source>Untitled pack</source>
+        <translation>이름 없는 팩</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Leave empty to name it after the template and first item</source>
+        <translation>비워 두면 템플릿 이름과 첫 항목으로 자동 이름을 붙입니다</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Add common items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Fill in the template&apos;s common items. Rows you already wrote are kept, and you can edit or delete any row afterwards.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <location line="+164"/>
+        <source>Draft</source>
+        <translation>초안 작성</translation>
+    </message>
+    <message>
+        <location line="-161"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>빈 행과 수정하지 않은 AI 행을 교체합니다. 직접 입력하거나 수정한 행은 유지됩니다. 첫 실행 시 텍스트 모델을 불러오느라 약 1분 걸립니다.</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Add common motions</source>
-        <translation>자주 쓰는 동작 추가</translation>
+        <translation>일반 동작 추가</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
-        <translation>선택한 캐릭터의 대기, 이동, 점프, 피격, 공격, 사망 동작을 초안으로 작성합니다. AI가 캐릭터의 모습에 맞게 각 동작을 작성하므로 팩을 만들기 전에 확인하고 수정하세요.</translation>
+        <translation>선택한 캐릭터의 대기, 이동, 점프, 피격, 공격, 사망 동작을 작성합니다. AI가 캐릭터에 맞게 동작을 작성하므로 팩을 만들기 전에 행을 확인하고 수정하세요.</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+47"/>
+        <source>Negative (optional)</source>
+        <translation>네거티브 (선택)</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Ctrl+Enter</source>
+        <translation>Ctrl+Enter</translation>
+    </message>
+    <message>
+        <location line="+25"/>
         <source>(No preset)</source>
         <translation>(프리셋 없음)</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+14"/>
+        <source>Add to &quot;{0}&quot;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+48"/>
         <source>Drafting...</source>
         <translation>작성 중...</translation>
     </message>
     <message>
-        <location line="+46"/>
-        <location line="+236"/>
+        <location line="+112"/>
+        <source>Fill in {0}</source>
+        <translation>{0}을(를) 입력하세요</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>{0} has {1} segments but the length is {2} screens</source>
+        <translation>{0}은(는) {1}개 구간인데 길이는 {2}화면입니다</translation>
+    </message>
+    <message>
+        <location line="-40"/>
+        <location line="+198"/>
         <source>Create a character pack first, then pick a character here.</source>
         <translation>먼저 캐릭터 팩을 만든 다음 여기에서 캐릭터를 고르세요.</translation>
     </message>
     <message>
-        <location line="-198"/>
+        <location line="-66"/>
         <source>Fill in the style or negative before saving a preset.</source>
         <translation>프리셋을 저장하기 전에 스타일이나 네거티브를 입력하세요.</translation>
     </message>
@@ -1408,58 +1514,54 @@
         <translation>프리셋 이름</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+31"/>
+        <source>None</source>
+        <translation>설정 안 함</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Style</source>
+        <translation>스타일</translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <source>Add and generate ({0})</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Create and generate ({0})</source>
+        <translation>만들고 생성 ({0})</translation>
+    </message>
+    <message>
+        <location line="-153"/>
         <source>Prompt</source>
         <translation>프롬프트</translation>
     </message>
     <message>
-        <location line="+31"/>
-        <source>Default: {0}</source>
-        <translation>기본값: {0}</translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>(New voice)</source>
-        <translation>(새 음성)</translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>Add row</source>
-        <translation>행 추가</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Remove row</source>
-        <translation>행 삭제</translation>
-    </message>
-    <message>
-        <location line="+71"/>
+        <location line="+109"/>
         <source>Enter a theme for the AI to draft items from.</source>
         <translation>AI가 항목을 작성할 주제를 입력하세요.</translation>
     </message>
     <message>
-        <location line="-380"/>
+        <location line="-463"/>
         <source>Items</source>
         <translation>항목</translation>
     </message>
     <message>
-        <location line="-83"/>
+        <location line="-23"/>
         <source>Library</source>
         <translation>라이브러리</translation>
     </message>
     <message>
-        <location line="+124"/>
-        <source>Create</source>
-        <translation>만들기</translation>
-    </message>
-    <message>
-        <location line="+102"/>
-        <location line="+247"/>
+        <location line="+300"/>
+        <location line="+21"/>
+        <location line="+175"/>
         <source>No template available. Is the backend running?</source>
         <translation>사용 가능한 템플릿이 없습니다. 백엔드가 실행 중인가요?</translation>
     </message>
     <message>
-        <location line="-234"/>
+        <location line="-145"/>
         <source>Add at least one item.</source>
         <translation>항목을 하나 이상 추가하세요.</translation>
     </message>
@@ -1467,7 +1569,7 @@
 <context>
     <name>PackStatus</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_status.py" line="+17"/>
+        <location filename="../../src/app/ui/library/pack_status.py" line="+18"/>
         <source>Scenes</source>
         <translation>장면</translation>
     </message>
@@ -1639,7 +1741,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-353"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-368"/>
         <source>Speaker</source>
         <translation>화자</translation>
     </message>
@@ -1677,7 +1779,7 @@
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="+240"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="+255"/>
         <source>Backend settings changed</source>
         <translation>백엔드 설정이 변경됨</translation>
     </message>
@@ -1756,7 +1858,32 @@
 <context>
     <name>StoragePage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+53"/>
+        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+57"/>
+        <source>Model folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Default: the models folder of the backend</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Browse...</source>
+        <translation type="unfinished">찾아보기...</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Models are read from and downloaded into this folder. Leave it empty to use the default. Takes effect after restarting the app. Models you already downloaded are not moved: move the old models folder here by hand to keep them. Only applies to the backend on this computer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Choose model folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
         <source>Model Storage</source>
         <translation>모델 저장 공간</translation>
     </message>
@@ -1766,7 +1893,7 @@
         <translation>다운로드한 모델 가중치가 차지하는 디스크 공간입니다. 삭제한 모델은 다음에 사용할 때 다시 다운로드됩니다.</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+15"/>
         <source>Refresh</source>
         <translation>새로 고침</translation>
     </message>
@@ -1821,7 +1948,7 @@
         <translation>합계: {0}, {1}개 항목</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+15"/>
         <source>Delete</source>
         <translation>삭제</translation>
     </message>
@@ -1913,7 +2040,7 @@
 <context>
     <name>TopBar</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="-296"/>
+        <location filename="../../src/app/ui/window.py" line="-306"/>
         <source>hide side</source>
         <translation>사이드바 표시/숨기기</translation>
     </message>
@@ -2172,7 +2299,7 @@
 <context>
     <name>Wan2VideoPanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/animation/wan2_video_panel.py" line="+25"/>
+        <location filename="../../src/app/ui/param/core/animation/wan2_video_panel.py" line="+36"/>
         <source>resolution</source>
         <translation>해상도</translation>
     </message>
@@ -2193,6 +2320,11 @@
     </message>
     <message>
         <location line="+4"/>
+        <source>headroom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>seed</source>
         <translation>시드</translation>
     </message>
@@ -2200,7 +2332,7 @@
 <context>
     <name>_BottomBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-147"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-152"/>
         <source>Save</source>
         <translation>저장</translation>
     </message>
@@ -2208,6 +2340,29 @@
         <location line="+9"/>
         <source>● There are unsaved changes.</source>
         <translation>● 저장되지 않은 변경 사항이 있습니다.</translation>
+    </message>
+</context>
+<context>
+    <name>_CastEditor</name>
+    <message>
+        <location filename="../../src/app/ui/library/form/cast_chips.py" line="-78"/>
+        <source>Name</source>
+        <translation>이름</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>(New voice)</source>
+        <translation>(새 음성)</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Voice description</source>
+        <translation>음색 설명</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Remove</source>
+        <translation>삭제</translation>
     </message>
 </context>
 <context>

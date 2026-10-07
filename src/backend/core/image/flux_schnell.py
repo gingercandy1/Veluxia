@@ -8,8 +8,7 @@ from PIL.Image import Resampling
 
 from src.backend.core.exceptions import GenerationCancelled
 from src.backend.core.model_base import BaseImageGenerator
-from src.backend.core.model_utils import huggingface_token, get_temp_dir
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import huggingface_token, get_temp_dir, models_root
 
 
 class FluxSchnellGenerator(BaseImageGenerator):
@@ -19,11 +18,11 @@ class FluxSchnellGenerator(BaseImageGenerator):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if not self.model_id:
-            self.nvfp4_local = Path(PROJECT_ROOT)/ "models" / "image" / "flux2-klein-4b-nvfp4"
+            self.nvfp4_local = models_root() / "image" / "flux2-klein-4b-nvfp4"
             self.nvfp4_path   = self.nvfp4_local / "flux-2-klein-4b-nvfp4.safetensors"
-            self.base_local = Path(PROJECT_ROOT) / "models" / "image" / "flux2-klein-4b-base"
+            self.base_local = models_root() / "image" / "flux2-klein-4b-base"
         else:
-            self.base_local = Path(PROJECT_ROOT) / "models" / "image" / "flux2-klein-4b-base"
+            self.base_local = models_root() / "image" / "flux2-klein-4b-base"
             self.nvfp4_path = self.base_local / "flux-2-klein-4b-nvfp4.safetensors"
 
     def _check_model_file(self):

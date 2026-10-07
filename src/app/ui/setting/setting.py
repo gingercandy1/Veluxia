@@ -1,21 +1,31 @@
-from PySide6.QtCore import Qt, Signal, QT_TRANSLATE_NOOP
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout,
-    QStackedWidget, QFrame, QMessageBox,
-    QLabel, QPushButton, QSizePolicy
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
+from src.app.ui.base.action_button import ActionButton
+from src.app.ui.base.anim import WINDOW_BACKGROUND, page_enter
+from src.app.ui.setting.page.about_page import AboutPage
+from src.app.ui.setting.page.backend_page import BackendPage
 from src.app.ui.setting.page.general_page import GeneralPage
 from src.app.ui.setting.page.gpu_page import GpuPage
-from src.app.ui.setting.page.backend_page import BackendPage
+from src.app.ui.setting.page.log_page import LogPanel, log_success
 from src.app.ui.setting.page.model_page import ModelPage
 from src.app.ui.setting.page.storage_page import StoragePage
 from src.app.ui.setting.page.translation_page import TranslationPage
-from src.app.ui.setting.page.about_page import AboutPage
-from src.app.ui.setting.page.log_page import LogPanel, log_success
-from src.app.ui.base.action_button import ActionButton
 from src.app.ui.window_data import WindowData
 from src.shared.settings import ConfigManager
+
+# 子页面切换时竖向滑动的距离：只是提示方向，太大会显得花哨；和资源库切页一致
+PAGE_SLIDE = 12
 
 class _NavItem(ActionButton):
     def __init__(self, text: str, svg: str, page_index: int, parent=None):
@@ -34,7 +44,7 @@ class _NavItem(ActionButton):
 class _NavBar(QWidget):
     page_changed = Signal(int)
 
-    NAV_ITEMS = [
+    NAV_ITEMS = (
         (QT_TRANSLATE_NOOP("_NavBar", "General"),       ":/svg/general.svg",      0),
         (QT_TRANSLATE_NOOP("_NavBar", "Graphics Card"), ":/svg/gpu.svg",          1),
         (QT_TRANSLATE_NOOP("_NavBar", "Backend"),       ":/svg/server.svg",       2),
@@ -43,7 +53,7 @@ class _NavBar(QWidget):
         (QT_TRANSLATE_NOOP("_NavBar", "Translation"),   ":/svg/translate.svg",    5),
         (QT_TRANSLATE_NOOP("_NavBar", "Journal"),       ":/svg/log.svg",          6),
         (QT_TRANSLATE_NOOP("_NavBar", "About"),         ":/svg/about.svg",        7),
-    ]
+    )
     BACKEND_INDEX = 2
 
     def __init__(self, parent=None):
@@ -132,6 +142,7 @@ class SettingPage(QWidget):
         self._connect_signals()
         self._saved_language = self._config.get("general", "language")
         self._saved_server = self._config.get_section("server")
+        self._saved_models = self._config.get_section("models")
 
     def _build_ui(self):
         root = QVBoxLayout(self)
@@ -198,7 +209,7 @@ class SettingPage(QWidget):
             self._stack.addWidget(page)
 
     def _connect_signals(self):
-        self._navbar.page_changed.connect(self._stack.setCurrentIndex)
+        self._navbar.page_changed.connect(self._switch_to)
         self._bottom_bar.save_clicked.connect(self._on_save)
         self._gpu_page.install.connect(self.install_requested.emit)
         self._backend_page.install.connect(self.install_requested.emit)
@@ -231,7 +242,11 @@ class SettingPage(QWidget):
         server = self._config.get_section("server")
         server_changed = server != self._saved_server
         self._saved_server = server
-        if server_changed and self._confirm_restart():
+        # 模型目录是后端启动时交给它的，同样要重启才生效
+        models = self._config.get_section("models")
+        models_changed = models != self._saved_models
+        self._saved_models = models
+        if (server_changed or models_changed) and self._confirm_restart():
             self.restart_requested.emit()
 
     def _confirm_restart(self) -> bool:
@@ -262,6 +277,15 @@ class SettingPage(QWidget):
             # Cancel 什么都不做
         else:
             self.back_requested.emit()
+
+    def _switch_to(self, index: int):
+        """导航是竖排列表：往下点新内容从下方滑进来，往上点从上方，内容和点击方向联动。"""
+        current = self._stack.currentIndex()
+        if index == current:
+            return
+        self._stack.setCurrentIndex(index)
+        offset = PAGE_SLIDE if index > current else -PAGE_SLIDE
+        page_enter(self._stack.currentWidget(), WINDOW_BACKGROUND, offset_y=offset)
 
     def navigate_to(self, index: int):
         """外部调用跳转到指定页"""

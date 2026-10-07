@@ -16,7 +16,7 @@ class StableAudioOpenPanel(BaseParamPanel):
         self._duration = self._labeled_slider(1, 47, 5, decimals=1, step=0.5)
         self._add_row(self.tr("duration (sec)"), self._duration)
 
-        self._steps = self._labeled_slider(1, 100, 8)
+        self._steps = self._labeled_slider(1, 200, 100)
         self._add_row(self.tr("num_inference_steps"), self._steps)
 
         self._negative_prompt = QPlainTextEdit()

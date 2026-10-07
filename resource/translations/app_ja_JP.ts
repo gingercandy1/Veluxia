@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+101"/>
         <location line="+135"/>
-        <location line="+326"/>
+        <location line="+334"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>バックエンドに接続できません。サービスが起動しているか確認してください。</translation>
     </message>
     <message>
-        <location line="-457"/>
+        <location line="-465"/>
         <source>Connection timed out.</source>
         <translation>接続がタイムアウトしました。</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+317"/>
+        <location line="+323"/>
         <source>Cannot connect to the backend.</source>
         <translation>バックエンドに接続できません。</translation>
     </message>
     <message>
-        <location line="-201"/>
+        <location line="-207"/>
         <source>Generation stopped.</source>
         <translation>生成を停止しました。</translation>
     </message>
@@ -98,12 +98,12 @@
         <translation>バックエンドに接続できません：{0}</translation>
     </message>
     <message>
-        <location line="+222"/>
+        <location line="+228"/>
         <source>An install task is already running...</source>
         <translation>インストールタスクはすでに実行中です…</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+7"/>
         <source>Install request accepted: {0}</source>
         <translation>インストール要求を受け付けました：{0}</translation>
     </message>
@@ -121,7 +121,7 @@
 <context>
     <name>ApiWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+127"/>
+        <location filename="../../src/app/work.py" line="+128"/>
         <source>No frames to export</source>
         <translation>書き出せるフレームがありません</translation>
     </message>
@@ -329,7 +329,7 @@
 <context>
     <name>BackendStartupWorker</name>
     <message>
-        <location filename="../../src/app/work.py" line="+301"/>
+        <location filename="../../src/app/work.py" line="+304"/>
         <location line="+22"/>
         <source>Starting backend...</source>
         <translation>バックエンドを起動しています…</translation>
@@ -366,6 +366,29 @@
     </message>
 </context>
 <context>
+    <name>CastChips</name>
+    <message>
+        <location filename="../../src/app/ui/library/form/cast_chips.py" line="+73"/>
+        <source>Add a role</source>
+        <translation>役を追加</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Unnamed</source>
+        <translation>名前なし</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Voice from {0}</source>
+        <translation>{0} の声を使用</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Voice designed from description</source>
+        <translation>説明から声を作成</translation>
+    </message>
+</context>
+<context>
     <name>ChatWidget</name>
     <message>
         <location filename="../../src/app/ui/chat/chat_widget.py" line="+146"/>
@@ -382,15 +405,23 @@
     </message>
 </context>
 <context>
+    <name>DefaultsBar</name>
+    <message>
+        <location filename="../../src/app/ui/library/form/defaults_bar.py" line="+42"/>
+        <source>Character</source>
+        <translation>キャラクター</translation>
+    </message>
+</context>
+<context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+188"/>
-        <location line="+65"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+191"/>
+        <location line="+71"/>
         <source>Select an asset to see how it was made</source>
         <translation>素材を選ぶと生成の過程を確認できます</translation>
     </message>
     <message>
-        <location line="-51"/>
+        <location line="-57"/>
         <source>Prompt</source>
         <translation>プロンプト</translation>
     </message>
@@ -398,6 +429,11 @@
         <location line="+9"/>
         <source>Flow</source>
         <translation>実行フロー</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Delete item</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+31"/>
@@ -410,7 +446,12 @@
         <translation>プレビューを読み込み中…</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+25"/>
+        <source>A pack needs at least one item; delete the whole pack instead</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <source>Double-click the card to enlarge</source>
         <translation>カードをダブルクリックで拡大</translation>
     </message>
@@ -866,6 +907,34 @@
     </message>
 </context>
 <context>
+    <name>ItemsTable</name>
+    <message>
+        <location filename="../../src/app/ui/library/form/items_table.py" line="+263"/>
+        <source>Settings for this item only</source>
+        <translation>この項目だけの設定</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Remove</source>
+        <translation>削除</translation>
+    </message>
+    <message>
+        <location line="+98"/>
+        <source>Double-click to choose an image; Delete clears it</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Default: {0}</source>
+        <translation>既定値：{0}</translation>
+    </message>
+    <message>
+        <location line="+259"/>
+        <source>Choose an image</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LTX2VideoPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/animation/ltx2_video_panel.py" line="+26"/>
@@ -944,7 +1013,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+189"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+229"/>
         <source>Failed to load packs: {0}</source>
         <translation>パック一覧の読み込みに失敗しました：{0}</translation>
     </message>
@@ -964,7 +1033,12 @@
         <translation>実行に失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+34"/>
+        <source>Failed to add items: {0}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+21"/>
         <source>AI draft failed: {0}</source>
         <translation>AI 下書きに失敗しました：{0}</translation>
     </message>
@@ -980,6 +1054,21 @@
     </message>
     <message>
         <location line="+18"/>
+        <source>Delete item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete item &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Failed to delete item: {0}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <location line="+18"/>
         <source>Export pack</source>
         <translation>パックをエクスポート</translation>
@@ -1082,12 +1171,12 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="+82"/>
+        <location filename="../../src/app/ui/window.py" line="+92"/>
         <source>Veluxia</source>
         <translation>Veluxia</translation>
     </message>
     <message>
-        <location line="+170"/>
+        <location line="+177"/>
         <source>Generation stopped</source>
         <translation>生成を停止しました</translation>
     </message>
@@ -1097,7 +1186,7 @@
         <translation>生成に失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+65"/>
         <source>Startup timed out. Please check the log and restart the app.</source>
         <translation>起動がタイムアウトしました。ログを確認してアプリを再起動してください。</translation>
     </message>
@@ -1183,9 +1272,17 @@
     </message>
 </context>
 <context>
+    <name>OverridePopup</name>
+    <message>
+        <location filename="../../src/app/ui/library/form/items_table.py" line="-434"/>
+        <source>Use pack settings</source>
+        <translation>パック全体の設定に戻す</translation>
+    </message>
+</context>
+<context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+118"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+143"/>
         <source>Library</source>
         <translation>ライブラリ</translation>
     </message>
@@ -1201,12 +1298,22 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+150"/>
+        <source>Add items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Add more items to this pack with the same template, style and characters. Finished assets are kept; only the new items are generated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+152"/>
         <source>Export</source>
         <translation>書き出し</translation>
     </message>
     <message>
-        <location line="-148"/>
+        <location line="-150"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>完成したアセットを zip で保存します。アイテムごとに 1 フォルダーで、下書きや中間ファイルは含みません。</translation>
     </message>
@@ -1216,7 +1323,7 @@
         <translation>削除</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+20"/>
         <source>Use new style</source>
         <translation>新しいスタイルを使う</translation>
     </message>
@@ -1259,59 +1366,23 @@
 <context>
     <name>PackForm</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_form.py" line="+130"/>
+        <location filename="../../src/app/ui/library/pack_form.py" line="+194"/>
         <source>New pack</source>
         <translation>新しいパック</translation>
     </message>
     <message>
-        <location line="+25"/>
-        <source>e.g. Forest props</source>
-        <translation>例：森の小物</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <location line="+44"/>
-        <source>Name</source>
-        <translation>名前</translation>
-    </message>
-    <message>
-        <location line="-52"/>
-        <source>Template</source>
-        <translation>テンプレート</translation>
-    </message>
-    <message>
-        <location line="-3"/>
-        <source>Category</source>
-        <translation>カテゴリ</translation>
-    </message>
-    <message>
-        <location line="+18"/>
+        <location line="+106"/>
         <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
         <translation>スタイル固定。各アイテムのプロンプトに追加されます。例：hand-painted, dark teal tones</translation>
     </message>
     <message>
-        <location line="+20"/>
-        <source>Style</source>
-        <translation>スタイル</translation>
-    </message>
-    <message>
-        <location line="-25"/>
-        <source>Optional</source>
-        <translation>任意</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Negative</source>
-        <translation>ネガティブ</translation>
-    </message>
-    <message>
-        <location line="+14"/>
-        <location line="+234"/>
+        <location line="-21"/>
+        <location line="+348"/>
         <source>Save as preset</source>
         <translation>プリセットとして保存</translation>
     </message>
     <message>
-        <location line="-232"/>
+        <location line="-345"/>
         <source>Save the style and negative above as a project preset. Using an existing name overwrites that preset.</source>
         <translation>上のスタイルとネガティブをプロジェクトのプリセットとして保存します。既存の名前を使うとそのプリセットを上書きします。</translation>
     </message>
@@ -1321,37 +1392,22 @@
         <translation>プリセットを削除</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Style preset</source>
-        <translation>スタイルプリセット</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Character</source>
-        <translation>キャラクター</translation>
-    </message>
-    <message>
-        <location line="+8"/>
+        <location line="-144"/>
         <source>Cast</source>
         <translation>登場人物</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>Link a character pack to reuse its voice, or describe the voice for a new role.</source>
         <translation>キャラクターパックを紐付けると声を再利用できます。新しい役は声の説明を入力してください。</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Character pack</source>
-        <translation>キャラクターパック</translation>
+        <location line="+69"/>
+        <source>One row per asset. Paste rows from Excel or text, or let AI draft them.</source>
+        <translation>1 行につき 1 素材。Excel やテキストから複数行を貼り付けるか、AI に下書きさせます。</translation>
     </message>
     <message>
-        <location line="+0"/>
-        <source>Voice description</source>
-        <translation>声の説明</translation>
-    </message>
-    <message>
-        <location line="+11"/>
+        <location line="+27"/>
         <source>AI draft theme, e.g. ground details for a glowing forest</source>
         <translation>AI 下書きのテーマ（例：光る森の地面のディテール）</translation>
     </message>
@@ -1361,44 +1417,94 @@
         <translation>件数 </translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location line="+101"/>
+        <location line="-20"/>
         <source>AI draft</source>
         <translation>AI 下書き</translation>
     </message>
     <message>
-        <location line="-99"/>
+        <location line="-26"/>
+        <source>Untitled pack</source>
+        <translation>無題のパック</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Leave empty to name it after the template and first item</source>
+        <translation>空欄ならテンプレート名と最初の項目から自動で名付けます</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Add common items</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Fill in the template&apos;s common items. Rows you already wrote are kept, and you can edit or delete any row afterwards.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <location line="+164"/>
+        <source>Draft</source>
+        <translation>下書き</translation>
+    </message>
+    <message>
+        <location line="-161"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>空の行と未編集の AI 行を置き換えます。入力・編集した行は残ります。初回はテキストモデルの読み込みに約 1 分かかります。</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Add common motions</source>
-        <translation>よく使う動作を追加</translation>
+        <translation>一般的な動作を追加</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
-        <translation>選択したキャラクターの待機・移動・ジャンプ・被ダメージ・攻撃・死亡を下書きします。AI がキャラクターの形に合わせて各動作を書くので、パック作成前に確認・修正してください。</translation>
+        <translation>選択したキャラクターの待機、移動、ジャンプ、被弾、攻撃、死亡の動作を下書きします。AI がキャラクターに合わせて動作を作成するので、パック作成前に行を確認・編集してください。</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+47"/>
+        <source>Negative (optional)</source>
+        <translation>ネガティブ（任意）</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Ctrl+Enter</source>
+        <translation>Ctrl+Enter</translation>
+    </message>
+    <message>
+        <location line="+25"/>
         <source>(No preset)</source>
         <translation>（プリセットなし）</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+14"/>
+        <source>Add to &quot;{0}&quot;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+48"/>
         <source>Drafting...</source>
         <translation>下書き中...</translation>
     </message>
     <message>
-        <location line="+46"/>
-        <location line="+236"/>
+        <location line="+112"/>
+        <source>Fill in {0}</source>
+        <translation>{0} を入力してください</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>{0} has {1} segments but the length is {2} screens</source>
+        <translation>{0} は {1} 段ですが、長さは {2} 画面です</translation>
+    </message>
+    <message>
+        <location line="-40"/>
+        <location line="+198"/>
         <source>Create a character pack first, then pick a character here.</source>
         <translation>先にキャラクターパックを作成してから、ここでキャラクターを選んでください。</translation>
     </message>
     <message>
-        <location line="-198"/>
+        <location line="-66"/>
         <source>Fill in the style or negative before saving a preset.</source>
         <translation>プリセットを保存する前に、スタイルまたはネガティブを入力してください。</translation>
     </message>
@@ -1408,58 +1514,54 @@
         <translation>プリセット名</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+31"/>
+        <source>None</source>
+        <translation>未設定</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Style</source>
+        <translation>スタイル</translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <source>Add and generate ({0})</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Create and generate ({0})</source>
+        <translation>作成して生成（{0}）</translation>
+    </message>
+    <message>
+        <location line="-153"/>
         <source>Prompt</source>
         <translation>プロンプト</translation>
     </message>
     <message>
-        <location line="+31"/>
-        <source>Default: {0}</source>
-        <translation>既定値：{0}</translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>(New voice)</source>
-        <translation>（新しい声）</translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <source>Add row</source>
-        <translation>行を追加</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Remove row</source>
-        <translation>行を削除</translation>
-    </message>
-    <message>
-        <location line="+71"/>
+        <location line="+109"/>
         <source>Enter a theme for the AI to draft items from.</source>
         <translation>AI が項目を下書きするためのテーマを入力してください。</translation>
     </message>
     <message>
-        <location line="-380"/>
+        <location line="-463"/>
         <source>Items</source>
         <translation>アイテム</translation>
     </message>
     <message>
-        <location line="-83"/>
+        <location line="-23"/>
         <source>Library</source>
         <translation>ライブラリ</translation>
     </message>
     <message>
-        <location line="+124"/>
-        <source>Create</source>
-        <translation>作成</translation>
-    </message>
-    <message>
-        <location line="+102"/>
-        <location line="+247"/>
+        <location line="+300"/>
+        <location line="+21"/>
+        <location line="+175"/>
         <source>No template available. Is the backend running?</source>
         <translation>利用できるテンプレートがありません。バックエンドは起動していますか？</translation>
     </message>
     <message>
-        <location line="-234"/>
+        <location line="-145"/>
         <source>Add at least one item.</source>
         <translation>アイテムを 1 つ以上追加してください。</translation>
     </message>
@@ -1467,7 +1569,7 @@
 <context>
     <name>PackStatus</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_status.py" line="+17"/>
+        <location filename="../../src/app/ui/library/pack_status.py" line="+18"/>
         <source>Scenes</source>
         <translation>シーン</translation>
     </message>
@@ -1639,7 +1741,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-353"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-368"/>
         <source>Speaker</source>
         <translation>話者</translation>
     </message>
@@ -1677,7 +1779,7 @@
 <context>
     <name>SettingPage</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="+240"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="+255"/>
         <source>Backend settings changed</source>
         <translation>バックエンド設定が変更されました</translation>
     </message>
@@ -1756,7 +1858,32 @@
 <context>
     <name>StoragePage</name>
     <message>
-        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+53"/>
+        <location filename="../../src/app/ui/setting/page/storage_page.py" line="+57"/>
+        <source>Model folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Default: the models folder of the backend</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Browse...</source>
+        <translation type="unfinished">参照...</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Models are read from and downloaded into this folder. Leave it empty to use the default. Takes effect after restarting the app. Models you already downloaded are not moved: move the old models folder here by hand to keep them. Only applies to the backend on this computer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Choose model folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
         <source>Model Storage</source>
         <translation>モデルのストレージ</translation>
     </message>
@@ -1766,7 +1893,7 @@
         <translation>ダウンロード済みのモデルの重みが使っているディスク容量です。削除したモデルは次に使うときに再ダウンロードされます。</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+15"/>
         <source>Refresh</source>
         <translation>更新</translation>
     </message>
@@ -1821,7 +1948,7 @@
         <translation>合計：{0}（{1} 件）</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+15"/>
         <source>Delete</source>
         <translation>削除</translation>
     </message>
@@ -1913,7 +2040,7 @@
 <context>
     <name>TopBar</name>
     <message>
-        <location filename="../../src/app/ui/window.py" line="-296"/>
+        <location filename="../../src/app/ui/window.py" line="-306"/>
         <source>hide side</source>
         <translation>サイドバーの表示切替</translation>
     </message>
@@ -2172,7 +2299,7 @@
 <context>
     <name>Wan2VideoPanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/animation/wan2_video_panel.py" line="+25"/>
+        <location filename="../../src/app/ui/param/core/animation/wan2_video_panel.py" line="+36"/>
         <source>resolution</source>
         <translation>解像度</translation>
     </message>
@@ -2193,6 +2320,11 @@
     </message>
     <message>
         <location line="+4"/>
+        <source>headroom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>seed</source>
         <translation>シード</translation>
     </message>
@@ -2200,7 +2332,7 @@
 <context>
     <name>_BottomBar</name>
     <message>
-        <location filename="../../src/app/ui/setting/setting.py" line="-147"/>
+        <location filename="../../src/app/ui/setting/setting.py" line="-152"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
@@ -2208,6 +2340,29 @@
         <location line="+9"/>
         <source>● There are unsaved changes.</source>
         <translation>● 未保存の変更があります。</translation>
+    </message>
+</context>
+<context>
+    <name>_CastEditor</name>
+    <message>
+        <location filename="../../src/app/ui/library/form/cast_chips.py" line="-78"/>
+        <source>Name</source>
+        <translation>名前</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>(New voice)</source>
+        <translation>（新しい声）</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Voice description</source>
+        <translation>声の説明</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Remove</source>
+        <translation>削除</translation>
     </message>
 </context>
 <context>

@@ -40,5 +40,7 @@ class StorageRouter(BaseRouter):
     def _response() -> ModelStorageResponse:
         sized = storage.list_storage()
         entries = [ModelStorageEntry(id=e.id, root=e.root, category=e.category, name=e.name,
-                                     size=size, manual=e.manual) for e, size in sized]
+                                     size=size, manual=e.manual,
+                                     parts=[path.name for path in e.paths])
+                   for e, size in sized]
         return ModelStorageResponse(entries=entries, total=sum(size for _, size in sized))

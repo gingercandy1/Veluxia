@@ -12,15 +12,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from src.shared.schemas import PACK_TYPES, condition_met
+from src.shared.schemas import IMAGE_FIELD, PACK_TYPES, when_field, when_met
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 # 主提示词也能在参数里引用：语音步骤要的是条目原文，而不是拼了风格锁的出图提示词
 PROMPT_FIELD = "prompt"
-# 动作包执行时放进 values 的来源角色描述：视频模型不知道主体是什么时会往人形上猜
-SOURCE_DESCRIPTION_FIELD = "source_description"
 # 步骤输入里的特殊引用：来源角色的立绘（ADR 0006），只有声明了 source 的模板能用
 SOURCE_INPUT = "@source"
+FIELD_KINDS = ("", IMAGE_FIELD)
 
 
 @dataclass(frozen=True)
@@ -33,6 +32,16 @@ class FieldSpec:
     options: tuple[tuple[str, str], ...] = ()
     # False 时 AI 起草不填这个字段、保持默认值：如分层一张要十几分钟，不该由模型随手选上
     draft: bool = True
+    # "image"：值是用户导入的图片，建包时复制进条目目录，字段里改存相对资源包的路径
+    kind: str = ""
+
+
+@dataclass(frozen=True)
+class PresetSpec:
+    """模板自带的常用条目：新建表单里一键填进表格，用户可以逐行改、删、再加自己的。"""
+    name: str
+    prompt: str
+    fields: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -44,7 +53,8 @@ class StepSpec:
     label: str = ""
     deliverable: bool = False
     review: bool = False
-    # 条件字段 id：该字段不满足 condition_met 时这一步（连同依赖它的下游）跳过
+    # 条件字段 id：该字段不满足 condition_met 时这一步（连同依赖它的下游）跳过；
+    # 写成 "!字段" 则反过来，满足时跳过
     when: str = ""
 
 
@@ -56,11 +66,17 @@ class Template:
     steps: tuple[StepSpec, ...]
     name: str = ""
     description: str = ""
+    # 一句话简介：新建界面常驻显示；完整说明 description 只放在悬停提示里
+    summary: str = ""
     prompt_label: str = ""
     cover: str = ""
     fields: tuple[FieldSpec, ...] = ()
     # 需要绑定的来源资源包类型，如 "character"；空表示不绑定
     source: str = ""
+    presets: tuple[PresetSpec, ...] = ()
+    # 用这个字段的值当条目 id（也就是产物目录名和精灵图帧名的前缀，如 walk_0000）：
+    # 动作包里 idle、walk 比 01、02 好认得多。值不是合法 id 或已被占用时退回按序号编
+    id_field: str = ""
 
     def step_ids(self) -> list[str]:
         return [step.id for step in self.steps]
@@ -90,7 +106,7 @@ class Template:
         values = self.field_values("", fields)
         active: dict[str, bool] = {}
         for step in self.steps:
-            ok = not step.when or condition_met(values[step.when])
+            ok = not step.when or when_met(step.when, values[when_field(step.when)])
             active[step.id] = ok and all(active.get(name, True) for name in step.inputs)
             if step.id == step_id:
                 return active[step.id]
@@ -100,7 +116,7 @@ class Template:
         """条件引用了这些字段的步骤及其下游：字段改了，这些步骤是否执行、怎么执行都可能变。"""
         affected: list[str] = []
         for step in self.steps:
-            if step.when in field_ids and step.id not in affected:
+            if when_field(step.when) in field_ids and step.id not in affected:
                 affected.append(step.id)
                 affected.extend(d for d in self.downstream_of(step.id) if d not in affected)
         return affected
@@ -201,10 +217,12 @@ def parse_template(data: dict) -> Template:
         FieldSpec(raw["id"], raw.get("label", ""), bool(raw.get("required", False)),
                   raw.get("default", ""),
                   tuple((opt["value"], opt.get("label", "")) for opt in raw.get("options", [])),
-                  bool(raw.get("draft", True)))
+                  bool(raw.get("draft", True)), raw.get("kind", ""))
         for raw in data.get("fields", [])
     )
     for spec in fields:
+        if spec.kind not in FIELD_KINDS:
+            raise ValueError(f"模板 {template_id} 的字段 {spec.id} 类型不支持：{spec.kind}")
         if spec.id == PROMPT_FIELD:
             raise ValueError(f"模板 {template_id} 的字段 id 不能是保留名：{PROMPT_FIELD}")
         if spec.options and spec.default not in [value for value, _ in spec.options]:
@@ -213,6 +231,10 @@ def parse_template(data: dict) -> Template:
     source = data.get("source", "")
     if source and source not in PACK_TYPES:
         raise ValueError(f"模板 {template_id} 的来源类型不支持：{source}")
+    id_field = data.get("id_field", "")
+    if id_field and id_field not in {spec.id for spec in fields}:
+        raise ValueError(f"模板 {template_id} 的 id_field 不是已声明的字段：{id_field}")
+    presets = tuple(_parse_preset(template_id, raw, fields) for raw in data.get("presets", []))
 
     seen: set[str] = set()
     steps = []
@@ -234,7 +256,7 @@ def parse_template(data: dict) -> Template:
         if unknown:
             raise ValueError(f"模板 {template_id} 的步骤 {step_id} 引用了未声明的字段：{', '.join(sorted(unknown))}")
         when = raw.get("when", "")
-        if when and when not in known_fields - {PROMPT_FIELD}:
+        if when and when_field(when) not in known_fields - {PROMPT_FIELD}:
             raise ValueError(
                 f"模板 {template_id} 的步骤 {step_id} 的条件引用了未声明的字段：{when}")
         seen.add(step_id)
@@ -253,11 +275,29 @@ def parse_template(data: dict) -> Template:
         steps=tuple(steps),
         name=data.get("name", ""),
         description=data.get("description", ""),
+        summary=data.get("summary", ""),
         prompt_label=data.get("prompt_label", ""),
         cover=cover,
         fields=fields,
         source=source,
+        presets=presets,
+        id_field=id_field,
     )
+
+
+def _parse_preset(template_id: str, raw: dict, specs: tuple[FieldSpec, ...]) -> PresetSpec:
+    name, prompt = raw.get("name", ""), raw.get("prompt", "")
+    if not name or not prompt:
+        raise ValueError(f"模板 {template_id} 的预设缺少 name 或 prompt：{raw}")
+    fields = {key: str(value) for key, value in raw.get("fields", {}).items()}
+    by_id = {spec.id: spec for spec in specs}
+    for key, value in fields.items():
+        spec = by_id.get(key)
+        if spec is None:
+            raise ValueError(f"模板 {template_id} 的预设 {name} 用了未声明的字段：{key}")
+        if spec.options and value not in [option for option, _ in spec.options]:
+            raise ValueError(f"模板 {template_id} 的预设 {name} 的字段 {key} 不在可选范围内：{value}")
+    return PresetSpec(name, prompt, fields)
 
 
 def list_templates() -> list[Template]:

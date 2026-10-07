@@ -1,4 +1,5 @@
 import socket
+import os
 import subprocess
 import sys
 import threading
@@ -322,6 +323,9 @@ class ApiProcess(BaseProcess):
             [sys.executable, "-m", "src.backend.server", "--port", str(port)],
             stdout=None,
             stderr=None,
+            # 和安装版后端走同一条路传模型目录，源码模式下两边虽然共用 setting.json，
+            # 但后端进程只在启动时读一次设置
+            env=local_backend.with_models_dir(dict(os.environ)),
         )
         return proc
 

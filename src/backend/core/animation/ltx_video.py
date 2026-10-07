@@ -8,9 +8,13 @@ from PIL import Image
 from PIL.Image import Resampling
 from huggingface_hub import snapshot_download, hf_hub_download
 
-from src.shared.settings import PROJECT_ROOT
 from src.backend.core.model_base import BaseAnimationGenerator
-from src.backend.core.model_utils import huggingface_token, print_vram_usage, get_temp_dir
+from src.backend.core.model_utils import (
+    get_temp_dir,
+    huggingface_token,
+    models_root,
+    print_vram_usage,
+)
 
 
 class LTXVideoGenerator(BaseAnimationGenerator):
@@ -38,7 +42,7 @@ class LTXVideoGenerator(BaseAnimationGenerator):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.model_dir = os.path.join(PROJECT_ROOT, "models", "animation", "ltx")
+        self.model_dir = str(models_root() / "animation" / "ltx")
         self.model_path  = os.path.join(self.model_dir, self.MODEL_NAME)
         self.text_encoder_path = os.path.join(self.model_dir, "text_encoder")
         self.tokenizer_path = os.path.join(self.model_dir, "tokenizer")

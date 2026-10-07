@@ -6,6 +6,9 @@
 
 各生成器的目录命名并不统一（有的按模型名，有的按仓库，几个模型也可能共用一个底座目录），
 所以这里不去猜"目录属于哪个模型"，而是按存放位置的层级列出，删除只允许删列出来的条目。
+唯一的合并规则：一个模型拆成主目录加 `主目录名-后缀` 的附属目录（如 z-image-turbo 与
+z-image-turbo-gguf / -base / -controlnet、wan2 与 wan2-gguf），附属目录并进主目录算一条，
+删除时整组一起删——只删附属目录模型照样用不了，分开列只会让同一个模型占好几行。
 """
 import os
 import shutil
@@ -13,9 +16,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from src.backend.core.model_base import GeneratorFactory, SingletonMeta
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import models_root
 
-MODELS_ROOT = Path(PROJECT_ROOT) / "models"
 # models/ 下按模态分的目录：列它们的下一级；其他直接放在 models/ 下的（如记忆用的向量模型）整个算一条
 _CATEGORY_DIRS = {"text", "image", "speech", "animation", "image_frame", "transcription",
                   "upscale", "lora", "prompt_refiner"}
@@ -27,7 +29,7 @@ def _roots() -> list[tuple[str, Path]]:
     """(条目 id 前缀, 目录)。ACE-Step 和 rembg 的权重不在 models/ 下，也一并列出来。"""
     from src.backend.core.speech.ace_step_music import ACE_STEP_ROOT
     rembg_home = Path(os.environ.get("U2NET_HOME", Path.home() / ".u2net"))
-    return [("models", MODELS_ROOT), ("ace_step", ACE_STEP_ROOT / "checkpoints"),
+    return [("models", models_root()), ("ace_step", ACE_STEP_ROOT / "checkpoints"),
             ("rembg", rembg_home)]
 
 
@@ -37,7 +39,7 @@ class StorageEntry:
     root: str        # models / ace_step / rembg
     category: str    # models 下的模态目录；其他位置为空
     name: str
-    path: Path
+    paths: tuple[Path, ...]  # 主目录在前，后面是并进来的附属目录
     manual: bool     # 删了不会自动重新下载
 
 
@@ -59,26 +61,40 @@ def _children(folder: Path) -> list[Path]:
     return sorted(p for p in folder.iterdir() if not p.name.startswith("."))
 
 
+def _grouped(items: list[Path]) -> list[tuple[Path, ...]]:
+    """同一层里 `xxx-后缀` 并进 `xxx`；能并进多个时取最短的，整串同前缀的目录落到同一组。"""
+    names = {item.name for item in items}
+    groups: dict[str, list[Path]] = {}
+    for item in items:
+        bases = [n for n in names if n != item.name and item.name.startswith(n + "-")]
+        groups.setdefault(min(bases, key=len) if bases else item.name, []).append(item)
+    # 主目录排第一个，条目的 id / 名字取它
+    return [tuple(sorted(paths, key=lambda p: p.name != base)) for base, paths in groups.items()]
+
+
 def list_entries() -> list[StorageEntry]:
     entries = []
     for root_id, root in _roots():
         if not root.is_dir():
             continue
+        top_level = []
         for child in _children(root):
             if root_id == "models" and child.name in _CATEGORY_DIRS and child.is_dir():
-                for item in _children(child):
+                for paths in _grouped(_children(child)):
                     entries.append(StorageEntry(
-                        f"{root_id}/{child.name}/{item.name}", root_id, child.name, item.name, item,
-                        manual=child.name in _MANUAL_CATEGORIES))
+                        f"{root_id}/{child.name}/{paths[0].name}", root_id, child.name,
+                        paths[0].name, paths, manual=child.name in _MANUAL_CATEGORIES))
             else:
-                entries.append(StorageEntry(f"{root_id}/{child.name}", root_id, "", child.name,
-                                            child, manual=False))
+                top_level.append(child)
+        for paths in _grouped(top_level):
+            entries.append(StorageEntry(f"{root_id}/{paths[0].name}", root_id, "", paths[0].name,
+                                        paths, manual=False))
     return entries
 
 
 def list_storage() -> list[tuple[StorageEntry, int]]:
     """按占用从大到小；大小每次现算，模型下载或删除后立刻反映出来。"""
-    sized = [(entry, _size(entry.path)) for entry in list_entries()]
+    sized = [(entry, sum(_size(path) for path in entry.paths)) for entry in list_entries()]
     return sorted(sized, key=lambda pair: pair[1], reverse=True)
 
 
@@ -97,11 +113,13 @@ def delete_entry(entry_id: str) -> None:
             unload = getattr(instance, "unload", None)
             if callable(unload):
                 unload()
-        try:
-            if entry.path.is_dir():
-                shutil.rmtree(entry.path)
-            else:
-                entry.path.unlink()
-        except PermissionError as exc:
-            raise ValueError(f"文件正被占用，删除失败（可以关掉正在使用它的程序后重试）：{exc}") from exc
-    print(f"🗑️ 已删除模型文件：{entry.path}")
+        for path in entry.paths:
+            try:
+                if path.is_dir():
+                    shutil.rmtree(path)
+                else:
+                    path.unlink()
+            except PermissionError as exc:
+                raise ValueError(
+                    f"文件正被占用，删除失败（可以关掉正在使用它的程序后重试）：{exc}") from exc
+            print(f"🗑️ 已删除模型文件：{path}")

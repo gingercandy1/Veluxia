@@ -1,10 +1,13 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QFileDialog,
     QFrame,
+    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QTableWidget,
@@ -16,6 +19,7 @@ from PySide6.QtWidgets import (
 from src.app.client import ApiClient
 from src.app.work import LibraryTaskWorker
 from src.shared.schemas import ModelStorageEntry, ModelStorageResponse
+from src.shared.settings import ConfigManager
 
 _UNITS = ("B", "KB", "MB", "GB", "TB")
 
@@ -43,7 +47,42 @@ class StoragePage(QWidget):
         self._busy = False
         self._entries: list[ModelStorageEntry] = []
         self._buttons: dict[int, QPushButton] = {}
+        self._config = ConfigManager()
         self._build_ui()
+        self._dir_edit.setText(self._config.get("models", "dir", ""))
+        self._dir_edit.textChanged.connect(self.collect)
+
+    def _build_folder_group(self) -> QGroupBox:
+        """模型存放目录：权重一两百 GB，常常要放到别的盘上。只影响本机后端，远程后端在它自己的机器上配置。"""
+        group = QGroupBox(self.tr("Model folder"))
+        group.setObjectName("setting_group")
+        group_layout = QVBoxLayout(group)
+        row = QHBoxLayout()
+        self._dir_edit = QLineEdit()
+        self._dir_edit.setPlaceholderText(self.tr("Default: the models folder of the backend"))
+        browse_btn = QPushButton(self.tr("Browse..."))
+        browse_btn.clicked.connect(self._on_browse_dir)
+        row.addWidget(self._dir_edit, 1)
+        row.addWidget(browse_btn)
+        group_layout.addLayout(row)
+        note = QLabel(self.tr(
+            "Models are read from and downloaded into this folder. Leave it empty to use the "
+            "default. Takes effect after restarting the app. Models you already downloaded are "
+            "not moved: move the old models folder here by hand to keep them. Only applies to "
+            "the backend on this computer."))
+        note.setObjectName("setting_hint")
+        note.setWordWrap(True)
+        group_layout.addWidget(note)
+        return group
+
+    def _on_browse_dir(self):
+        path = QFileDialog.getExistingDirectory(
+            self, self.tr("Choose model folder"), self._dir_edit.text().strip())
+        if path:
+            self._dir_edit.setText(path)
+
+    def collect(self):
+        self._config.set("models", "dir", self._dir_edit.text().strip())
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
@@ -63,6 +102,7 @@ class StoragePage(QWidget):
         sep.setFrameShape(QFrame.Shape.HLine)
         sep.setObjectName("page_separator")
         layout.addWidget(sep)
+        layout.addWidget(self._build_folder_group())
 
         row = QHBoxLayout()
         self.total_label = QLabel()
@@ -154,7 +194,8 @@ class StoragePage(QWidget):
         for row, entry in enumerate(self._entries):
             location = QTableWidgetItem(self._location(entry))
             name = QTableWidgetItem(entry.name)
-            name.setToolTip(entry.id)
+            # 并了附属目录的条目把各目录列出来，删除时它们会一起删
+            name.setToolTip("\n".join([entry.id, *entry.parts[1:]]))
             size = QTableWidgetItem(format_size(entry.size))
             size.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             for column, item in ((self.COL_LOCATION, location), (self.COL_NAME, name),

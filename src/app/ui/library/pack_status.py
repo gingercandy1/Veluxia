@@ -9,7 +9,8 @@ from src.shared.schemas import (
     StepState,
     TemplateInfo,
     TemplateStepInfo,
-    condition_met,
+    when_field,
+    when_met,
 )
 
 _CONTEXT = "PackStatus"
@@ -129,8 +130,9 @@ def step_skipped(item: CollectionItem, step: TemplateStepInfo, template: Templat
         return True
     if not step.when:
         return False
-    default = next((f.default for f in template.fields if f.id == step.when), "")
-    return not condition_met(item.fields.get(step.when) or default)
+    field_id = when_field(step.when)
+    default = next((f.default for f in template.fields if f.id == field_id), "")
+    return not when_met(step.when, item.fields.get(field_id) or default)
 
 
 def _finished(item: CollectionItem, step: TemplateStepInfo, template: TemplateInfo) -> bool:
@@ -210,10 +212,13 @@ def latest_image(item: CollectionItem, chain: list[TemplateStepInfo]) -> str:
 
 
 def pack_cover(manifest: Manifest, template: TemplateInfo) -> str:
-    """封面：模板指定的封面步骤里第一个已完成的图片；没有图片产物的包（对话、音效）返回空。"""
+    """封面：模板指定的封面步骤里第一个已完成的图片；没有图片产物的包（对话、音效）返回空。
+
+    封面步骤一张图都没有时退到其他图片交付物：互斥流程里（道具全做组图）封面步骤全被跳过。
+    """
     cover_steps = [step for step in template.step_details if step.id == template.cover]
-    if not cover_steps:
-        cover_steps = [step for step in deliverables(template) if media_kind(step.type) == "image"]
+    cover_steps += [step for step in deliverables(template)
+                    if media_kind(step.type) == "image" and step.id != template.cover]
     for step in cover_steps:
         for item in manifest.items:
             path = latest_image(item, [step])

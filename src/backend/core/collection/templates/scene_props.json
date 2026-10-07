@@ -1,15 +1,29 @@
 {
   "id": "scene_props",
-  "version": 2,
+  "version": 3,
   "type": "scene",
   "name": "场景道具",
-  "description": "单个摆件、建筑部件等可放进场景的物体：去背景、放大后裁掉透明边，直接拖进引擎。",
+  "summary": "透明底的摆件和建筑部件，可单张或一张组图出多个变体",
+  "description": "单个摆件、建筑部件等可放进场景的物体：去背景、放大后裁掉透明边，直接拖进引擎。出图方式选组图时，先由 AI 把道具展开成大小、形状、颜色各不相同的变体清单，再把这些变体画在同一张图里，画风天然统一；去背景后按元素自动切开、放大，一个条目得到一组透明图。元素粘连时会切成一张，可重新生成。",
   "prompt_label": "道具描述",
   "cover": "trim",
+  "fields": [
+    {"id": "sheet", "label": "出图方式", "default": "0", "draft": false, "options": [
+      {"value": "0", "label": "单张"},
+      {"value": "4", "label": "组图 4 个"},
+      {"value": "6", "label": "组图 6 个"},
+      {"value": "9", "label": "组图 9 个"}
+    ]}
+  ],
   "steps": [
-    {"id": "generate", "type": "image.generate", "label": "生成", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "single isolated object, plain white background, centered, full view"}},
-    {"id": "remove_bg", "type": "image.remove_bg", "label": "去背景", "params": {"model_name": "rembg-birefnet"}, "inputs": ["generate"]},
-    {"id": "upscale", "type": "image.upscale", "label": "放大", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["remove_bg"]},
-    {"id": "trim", "type": "image.trim", "label": "裁边", "deliverable": true, "inputs": ["upscale"]}
+    {"id": "generate", "type": "image.generate", "label": "生成", "when": "!sheet", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "single isolated object, plain white background, centered, full view"}},
+    {"id": "remove_bg", "type": "image.remove_bg", "label": "去背景", "when": "!sheet", "params": {"model_name": "rembg-birefnet"}, "inputs": ["generate"]},
+    {"id": "upscale", "type": "image.upscale", "label": "放大", "when": "!sheet", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["remove_bg"]},
+    {"id": "trim", "type": "image.trim", "label": "裁边", "deliverable": true, "when": "!sheet", "inputs": ["upscale"]},
+    {"id": "sheet_variants", "type": "text.variants", "label": "写变体", "when": "sheet", "params": {"model_name": "Qwen2.5-7B", "count": "{sheet}", "temperature": 0.9}},
+    {"id": "sheet_generate", "type": "image.generate_sheet", "label": "生成组图", "when": "sheet", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "game asset sheet, each object clearly different in size, height, shape and color as listed, from tiny to large, every object separate and fully visible, laid out in rows with wide empty gaps between them, plain white background, no overlap, no ground, no shadows"}, "inputs": ["sheet_variants"]},
+    {"id": "sheet_remove_bg", "type": "image.remove_bg", "label": "组图去背景", "when": "sheet", "params": {"model_name": "rembg-birefnet"}, "inputs": ["sheet_generate"]},
+    {"id": "sheet_split", "type": "image.split", "label": "切分", "when": "sheet", "params": {"padding": 4, "min_area": 0.002}, "inputs": ["sheet_remove_bg"]},
+    {"id": "sheet_upscale", "type": "image.upscale", "label": "组图元素", "deliverable": true, "when": "sheet", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["sheet_split"]}
   ]
 }

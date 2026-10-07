@@ -94,6 +94,23 @@ def test_encode_runner_writes_reference_and_embeds(tmp_path, fake_edit):
     assert ctx.meta["prompt"] == "将镜头向左旋转45度, 纯白背景"
 
 
+def test_encode_runner_takes_instruction_from_step_params(tmp_path, fake_edit):
+    """角色立绘包的条目原文是外观描述，转面的视角指令写在步骤参数里，
+    不能把外观描述当成改图指令送进编码。"""
+    portrait = tmp_path / "portrait.png"
+    Image.new("RGBA", (34, 68), (0, 0, 255, 255)).save(portrait)
+    params = {"model_name": "fake-edit", "scale": 0.5, "instruction": "将镜头向右旋转90度",
+              "prompt_suffix": "纯白背景"}
+    runner = EditEncodeRunner()
+    ctx = _ctx(tmp_path, params, [portrait], prompt="一个圆滚滚的球形主角")
+    with runner.open(params, threading.Event()):
+        runner.run(ctx)
+        generator = SingletonMeta._instances[_FakeEdit]
+    assert generator.raw["content"] == "将镜头向右旋转90度, 纯白背景"
+    assert "instruction" not in generator.raw
+    assert "球形" not in generator.raw["content"]
+
+
 def test_encode_runner_requires_instruction(tmp_path, fake_edit):
     portrait = tmp_path / "portrait.png"
     Image.new("RGBA", (8, 8), (0, 0, 255, 255)).save(portrait)

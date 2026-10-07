@@ -14,6 +14,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
+from PIL import Image
 from pydantic import TypeAdapter
 
 from src.backend.core.collection.executor import (
@@ -26,15 +27,19 @@ from src.backend.core.collection.steps import CastVoice, registered_runners
 from src.backend.core.collection.template import SOURCE_INPUT, Template, load_template
 from src.backend.core.model_utils import get_media_root
 from src.shared.schemas import (
+    IMAGE_FIELD,
+    AddItemsRequest,
     ApproveStepRequest,
     CastMember,
     CollectionItem,
     CreatePackRequest,
     Manifest,
+    NewCollectionItem,
     ResetStepRequest,
     StepState,
     StylePreset,
     UpdateItemFieldsRequest,
+    when_field,
 )
 
 LIBRARY_DIR_NAME = "library"
@@ -99,20 +104,7 @@ def create_pack(request: CreatePackRequest) -> Manifest:
     if not request.items:
         raise ValueError("资源包至少需要一个条目")
 
-    items = []
-    for index, new_item in enumerate(request.items, start=1):
-        item_id = new_item.id or f"{index:02d}"
-        _check_id(item_id, "条目")
-        fields = {key: value.strip() for key, value in new_item.fields.items() if value.strip()}
-        try:
-            template.check_item_fields(fields)
-        except ValueError as exc:
-            raise ValueError(f"条目 {item_id}：{exc}") from exc
-        items.append(CollectionItem(id=item_id, prompt=new_item.prompt, fields=fields))
-    ids = [item.id for item in items]
-    duplicated = sorted({item_id for item_id in ids if ids.count(item_id) > 1})
-    if duplicated:
-        raise ValueError(f"条目 id 重复：{', '.join(duplicated)}")
+    items = _new_items(template, request.items, [])
     _check_cast(template, request.cast)
     _check_source(template, request.source)
     if request.style_preset:
@@ -132,8 +124,68 @@ def create_pack(request: CreatePackRequest) -> Manifest:
     )
     directory = pack_dir(manifest.id)
     directory.mkdir()
+    try:
+        _import_images(template, items, directory)
+    except OSError:
+        # 复制失败时不留下没有 manifest 的半成品目录
+        shutil.rmtree(directory, ignore_errors=True)
+        raise
     save_manifest(directory, manifest)
     return manifest
+
+
+def add_items(pack_id: str, request: AddItemsRequest) -> Manifest:
+    """往已有资源包追加条目，下次执行时只跑新条目（已完成的步骤执行器会跳过）。
+    执行中不能追加：执行器持有的是开始时读到的 manifest，存盘时会把新条目覆盖掉。"""
+    if not request.items:
+        raise ValueError("至少需要一个条目")
+    directory = pack_dir(pack_id)
+    with _claim(pack_id):
+        manifest = load_manifest(directory)
+        template = load_template(manifest.template)
+        new_items = _new_items(template, request.items, manifest.items)
+        _import_images(template, new_items, directory)
+        manifest.items.extend(new_items)
+        save_manifest(directory, manifest)
+        return manifest
+
+
+def delete_item(pack_id: str, item_id: str) -> Manifest:
+    """从资源包里删掉一个条目和它的产物目录。
+
+    和追加条目一样要占住资源包：执行器存盘时会用开始时读到的 manifest 覆盖，
+    删除的条目会被写回来。最后一个条目不能删（建包时至少要一个），也不能删被别的包
+    引用的角色：对话包的出场角色、动作包的来源角色下次执行时会找不到它。
+    """
+    directory = pack_dir(pack_id)
+    with _claim(pack_id):
+        manifest = load_manifest(directory)
+        item = _find_item(manifest, item_id)
+        if len(manifest.items) == 1:
+            raise ValueError("资源包至少要保留一个条目，要删掉最后一个请直接删除整个资源包")
+        users = _item_users(pack_id, item_id)
+        if users:
+            raise ValueError(f"条目 {item_id} 正被资源包 {'、'.join(users)} 引用，先删掉那些资源包")
+        manifest.items.remove(item)
+        # 先存 manifest 再删目录：中途失败时最多留下一个没人引用的目录，
+        # 反过来则会留下指向已删文件的条目
+        save_manifest(directory, manifest)
+        try:
+            shutil.rmtree(directory / item.id)
+        except FileNotFoundError:
+            pass  # 还没生成过，没有产物目录
+        except OSError as exc:
+            print(f"⚠️ 条目 {item.id} 已从资源包 {pack_id} 移除，但产物目录没能删干净：{exc}")
+        return manifest
+
+
+def _item_users(pack_id: str, item_id: str) -> list[str]:
+    """引用了 "<pack_id>/<item_id>" 的其他资源包名（出场角色或来源角色）。"""
+    reference = f"{pack_id}/{item_id}"
+    return [other.name or other.id for other in list_packs()
+            if other.id != pack_id
+            and (other.source == reference
+                 or any(member.character == reference for member in other.cast))]
 
 
 def delete_pack(pack_id: str) -> None:
@@ -199,10 +251,8 @@ def run_pack(pack_id: str, cancel_event: threading.Event) -> Manifest:
         # 每次执行时现解析：角色包的声线可能是创建对话包之后才生成或重做的
         cast = [_resolve_cast_member(member) for member in manifest.cast]
         source = _source_portrait(manifest.source) if template.source else None
-        description = character_description(manifest.source) if template.source else ""
         return CollectionExecutor(directory, template, cancel_event=cancel_event,
-                                  cast=cast, source=source,
-                                  source_description=description).run()
+                                  cast=cast, source=source).run()
 
 
 def approve_step(pack_id: str, request: ApproveStepRequest) -> Manifest:
@@ -255,8 +305,10 @@ def update_item_fields(pack_id: str, request: UpdateItemFieldsRequest) -> Manife
         manifest = load_manifest(directory)
         template = load_template(manifest.template)
         item = _find_item(manifest, request.item_id)
-        conditional = {step.when for step in template.steps if step.when}
-        not_allowed = sorted(set(request.fields) - conditional)
+        conditional = {when_field(step.when) for step in template.steps if step.when}
+        # 图片字段存的是复制进资源包的相对路径，事后改成别的路径不会复制文件，生成时会找不到图
+        image_fields = {spec.id for spec in template.fields if spec.kind == IMAGE_FIELD}
+        not_allowed = sorted(set(request.fields) - (conditional - image_fields))
         if not_allowed:
             raise ValueError(f"这些字段不能事后修改：{', '.join(not_allowed)}")
         fields = {**item.fields, **{k: v.strip() for k, v in request.fields.items()}}
@@ -374,6 +426,70 @@ def _write_styles(styles: list[StylePreset]) -> None:
     temp = path.with_suffix(".json.tmp")
     temp.write_bytes(_STYLE_LIST.dump_json(styles, indent=2))
     os.replace(temp, path)
+
+
+def _new_items(template: Template, new_items: list[NewCollectionItem],
+               existing: list[CollectionItem]) -> list[CollectionItem]:
+    """校验并生成条目。没填 id 的先试模板的 id_field（如动作名 walk），
+    不行再按序号接着已有条目往下编，跳过已被占用的号。"""
+    taken = {item.id for item in existing} | {item.id for item in new_items if item.id}
+    items = []
+    index = len(existing)
+    for new_item in new_items:
+        index += 1
+        fields = {key: value.strip() for key, value in new_item.fields.items() if value.strip()}
+        item_id = new_item.id
+        if not item_id:
+            named = fields.get(template.id_field, "") if template.id_field else ""
+            if named and _ID_PATTERN.fullmatch(named) and named not in taken:
+                item_id = named
+            else:
+                while f"{index:02d}" in taken:
+                    index += 1
+                item_id = f"{index:02d}"
+            taken.add(item_id)
+        _check_id(item_id, "条目")
+        try:
+            template.check_item_fields(fields)
+            _check_images(template, fields)
+        except ValueError as exc:
+            raise ValueError(f"条目 {item_id}：{exc}") from exc
+        items.append(CollectionItem(id=item_id, prompt=new_item.prompt, fields=fields))
+    ids = [item.id for item in [*existing, *items]]
+    duplicated = sorted({item_id for item_id in ids if ids.count(item_id) > 1})
+    if duplicated:
+        raise ValueError(f"条目 id 重复：{', '.join(duplicated)}")
+    return items
+
+
+def _check_images(template: Template, fields: dict[str, str]) -> None:
+    """导入的图片在建包前先确认能打开：等到生成视频那一步才发现路径错了要白等模型加载。"""
+    for spec in template.fields:
+        path = fields.get(spec.id)
+        if spec.kind != IMAGE_FIELD or not path:
+            continue
+        label = spec.label or spec.id
+        if not Path(path).is_file():
+            raise ValueError(f"{label} 找不到文件：{path}")
+        try:
+            with Image.open(path) as image:
+                image.verify()
+        except (OSError, SyntaxError) as exc:
+            raise ValueError(f"{label} 不是可用的图片：{path}") from exc
+
+
+def _import_images(template: Template, items: list[CollectionItem], directory: Path) -> None:
+    """把用户选的图片复制进条目目录，字段改存相对资源包的路径：
+    资源包要能整个拷走、导出，不能依赖用户磁盘上原来的位置。"""
+    for item in items:
+        for spec in template.fields:
+            source = item.fields.get(spec.id)
+            if spec.kind != IMAGE_FIELD or not source:
+                continue
+            target = directory / item.id / f"{spec.id}{Path(source).suffix.lower()}"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+            item.fields[spec.id] = target.relative_to(directory).as_posix()
 
 
 def _reset_downstream(template: Template, item: CollectionItem, step_id: str) -> None:

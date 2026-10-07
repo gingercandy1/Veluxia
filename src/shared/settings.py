@@ -10,6 +10,8 @@ BACKEND_URL = "http://127.0.0.1:8765"
 # 单文件 exe 里 PROJECT_ROOT 是每次启动都会清空的临时解压目录，设置写在 exe 旁边才能保留
 _CONFIG_ROOT = Path(sys.executable).parent if getattr(sys, "frozen", False) else PROJECT_ROOT
 SETTING_CONFIG_PATH = os.path.join(_CONFIG_ROOT, "config", "setting.json")
+# 前端拉起本机后端时用这个环境变量传模型目录：安装版后端有自己的 setting.json，读不到前端的设置
+MODELS_DIR_ENV = "VELUXIA_MODELS_DIR"
 
 DEFAULT_CONFIG = {
     "general": {
@@ -31,11 +33,19 @@ DEFAULT_CONFIG = {
     "huggingface": {
         "token": "",
     },
+    "models": {
+        # 模型权重的存放目录；空表示项目下的 models/。改了要重启后端才生效
+        "dir": "",
+    },
     "server": {
         "mode": "local",
         "url": "",
         "token": "",
         "install_dir": "",
+    },
+    "library": {
+        # 新建资源包时按模板记住上次的整包设置和风格预设：{模板 id: {"defaults": {...}, "preset": id}}
+        "form_memory": {},
     },
 }
 

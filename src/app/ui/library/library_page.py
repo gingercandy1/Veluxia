@@ -8,15 +8,16 @@ from typing import Any
 
 from PySide6.QtCore import QSize, QStandardPaths, Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices, QImage, QPixmap
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox, QStackedWidget
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox, QStackedWidget, QWidget
 
 from src.app.client import ApiClient
+from src.app.ui.base.anim import page_enter
 from src.app.ui.base.widget import BaseWidget
 from src.app.ui.library.cards import ASSET_THUMB, PACK_THUMB, Card
 from src.app.ui.library.detail_panel import PREVIEW_WIDTH, AssetKey
 from src.app.ui.library.garden import GardenView
 from src.app.ui.library.pack_detail import PackDetail
-from src.app.ui.library.pack_form import PackForm
+from src.app.ui.library.pack_form import PAGE_BACKGROUND, PackForm
 from src.app.ui.library.pack_status import (
     AUDIO_SUFFIXES,
     IMAGE_SUFFIXES,
@@ -30,6 +31,7 @@ from src.app.ui.library.pack_status import (
 )
 from src.app.work import LibraryTaskWorker
 from src.shared.schemas import (
+    AddItemsRequest,
     ApproveStepRequest,
     CollectionItem,
     CreatePackRequest,
@@ -50,7 +52,15 @@ from src.shared.settings import PROJECT_ROOT
 POLL_INTERVAL_MS = 2000
 # 详情预览用的本地副本：音频播放器和看图浮层都只认本地文件
 LIBRARY_CACHE_DIR = Path(PROJECT_ROOT) / "cache" / "library"
+# 缩略图和详情预览缩好后的副本：原图常有几 MB 到十几 MB（精灵图、长条背景），
+# 缩成几十 KB 存一份，下次打开不必再下载和解码原图
+THUMB_CACHE_DIR = LIBRARY_CACHE_DIR / "thumbs"
+# 同时下载并解码的图片数：打开资料库会为每个包、每张素材各起一个线程，
+# 全部同时解码会占满 CPU，把界面线程的绘制挤得卡顿
+_DECODE_SLOTS = threading.Semaphore(2)
 CHARACTER_TYPE = "character"
+# 切页时新页面滑入的距离：只是一点方向感，滑太远会显得拖沓
+PAGE_SLIDE = 12
 
 
 def state_signature(item: CollectionItem, step_ids: list[str]) -> str:
@@ -95,8 +105,10 @@ class LibraryPage(BaseWidget):
         self.stack = QStackedWidget()
         self.garden = GardenView()
         self.form = PackForm()
+        # 追加条目单独一个表单：不会冲掉新建表单里填了一半的内容
+        self.add_form = PackForm(append=True)
         self.detail = PackDetail()
-        for page in (self.garden, self.form, self.detail):
+        for page in (self.garden, self.form, self.add_form, self.detail):
             self.stack.addWidget(page)
         layout.addWidget(self.stack)
 
@@ -104,7 +116,12 @@ class LibraryPage(BaseWidget):
         self.garden.new_requested.connect(self._show_form)
         self.form.back_requested.connect(self._show_garden)
         self.form.create_requested.connect(self._create_pack)
-        self.form.draft_requested.connect(self._draft_items)
+        self.form.draft_requested.connect(lambda request: self._draft_items(self.form, request))
+        self.add_form.back_requested.connect(self._back_to_detail)
+        self.add_form.add_requested.connect(self._add_items)
+        self.add_form.draft_requested.connect(
+            lambda request: self._draft_items(self.add_form, request))
+        self.detail.add_items_requested.connect(self._show_add_form)
         self.form.style_save_requested.connect(self._save_style)
         self.form.style_delete_requested.connect(self._delete_style)
         self.detail.style_sync_requested.connect(self._sync_style)
@@ -120,6 +137,7 @@ class LibraryPage(BaseWidget):
         self.detail.detail.reset_requested.connect(self._reset_step)
         self.detail.detail.approve_requested.connect(self._approve_step)
         self.detail.detail.fields_update_requested.connect(self._update_fields)
+        self.detail.detail.delete_requested.connect(self._delete_item)
 
     # ---- 对外 ----
     def activate(self):
@@ -139,21 +157,43 @@ class LibraryPage(BaseWidget):
             worker.wait(3000)
 
     # ---- 页面切换 ----
+    def _switch_to(self, page: QWidget, forward: bool):
+        """切页时淡入并滑动一小段：前进从右边进来，返回从左边进来。"""
+        if self.stack.currentWidget() is page:
+            return
+        self.stack.setCurrentWidget(page)
+        page_enter(page, PAGE_BACKGROUND, PAGE_SLIDE if forward else -PAGE_SLIDE)
+
     def _show_garden(self):
-        self.stack.setCurrentWidget(self.garden)
+        self._switch_to(self.garden, forward=False)
 
     def _show_form(self, pack_type: str = ""):
         if pack_type:
             self.form.preselect_category(pack_type)
         self.form.set_error("")
-        self.stack.setCurrentWidget(self.form)
+        self._switch_to(self.form, forward=True)
 
-    def _open_pack(self, pack_id: str):
+    def _open_pack(self, pack_id: str, forward: bool = True):
         pack = self._find_pack(pack_id)
         if pack is None:
             return
-        self.stack.setCurrentWidget(self.detail)
+        self._switch_to(self.detail, forward=forward)
         self._show_detail(pack)
+
+    def _show_add_form(self):
+        pack = self.detail.pack
+        if pack is None:
+            return
+        self.add_form.set_target(pack.manifest, self._templates[pack.manifest.template])
+        self.add_form.set_error("")
+        self._switch_to(self.add_form, forward=True)
+
+    def _back_to_detail(self):
+        target = self.add_form.target_id()
+        if self._find_pack(target) is None:
+            self._show_garden()  # 追加期间资源包在别处被删了
+            return
+        self._open_pack(target, forward=False)
 
     def _current_pack(self) -> PackResponse | None:
         if self.stack.currentWidget() is not self.detail or self.detail.pack is None:
@@ -301,20 +341,42 @@ class LibraryPage(BaseWidget):
         self._packs = [*self._packs, response]
         self._on_packs(PackListResponse(packs=self._packs))
         self._open_pack(response.manifest.id)
+        # 建包的意图就是生成：直接开始执行；别的资源包正在执行时只打开，由用户稍后再点
+        if not self._is_busy():
+            self._run_pack(response.manifest.id)
 
-    def _draft_items(self, request: DraftItemsRequest):
-        self.form.set_drafting(True)
-        self._start(self._client.draft_items, request,
-                    on_ok=lambda response: self._on_drafted(request.template, response),
-                    on_error=lambda message: self._on_drafted(
-                        request.template, DraftItemsResponse.from_error(message)))
+    def _add_items(self, pack_id: str, request: AddItemsRequest):
+        self.add_form.set_busy(True)
+        self._start(self._client.add_items, pack_id, request, on_ok=self._on_items_added,
+                    on_error=lambda message: self._on_items_added(PackResponse.from_error(message)))
 
-    def _on_drafted(self, template_id: str, response: DraftItemsResponse):
-        self.form.set_drafting(False)
+    def _on_items_added(self, response: PackResponse):
+        self.add_form.set_busy(False)
         if not response.ok:
-            self.form.set_error(self.tr("AI draft failed: {0}").format(response.error))
+            self.add_form.set_error(self.tr("Failed to add items: {0}").format(response.error))
             return
-        self.form.apply_drafts(template_id, response.items)
+        self.add_form.reset()
+        self._packs = [response if p.manifest.id == response.manifest.id else p
+                       for p in self._packs]
+        self._on_packs(PackListResponse(packs=self._packs))
+        self._open_pack(response.manifest.id, forward=False)
+        # 和建包一样，加条目的意图就是生成；已完成的步骤执行器会跳过，只跑新条目
+        if not self._is_busy():
+            self._run_pack(response.manifest.id)
+
+    def _draft_items(self, form: PackForm, request: DraftItemsRequest):
+        form.set_drafting(True)
+        self._start(self._client.draft_items, request,
+                    on_ok=lambda response: self._on_drafted(form, request.template, response),
+                    on_error=lambda message: self._on_drafted(
+                        form, request.template, DraftItemsResponse.from_error(message)))
+
+    def _on_drafted(self, form: PackForm, template_id: str, response: DraftItemsResponse):
+        form.set_drafting(False)
+        if not response.ok:
+            form.set_error(self.tr("AI draft failed: {0}").format(response.error))
+            return
+        form.apply_drafts(template_id, response.items)
 
     def _delete_current(self):
         pack = self.detail.pack
@@ -332,6 +394,36 @@ class LibraryPage(BaseWidget):
         if reply != QMessageBox.StandardButton.Yes:
             return
         self._start(self._client.delete_pack, manifest.id, on_ok=self._on_deleted)
+
+    def _delete_item(self, item_id: str):
+        pack = self.detail.pack
+        if pack is None:
+            return
+        item = next((i for i in pack.manifest.items if i.id == item_id), None)
+        if item is None:
+            return
+        reply = QMessageBox.question(
+            self,
+            self.tr("Delete item"),
+            self.tr("Delete item \"{0}\" and all its generated files? This cannot be undone.")
+            .format(item_title(item)),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        self._start(self._client.delete_item, pack.manifest.id, item_id,
+                    on_ok=self._on_item_deleted,
+                    on_error=lambda message: self._on_item_deleted(PackResponse.from_error(message)))
+
+    def _on_item_deleted(self, response: PackResponse):
+        if not response.ok:
+            self.detail.set_error(self.tr("Failed to delete item: {0}").format(response.error))
+            return
+        # 和追加条目不同，删除不触发执行：剩下的条目都是用户已经看过的
+        self._packs = [response if p.manifest.id == response.manifest.id else p
+                       for p in self._packs]
+        self._on_packs(PackListResponse(packs=self._packs))
 
     # ---- 导出 ----
     def _export_current(self):
@@ -494,16 +586,40 @@ class LibraryPage(BaseWidget):
         def failed(message: str):
             card.set_loading(False)
             print(f"⚠️ 缩略图加载失败：{message}")
-        self._start(self._fetch_image, url, size,
+        self._start(self._fetch_image, url, size, signature,
                     on_ok=lambda image: apply(QPixmap.fromImage(image)), on_error=failed)
 
-    def _fetch_image(self, url: str, size: QSize) -> QImage:
+    def _fetch_image(self, url: str, size: QSize, signature: str) -> QImage:
+        """取图并缩到 size 内。signature 是内容版本：同名产物重跑后它会变，旧缓存随之作废。"""
+        cache = self._thumb_cache_path(url, size, signature)
+        cached = QImage(str(cache))
+        if not cached.isNull():
+            return cached
         # 在 worker 线程里解码和缩放：原图可能有几千像素，放主线程会卡界面
-        image = QImage.fromData(self._client.fetch_media(url))
-        if image.isNull():
-            raise ValueError(f"无法解码图片：{url}")
-        return image.scaled(size, Qt.AspectRatioMode.KeepAspectRatio,
-                            Qt.TransformationMode.SmoothTransformation)
+        with _DECODE_SLOTS:
+            image = QImage.fromData(self._client.fetch_media(url))
+            if image.isNull():
+                raise ValueError(f"无法解码图片：{url}")
+            scaled = image.scaled(size, Qt.AspectRatioMode.KeepAspectRatio,
+                                  Qt.TransformationMode.SmoothTransformation)
+        self._save_thumb_cache(scaled, cache)
+        return scaled
+
+    @staticmethod
+    def _thumb_cache_path(url: str, size: QSize, signature: str) -> Path:
+        key = f"{url}#{signature}#{size.width()}x{size.height()}"
+        return THUMB_CACHE_DIR / f"{hashlib.sha1(key.encode('utf-8')).hexdigest()[:20]}.png"
+
+    @staticmethod
+    def _save_thumb_cache(image: QImage, cache: Path):
+        """先写临时文件再改名：别的线程读到写了一半的文件会当成坏图重新下载。
+        缓存只是加速，写不进去不影响缩略图显示，只提示一下。"""
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        temp = cache.with_name(f"{cache.stem}.{threading.get_ident()}.tmp")
+        if not image.save(str(temp), "PNG"):
+            print(f"⚠️ 缩略图缓存写入失败：{cache}")
+            return
+        temp.replace(cache)
 
     # ---- 素材详情 ----
     def _on_asset_selected(self, _item_id: str, _step_id: str):
@@ -550,13 +666,13 @@ class LibraryPage(BaseWidget):
         if len(images) > 1:
             urls = [f"{pack.media_base}/{image}" for image in images]
             size = QSize(PREVIEW_WIDTH, PREVIEW_WIDTH * 2)
-            self._start(lambda: [self._fetch_image(url, size) for url in urls],
+            self._start(lambda: [self._fetch_image(url, size, key.signature) for url in urls],
                         on_ok=lambda loaded: panel.set_images(
                             key, [QPixmap.fromImage(image) for image in loaded]),
                         on_error=on_error)
         elif images:
             self._start(self._fetch_image, f"{pack.media_base}/{images[-1]}",
-                        QSize(PREVIEW_WIDTH, PREVIEW_WIDTH * 2),
+                        QSize(PREVIEW_WIDTH, PREVIEW_WIDTH * 2), key.signature,
                         on_ok=lambda image: panel.set_image(key, QPixmap.fromImage(image)),
                         on_error=on_error)
         elif audio:
@@ -612,6 +728,6 @@ class LibraryPage(BaseWidget):
 
     def _on_worker_error(self, message: str):
         current = self.stack.currentWidget()
-        target = current if current in (self.form, self.detail) else self.garden
+        target = current if current in (self.form, self.add_form, self.detail) else self.garden
         target.set_error(message)
         print(f"⚠️ 资料库请求失败：{message}")

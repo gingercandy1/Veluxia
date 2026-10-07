@@ -7,9 +7,13 @@ from PIL import Image
 from PIL.Image import Resampling
 from huggingface_hub import snapshot_download
 
-from src.shared.settings import PROJECT_ROOT
 from src.backend.core.model_base import BaseAnimationGenerator
-from src.backend.core.model_utils import huggingface_token, print_vram_usage, get_temp_dir
+from src.backend.core.model_utils import (
+    get_temp_dir,
+    huggingface_token,
+    models_root,
+    print_vram_usage,
+)
 
 
 class LTX2VideoGenerator(BaseAnimationGenerator):
@@ -42,7 +46,7 @@ class LTX2VideoGenerator(BaseAnimationGenerator):
         super().__init__(**kwargs)
 
         repo_dir = "ltx2_3" if self.model_name == "LTX-2.3" else "ltx2_5"
-        self.model_dir = Path(PROJECT_ROOT) / "models" / "animation" / repo_dir
+        self.model_dir = models_root() / "animation" / repo_dir
 
     def _check_model_file(self):
         if self.model_dir.exists() and any(self.model_dir.iterdir()):

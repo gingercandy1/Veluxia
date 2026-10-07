@@ -26,8 +26,7 @@ from src.backend.core.diffusers_utils import (
 )
 from src.backend.core.image.qwen_image import lightning_scheduler
 from src.backend.core.model_base import BaseImageGenerator
-from src.backend.core.model_utils import ensure_file, ensure_snapshot, get_temp_dir
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import ensure_file, ensure_snapshot, get_temp_dir, models_root
 
 # 与管线内部一致：编码器看的参考图缩到约 384×384 的面积
 CONDITION_IMAGE_SIZE = 384 * 384
@@ -60,7 +59,7 @@ class QwenImageEditPlusGenerator(BaseImageGenerator):
         extra = getattr(self, "model_extra", None) or {}
         self.gguf_filename = gguf_filename(self.model_filename)
         self.gguf_repo_id = extra.get("gguf_repo_id", "QuantStack/Qwen-Image-Edit-2509-GGUF")
-        self.base_local = Path(PROJECT_ROOT) / "models" / "image" / self.model_dir
+        self.base_local = models_root() / "image" / self.model_dir
         self.gguf_local = self.base_local / "gguf"
         # Lightning 4 步和镜头转换 LoRA 都只给 2509 编辑底座用，和底座放在一起
         self.loras = parse_loras(extra, local_dir=self.base_local / "lora")

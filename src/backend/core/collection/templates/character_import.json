@@ -1,0 +1,51 @@
+{
+  "id": "character_import",
+  "version": 1,
+  "type": "character",
+  "name": "角色导入",
+  "summary": "用你已有的角色图当主角：去背景裁边后直接做动作、转面、对话配音",
+  "description": "导入一张已有的角色图（之前生成的、自己画的都行），去背景、裁边后作为这个角色的立绘，同时按音色描述生成一段声线样本。之后在“角色动作”“角色转面”“对话”里，都能像选其它角色一样选它。图片最好是单个角色、背景干净；已经是透明底的也可以。不会重新生成或改动你的图，原图会复制进资源包。转面选“同时生成”时，会再转出左前 45°、左侧、背面、右侧四个视角，和正面一起拼成一张总览图，整条多约 10 分钟。角色描述不影响立绘，只在对话配音时当角色设定用，可以留空。",
+  "prompt_label": "角色描述（对话配音时当设定用，可留空）",
+  "cover": "trim",
+  "fields": [
+    {"id": "portrait", "label": "角色图片", "required": true, "kind": "image", "draft": false},
+    {"id": "name", "label": "角色名", "required": true},
+    {"id": "gender", "label": "性别", "required": true, "default": "", "options": [
+      {"value": "", "label": "请选择"},
+      {"value": "男性", "label": "男"},
+      {"value": "女性", "label": "女"},
+      {"value": "中性", "label": "其它"}
+    ]},
+    {"id": "turnaround", "label": "转面", "default": "0", "draft": false, "options": [
+      {"value": "0", "label": "不生成"},
+      {"value": "1", "label": "同时生成转面总览（多约 10 分钟）"}
+    ]},
+    {"id": "personality", "label": "性格设定"},
+    {"id": "voice", "label": "音色描述", "default": "年轻的声音，语速适中，吐字清晰"},
+    {"id": "sample_line", "label": "试音台词", "default": "你好，很高兴认识你，接下来请多关照。"}
+  ],
+  "steps": [
+    {"id": "import", "type": "image.import", "label": "导入图片", "params": {"field": "portrait"}},
+    {"id": "remove_bg", "type": "image.remove_bg", "label": "去背景", "params": {"model_name": "rembg-birefnet"}, "inputs": ["import"]},
+    {"id": "trim", "type": "image.trim", "label": "裁边", "deliverable": true, "inputs": ["remove_bg"]},
+    {"id": "voice", "type": "speech.generate", "label": "声线样本", "deliverable": true, "params": {"model_name": "Qwen3-TTS-1.7b-design", "content": "{sample_line}", "voice_prompt": "{gender}，{voice}"}},
+
+    {"id": "encode_1", "type": "image.edit_encode", "label": "理解立绘（左前）", "when": "turnaround", "inputs": ["trim"], "params": {"model_name": "Qwen-Image-Edit-2509", "scale": 0.85, "instruction": "将镜头向左旋转45度", "prompt_suffix": "保持角色的外观、服装和画风不变，全身，纯白背景"}},
+    {"id": "encode_2", "type": "image.edit_encode", "label": "理解立绘（左侧）", "when": "turnaround", "inputs": ["trim"], "params": {"model_name": "Qwen-Image-Edit-2509", "scale": 0.85, "instruction": "将镜头向左旋转90度", "prompt_suffix": "保持角色的外观、服装和画风不变，全身，纯白背景"}},
+    {"id": "encode_3", "type": "image.edit_encode", "label": "理解立绘（背面）", "when": "turnaround", "inputs": ["trim"], "params": {"model_name": "Qwen-Image-Edit-2509", "scale": 0.85, "instruction": "将镜头向左旋转180度", "prompt_suffix": "保持角色的外观、服装和画风不变，全身，纯白背景"}},
+    {"id": "encode_4", "type": "image.edit_encode", "label": "理解立绘（右侧）", "when": "turnaround", "inputs": ["trim"], "params": {"model_name": "Qwen-Image-Edit-2509", "scale": 0.85, "instruction": "将镜头向右旋转90度", "prompt_suffix": "保持角色的外观、服装和画风不变，全身，纯白背景"}},
+    {"id": "turn_1", "type": "image.edit", "label": "生成视角（左前）", "inputs": ["encode_1"], "params": {"model_name": "Qwen-Image-Edit-2509", "num_inference_steps": 4}},
+    {"id": "turn_2", "type": "image.edit", "label": "生成视角（左侧）", "inputs": ["encode_2"], "params": {"model_name": "Qwen-Image-Edit-2509", "num_inference_steps": 4}},
+    {"id": "turn_3", "type": "image.edit", "label": "生成视角（背面）", "inputs": ["encode_3"], "params": {"model_name": "Qwen-Image-Edit-2509", "num_inference_steps": 4}},
+    {"id": "turn_4", "type": "image.edit", "label": "生成视角（右侧）", "inputs": ["encode_4"], "params": {"model_name": "Qwen-Image-Edit-2509", "num_inference_steps": 4}},
+    {"id": "view_bg_1", "type": "image.remove_bg", "label": "去背景（左前）", "inputs": ["turn_1"], "params": {"model_name": "rembg-birefnet"}},
+    {"id": "view_bg_2", "type": "image.remove_bg", "label": "去背景（左侧）", "inputs": ["turn_2"], "params": {"model_name": "rembg-birefnet"}},
+    {"id": "view_bg_3", "type": "image.remove_bg", "label": "去背景（背面）", "inputs": ["turn_3"], "params": {"model_name": "rembg-birefnet"}},
+    {"id": "view_bg_4", "type": "image.remove_bg", "label": "去背景（右侧）", "inputs": ["turn_4"], "params": {"model_name": "rembg-birefnet"}},
+    {"id": "view_1", "type": "image.trim", "label": "裁边（左前）", "inputs": ["view_bg_1"]},
+    {"id": "view_2", "type": "image.trim", "label": "裁边（左侧）", "inputs": ["view_bg_2"]},
+    {"id": "view_3", "type": "image.trim", "label": "裁边（背面）", "inputs": ["view_bg_3"]},
+    {"id": "view_4", "type": "image.trim", "label": "裁边（右侧）", "inputs": ["view_bg_4"]},
+    {"id": "views", "type": "image.montage", "label": "转面总览", "deliverable": true, "inputs": ["trim", "view_1", "view_2", "view_3", "view_4"], "params": {"height": 768, "gap": 24}}
+  ]
+}

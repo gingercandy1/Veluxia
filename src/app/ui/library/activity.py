@@ -21,27 +21,6 @@ STATUS_COLOR = {
 # 约 30 帧：动效够顺，空闲时计时器停掉不占 CPU
 FRAME_MS = 33
 
-DOT_RADIUS = 2.0
-DOT_GAP = 5.0
-DOTS_WIDTH = DOT_RADIUS * 2 * 3 + DOT_GAP * 2
-_DOT_PERIOD = 1.2
-_DOT_HOP = 3.0
-
-
-def paint_dots(painter: QPainter, left: float, center_y: float, color: QColor = ACCENT):
-    """三个点依次跳起再落下，像聊天里的"正在输入"。"""
-    now = time.monotonic()
-    painter.save()
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    painter.setPen(Qt.PenStyle.NoPen)
-    painter.setBrush(color)
-    for index in range(3):
-        # 每个点错开一点相位；周期前 40% 跳一下，其余时间停在原位
-        phase = (now / _DOT_PERIOD - index * 0.15) % 1.0
-        hop = math.sin(math.pi * phase / 0.4) * _DOT_HOP if phase < 0.4 else 0.0
-        x = left + DOT_RADIUS + index * (DOT_RADIUS * 2 + DOT_GAP)
-        painter.drawEllipse(QPointF(x, center_y - hop), DOT_RADIUS, DOT_RADIUS)
-    painter.restore()
 
 
 class FrameTicker:

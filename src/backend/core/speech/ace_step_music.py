@@ -6,7 +6,7 @@ from src.backend.core.model_base import BaseSpeechGenerator
 from src.backend.core.model_utils import get_temp_dir, huggingface_token, print_vram_usage
 from src.shared.settings import PROJECT_ROOT
 
-# 第三方源码目录（gitignore，单独克隆 + 安装依赖，见 backend/pyproject.toml）
+# 第三方源码目录（gitignore，单独克隆 + 安装依赖，见 pyproject.toml backend 分组的注释）
 ACE_STEP_ROOT = Path(PROJECT_ROOT) / "src" / "backend" / "core" / "speech" / "ACE_Step"
 
 

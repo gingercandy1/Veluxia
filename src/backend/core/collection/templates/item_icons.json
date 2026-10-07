@@ -3,6 +3,7 @@
   "version": 1,
   "type": "item",
   "name": "物品图标",
+  "summary": "256×256 透明底的背包图标",
   "description": "道具、装备、材料的背包图标：去背景、裁边后统一成 256×256 透明图。",
   "prompt_label": "物品描述",
   "cover": "resize",

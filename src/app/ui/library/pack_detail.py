@@ -1,5 +1,7 @@
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QIcon, QPixmap
+import math
+import time
+from PySide6.QtCore import QPointF, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -16,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.ui.base.widget import BaseWidget
-from src.app.ui.library.activity import DOTS_WIDTH, FrameTicker, ProgressStrip, paint_dots
+from src.app.ui.library.activity import ACCENT, FrameTicker, ProgressStrip
 from src.app.ui.library.cards import ASSET_THUMB, Card
 from src.app.ui.library.detail_panel import DetailPanel
 from src.app.ui.library.flow_layout import FlowLayout
@@ -53,6 +55,28 @@ RUNNING_ROLE = Qt.ItemDataRole.UserRole + 1
 class RunningDotsDelegate(QStyledItemDelegate):
     """执行中的资源包名字后面画跳动的三个点；名字太长时先省略，给点留出位置。"""
     GAP = 6
+    _DOT_PERIOD = 1.2
+    _DOT_HOP = 3.0
+    DOT_RADIUS = 2.0
+    DOT_GAP = 5.0
+    DOTS_WIDTH = DOT_RADIUS * 2 * 3 + DOT_GAP * 2
+
+    @classmethod
+    def paint_dots(cls, painter: QPainter, left: float, center_y: float, color: QColor = ACCENT):
+        """三个点依次跳起再落下，像聊天里的"正在输入"。"""
+        now = time.monotonic()
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(color)
+        for index in range(3):
+            # 每个点错开一点相位；周期前 40% 跳一下，其余时间停在原位
+            phase = (now / cls._DOT_PERIOD - index * 0.15) % 1.0
+            hop = math.sin(math.pi * phase / 0.4) * cls._DOT_HOP if phase < 0.4 else 0.0
+            x = left + cls.DOT_RADIUS + index * (cls.DOT_RADIUS * 2 + cls.DOT_GAP)
+            painter.drawEllipse(QPointF(x, center_y - hop), cls.DOT_RADIUS, cls.DOT_RADIUS)
+        painter.restore()
+
 
     def paint(self, painter, option, index):
         if not index.data(RUNNING_ROLE):
@@ -63,10 +87,10 @@ class RunningDotsDelegate(QStyledItemDelegate):
         style = opt.widget.style() if opt.widget else QStyle()
         text_rect = style.subElementRect(QStyle.SubElement.SE_ItemViewItemText, opt, opt.widget)
         opt.text = opt.fontMetrics.elidedText(
-            opt.text, Qt.TextElideMode.ElideRight, int(text_rect.width() - DOTS_WIDTH - self.GAP))
+            opt.text, Qt.TextElideMode.ElideRight, int(text_rect.width() - self.DOTS_WIDTH - self.GAP))
         style.drawControl(QStyle.ControlElement.CE_ItemViewItem, opt, painter, opt.widget)
         left = text_rect.left() + opt.fontMetrics.horizontalAdvance(opt.text) + self.GAP
-        paint_dots(painter, left, text_rect.center().y() + 1)
+        self.paint_dots(painter, left, text_rect.center().y() + 1)
 
 
 class PackDetail(BaseWidget):
@@ -76,6 +100,7 @@ class PackDetail(BaseWidget):
     pack_selected = Signal(str)                    # 树里点了别的资源包
     run_requested = Signal()
     stop_requested = Signal()
+    add_items_requested = Signal()
     delete_requested = Signal()
     export_requested = Signal()
     style_sync_requested = Signal()
@@ -161,6 +186,10 @@ class PackDetail(BaseWidget):
         self.run_btn = QPushButton(self.tr("Run"))
         self.run_btn.setObjectName("library_primary_btn")
         self.stop_btn = QPushButton(self.tr("Stop"))
+        self.add_btn = QPushButton(self.tr("Add items"))
+        self.add_btn.setToolTip(self.tr(
+            "Add more items to this pack with the same template, style and characters. "
+            "Finished assets are kept; only the new items are generated."))
         self.export_btn = QPushButton(self.tr("Export"))
         self.export_btn.setToolTip(self.tr(
             "Save the finished assets as a zip, one folder per item, "
@@ -169,9 +198,11 @@ class PackDetail(BaseWidget):
         self.delete_btn.setObjectName("library_danger_btn")
         self.run_btn.clicked.connect(self.run_requested)
         self.stop_btn.clicked.connect(self.stop_requested)
+        self.add_btn.clicked.connect(self.add_items_requested)
         self.export_btn.clicked.connect(self.export_requested)
         self.delete_btn.clicked.connect(self.delete_requested)
-        for button in (self.run_btn, self.stop_btn, self.export_btn, self.delete_btn):
+        for button in (self.run_btn, self.stop_btn, self.add_btn, self.export_btn,
+                       self.delete_btn):
             header.addWidget(button)
         layout.addLayout(header)
 
@@ -348,6 +379,8 @@ class PackDetail(BaseWidget):
         self.stop_btn.setVisible(running)
         self.stop_btn.setEnabled(running)
         self.delete_btn.setEnabled(not running)
+        # 执行器持有开始时读到的 manifest，执行中追加的条目会在它存盘时被覆盖，后端也会拒绝
+        self.add_btn.setEnabled(not running)
         # 执行中改风格锁会让同一个包前后两半风格不一致，后端也会因包被占用而拒绝
         self.sync_style_btn.setEnabled(not running)
         self.refresh_source_btn.setEnabled(not running)

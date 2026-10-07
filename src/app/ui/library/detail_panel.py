@@ -38,6 +38,7 @@ from src.shared.schemas import (
     StepState,
     TemplateInfo,
     TemplateStepInfo,
+    when_field,
 )
 
 PANEL_WIDTH = 340
@@ -154,6 +155,7 @@ class DetailPanel(BaseWidget):
     reset_requested = Signal(str, str)              # item id, step id
     approve_requested = Signal(str, str, object)    # item id, step id, 修改后的内容或 None
     fields_update_requested = Signal(str, dict)     # item id, 要改的字段（如事后补做分层）
+    delete_requested = Signal(str)                  # item id：删掉整个条目（它的全部素材）
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -165,6 +167,7 @@ class DetailPanel(BaseWidget):
         self._speakers: list[str] = []
         self._approved = False
         self._busy = False
+        self._is_last_item = False
         self._redo_buttons: list[QPushButton] = []
         # (应用按钮, 下拉, 当前值)；_options_key 没变就不重建，免得轮询刷新把用户正在选的值冲掉
         self._option_rows: list[tuple[QPushButton, QComboBox, str]] = []
@@ -214,6 +217,10 @@ class DetailPanel(BaseWidget):
         self._flow.setSpacing(4)
         self._layout.addLayout(self._flow)
         self._layout.addStretch()
+        self.delete_btn = QPushButton(self.tr("Delete item"))
+        self.delete_btn.setObjectName("library_danger_btn")
+        self.delete_btn.clicked.connect(lambda: self.delete_requested.emit(self._item_id))
+        self._layout.addWidget(self.delete_btn)
         self._set_sections_visible(False)
 
     # ---- 对外 ----
@@ -223,6 +230,8 @@ class DetailPanel(BaseWidget):
         key = asset_key(pack.manifest.id, item, step.id)
         changed = key != self.key
         self.key, self._item_id, self._step, self._busy = key, item.id, step, busy
+        self._is_last_item = len(pack.manifest.items) <= 1
+        self._refresh_delete_button()
         self._speakers = [member.name for member in pack.manifest.cast]
         self._approved = (item.steps.get(step.id) or StepState()).approved
 
@@ -265,6 +274,13 @@ class DetailPanel(BaseWidget):
         for button in self._redo_buttons:
             button.setEnabled(not busy)
         self._refresh_option_buttons()
+        self._refresh_delete_button()
+
+    def _refresh_delete_button(self):
+        self.delete_btn.setEnabled(not self._busy and not self._is_last_item)
+        self.delete_btn.setToolTip(
+            self.tr("A pack needs at least one item; delete the whole pack instead")
+            if self._is_last_item else "")
 
     def _refresh_option_buttons(self):
         for button, combo, current in self._option_rows:
@@ -349,7 +365,7 @@ class DetailPanel(BaseWidget):
 
         改了之后后端只把依赖这个字段的步骤标记为待重做，已生成的整图不动。
         """
-        conditional = {s.when for s in template.step_details if s.when}
+        conditional = {when_field(s.when) for s in template.step_details if s.when}
         options_key = (self.key.pack_id if self.key else "", item.id, step.id,
                        tuple((f, item.fields.get(f, "")) for f in sorted(conditional)))
         if options_key == self._options_key:
@@ -461,7 +477,7 @@ class DetailPanel(BaseWidget):
         return "\n".join(lines)
 
     def _set_sections_visible(self, visible: bool):
-        for widget in (self._prompt_heading, self.prompt_label, self._flow_heading):
+        for widget in (self._prompt_heading, self.prompt_label, self._flow_heading, self.delete_btn):
             widget.setVisible(visible)
         if not visible:
             self.fields_label.hide()

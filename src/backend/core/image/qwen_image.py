@@ -9,8 +9,7 @@ from PIL import Image
 from src.backend.core.diffusers_utils import apply_loras, apply_offload, ensure_loras, parse_loras
 from src.backend.core.exceptions import GenerationCancelled
 from src.backend.core.model_base import BaseImageGenerator
-from src.backend.core.model_utils import ensure_snapshot, get_temp_dir
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import ensure_snapshot, get_temp_dir, models_root
 
 
 def lightning_scheduler():
@@ -49,8 +48,8 @@ class QwenImageLightningGenerator(BaseImageGenerator):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.pipe_edit = None
-        self.base_local = Path(PROJECT_ROOT) / "models" / "image" / self.model_dir
-        self.edit_local = Path(PROJECT_ROOT) / "models" / "image" / "qwen-image-edit"
+        self.base_local = models_root() / "image" / self.model_dir
+        self.edit_local = models_root() / "image" / "qwen-image-edit"
         if not self.model_id:
             self.model_id = "unsloth/Qwen-Image-2512-FP8"
         # Lightning LoRA 只挂在文生图管道上，编辑管道用官方原版权重

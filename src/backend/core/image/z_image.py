@@ -21,8 +21,7 @@ from src.backend.core.image.tileable import (
     validate_tile_mode,
 )
 from src.backend.core.model_base import BaseImageGenerator
-from src.backend.core.model_utils import ensure_file, ensure_snapshot, get_temp_dir
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import ensure_file, ensure_snapshot, get_temp_dir, models_root
 
 
 class ZImageGenerator(BaseImageGenerator):
@@ -45,11 +44,11 @@ class ZImageGenerator(BaseImageGenerator):
             "gguf_repo_id", "jayn7/Z-Image-Turbo-GGUF")
         if not self.model_id:
             self.model_id = "Tongyi-MAI/Z-Image-Turbo"
-        self.gguf_local = Path(PROJECT_ROOT) / "models" / "image" / "z-image-turbo-gguf"
+        self.gguf_local = models_root() / "image" / "z-image-turbo-gguf"
 
         # GGUF 链路的骨架不含 transformer 权重，和全量权重分目录存，免得误当成完整模型
         base_dir = "z-image-turbo-base" if self.gguf_filename else self.model_dir
-        self.base_local = Path(PROJECT_ROOT) / "models" / "image" / base_dir
+        self.base_local = models_root() / "image" / base_dir
 
     def _check_model_file(self):
         if not self.gguf_filename:

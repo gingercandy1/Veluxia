@@ -12,11 +12,14 @@ from typing import Optional
 import numpy as np
 
 from src.backend.core.model_base import BaseTranscriptionGenerator, load_models_config
-from src.backend.core.model_utils import get_temp_dir, hf_download_progress, huggingface_token
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import (
+    get_temp_dir,
+    hf_download_progress,
+    huggingface_token,
+    models_root,
+)
 
 SAMPLE_RATE = 16000
-MODELS_DIR = Path(PROJECT_ROOT) / "models" / "transcription"
 VAD_REPO = "csukuangfj/vad"
 VAD_FILE = "silero_vad.onnx"
 # Whisper 一次最多吃 30 秒；VAD 切出来的句子上限留点余量
@@ -132,7 +135,7 @@ class SherpaASRGenerator(BaseTranscriptionGenerator):
         return self.target, None if arch == "nemo_transducer" else self.language
 
     def _model_dir(self, repo_id: str) -> Path:
-        return MODELS_DIR / repo_id.split("/")[-1]
+        return models_root() / "transcription" / repo_id.split("/")[-1]
 
     def _download(self, repo_id: str, patterns: list[str]):
         from huggingface_hub import snapshot_download

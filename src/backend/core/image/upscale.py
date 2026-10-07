@@ -8,8 +8,7 @@ from PIL import Image
 
 from src.backend.core.image.tileable import validate_tile_mode
 from src.backend.core.model_base import BaseImageGenerator
-from src.backend.core.model_utils import get_temp_dir
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import get_temp_dir, models_root
 
 # 输出像素上限：整张图的张量都在内存里，超过后 CPU 内存先爆
 _MAX_OUTPUT_PIXELS = 8192 * 8192
@@ -53,7 +52,7 @@ class UpscaleGenerator(BaseImageGenerator):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.weight_path = Path(PROJECT_ROOT) / "models" / "upscale" / self.weight_filename
+        self.weight_path = models_root() / "upscale" / self.weight_filename
 
     def _check_model_file(self):
         if self.weight_path.exists():

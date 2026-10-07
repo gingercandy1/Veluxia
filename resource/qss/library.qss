@@ -309,3 +309,188 @@ QTableWidget#script_table::item {
     padding: 4px 8px;
     border: none;
 }
+
+/* ────────────────────────────────────────────────────────────
+   新建资源包表单：固定顶栏 / 底栏；分类标签 + 模板小块 + 整包设置 + 条目 + 折叠的风格
+   ──────────────────────────────────────────────────────────── */
+QWidget#library_form_header,
+QWidget#library_form_footer {
+    background-color: #101215;
+}
+
+QWidget#library_form_footer {
+    border-top: 0.5px solid rgba(100, 100, 100, 0.25);
+}
+
+/* 标题栏里的名称：平时像普通文字，悬停 / 编辑时才显出输入框 */
+QLineEdit#library_name_edit {
+    background-color: transparent;
+    border: 0.5px solid transparent;
+    color: #DCDCDC;
+    font-size: 13px;
+}
+
+QLineEdit#library_name_edit:hover {
+    border-color: rgba(255, 255, 255, 0.10);
+}
+
+QLineEdit#library_name_edit:focus {
+    background-color: #0d1117;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* 分类标签：未选中只是暗色文字，选中变亮，下方指示条由代码滑过去 */
+QPushButton#library_tab {
+    background-color: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 13px;
+    padding: 6px 12px;
+}
+
+QPushButton#library_tab:hover {
+    color: rgba(255, 255, 255, 0.80);
+}
+
+QPushButton#library_tab:checked {
+    color: #DCDCDC;
+    font-weight: 600;
+}
+
+QFrame#library_tab_indicator {
+    background-color: #7B9DBC;
+    border: none;
+    border-radius: 1px;
+}
+
+/* 模板小块 / 角色小块：胶囊形，选中用强调色描边 */
+QPushButton#library_chip,
+QPushButton#library_chip_add {
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 0.5px solid #26282b;
+    border-radius: 14px;
+    color: rgba(255, 255, 255, 0.70);
+    padding: 4px 14px;
+}
+
+QPushButton#library_chip:hover,
+QPushButton#library_chip_add:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #DCDCDC;
+}
+
+QPushButton#library_chip:checked,
+QPushButton#library_chip[linked="true"] {
+    background-color: rgba(123, 157, 188, 0.14);
+    border-color: #4b5e71;
+    color: #DCDCDC;
+}
+
+QPushButton#library_chip_add {
+    padding: 4px 12px;
+    font-weight: 600;
+}
+
+QLabel#library_form_summary {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+/* 风格折叠行：一行摘要，点开展开编辑 */
+QPushButton#library_style_toggle {
+    background-color: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    padding: 4px 0px;
+    text-align: left;
+}
+
+QPushButton#library_style_toggle:hover {
+    color: #DCDCDC;
+}
+
+/* 条目行尾的 ⋯ / ×：悬停才出现，小而不抢眼 */
+QToolButton#library_row_action {
+    background-color: #1a1d22;
+    border: 0.5px solid #2a2d31;
+    border-radius: 5px;
+    color: rgba(255, 255, 255, 0.60);
+    min-width: 22px;
+    min-height: 22px;
+    font-size: 13px;
+}
+
+QToolButton#library_row_action:hover {
+    background-color: #262a30;
+    color: #DCDCDC;
+}
+
+/* 单独设置、编辑角色的浮层 */
+QFrame#library_popup {
+    background-color: #181b20;
+    border: 0.5px solid #2c3036;
+    border-radius: 8px;
+}
+
+/* 表单里的下拉统一补上箭头：全局样式把 drop-down 设成了无边框空白区 */
+QWidget#pack_form QComboBox::down-arrow {
+    image: url(:/svg/spin_down.svg);
+    width: 10px;
+    height: 10px;
+}
+
+/* 表格单元格里的下拉去掉底色和边框，和单元格融为一体，悬停时再显示出来 */
+QTableWidget#library_table QComboBox {
+    background-color: transparent;
+    border: 0.5px solid transparent;
+}
+
+QTableWidget#library_table QComboBox:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+QTableWidget#library_table QHeaderView::section {
+    font-size: 12px;
+}
+
+/* 次要操作（加行、删行、删预设）：只有文字，悬停才显出底色 */
+QPushButton#library_ghost_btn {
+    background-color: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    padding: 4px 10px;
+}
+
+QPushButton#library_ghost_btn:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #DCDCDC;
+}
+
+QPushButton#library_ghost_btn:disabled {
+    color: rgba(255, 255, 255, 0.20);
+}
+
+/* 主按钮"创建"：实心填充，放在固定底栏右侧 */
+QPushButton#library_create_btn {
+    background-color: #5b7c9b;
+    border: 0.5px solid #6d8eac;
+    border-radius: 6px;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 7px 28px;
+}
+
+QPushButton#library_create_btn:hover {
+    background-color: #6a8cab;
+}
+
+QPushButton#library_create_btn:pressed {
+    background-color: #4f6d89;
+}
+
+QPushButton#library_create_btn:disabled {
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: #1e2023;
+    color: rgba(255, 255, 255, 0.25);
+}

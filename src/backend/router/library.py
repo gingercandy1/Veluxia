@@ -15,6 +15,7 @@ from src.backend.core.job_manager import Job
 from src.backend.core.model_utils import to_media_url
 from src.backend.router_base import BaseRouter
 from src.shared.schemas import (
+    AddItemsRequest,
     ApproveStepRequest,
     BaseResponse,
     CreatePackRequest,
@@ -31,6 +32,7 @@ from src.shared.schemas import (
     TemplateFieldInfo,
     TemplateInfo,
     TemplateListResponse,
+    TemplatePresetInfo,
     TemplateStepInfo,
     UpdateItemFieldsRequest,
 )
@@ -72,6 +74,8 @@ class LibraryRouter(BaseRouter):
                 # 加载并运行 LLM 是同步阻塞的，放进线程池避免卡住事件循环
                 items = await asyncio.to_thread(draft_items, req)
             except ValueError as exc:
+                # 起草失败多半是模型输出解析不了，访问日志里只有 400，原因要单独打出来才好查
+                print(f"⚠️ AI 起草失败（{req.template}：{req.theme.strip()}）：{exc}")
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
             except GeneratorBusyError as exc:
                 raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -116,6 +120,16 @@ class LibraryRouter(BaseRouter):
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
             return FileResponse(target, media_type="application/zip", filename=f"{pack_id}.zip",
                                 background=BackgroundTask(target.unlink, missing_ok=True))
+
+        @self.router.post("/packs/{pack_id}/items", response_model=PackResponse,
+                          summary="往已有资源包追加条目")
+        async def add_items(pack_id: str, req: AddItemsRequest) -> PackResponse:
+            return await self._update_pack(library.add_items, pack_id, req)
+
+        @self.router.delete("/packs/{pack_id}/items/{item_id}", response_model=PackResponse,
+                            summary="删除资源包里的一个条目")
+        async def delete_item(pack_id: str, item_id: str) -> PackResponse:
+            return await self._update_pack(library.delete_item, pack_id, item_id)
 
         @self.router.post("/packs/{pack_id}/approve", response_model=PackResponse,
                           summary="确认待审阅的步骤")
@@ -187,11 +201,13 @@ class LibraryRouter(BaseRouter):
 
     @staticmethod
     def _template_info(template: Template) -> TemplateInfo:
+        segments_of = {prompts: segments for segments, prompts in template.segment_fields()}
         return TemplateInfo(
             id=template.id,
             type=template.type,
             name=template.name,
             description=template.description,
+            summary=template.summary,
             prompt_label=template.prompt_label,
             cover=template.cover,
             source=template.source,
@@ -199,9 +215,12 @@ class LibraryRouter(BaseRouter):
                 TemplateFieldInfo(
                     id=spec.id, label=spec.label, required=spec.required, default=spec.default,
                     options=[FieldOption(value=value, label=label) for value, label in spec.options],
+                    segments_field=segments_of.get(spec.id, ""), kind=spec.kind,
                 )
                 for spec in template.fields
             ],
+            presets=[TemplatePresetInfo(name=p.name, prompt=p.prompt, fields=dict(p.fields))
+                     for p in template.presets],
             steps=template.step_ids(),
             step_details=[
                 TemplateStepInfo(id=step.id, type=step.type, label=step.label,

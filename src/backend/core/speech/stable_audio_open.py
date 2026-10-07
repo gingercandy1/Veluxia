@@ -3,8 +3,19 @@ from pathlib import Path
 
 from src.backend.core.exceptions import GenerationCancelled
 from src.backend.core.model_base import BaseSpeechGenerator
-from src.backend.core.model_utils import huggingface_token, get_temp_dir, print_vram_usage
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import (
+    get_temp_dir,
+    huggingface_token,
+    models_root,
+    print_vram_usage,
+)
+
+
+def normalize_peak(waveform):
+    """峰值超过 1 时整体按峰值缩小：模型输出幅度不受限，直接写 wav 会被截断成爆音
+    （爆炸类音效实测有 3% 以上的采样被削）；官方 stable-audio-tools 也是按峰值归一化。"""
+    peak = float(abs(waveform).max())
+    return waveform / peak if peak > 1.0 else waveform
 
 
 class StableAudioOpenGenerator(BaseSpeechGenerator):
@@ -28,9 +39,12 @@ class StableAudioOpenGenerator(BaseSpeechGenerator):
         "vae/*",
     ]
 
+    _DEFAULT_STEPS = 100
+    _DEFAULT_NEGATIVE = "Low quality."
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.base_local = Path(PROJECT_ROOT) / "models" / "speech" / "stable-audio-open-1.0"
+        self.base_local = models_root() / "speech" / "stable-audio-open-1.0"
         if not self.model_id:
             self.model_id = "stabilityai/stable-audio-open-1.0"
 
@@ -83,7 +97,7 @@ class StableAudioOpenGenerator(BaseSpeechGenerator):
                 ).audios[0]
 
                 import soundfile as sf
-                waveform = audio.T.float().cpu().numpy()
+                waveform = normalize_peak(audio.T.float().cpu().numpy())
                 sf.write(str(self.save_path), waveform, self.pipe.vae.sampling_rate)
                 print(f"✅ 生成完成: {self.save_path.name}")
                 return self.save_path
@@ -102,10 +116,12 @@ class StableAudioOpenGenerator(BaseSpeechGenerator):
         self.save_path = Path(self.output_dir) / f"sfx_{uuid.uuid4()}.wav"
 
         self.prompt = raw.get("content", "")
-        self.negative_prompt = raw.get("negative_prompt", "").strip() or None
+        # 官方示例用 "Low quality." 做负面提示词，不给的话成品容易带底噪、发闷
+        self.negative_prompt = raw.get("negative_prompt", "").strip() or self._DEFAULT_NEGATIVE
         # 47s 是模型上限，音效场景大多数几秒即可，默认给短一点
         self.duration = float(raw.get("duration", 5.0))
-        self.num_inference_steps = raw.get("num_inference_steps", 8)
+        # 这不是蒸馏模型，官方示例用 200 步；8 步去噪不充分，出来的声音和描述对不上
+        self.num_inference_steps = int(raw.get("num_inference_steps", self._DEFAULT_STEPS))
 
         seed_value = raw.get("seed", 0)
         self.generator = self.torch.Generator("cpu").manual_seed(int(seed_value))

@@ -1,8 +1,3 @@
-"""本机后端的安装与启动（ADR 0005）。
-
-前端打包成 exe 后自身没有后端所需的 Python，改为从安装目录（Release 里的 veluxia-backend.zip 解压而来）
-拉起后端。源码运行时仍用当前解释器，开发流程不变。所有函数都是阻塞的，须在 Worker 线程里调用。
-"""
 import os
 import shutil
 import subprocess
@@ -14,7 +9,7 @@ from pathlib import Path
 
 import httpx
 
-from src.shared.settings import ConfigManager
+from src.shared.settings import MODELS_DIR_ENV, ConfigManager
 
 RELEASE_URL = (
     "https://github.com/gingercandy1/Veluxia/releases/latest/download/veluxia-backend.zip"
@@ -47,10 +42,22 @@ def is_installed(root: Path) -> bool:
 
 
 def _clean_env(root: Path) -> dict:
-    env = {k: v for k, v in os.environ.items() if k not in INHERITED_PYTHON_ENV}
+    env = with_models_dir({k: v for k, v in os.environ.items() if k not in INHERITED_PYTHON_ENV})
     env["PYTHONPATH"] = str(root / "app")
     # 让 pip / 后端日志按 UTF-8 输出，前端解码时才不会乱码
     env["PYTHONIOENCODING"] = "utf-8"
+    return env
+
+
+def with_models_dir(env: dict) -> dict:
+    """把设置里的模型目录交给后端进程：安装版后端读的是它自己的 setting.json，看不到前端的设置。
+    没设置时不传，后端用默认目录（或它自己的设置）。"""
+    models_dir = (ConfigManager().get("models", "dir", "") or "").strip()
+    if models_dir:
+        env[MODELS_DIR_ENV] = models_dir
+    else:
+        # 前端自己被带着这个变量启动时也不往下传，免得设置里清空了还在用旧目录
+        env.pop(MODELS_DIR_ENV, None)
     return env
 
 

@@ -67,6 +67,93 @@ def test_character_gender_must_be_chosen_and_leads_the_voice_prompt():
     assert voice.format_map(character.field_values("a knight", items[0].fields)).startswith("男性，")
 
 
+def test_character_gender_other_gives_a_neutral_voice():
+    character = load_template("character_basic")
+    system, _ = (m["content"] for m in build_draft_messages(character, _request()))
+    assert "中性（其它）" in system
+    items = parse_drafts(json.dumps({"items": [
+        {"prompt": "a bouncing ball", "name": "球球", "gender": "其它"}]}, ensure_ascii=False),
+        character)
+    assert items[0].fields["gender"] == "中性"
+    character.check_item_fields(items[0].fields)
+    voice = character.step("voice").params["voice_prompt"]
+    assert voice.format_map(character.field_values("a ball", items[0].fields)).startswith("中性，")
+
+
+def test_character_canvas_is_chosen_by_the_ai_from_the_description():
+    """画幅由 AI 起草时按角色外形选：方形给球形、团状的角色，竖版给站立的角色。
+    模型看到的是选项的显示名，所以显示名里要写清各自适合什么角色。"""
+    character = load_template("character_basic")
+    canvas = next(spec for spec in character.fields if spec.id == "canvas")
+    assert canvas.draft and canvas.default == "768x1344" and not canvas.required
+    system, _ = (m["content"] for m in build_draft_messages(character, _request()))
+    assert "768x1344（竖版" in system and "1024x1024（方形" in system
+    assert "球形" in system.split('"canvas"')[1].split("\n")[0]
+    items = parse_drafts(json.dumps({"items": [
+        {"prompt": "一个圆球", "name": "球球", "gender": "其它", "canvas": "1024x1024"},
+        {"prompt": "一个骑士", "name": "亚瑟", "gender": "男", "canvas": "方形（球形、团状、没有四肢的角色）"},
+        {"prompt": "一个法师", "name": "梅林", "gender": "男", "canvas": "huge"},
+        {"prompt": "一只猫", "name": "咪咪", "gender": "女"},
+    ]}, ensure_ascii=False), character)
+    # 值和显示名都认；不合法或没写的留空，走模板默认（竖版）
+    assert [i.fields.get("canvas") for i in items] == [
+        "1024x1024", "1024x1024", None, None]
+
+
+def test_character_suffix_follows_the_canvas_and_only_the_portrait_says_full_body():
+    """实测：竖版人形不写 full body 会被截到大腿；方形球形角色写了 full body 会长出手脚。"""
+    generate = load_template("character_basic").step("generate").params
+    suffixes = generate["prompt_suffix"]
+    canvas = next(spec for spec in load_template("character_basic").fields if spec.id == "canvas")
+    assert set(suffixes) == {value for value, _ in canvas.options}  # 每个画幅都有对应的后缀
+    assert "full body" in suffixes["768x1344"]
+    assert "full body" not in suffixes["1024x1024"] and "character" not in suffixes["1024x1024"]
+    assert generate["size"] == "{canvas}"
+
+
+def test_character_canvas_is_a_pack_default_with_per_row_override(qapp=None):
+    from src.app.ui.library.form.defaults_bar import pack_level
+    from src.backend.router.library import LibraryRouter
+    info = LibraryRouter._template_info(load_template("character_basic"))
+    canvas = next(f for f in info.fields if f.id == "canvas")
+    assert pack_level(canvas)  # 整包默认 + 单行覆盖：AI 给某一行选了方形就记成这一行的单独设置
+
+
+def test_draft_prompt_keeps_backgrounds_out_of_cutout_subjects_only():
+    """会被抠出来单独用的主体（角色、图标、道具）不写背景：实测起草的骑士描述里有
+    "背景是古老的城堡"，生成出来城堡连着人一起留下。场景类模板的描述本来就是背景，不受限制。"""
+    def system(template_id):
+        return build_draft_messages(load_template(template_id), _request())[0]["content"]
+
+    rule = "描述里不要写背景"
+    for cutout in ("character_basic", "item_icons", "scene_props", "scene_foliage"):
+        assert rule in system(cutout), cutout
+    for kept in ("scene_background", "effect_skill", "dialogue_scene", "audio_sfx",
+                 "character_motion"):
+        assert rule not in system(kept), kept
+
+
+def test_draft_prompt_tells_image_templates_not_to_write_negations():
+    rules = build_draft_messages(load_template("character_basic"), _request())[0]["content"]
+    assert "不要写“没有……”" in rules and "圆球" in rules
+    # 台词、音效这类没有生图步骤的模板不受这条限制（台词里本来就会有否定句）
+    for template_id in ("dialogue_scene", "audio_sfx"):
+        system = build_draft_messages(load_template(template_id), _request())[0]["content"]
+        assert "不要写“没有……”" not in system, template_id
+
+
+def test_character_shape_is_left_to_the_prompt():
+    """外形（人形、球形、动物……）只由外观描述决定：立绘后缀不能写死姿态或体型，
+    否则球形主角会被"站立姿势"拉向有手脚的人形。"""
+    character = load_template("character_basic")
+    assert not any(spec.id == "body" for spec in character.fields)
+    for suffix in character.step("generate").params["prompt_suffix"].values():
+        assert "standing" not in suffix and "arms" not in suffix and "legs" not in suffix
+        assert "plain white background" in suffix
+    # 球形主角可以直接建：只用外观描述，性别选"其它"
+    character.check_item_fields({"name": "球球", "gender": "中性"})
+
+
 def test_parse_aligns_length_with_segment_count():
     scene = load_template("scene_background")
     items = parse_drafts(json.dumps({"items": [
@@ -101,6 +188,15 @@ def test_parse_tolerates_wrappers_around_json(reply):
 def test_parse_salvages_complete_items_from_truncated_output():
     reply = '{"items": [{"prompt": "a fern"}, {"prompt": "a rock"}, {"prompt": "a lo'
     assert [i.prompt for i in parse_drafts(reply, TEMPLATE)] == ["a fern", "a rock"]
+
+
+def test_parse_salvages_objects_wrapped_in_stray_quotes():
+    # Qwen2.5-7B 实际写出的坏 JSON：每个条目对象前后多了引号，整体解析不了，
+    # 但每个 {"prompt": ...} 本身是完整的
+    reply = ('{"items": ["{"prompt": "枯萎的野花"}", \n{"prompt": "几片落叶"}", \n'
+             '{"prompt": "一块古老的石板"}", \n{"prompt": "一根倒下的枯')
+    assert [i.prompt for i in parse_drafts(reply, TEMPLATE)] == [
+        "枯萎的野花", "几片落叶", "一块古老的石板"]
 
 
 @pytest.mark.parametrize("reply, message", [
@@ -195,10 +291,8 @@ def test_motion_messages_carry_the_subject_and_forbid_extra_limbs():
     system, user = (m["content"] for m in build_draft_messages(motion, request, "一个红色的球体"))
     assert "绑定的物体：一个红色的球体" in user
     # 没有四肢的主体要改用弹跳、滚动表现，不能写手脚
-    assert "没有四肢" in system and "弹跳" in system
+    assert "手、脚" in system and "弹跳" in system
     assert "loop（" in system and "pingpong（" in system
-    # 烟雾、火焰这类表面特效要一直在，待机只做流动
-    assert "消散" in system and "待机" in system
     # 其他模板的提示词不受影响
     plain_system, plain_user = (m["content"] for m in build_draft_messages(TEMPLATE, _request()))
     assert "绑定的物体" not in plain_user and "弹跳" not in plain_system

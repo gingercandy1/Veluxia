@@ -68,7 +68,26 @@ def test_delete_removes_listed_entry_and_unloads_models(roots):
     assert GeneratorFactory._holder is None
 
 
-@pytest.mark.parametrize("entry_id", ["models/image", "models/../models", "models/image/nope", ""])
+def test_auxiliary_dirs_merge_into_their_model(roots):
+    _file(roots / "image" / "z-image-turbo" / "a.bin", 10)
+    _file(roots / "image" / "z-image-turbo-base" / "b.bin", 20)
+    _file(roots / "image" / "z-image-turbo-gguf" / "c.gguf", 30)
+    _file(roots / "image" / "z-image-edit" / "d.bin", 1)  # 只是名字开头相同，单独一条
+    entries = {e.id: e for e in storage.list_entries()}
+    turbo = entries["models/image/z-image-turbo"]
+    assert [p.name for p in turbo.paths] == [
+        "z-image-turbo", "z-image-turbo-base", "z-image-turbo-gguf"]
+    assert "models/image/z-image-turbo-gguf" not in entries
+    assert "models/image/z-image-edit" in entries
+    assert dict((e.id, size) for e, size in storage.list_storage())[turbo.id] == 60
+
+    storage.delete_entry("models/image/z-image-turbo")
+    assert not any((roots / "image" / name).exists()
+                   for name in ("z-image-turbo", "z-image-turbo-base", "z-image-turbo-gguf"))
+    assert (roots / "image" / "z-image-edit").is_dir()
+
+
+@pytest.mark.parametrize("entry_id", ["models/image","models/../models", "models/image/nope", ""])
 def test_delete_only_accepts_listed_ids(roots, entry_id):
     with pytest.raises(FileNotFoundError):
         storage.delete_entry(entry_id)

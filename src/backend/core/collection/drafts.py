@@ -32,15 +32,31 @@ _MOTION_RULES = (
     "- 这是动作包：每个条目是一个动作，主体就是用户给的「绑定的物体」。"
     f'"{PROMPT_FIELD}" 要写成给图生视频模型看的动作描述：先点明主体是什么，再写这个动作具体怎么动。\n'
     "- 只写主体实际有的部位。球、箱子、史莱姆、道具这类没有四肢、没有脸的物体，"
-    "要改用弹跳、滚动、挤压拉伸、旋转、摇摆、闪烁来表现（如「跑」写成快速向前滚动并轻微弹起）；"
-    "这时描述里连「没有手脚」这类否定说法也不要写，视频模型看到这些词反而会画出来，"
-    "改为强调它的外形，如「始终是一个完整的圆球」。\n"
-    "- 主体的外形、大小、颜色和表面特效（烟雾、火焰、光芒、水流等）整段都要保持原样，"
-    "要写明特效一直存在、只是在流动或翻涌，不能写成消散、变淡、熄灭、飘走。\n"
-    "- 待机是幅度很小的动作：只让表面特效流动扰动，或整体轻微浮动、呼吸般缩放，主体本身不变形、不移动。\n"
+    "绝不能出现手、脚、腿、胳膊、脸、走路、挥手这类人形动作，"
+    "要改用弹跳、滚动、挤压拉伸、旋转、摇摆、闪烁来表现（如「跑」写成快速向前滚动并轻微弹起）。\n"
     "- 动作在原地循环，镜头不动。\n"
     "- 走、跑、滚动这类周期动作循环方式选 loop；待机、呼吸、漂浮这类小幅动作选 pingpong。"
 )
+
+
+# 生图模型（Z-Image-Turbo）蒸馏版引导系数为 0，不读负面提示词，"没有手脚"只是正向文字里的
+# 几个字（实测写不写这句，球形角色照样长脚）；所以只写看得见的特征，不写"没有什么"
+_IMAGE_PROMPT_RULES = (
+    "\n- 描述只写画面里有什么，不要写“没有……”“不带……”：生图模型不读否定，"
+    "写了也不起作用。想要球形就直接写“圆球”，别写“没有手脚”。"
+)
+# 主体会被抠出来单独使用（角色、图标、道具、花草）：生成时后缀要求纯白背景，
+# 描述里再写城堡、森林，模型两头都照做，抠图时背景就连着主体一起留下（实测）
+_CUTOUT_RULES = (
+    "\n- 这些条目会被单独抠出来使用，描述里不要写背景、场景、地面、阴影、周围的环境，"
+    "只写主体本身。"
+)
+
+
+def _prompt_rules(template: Template) -> str:
+    types = {step.type for step in template.steps}
+    return (_IMAGE_PROMPT_RULES * ("image.generate" in types)
+            + _CUTOUT_RULES * ("image.generate" in types and "image.remove_bg" in types))
 
 
 def _draft_fields(template: Template) -> list[FieldSpec]:
@@ -71,8 +87,8 @@ def build_draft_messages(template: Template, req: DraftItemsRequest,
         f"要求：\n- 正好 {req.count} 个条目，每一个都必须属于用户给的主题，不能跑题；"
         "条目多时宁可在主题内换形态、材质、大小，也不要写主题以外的东西。\n"
         "- 条目之间差异明显，不要只换颜色或换个词；各条目的开头措辞也要不同。\n"
-        "- 主题里的风格、氛围词（如发光、某某游戏风格）是整包共有的，不必每条都重复。\n"
         "- 不要写画风、渲染等风格词，风格由资源包统一添加。"
+        + _prompt_rules(template)
     )
     if template.source:
         system += "\n" + _MOTION_RULES
@@ -91,20 +107,25 @@ def build_draft_messages(template: Template, req: DraftItemsRequest,
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
-def _salvage_objects(body: str) -> list:
-    """输出在数组中途被截断时，逐个取出已经写完整的对象，不让前面的条目白写。"""
-    start = body.find("[")
-    if start < 0:
-        return []
-    decoder, index, objects = json.JSONDecoder(), start + 1, []
-    while True:
-        while index < len(body) and body[index] in " \t\r\n,":
-            index += 1
+def _salvage_objects(body: str) -> list[dict]:
+    """整体解析不了时，逐个取出写完整的对象，不让写好的条目白写。
+
+    不只应对末尾截断：小模型还会写出 ["{"prompt": "…"}", …] 这种对象外多套引号的坏 JSON，
+    整体和逐元素都解析不了，但每个对象本身是完整的。所以在每个 { 处都试着解析一次，
+    成功就跳过整个对象（不再拆它里面嵌套的对象），失败就找下一个 {。
+    """
+    decoder, objects = json.JSONDecoder(), []
+    index = body.find("{")
+    while index >= 0:
         try:
-            value, index = decoder.raw_decode(body, index)
+            value, end = decoder.raw_decode(body, index)
         except json.JSONDecodeError:
-            return objects
-        objects.append(value)
+            index = body.find("{", index + 1)
+            continue
+        if isinstance(value, dict):
+            objects.append(value)
+        index = body.find("{", end)
+    return objects
 
 
 def _extract_items(text: str) -> list:
@@ -187,13 +208,15 @@ def draft_items(req: DraftItemsRequest) -> list[NewCollectionItem]:
     text_fields = sum(1 for spec in _draft_fields(template) if not spec.options)
     max_tokens = min(_MAX_TOKENS, 200 + req.count * _TOKENS_PER_TEXT * (1 + text_fields))
 
-    # 走租约：生成任务在跑时直接拒绝，空闲时会先卸载驻留的生图模型再加载 LLM
     with GeneratorFactory.acquire(FactoryType.Text, req.model_name or DRAFT_MODEL) as generator:
         generator.ensure_model_loaded()
-        # 温度偏高 + 每次随机种子：同一主题多点几次"刷新"要能拿到不同的条目
-        # 不用 JSON 语法约束：实测会把生成速度拖慢 6~10 倍，改为解析时容错
-        reply = generator.complete_chat(messages, max_tokens=max_tokens, temperature=0.9,
-                                        seed=random.randrange(2**31))
-    items = parse_drafts(reply, template, req.exclude)[:req.count]
+        reply = generator.complete_chat(messages, max_tokens=max_tokens,
+                                        temperature=0.9, seed=random.randrange(2**31))
+    try:
+        items = parse_drafts(reply, template, req.exclude)[:req.count]
+    except ValueError:
+        print(f"⚠️ AI 起草的模型输出无法使用，开头：{reply[:400]!r}")
+        raise
+
     print(f"✅ AI 起草了 {len(items)} 个条目（{template.id}：{req.theme.strip()}）")
     return items

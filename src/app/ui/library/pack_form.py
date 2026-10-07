@@ -1,11 +1,15 @@
-from PySide6.QtCore import QRect, QSize, Qt, Signal
-from PySide6.QtGui import QGuiApplication, QIcon, QKeySequence
+"""新建资源包：选分类和模板 → 整包设置 → 条目 → 风格（默认折叠）→ 创建并生成。
+
+界面原则：常驻文字尽量少（说明放进悬停提示、输入框只用占位文字），操作少（空行自动长出、
+可选下拉整包设一次、记住上次的选择），关键操作有动画反馈。
+"""
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
-    QAbstractItemView,
+    QApplication,
     QComboBox,
     QGridLayout,
     QHBoxLayout,
-    QHeaderView,
     QInputDialog,
     QLabel,
     QLineEdit,
@@ -13,276 +17,332 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSpinBox,
-    QStyle,
-    QStyleOptionViewItem,
-    QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+from src.app.ui.base.anim import (
+    WINDOW_BACKGROUND,
+    Collapsible,
+    bounce,
+    cover_fade_in,
+    shake,
+)
 from src.app.ui.base.widget import BaseWidget
-from src.app.ui.library.pack_status import category_text, ordered_categories
+from src.app.ui.library.form.cast_chips import CastChips
+from src.app.ui.library.form.defaults_bar import DefaultsBar, pack_level, short_label
+from src.app.ui.library.form.items_table import PROMPT_COLUMN, Column, ItemsTable
+from src.app.ui.library.form.template_picker import TemplatePicker
 from src.shared.schemas import (
-    CastMember,
+    AddItemsRequest,
     CollectionStyle,
     CreatePackRequest,
     DraftItemsRequest,
+    Manifest,
     NewCollectionItem,
     StylePreset,
-    TemplateFieldInfo,
     TemplateInfo,
 )
+from src.shared.settings import ConfigManager
 
 DIALOGUE_TYPE = "dialogue"
-# 动作包「添加常用动作」的固定主题：不用用户想主题，按绑定的角色起草一组基础动作
 COMMON_MOTIONS_THEME = "游戏里最常用的基础动作：待机、移动、跳跃、受击、攻击、死亡"
 COMMON_MOTIONS_COUNT = 6
-# 与后端 drafts.MAX_DRAFT_COUNT 一致：再多 LLM 的 4096 上下文装不下
-MAX_DRAFT_COUNT = 20
+MAX_DRAFT_COUNT = 20                 # 与后端 drafts.MAX_DRAFT_COUNT 一致：再多 LLM 的 4096 上下文装不下
+AUTO_NAME_CHARS = 12                 # 名称留空时自动命名，取第一条描述的前几个字
+_STYLE_SUMMARY_CHARS = 24
+PAGE_BACKGROUND = WINDOW_BACKGROUND  # 与 library.qss 里 #pack_form 的底色一致：淡入盖层用它
 
 
-class PasteTable(QTableWidget):
-    """Ctrl+V 粘贴多行文本时一行一个条目、Tab 分列，从 Excel / 文本批量填条目不用逐格输入。"""
-    rows_needed = Signal(int)  # 需要的总行数，由表单负责补行（补行时要带上下拉控件）
+class FormMemory:
+    """按模板记住上次的整包设置和风格预设，下次打开同一个模板时自动带出。"""
+    SECTION, KEY = "library", "form_memory"
 
-    def keyPressEvent(self, event):
-        if event.matches(QKeySequence.StandardKey.Paste):
-            text = QGuiApplication.clipboard().text()
-            if "\n" in text.strip() or "\t" in text:
-                self.paste_rows(text)
-                return
-        super().keyPressEvent(event)
+    def load(self, template_id: str) -> dict:
+        return dict(ConfigManager().get(self.SECTION, self.KEY, {}).get(template_id, {}))
 
-    def paste_rows(self, text: str):
-        lines = [line for line in text.splitlines() if line.strip()]
-        start_row = max(self.currentRow(), 0)
-        start_col = max(self.currentColumn(), 0)
-        self.rows_needed.emit(start_row + len(lines))
-        for offset, line in enumerate(lines):
-            for col_offset, value in enumerate(line.split("\t")):
-                self.set_cell_text(start_row + offset, start_col + col_offset, value.strip())
+    def save(self, template_id: str, defaults: dict[str, str], preset: str):
+        config = ConfigManager()
+        memory = dict(config.get(self.SECTION, self.KEY, {}))
+        memory[template_id] = {"defaults": defaults, "preset": preset}
+        config.set(self.SECTION, self.KEY, memory)
+        config.save()
 
-    def cell_text(self, row: int, col: int) -> str:
-        combo = self.cellWidget(row, col)
-        if isinstance(combo, QComboBox):
-            return combo.currentData() or ""
-        cell = self.item(row, col)
-        return cell.text().strip() if cell else ""
 
-    def set_cell_text(self, row: int, col: int, value: str):
-        if col >= self.columnCount():
-            return
-        combo = self.cellWidget(row, col)
-        if isinstance(combo, QComboBox):
-            # 粘贴的可能是选项名也可能是实际值，两种都认
-            index = combo.findText(value)
-            combo.setCurrentIndex(index if index >= 0 else max(combo.findData(value), 0))
-            return
-        cell = self.item(row, col)
-        if cell is None:
-            self.setItem(row, col, QTableWidgetItem(value))
-        else:
-            # 保留新行上的"默认值"提示
-            cell.setText(value)
+def count_segments(value: str) -> int:
+    """与后端 template.count_segments 同样的切分规则：全角竖线也算分隔，空段不计。"""
+    return sum(1 for part in value.replace("｜", "|").split("|") if part.strip())
 
 
 class PackForm(BaseWidget):
-    """新建资源包：选分类和模板，填风格锁，条目用表格录入（模板字段各占一列）；
-    对话包另填出场角色，可以绑定已有角色包的声线。"""
+    """append=True 时是"往已有资源包追加条目"：模板、名称、风格锁、出场角色和来源角色都沿用
+    包里的，界面只留条目表格、整包下拉和 AI 起草。"""
     create_requested = Signal(object)  # CreatePackRequest
+    add_requested = Signal(str, object)  # 资源包 id, AddItemsRequest
     draft_requested = Signal(object)  # DraftItemsRequest
     style_save_requested = Signal(object)  # StylePreset
     style_delete_requested = Signal(str)  # 预设 id
     back_requested = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, memory: FormMemory | None = None, append: bool = False):
         super().__init__(parent)
         self.setObjectName("pack_form")
+        self._memory = memory or FormMemory()
+        self._append = append
+        # 追加模式下的目标资源包
+        self._target: Manifest | None = None
         self._templates: list[TemplateInfo] = []
-        self._characters: list[tuple[str, str]] = []  # (显示名, "<资源包 id>/<条目 id>")
         self._styles: list[StylePreset] = []
-        self._fields: list[TemplateFieldInfo] = []
+        self._busy = False
         # 上次 AI 起草填进去的行内容：再次起草时，没被用户改过的这些行会被换掉
         self._drafted_rows: set[tuple[str, ...]] = set()
+        # 换了分类就清空条目；同一分类内换模板保留描述列
+        self._category_switched = False
+        # 记住的风格预设在预设列表到来之前就要用到时，先记下，列表到了再套用
+        self._pending_preset = ""
+        # 点创建时的整包设置：后端确认创建成功（reset）后才记住，被拒绝的那次不算
+        self._pending_memory: tuple[str, dict[str, str], str] | None = None
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        outer.addWidget(self._build_header())
+
         scroll = QScrollArea()
         scroll.setObjectName("library_scroll")
         scroll.setWidgetResizable(True)
-        outer.addWidget(scroll)
+        outer.addWidget(scroll, 1)
         body = QWidget()
         body.setObjectName("library_scroll_content")
         scroll.setWidget(body)
-
         layout = QVBoxLayout(body)
-        layout.setContentsMargins(24, 16, 24, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(28, 6, 28, 20)
+        layout.setSpacing(18)
 
-        header = QHBoxLayout()
+        self.picker = TemplatePicker()
+        self.picker.category_changed.connect(self._on_category_changed)
+        self.picker.template_changed.connect(self._on_template_changed)
+        layout.addWidget(self.picker)
+
+        # 模板相关的部分放在一个容器里，换模板时整体淡入
+        self.content = QWidget()
+        content = QVBoxLayout(self.content)
+        content.setContentsMargins(0, 0, 0, 0)
+        content.setSpacing(12)
+        self.defaults = DefaultsBar()
+        self.defaults.changed.connect(self._on_defaults_changed)
+        self.source_section = self.defaults.source_section
+        self.source_combo = self.defaults.source_combo
+        content.addWidget(self.defaults)
+
+        self.cast_section = QWidget()
+        cast_row = QHBoxLayout(self.cast_section)
+        cast_row.setContentsMargins(0, 0, 0, 0)
+        cast_row.setSpacing(10)
+        cast_label = QLabel(self.tr("Cast"))
+        cast_label.setObjectName("library_form_label")
+        cast_label.setToolTip(self.tr(
+            "Link a character pack to reuse its voice, or describe the voice for a new role."))
+        cast_row.addWidget(cast_label, 0, Qt.AlignmentFlag.AlignTop)
+        self.cast_chips = CastChips()
+        cast_row.addWidget(self.cast_chips, 1)
+        content.addWidget(self.cast_section)
+
+        content.addLayout(self._build_items_header())
+        self.draft_panel = Collapsible(self._build_draft_row())
+        content.addWidget(self.draft_panel)
+        self.items_table = ItemsTable()
+        self.items_table.rows_changed.connect(self._update_create_button)
+        content.addWidget(self.items_table)
+        layout.addWidget(self.content)
+
+        self.style_toggle = QPushButton()
+        self.style_toggle.setObjectName("library_style_toggle")
+        self.style_toggle.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.style_toggle.clicked.connect(self._toggle_style)
+        layout.addWidget(self.style_toggle, 0, Qt.AlignmentFlag.AlignLeft)
+        self.style_panel = Collapsible(self._build_style_panel())
+        layout.addWidget(self.style_panel)
+        # 多出来的高度全给末尾：stretch 为 0 时 Qt 会把它分给上面各块，块与块之间出现空洞
+        layout.addStretch(1)
+
+        outer.addWidget(self._build_footer())
+
+        for keys in ("Ctrl+Return", "Ctrl+Enter"):
+            QShortcut(QKeySequence(keys), self, self._on_create,
+                      context=Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        self.cast_section.hide()
+        self.set_styles([])
+        self._update_style_toggle()
+        self._update_create_button()
+        if append:
+            for widget in (self.picker, self.name_edit, self.style_toggle, self.style_panel):
+                widget.hide()
+
+    # ---- 构建 ----
+    def _build_header(self) -> QWidget:
+        bar = QWidget()
+        bar.setObjectName("library_form_header")
+        header = QHBoxLayout(bar)
+        header.setContentsMargins(24, 14, 28, 10)
         back = QPushButton(QIcon(":/svg/back.svg"), self.tr("Library"))
         back.setObjectName("library_back_btn")
         back.setIconSize(QSize(16, 16))
         back.setCursor(Qt.CursorShape.PointingHandCursor)
         back.clicked.connect(self.back_requested)
         header.addWidget(back)
-        title = QLabel(self.tr("New pack"))
-        title.setObjectName("library_title")
-        header.addWidget(title)
+        self.title_label = QLabel(self.tr("New pack"))
+        self.title_label.setObjectName("library_title")
+        header.addWidget(self.title_label)
         header.addStretch()
-        layout.addLayout(header)
-
-        # 标签放在输入框上方、两列并排：标签列放左侧会让上面的表单和下面顶格的表格左边缘错开，
-        # 标签全放上方又太高，把"创建"按钮挤出首屏
-        form = QGridLayout()
-        form.setHorizontalSpacing(16)
-        form.setVerticalSpacing(12)
-        form.setColumnStretch(0, 1)
-        form.setColumnStretch(1, 1)
-        self.category_combo = QComboBox()
-        self.category_combo.currentIndexChanged.connect(self._fill_template_combo)
-        form.addLayout(self._field(self.tr("Category"), self.category_combo), 0, 0)
-        self.template_combo = QComboBox()
-        self.template_combo.currentIndexChanged.connect(self._on_template_changed)
-        form.addLayout(self._field(self.tr("Template"), self.template_combo), 0, 1)
-        self.description_label = QLabel()
-        self.description_label.setObjectName("detail_muted")
-        self.description_label.setWordWrap(True)
-        form.addWidget(self.description_label, 1, 0, 1, 2)
-
+        # 名称可以不填：标题栏里点一下就能改，留空时自动命名
         self.name_edit = QLineEdit()
-        self.name_edit.setPlaceholderText(self.tr("e.g. Forest props"))
-        form.addLayout(self._field(self.tr("Name"), self.name_edit), 2, 0)
-        self.negative_edit = QLineEdit()
-        self.negative_edit.setPlaceholderText(self.tr("Optional"))
-        form.addLayout(self._field(self.tr("Negative"), self.negative_edit), 2, 1)
-        self.style_edit = QPlainTextEdit()
-        self.style_edit.setObjectName("library_text_edit")
-        self.style_edit.setPlaceholderText(
-            self.tr("Style lock, appended to every item, e.g. hand-painted, dark teal tones"))
-        self.style_edit.setFixedHeight(64)
-        # 项目级风格预设（ADR 0006）：选中后把内容填进风格锁，不同资源包的画风才统一
-        preset_row = QWidget()
-        preset_layout = QHBoxLayout(preset_row)
-        preset_layout.setContentsMargins(0, 0, 0, 0)
-        self.preset_combo = QComboBox()
-        # 只响应用户手动选择；刷新列表时不要覆盖用户已经改过的风格锁
-        self.preset_combo.activated.connect(self._on_preset_chosen)
-        preset_layout.addWidget(self.preset_combo, 1)
-        self.save_preset_btn = QPushButton(self.tr("Save as preset"))
-        self.save_preset_btn.setToolTip(self.tr(
-            "Save the style and negative above as a project preset. "
-            "Using an existing name overwrites that preset."))
-        self.save_preset_btn.clicked.connect(self._on_save_preset)
-        preset_layout.addWidget(self.save_preset_btn)
-        self.delete_preset_btn = QPushButton(self.tr("Delete preset"))
-        self.delete_preset_btn.clicked.connect(self._on_delete_preset)
-        preset_layout.addWidget(self.delete_preset_btn)
-        form.addLayout(self._field(self.tr("Style preset"), preset_row), 3, 0, 1, 2)
-        form.addLayout(self._field(self.tr("Style"), self.style_edit), 4, 0, 1, 2)
-        # 动作包等模板要绑定角色包里的一个角色（ADR 0006），用它的立绘做参考图
-        self.source_section = QWidget()
-        self.source_combo = QComboBox()
-        self.source_section.setLayout(self._field(self.tr("Character"), self.source_combo))
-        self.source_section.layout().setContentsMargins(0, 0, 0, 0)
-        form.addWidget(self.source_section, 5, 0)
-        layout.addLayout(form)
+        self.name_edit.setObjectName("library_name_edit")
+        self.name_edit.setPlaceholderText(self.tr("Untitled pack"))
+        self.name_edit.setToolTip(self.tr("Leave empty to name it after the template and first item"))
+        self.name_edit.addAction(QIcon(":/svg/edit.svg"), QLineEdit.ActionPosition.TrailingPosition)
+        self.name_edit.setFixedWidth(240)
+        header.addWidget(self.name_edit)
+        return bar
 
-        self.cast_section = QWidget()
-        cast_layout = QVBoxLayout(self.cast_section)
-        cast_layout.setContentsMargins(0, 0, 0, 0)
-        cast_layout.addWidget(self._heading(self.tr("Cast")))
-        cast_layout.addWidget(self._hint(self.tr(
-            "Link a character pack to reuse its voice, or describe the voice for a new role.")))
-        self.cast_table = QTableWidget(0, 3)
-        self.cast_table.setHorizontalHeaderLabels(
-            [self.tr("Name"), self.tr("Character pack"), self.tr("Voice description")])
-        self._setup_table(self.cast_table, stretch_column=2)
-        self.cast_table.setMinimumHeight(140)
-        cast_layout.addWidget(self.cast_table)
-        cast_layout.addLayout(self._row_buttons(self._add_cast_row, self.cast_table))
-        layout.addWidget(self.cast_section)
+    def _build_items_header(self) -> QHBoxLayout:
+        row = QHBoxLayout()
+        row.setSpacing(8)
+        title = QLabel(self.tr("Items"))
+        title.setObjectName("library_section_title")
+        title.setToolTip(self.tr(
+            "One row per asset. Paste rows from Excel or text, or let AI draft them."))
+        row.addWidget(title)
+        row.addStretch()
+        # 模板带了常用条目才显示（如角色动作：待机、走、跑、攻击、死亡……）
+        self.preset_items_btn = QPushButton(self.tr("Add common items"))
+        self.preset_items_btn.setObjectName("library_ghost_btn")
+        self.preset_items_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.preset_items_btn.setToolTip(self.tr(
+            "Fill in the template's common items. Rows you already wrote are kept, "
+            "and you can edit or delete any row afterwards."))
+        self.preset_items_btn.clicked.connect(self.add_presets)
+        self.preset_items_btn.hide()
+        row.addWidget(self.preset_items_btn)
+        self.draft_toggle_btn = QPushButton("✨ " + self.tr("AI draft"))
+        self.draft_toggle_btn.setObjectName("library_ghost_btn")
+        self.draft_toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.draft_toggle_btn.clicked.connect(self._toggle_draft)
+        row.addWidget(self.draft_toggle_btn)
+        return row
 
-        layout.addWidget(self._heading(self.tr("Items")))
-        draft_row = QHBoxLayout()
+    def _build_draft_row(self) -> QWidget:
+        panel = QWidget()
+        row = QHBoxLayout(panel)
+        row.setContentsMargins(0, 0, 0, 4)
+        row.setSpacing(8)
         self.draft_theme_edit = QLineEdit()
         self.draft_theme_edit.setPlaceholderText(
             self.tr("AI draft theme, e.g. ground details for a glowing forest"))
         self.draft_theme_edit.returnPressed.connect(self._on_draft)
-        draft_row.addWidget(self.draft_theme_edit, 1)
+        row.addWidget(self.draft_theme_edit, 1)
         self.draft_count_spin = QSpinBox()
         self.draft_count_spin.setRange(1, MAX_DRAFT_COUNT)
         self.draft_count_spin.setValue(10)
         self.draft_count_spin.setPrefix(self.tr("Count "))
-        draft_row.addWidget(self.draft_count_spin)
-        self.draft_btn = QPushButton(self.tr("AI draft"))
+        row.addWidget(self.draft_count_spin)
+        self.draft_btn = QPushButton(self.tr("Draft"))
+        self.draft_btn.setObjectName("library_primary_btn")
         self.draft_btn.setToolTip(self.tr(
             "Replaces empty rows and untouched AI rows; rows you typed or edited are kept. "
             "The first run loads the text model and takes about a minute."))
         self.draft_btn.clicked.connect(self._on_draft)
-        draft_row.addWidget(self.draft_btn)
+        row.addWidget(self.draft_btn)
         self.common_motions_btn = QPushButton(self.tr("Add common motions"))
+        self.common_motions_btn.setObjectName("library_ghost_btn")
         self.common_motions_btn.setToolTip(self.tr(
             "Drafts idle, move, jump, hit, attack and death for the chosen character. "
             "The AI writes each motion to fit what the character is, so check and edit the rows "
             "before creating the pack."))
         self.common_motions_btn.clicked.connect(self._on_common_motions)
-        draft_row.addWidget(self.common_motions_btn)
-        layout.addLayout(draft_row)
-        self.items_table = PasteTable(0, 1)
-        self._setup_table(self.items_table, stretch_column=0)
-        self.items_table.setMinimumHeight(240)
-        self.items_table.rows_needed.connect(self._ensure_item_rows)
-        layout.addWidget(self.items_table, 1)
-        layout.addLayout(self._row_buttons(lambda: self._add_item_row(), self.items_table))
+        self.common_motions_btn.hide()
+        row.addWidget(self.common_motions_btn)
+        return panel
 
+    def _build_style_panel(self) -> QWidget:
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(0, 4, 0, 0)
+        layout.setSpacing(10)
+        # 项目级风格预设（ADR 0006）：选中后把内容填进风格锁，不同资源包的画风才统一
+        presets = QHBoxLayout()
+        presets.setSpacing(8)
+        self.preset_combo = QComboBox()
+        self.preset_combo.setMinimumWidth(200)
+        # 只响应用户手动选择；刷新列表时不要覆盖用户已经改过的风格锁
+        self.preset_combo.activated.connect(self._on_preset_chosen)
+        presets.addWidget(self.preset_combo)
+        self.save_preset_btn = QPushButton(self.tr("Save as preset"))
+        self.save_preset_btn.setObjectName("library_ghost_btn")
+        self.save_preset_btn.setToolTip(self.tr(
+            "Save the style and negative above as a project preset. "
+            "Using an existing name overwrites that preset."))
+        self.save_preset_btn.clicked.connect(self._on_save_preset)
+        presets.addWidget(self.save_preset_btn)
+        self.delete_preset_btn = QPushButton(self.tr("Delete preset"))
+        self.delete_preset_btn.setObjectName("library_ghost_btn")
+        self.delete_preset_btn.clicked.connect(self._on_delete_preset)
+        presets.addWidget(self.delete_preset_btn)
+        presets.addStretch()
+        layout.addLayout(presets)
+
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(12)
+        grid.setColumnStretch(0, 3)
+        grid.setColumnStretch(1, 2)
+        self.style_edit = QPlainTextEdit()
+        self.style_edit.setObjectName("library_text_edit")
+        self.style_edit.setPlaceholderText(
+            self.tr("Style lock, appended to every item, e.g. hand-painted, dark teal tones"))
+        self.style_edit.setFixedHeight(64)
+        self.style_edit.textChanged.connect(self._update_style_toggle)
+        grid.addWidget(self.style_edit, 0, 0)
+        self.negative_edit = QLineEdit()
+        self.negative_edit.setPlaceholderText(self.tr("Negative (optional)"))
+        self.negative_edit.textChanged.connect(self._update_style_toggle)
+        grid.addWidget(self.negative_edit, 0, 1, Qt.AlignmentFlag.AlignTop)
+        layout.addLayout(grid)
+        return panel
+
+    def _build_footer(self) -> QWidget:
+        bar = QWidget()
+        bar.setObjectName("library_form_footer")
+        footer = QHBoxLayout(bar)
+        footer.setContentsMargins(28, 10, 28, 12)
+        footer.setSpacing(16)
         self.error_label = QLabel()
         self.error_label.setObjectName("library_error")
         self.error_label.setWordWrap(True)
         self.error_label.hide()
-        layout.addWidget(self.error_label)
-
-        buttons = QHBoxLayout()
-        buttons.addStretch()
-        self.create_btn = QPushButton(self.tr("Create"))
-        self.create_btn.setObjectName("library_primary_btn")
+        footer.addWidget(self.error_label, 1)
+        footer.addStretch()
+        self.create_btn = QPushButton()
+        self.create_btn.setObjectName("library_create_btn")
+        self.create_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.create_btn.setToolTip(self.tr("Ctrl+Enter"))
         self.create_btn.clicked.connect(self._on_create)
-        buttons.addWidget(self.create_btn)
-        layout.addLayout(buttons)
-        self.cast_section.hide()
-        self.source_section.hide()
-        self.common_motions_btn.hide()
-        self.set_styles([])
+        footer.addWidget(self.create_btn)
+        return bar
 
     # ---- 对外 ----
     def set_templates(self, templates: list[TemplateInfo]):
         # 每次进入资料库都会重新拉模板；没变化时不重建，免得清掉用户填了一半的条目
         if templates == self._templates:
             return
+        current = self.picker.current_category()
         self._templates = templates
-        current = self.category_combo.currentData()
-        self.category_combo.blockSignals(True)
-        self.category_combo.clear()
-        types = {t.type for t in templates}
-        for pack_type in ordered_categories({t: [] for t in types}):
-            if pack_type in types:
-                self.category_combo.addItem(category_text(pack_type), pack_type)
-        self.category_combo.blockSignals(False)
-        self.preselect_category(current or "")
+        self.picker.set_templates(templates)
+        self._category_switched = True
+        self.picker.select_category(current)
 
     def set_characters(self, characters: list[tuple[str, str]]):
-        self._characters = characters
-        for row in range(self.cast_table.rowCount()):
-            combo = self.cast_table.cellWidget(row, 1)
-            value = combo.currentData()
-            self._fill_character_combo(combo)
-            combo.setCurrentIndex(max(combo.findData(value), 0))
-        value = self.source_combo.currentData()
-        self.source_combo.clear()
-        for label, reference in characters:
-            self.source_combo.addItem(label, reference)
-        self.source_combo.setCurrentIndex(max(self.source_combo.findData(value), 0))
+        self.defaults.set_characters(characters)
+        self.cast_chips.set_characters(characters)
 
     def set_styles(self, styles: list[StylePreset], select_name: str = ""):
         """select_name：刚保存的预设，列表刷新后选中它。"""
@@ -294,30 +354,68 @@ class PackForm(BaseWidget):
             self.preset_combo.addItem(style.name, style.id)
         selected = next((s.id for s in styles if s.name == select_name), value)
         self.preset_combo.setCurrentIndex(max(self.preset_combo.findData(selected), 0))
+        if self._pending_preset:
+            self._apply_preset_memory(self._pending_preset)
         self._update_preset_buttons()
+        self._update_style_toggle()
+
+    def set_target(self, manifest: Manifest, template: TemplateInfo):
+        """追加模式：指定往哪个资源包里加。换了资源包才清空表格，回到同一个包时保留没提交的行。"""
+        same = self._target is not None and self._target.id == manifest.id
+        self._target = manifest
+        self.title_label.setText(self.tr("Add to \"{0}\"").format(
+            manifest.name or template.name or manifest.id))
+        if same and self._templates == [template]:
+            return
+        self._templates = [template]
+        self.picker.set_templates([template])
+        self._category_switched = True
+        self.picker.select_category(template.type)
+        self.draft_theme_edit.clear()
+        self.draft_panel.set_expanded(False)
+        self.set_error("")
+
+    def target_id(self) -> str:
+        return self._target.id if self._target is not None else ""
 
     def preselect_category(self, pack_type: str):
-        index = self.category_combo.findData(pack_type)
-        self.category_combo.setCurrentIndex(max(index, 0))
-        self._fill_template_combo()
+        """从资料库某个分类的"新建"进来：分类没变就保留已填内容。"""
+        if pack_type and pack_type != self.picker.current_category():
+            self._category_switched = True
+            self.picker.select_category(pack_type)
 
     def reset(self):
+        """创建成功后调用：先记住这次创建用的整包设置和风格预设，再清空并重新带出。"""
+        if self._pending_memory is not None:
+            self._memory.save(*self._pending_memory)
+            self._pending_memory = None
         self.name_edit.clear()
         self.style_edit.clear()
         self.negative_edit.clear()
         self.preset_combo.setCurrentIndex(0)
+        self.cast_chips.clear()
+        self.draft_theme_edit.clear()
+        self.draft_panel.set_expanded(False)
+        self._drafted_rows = set()
+        self.items_table.reset_rows()
+        template = self.current_template()
+        if template is not None:
+            self._apply_memory(template.id)
         self._update_preset_buttons()
-        self.cast_table.setRowCount(0)
-        self._on_template_changed()
         self.set_error("")
 
     def set_busy(self, busy: bool):
-        self.create_btn.setEnabled(not busy)
+        self._busy = busy
+        self._update_create_button()
 
     def set_drafting(self, drafting: bool):
         self.draft_btn.setEnabled(not drafting)
         self.common_motions_btn.setEnabled(not drafting)
-        self.draft_btn.setText(self.tr("Drafting...") if drafting else self.tr("AI draft"))
+        self.draft_btn.setText(self.tr("Drafting...") if drafting else self.tr("Draft"))
+        if drafting:
+            self.items_table.show_placeholders(self.draft_count_spin.value())
+        else:
+            self.items_table.hide_placeholders()
 
     def apply_drafts(self, template_id: str, items: list[NewCollectionItem]):
         """把 AI 起草的条目填进表格：空行和上次起草后没动过的行换成新条目，用户写过的行保留。"""
@@ -325,42 +423,71 @@ class PackForm(BaseWidget):
         if template is None or template.id != template_id:
             # 起草期间切换了模板，字段列已经对不上
             return
-        for row in reversed(range(self.items_table.rowCount())):
-            if self._is_empty_row(row) or self._row_values(row) in self._drafted_rows:
-                self.items_table.removeRow(row)
+        table = self.items_table
+        for row in reversed(range(table.rowCount())):
+            if table.is_empty_row(row) or table.row_values(row) in self._drafted_rows:
+                table.removeRow(row)
         self._drafted_rows = set()
+        self._fill_rows(items, track_drafted=True)
+
+    def add_presets(self):
+        """把模板自带的常用条目（如角色动作的待机、走、跑……）一键填进表格。
+
+        只追加：用户写过的行、AI 起草的行都保留；表格里已经有同名预设（按条目的字段和描述
+        判断）就不再重复添加，所以连点几次也不会越加越多。填进来的行和手写的一样可以改、删。
+        预设不记进 _drafted_rows：之后再 AI 起草不应该把它们清掉。
+        """
+        template = self.current_template()
+        if template is None or not template.presets:
+            return
+        table = self.items_table
+        present = {table.cell_text(row, 0) for row in table.filled_rows()}
+        fresh = [NewCollectionItem(prompt=preset.prompt, fields=dict(preset.fields))
+                 for preset in template.presets if preset.prompt not in present]
+        for row in reversed(range(table.rowCount())):
+            if table.is_empty_row(row):
+                table.removeRow(row)
+        self._fill_rows(fresh, track_drafted=False)
+
+    def _fill_rows(self, items: list[NewCollectionItem], track_drafted: bool):
+        table = self.items_table
+        columns = table.columns()
+        defaults = self.defaults.values()
+        added = []
         for item in items:
-            row = self.items_table.rowCount()
-            self._add_item_row()
-            self.items_table.set_cell_text(row, 0, item.prompt)
-            for col, spec in enumerate(self._fields, start=1):
-                if spec.id in item.fields:
-                    self.items_table.set_cell_text(row, col, item.fields[spec.id])
-            self._drafted_rows.add(self._row_values(row))
+            row = table.add_row()
+            table.set_cell_text(row, 0, item.prompt)
+            for col, column in enumerate(columns[1:], start=1):
+                if column.id in item.fields:
+                    table.set_cell_text(row, col, item.fields[column.id])
+            # 模型给某条选了和整包不同的值（如某个场景要多屏），记成这一行的单独设置
+            overrides = {field_id: value for field_id, value in item.fields.items()
+                         if field_id in defaults and value and value != defaults[field_id]}
+            if overrides:
+                table.set_row_overrides(row, overrides)
+            if track_drafted:
+                self._drafted_rows.add(table.row_values(row))
+            added.append(row)
+        table.ensure_blank_row()
+        table.update_conditional_columns()
+        table.reveal(added)
+        self._update_create_button()
 
     def set_error(self, message: str):
         # 空标签也占一行布局高度，没有错误时隐藏
         self.error_label.setText(message)
         self.error_label.setVisible(bool(message))
+        if message:
+            # 创建被拒绝：这次的设置不记，免得之后别处调 reset 时误存
+            self._pending_memory = None
+            shake(self.error_label)
 
     def build_request(self) -> CreatePackRequest:
-        """读表格生成请求；空行跳过。必填字段等规则由后端校验，错误原样提示。"""
+        """读表格生成请求；空行跳过。能定位到格子的错误先在界面上标出来，其余规则由后端校验。"""
         template = self.current_template()
         if template is None:
             raise ValueError(self.tr("No template available. Is the backend running?"))
-        items = []
-        for row in range(self.items_table.rowCount()):
-            prompt = self.items_table.cell_text(row, 0)
-            fields = {spec.id: self.items_table.cell_text(row, col)
-                      for col, spec in enumerate(self._fields, start=1)}
-            typed = [value for spec, value in zip(self._fields, fields.values(), strict=True)
-                     if not spec.options]
-            if not prompt and not any(typed):
-                continue
-            items.append(NewCollectionItem(prompt=prompt,
-                                           fields={k: v for k, v in fields.items() if v}))
-        if not items:
-            raise ValueError(self.tr("Add at least one item."))
+        items = self._build_items()
         source = (self.source_combo.currentData() or "") if template.source else ""
         if template.source and not source:
             raise ValueError(self.tr("Create a character pack first, then pick a character here."))
@@ -368,19 +495,112 @@ class PackForm(BaseWidget):
                                 negative=self.negative_edit.text().strip())
         preset = self._selected_preset()
         return CreatePackRequest(
-            name=self.name_edit.text().strip(),
+            name=self.name_edit.text().strip() or self._auto_name(template, items),
             template=template.id,
             style=style,
             # 选了预设后又手动改过风格锁，就不再算用了这个预设，否则详情页会一直提示"预设已更新"
             style_preset=preset.id if preset is not None and preset.style() == style else "",
-            cast=self._cast() if template.type == DIALOGUE_TYPE else [],
+            cast=self.cast_chips.members() if template.type == DIALOGUE_TYPE else [],
             source=source,
             items=items,
         )
 
+    def build_add_request(self) -> AddItemsRequest:
+        if self.current_template() is None:
+            raise ValueError(self.tr("No template available. Is the backend running?"))
+        return AddItemsRequest(items=self._build_items())
+
+    def _build_items(self) -> list[NewCollectionItem]:
+        table = self.items_table
+        table.clear_errors()
+        columns = table.columns()
+        defaults = self.defaults.values()
+        items = []
+        for row in table.filled_rows():
+            values = {**defaults, **table.row_overrides(row)}
+            fields = {}
+            for col, column in enumerate(columns[1:], start=1):
+                text = table.cell_text(row, col)
+                if column.required and not text:
+                    table.mark_error(row, col)
+                    raise ValueError(self.tr("Fill in {0}").format(short_label(column.label)))
+                if column.segments_field and text:
+                    screens = values.get(column.segments_field, "1")
+                    count = count_segments(text)
+                    if screens.isdigit() and count != int(screens):
+                        table.mark_error(row, col)
+                        raise ValueError(self.tr(
+                            "{0} has {1} segments but the length is {2} screens").format(
+                            short_label(column.label), count, screens))
+                if text:
+                    fields[column.id] = text
+            fields.update({k: v for k, v in values.items() if v})
+            items.append(NewCollectionItem(prompt=table.cell_text(row, 0), fields=fields))
+        if not items:
+            raise ValueError(self.tr("Add at least one item."))
+        return items
+
     def current_template(self) -> TemplateInfo | None:
-        template_id = self.template_combo.currentData()
-        return next((t for t in self._templates if t.id == template_id), None)
+        return self.picker.current_template()
+
+    # ---- 模板切换 ----
+    def _on_category_changed(self, _pack_type: str):
+        self._category_switched = True
+
+    def _on_template_changed(self, _template_id: str):
+        template = self.current_template()
+        table = self.items_table
+        # 同一分类内换模板保留描述列；换了分类清空
+        kept = [] if self._category_switched else [
+            table.cell_text(row, 0) for row in table.filled_rows() if table.cell_text(row, 0)]
+        self._category_switched = False
+        self._drafted_rows = set()
+        fields = list(template.fields) if template else []
+        self.preset_items_btn.setVisible(bool(template and template.presets))
+        self.common_motions_btn.setVisible(bool(template and template.source))
+        # 追加时来源角色沿用包里绑定的，不再选
+        self.defaults.set_fields(
+            fields, needs_source=bool(template and template.source) and not self._append)
+        if template is not None:
+            self._apply_memory(template.id)
+        prompt_label = (template.prompt_label if template else "") or self.tr("Prompt")
+        columns = [Column(PROMPT_COLUMN, prompt_label)] + [
+            Column.from_field(spec) for spec in fields if not pack_level(spec)]
+        table.set_columns(columns, self.defaults.fields(), self.defaults.values)
+        for prompt in kept:
+            row = table.rowCount() - 1
+            table.set_cell_text(row, 0, prompt)
+            table.ensure_blank_row()
+        is_dialogue = template is not None and template.type == DIALOGUE_TYPE
+        self.cast_section.setVisible(is_dialogue and not self._append)
+        if not is_dialogue:
+            self.cast_chips.clear()
+        self._update_create_button()
+        # 只淡入不滑动：这块高度随内容变化，布局一直在重排，横向滑动会和布局抢位置；
+        # 里面有表格和下拉框，用盖层淡入而不是透明度特效，不卡也不会画错位
+        cover_fade_in(self.content, PAGE_BACKGROUND)
+
+    def _on_defaults_changed(self):
+        self.items_table.update_conditional_columns()
+
+    # ---- 记住上次的选择 ----
+    def _apply_memory(self, template_id: str):
+        memory = self._memory.load(template_id)
+        self.defaults.set_values(memory.get("defaults", {}))
+        preset = memory.get("preset", "")
+        # 用户已经写了风格就不覆盖
+        if preset and not self.style_edit.toPlainText().strip() and not self.negative_edit.text():
+            self._apply_preset_memory(preset)
+
+    def _apply_preset_memory(self, preset_id: str):
+        index = self.preset_combo.findData(preset_id)
+        if index < 0:
+            # 预设列表还没到：等 set_styles 再套用
+            self._pending_preset = preset_id
+            return
+        self._pending_preset = ""
+        self.preset_combo.setCurrentIndex(index)
+        self._on_preset_chosen()
 
     # ---- 风格预设 ----
     def _selected_preset(self) -> StylePreset | None:
@@ -396,6 +616,7 @@ class PackForm(BaseWidget):
             self.style_edit.setPlainText(preset.prompt)
             self.negative_edit.setText(preset.negative)
         self._update_preset_buttons()
+        self._update_style_toggle()
 
     def _on_save_preset(self):
         prompt = self.style_edit.toPlainText().strip()
@@ -420,170 +641,37 @@ class PackForm(BaseWidget):
         if preset is not None:
             self.style_delete_requested.emit(preset.id)
 
-    # ---- 模板切换 ----
-    def _fill_template_combo(self):
-        pack_type = self.category_combo.currentData()
-        self.template_combo.blockSignals(True)
-        self.template_combo.clear()
-        for template in self._templates:
-            if template.type == pack_type:
-                self.template_combo.addItem(template.name or template.id, template.id)
-        self.template_combo.blockSignals(False)
-        self._on_template_changed()
+    def _toggle_style(self):
+        self.style_panel.toggle()
+        self._update_style_toggle()
 
-    def _on_template_changed(self):
-        template = self.current_template()
-        self._fields = list(template.fields) if template else []
-        self._drafted_rows = set()
-        self.description_label.setText(template.description if template else "")
-        prompt_label = (template.prompt_label if template else "") or self.tr("Prompt")
-        self.items_table.clear()
-        self.items_table.setRowCount(0)
-        self.items_table.setColumnCount(1 + len(self._fields))
-        headers = [prompt_label] + [
-            (spec.label or spec.id) + (" *" if spec.required else "") for spec in self._fields]
-        self.items_table.setHorizontalHeaderLabels(headers)
-        for _ in range(3):
-            self._add_item_row()
-        is_dialogue = template is not None and template.type == DIALOGUE_TYPE
-        self.cast_section.setVisible(is_dialogue)
-        if is_dialogue and self.cast_table.rowCount() == 0:
-            self._add_cast_row()
-        has_source = template is not None and bool(template.source)
-        self.source_section.setVisible(has_source)
-        self.common_motions_btn.setVisible(has_source)
+    def _update_style_toggle(self):
+        """折叠时的一行摘要：用了哪个预设，或者风格锁的开头几个词。"""
+        preset = self._selected_preset()
+        style = self.style_edit.toPlainText().strip()
+        if preset is not None and preset.style() == CollectionStyle(
+                prompt=style, negative=self.negative_edit.text().strip()):
+            summary = preset.name
+        elif style:
+            summary = style if len(style) <= _STYLE_SUMMARY_CHARS else \
+                style[:_STYLE_SUMMARY_CHARS] + "…"
+        else:
+            summary = self.tr("None")
+        arrow = "▾" if self.style_panel.is_expanded() else "▸"
+        # tr 不能写在 f-string 里：lupdate 提取不到，会被当成废弃字符串删掉
+        label = self.tr("Style")
+        self.style_toggle.setText(f"{label}  ·  {summary}  {arrow}")
 
-    # ---- 行 ----
-    def _add_item_row(self):
-        row = self.items_table.rowCount()
-        self.items_table.insertRow(row)
-        for col, spec in enumerate(self._fields, start=1):
-            if spec.options:
-                combo = QComboBox()
-                for option in spec.options:
-                    combo.addItem(option.label or option.value, option.value)
-                combo.setCurrentIndex(max(combo.findData(spec.default), 0))
-                self._set_cell_combo(self.items_table, row, col, combo)
-            elif spec.default:
-                cell = QTableWidgetItem()
-                # 默认值只做提示：留空时后端用默认值，改模板默认值也能生效
-                cell.setToolTip(self.tr("Default: {0}").format(spec.default))
-                self.items_table.setItem(row, col, cell)
-
-    def _row_values(self, row: int) -> tuple[str, ...]:
-        return tuple(self.items_table.cell_text(row, col)
-                     for col in range(self.items_table.columnCount()))
-
-    def _is_empty_row(self, row: int) -> bool:
-        # 下拉列总有值，不算用户填写；与 build_request 跳过空行的规则一致
-        return not self.items_table.cell_text(row, 0) and not any(
-            self.items_table.cell_text(row, col)
-            for col, spec in enumerate(self._fields, start=1) if not spec.options)
-
-    def _ensure_item_rows(self, count: int):
-        while self.items_table.rowCount() < count:
-            self._add_item_row()
-
-    def _add_cast_row(self):
-        row = self.cast_table.rowCount()
-        self.cast_table.insertRow(row)
-        combo = QComboBox()
-        self._fill_character_combo(combo)
-        self._set_cell_combo(self.cast_table, row, 1, combo)
-
-    def _fill_character_combo(self, combo: QComboBox):
-        combo.clear()
-        combo.addItem(self.tr("(New voice)"), "")
-        for label, value in self._characters:
-            combo.addItem(label, value)
-
-    def _cast(self) -> list[CastMember]:
-        cast = []
-        for row in range(self.cast_table.rowCount()):
-            name_cell = self.cast_table.item(row, 0)
-            description_cell = self.cast_table.item(row, 2)
-            name = name_cell.text().strip() if name_cell else ""
-            description = description_cell.text().strip() if description_cell else ""
-            character = self.cast_table.cellWidget(row, 1).currentData() or ""
-            if name or description or character:
-                cast.append(CastMember(name=name, character=character, description=description))
-        return cast
-
-    # ---- 工具 ----
-    def _row_buttons(self, add, table: QTableWidget) -> QHBoxLayout:
-        row = QHBoxLayout()
-        add_btn = QPushButton(self.tr("Add row"))
-        remove_btn = QPushButton(self.tr("Remove row"))
-        add_btn.clicked.connect(add)
-        remove_btn.clicked.connect(lambda: self._remove_selected(table))
-        row.addWidget(add_btn)
-        row.addWidget(remove_btn)
-        row.addStretch()
-        return row
-
-    @staticmethod
-    def _remove_selected(table: QTableWidget):
-        rows = sorted({index.row() for index in table.selectedIndexes()}, reverse=True)
-        if not rows and table.currentRow() >= 0:
-            rows = [table.currentRow()]
-        for row in rows:
-            table.removeRow(row)
-
-    @staticmethod
-    def _set_cell_combo(table: QTableWidget, row: int, col: int, combo: QComboBox):
-        """下拉框带内边距和箭头，比表格默认行高、最小列宽大，不撑开就会被裁掉文字。"""
-        table.setCellWidget(row, col, combo)
-        # 先套上样式表再量尺寸，否则拿到的是未加内边距的原生尺寸（表格未显示时也还没套）
-        table.ensurePolished()
-        combo.ensurePolished()
-        # 单元格控件会被 ::item 的 padding 和网格线再缩一圈，从样式里量出来一并补上
-        option = QStyleOptionViewItem()
-        option.rect = QRect(0, 0, 100, 100)
-        inner = table.style().subElementRect(QStyle.SubElement.SE_ItemViewItemText, option, table)
-        grid = 1 if table.showGrid() else 0
-        height = combo.sizeHint().height() + 100 - inner.height() + grid
-        width = combo.sizeHint().width() + 100 - inner.width() + grid
-        if table.rowHeight(row) < height:
-            table.setRowHeight(row, height)
-        if table.columnWidth(col) < width:
-            table.setColumnWidth(col, width)
-
-    @staticmethod
-    def _setup_table(table: QTableWidget, stretch_column: int):
-        table.setObjectName("library_table")
-        table.verticalHeader().setVisible(False)
-        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        table.horizontalHeader().setStretchLastSection(True)
-        table.horizontalHeader().setMinimumSectionSize(90)
-        table.setColumnWidth(stretch_column, 320)
-
-    @staticmethod
-    def _field(text: str, widget: QWidget) -> QVBoxLayout:
-        label = QLabel(text)
-        label.setObjectName("library_form_label")
-        column = QVBoxLayout()
-        column.setSpacing(6)
-        column.addWidget(label)
-        column.addWidget(widget)
-        return column
-
-    @staticmethod
-    def _heading(text: str) -> QLabel:
-        label = QLabel(text)
-        label.setObjectName("library_section_title")
-        return label
-
-    @staticmethod
-    def _hint(text: str) -> QLabel:
-        label = QLabel(text)
-        label.setObjectName("detail_muted")
-        label.setWordWrap(True)
-        return label
+    # ---- 起草 ----
+    def _toggle_draft(self):
+        self.draft_panel.toggle()
+        if self.draft_panel.is_expanded():
+            self.draft_theme_edit.setFocus()
 
     def _on_draft(self):
         theme = self.draft_theme_edit.text().strip()
-        if self.current_template() is not None and not theme:
+        if not theme:
+            self.draft_panel.set_expanded(True)
             self.set_error(self.tr("Enter a theme for the AI to draft items from."))
             return
         self._request_draft(theme, self.draft_count_spin.value())
@@ -596,29 +684,81 @@ class PackForm(BaseWidget):
         if template is None:
             self.set_error(self.tr("No template available. Is the backend running?"))
             return
-        # 动作包要按绑定角色的样子写动作，没选角色就没法起草
-        source = (self.source_combo.currentData() or "") if template.source else ""
+        source = (self._target.source if self._target is not None else
+                  self.source_combo.currentData() or "") if template.source else ""
         if template.source and not source:
             self.set_error(self.tr("Create a character pack first, then pick a character here."))
             return
-        # 表格里已有的条目（含上次起草的）都告诉模型，再点一次拿到的是新条目
-        existing = [self.items_table.cell_text(row, 0) for row in range(self.items_table.rowCount())]
+        # 表格里已有的条目（含上次起草的）都告诉模型，再点一次拿到的是新条目；
+        # 追加时包里已有的条目也算，避免起草出和已生成素材重复的东西
+        table = self.items_table
+        existing = [table.cell_text(row, 0) for row in table.filled_rows()]
+        if self._target is not None:
+            existing += [item.prompt for item in self._target.items]
+            style = self._target.style.prompt
+            cast = self._target.cast
+        else:
+            style = self.style_edit.toPlainText().strip()
+            cast = self.cast_chips.members() if template.type == DIALOGUE_TYPE else []
         self.set_error("")
         self.draft_requested.emit(DraftItemsRequest(
             template=template.id,
             theme=theme,
             count=count,
-            style=self.style_edit.toPlainText().strip(),
-            cast=self._cast() if template.type == DIALOGUE_TYPE else [],
+            style=style,
+            cast=cast,
             exclude=[prompt for prompt in existing if prompt],
             source=source,
         ))
 
+    # ---- 创建 ----
+    def _update_create_button(self):
+        count = len(self.items_table.filled_rows())
+        text = self.tr("Add and generate ({0})") if self._append else \
+            self.tr("Create and generate ({0})")
+        self.create_btn.setText(text.format(count))
+        self.create_btn.setEnabled(count > 0 and not self._busy)
+
+    def _auto_name(self, template: TemplateInfo, items: list[NewCollectionItem]) -> str:
+        first = next((item.prompt for item in items if item.prompt), "")
+        name = template.name or template.id
+        return f"{name} · {first[:AUTO_NAME_CHARS]}" if first else name
+
     def _on_create(self):
+        if self._busy:
+            return
+        if self._append:
+            self._on_add()
+            return
         try:
             request = self.build_request()
         except ValueError as exc:
             self.set_error(str(exc))
             return
         self.set_error("")
+        self._pending_memory = (request.template, self.defaults.values(), request.style_preset)
+        bounce(self.create_btn)
         self.create_requested.emit(request)
+
+    def _on_add(self):
+        if self._target is None:
+            return
+        try:
+            request = self.build_add_request()
+        except ValueError as exc:
+            self.set_error(str(exc))
+            return
+        self.set_error("")
+        bounce(self.create_btn)
+        self.add_requested.emit(self._target.id, request)
+
+    def keyPressEvent(self, event):
+        """Esc：正在输入框里编辑时只退出编辑，否则返回资料库。"""
+        if event.key() == Qt.Key.Key_Escape:
+            focus = QApplication.focusWidget()
+            if isinstance(focus, (QLineEdit, QPlainTextEdit, QSpinBox)) and self.isAncestorOf(focus):
+                focus.clearFocus()
+            else:
+                self.back_requested.emit()
+            return
+        super().keyPressEvent(event)

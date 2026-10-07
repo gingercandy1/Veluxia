@@ -105,9 +105,25 @@ INACTIVE_FIELD_VALUES: tuple[str, ...] = ("", "0")
 def condition_met(value: str) -> bool:
     """模板步骤的 when 条件：引用的字段有值、且不是 "0"（如分层字段选了"不分层"）。"""
     return value.strip() not in INACTIVE_FIELD_VALUES
+
+
+# when 前加 "!" 表示取反：同一个字段在两条互斥的流程间二选一（如道具的单张 / 组图）
+WHEN_NOT = "!"
+
+
+def when_field(when: str) -> str:
+    """when 条件引用的字段 id（去掉取反前缀）。"""
+    return when.removeprefix(WHEN_NOT)
+
+
+def when_met(when: str, value: str) -> bool:
+    """按字段值判断带 when 条件的步骤要不要执行；value 是 when_field(when) 字段的值。"""
+    return condition_met(value) != when.startswith(WHEN_NOT)
 # 资源包分类，界面按这个顺序分区排列：按游戏里的东西分，而不是按文件类型分
 PackType = Literal["scene", "character", "item", "effect", "dialogue", "audio"]
 PACK_TYPES: tuple[str, ...] = ("scene", "character", "item", "effect", "dialogue", "audio")
+# 模板字段的类型：图片字段由界面选本地文件，后端建包时复制进资源包
+IMAGE_FIELD = "image"
 # 剧本台词的情绪：后端写进 LLM 提示词，界面审阅剧本时做下拉选项，两边必须一致
 DIALOGUE_EMOTIONS: tuple[str, ...] = ("平静", "开心", "生气", "悲伤", "惊讶", "害怕", "坚定")
 
@@ -172,6 +188,11 @@ class CreatePackRequest(BaseModel):
     style_preset: str = Field("", description="风格预设 id；style 须已填成该预设的内容")
     cast: List[CastMember] = Field(default_factory=list)
     source: str = Field("", description="来源角色 <资源包 id>/<条目 id>；只有模板声明了 source 才需要")
+    items: List[NewCollectionItem] = Field(default_factory=list)
+
+
+class AddItemsRequest(BaseModel):
+    """往已有资源包里追加条目：沿用包的模板、风格锁、出场角色和来源角色，只补新条目。"""
     items: List[NewCollectionItem] = Field(default_factory=list)
 
 
@@ -242,6 +263,9 @@ class TemplateFieldInfo(BaseModel):
     required: bool = False
     default: str = ""
     options: List[FieldOption] = Field(default_factory=list, description="非空时界面用下拉选择")
+    segments_field: str = Field("", description="这是分段描述字段时，对应的屏数字段 id："
+                                                 "屏数大于 1 时这个字段才有意义，界面据此显示或隐藏")
+    kind: str = Field("", description="字段类型：空是文本，image 是用户导入的本地图片路径")
 
 
 class TemplateStepInfo(BaseModel):
@@ -252,7 +276,14 @@ class TemplateStepInfo(BaseModel):
     review: bool = Field(False, description="完成后需用户确认，下游步骤才继续")
     inputs: List[str] = Field(default_factory=list, description="上游步骤 id，界面按它算素材的执行流程")
     when: str = Field("", description="条件字段 id：该字段不满足 condition_met 时这一步跳过；"
-                                        "空表示总是执行")
+                                        "前缀 ! 表示满足时跳过；空表示总是执行")
+
+
+class TemplatePresetInfo(BaseModel):
+    """模板自带的常用条目（如角色动作里的待机、走、跳），新建表单一键填进表格。"""
+    name: str
+    prompt: str
+    fields: Dict[str, str] = Field(default_factory=dict)
 
 
 class TemplateInfo(BaseModel):
@@ -260,10 +291,12 @@ class TemplateInfo(BaseModel):
     type: str
     name: str = ""
     description: str = ""
+    summary: str = Field("", description="一句话简介，新建界面常驻显示；完整说明放在悬停提示里")
     prompt_label: str = Field("", description="条目主提示词在界面上的名称，如“外观描述”“台词”")
     cover: str = Field("", description="用作封面缩略图的步骤 id，空表示没有图片产物")
     source: str = Field("", description="需要绑定的来源资源包类型，如 character；空表示不需要")
     fields: List[TemplateFieldInfo] = Field(default_factory=list)
+    presets: List[TemplatePresetInfo] = Field(default_factory=list)
     steps: List[str] = Field(default_factory=list, description="步骤 id，按执行顺序")
     step_details: List[TemplateStepInfo] = Field(default_factory=list)
 
@@ -293,6 +326,8 @@ class ModelStorageEntry(BaseModel):
     name: str
     size: int = Field(0, description="字节")
     manual: bool = Field(False, description="删了不会自动重新下载，需要手动放回")
+    parts: List[str] = Field(default_factory=list,
+                             description="这一条包含的目录 / 文件名，附属目录（如 -gguf）并进主目录")
 
 
 class ModelStorageResponse(BaseResponse):

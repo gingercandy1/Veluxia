@@ -8,8 +8,7 @@ from PIL import Image
 from src.backend.core.exceptions import GenerationCancelled
 from src.backend.core.image.tileable import apply_tile_mode, validate_tile_mode
 from src.backend.core.model_base import BaseImageGenerator
-from src.backend.core.model_utils import huggingface_token, get_temp_dir
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import huggingface_token, get_temp_dir, models_root
 
 
 class SDXLGenerator(BaseImageGenerator):
@@ -21,7 +20,7 @@ class SDXLGenerator(BaseImageGenerator):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.pipe_img2img = None
-        self.base_local = Path(PROJECT_ROOT) / "models" / "image" / self.model_dir
+        self.base_local = models_root() / "image" / self.model_dir
         if not self.model_id:
             self.model_id = "stabilityai/stable-diffusion-xl-base-1.0"
 

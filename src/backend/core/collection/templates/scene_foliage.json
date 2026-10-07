@@ -1,0 +1,19 @@
+{
+  "id": "scene_foliage",
+  "version": 4,
+  "type": "scene",
+  "name": "花草摇摆",
+  "summary": "透明底花草，自动网格变形出无缝循环摇摆序列帧",
+  "description": "生成透明底花草后，用程序化网格变形生成无缝循环摇摆序列帧（ADR 0008）。纯 CPU，不占显存租约。摇摆前先把长边缩到 512，24 帧拼成的精灵图才不会大到界面和引擎打不开。根部不动，越往上摆得越大，叶尖比叶根慢半拍；风像一道波从左扫到右，草叶依次而不是同时摆，叶尖上再叠一层小幅颤动。整周期正好 N 帧，首尾天然衔接。",
+  "prompt_label": "花草描述",
+  "cover": "sheet",
+  "steps": [
+    {"id": "generate", "type": "image.generate", "label": "生成", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "single isolated plant clump, plain white background, centered, entire plant fully visible with empty margin on all sides, not cropped, not a field, roots at the bottom, no ground, no soil, no pot"}},
+    {"id": "remove_bg", "type": "image.remove_bg", "label": "去背景", "params": {"model_name": "rembg-birefnet"}, "inputs": ["generate"]},
+    {"id": "trim", "type": "image.trim", "label": "裁边", "inputs": ["remove_bg"]},
+    {"id": "fit", "type": "image.resize", "label": "缩放", "params": {"size": 512}, "inputs": ["trim"]},
+    {"id": "tight", "type": "image.trim", "label": "再裁边", "inputs": ["fit"]},
+    {"id": "sway", "type": "frames.sway", "label": "摇摆", "params": {"frames": 24, "amplitude": 0.08, "power": 1.5, "lag": 0.6, "mesh_density": 12, "wave": 1.5, "flutter": 0.3}, "inputs": ["tight"]},
+    {"id": "sheet", "type": "frames.sheet", "label": "精灵图", "deliverable": true, "params": {"fps": 12}, "inputs": ["sway"]}
+  ]
+}

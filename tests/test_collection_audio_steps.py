@@ -128,10 +128,13 @@ def test_speech_step_uses_raw_prompt_and_records_meta(tmp_path, fake_models):
     params = {"model_name": "fake-design", "voice_prompt": "低沉"}
     ctx = _ctx(tmp_path, params, "voice")
     [path] = _run(SpeechGenerateRunner(), ctx)
-    # 音频不拼风格锁
-    assert _FakeSpeech.calls == [("fake-design", {"voice_prompt": "低沉", "content": "raw"})]
+    # 音频不拼风格锁；种子每次随机，记进 meta 以便复现
+    [(model, sent)] = _FakeSpeech.calls
+    seed = sent.pop("seed")
+    assert model == "fake-design" and sent == {"voice_prompt": "低沉", "content": "raw"}
     assert path.name == "voice.wav" and path.is_file()
-    assert ctx.meta == {"model": "fake-design", "prompt": "raw", "params": {"voice_prompt": "低沉"}}
+    assert ctx.meta == {"model": "fake-design", "prompt": "raw",
+                        "params": {"voice_prompt": "低沉", "seed": seed}}
 
 
 def test_speech_step_rejects_empty_content(tmp_path, fake_models):

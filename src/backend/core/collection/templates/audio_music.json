@@ -3,6 +3,7 @@
   "version": 1,
   "type": "audio",
   "name": "背景音乐",
+  "summary": "可无缝循环的纯音乐 BGM",
   "description": "关卡、战斗、主菜单等纯音乐 BGM，每条描述生成一首，并把首尾处理成可无缝循环。",
   "prompt_label": "曲风与情绪（英文效果更好，如 orchestral, calm forest, harp）",
   "fields": [

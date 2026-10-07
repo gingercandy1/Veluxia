@@ -10,7 +10,7 @@ from PySide6.QtCore import QCoreApplication
 
 from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, AnimationResponse, SpeechResponse, \
     ModelInfoResponse, TranslateResponse, RefineResponse, SpriteSheetResponse, TranscriptionResponse, \
-    CreatePackRequest, PackListResponse, PackResponse, TemplateListResponse, \
+    AddItemsRequest, CreatePackRequest, PackListResponse, PackResponse, TemplateListResponse, \
     ApproveStepRequest, ResetStepRequest, DraftItemsRequest, DraftItemsResponse, \
     StyleListResponse, StylePreset, ModelStorageResponse, UpdateItemFieldsRequest
 
@@ -400,12 +400,18 @@ class ApiClient:
     def create_pack(self, request: CreatePackRequest) -> PackResponse:
         return self._post("/library/packs", request.model_dump(), PackResponse)
 
+    def add_items(self, pack_id: str, request: AddItemsRequest) -> PackResponse:
+        return self._post(f"/library/packs/{pack_id}/items", request.model_dump(), PackResponse)
+
     def draft_items(self, request: DraftItemsRequest) -> DraftItemsResponse:
         """首次调用要加载 LLM，较慢；仍在默认 300 秒超时之内。"""
         return self._post("/library/drafts", request.model_dump(), DraftItemsResponse)
 
     def delete_pack(self, pack_id: str) -> BaseResponse:
         return self._delete(f"/library/packs/{pack_id}")
+
+    def delete_item(self, pack_id: str, item_id: str) -> PackResponse:
+        return self._delete(f"/library/packs/{pack_id}/items/{item_id}", PackResponse)
 
     def run_pack(self, pack_id: str, stop_event: Optional[threading.Event] = None) -> PackResponse:
         """整包执行可能跑一整夜；进度以 manifest 为准，由界面另行轮询 get_pack。"""

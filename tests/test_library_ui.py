@@ -2,17 +2,19 @@
 import json
 
 import pytest
-from PySide6.QtCore import QEvent
+from PySide6.QtCore import QElapsedTimer, QEvent, Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel, QTableWidgetItem
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QAbstractItemView, QLabel, QLineEdit, QStackedWidget, QWidget
 
+from src.app.ui.base.anim import page_enter
 from src.app.ui.library import library_page
 from src.app.ui.library.activity import LoadingStrip
 from src.app.ui.library.detail_panel import DetailPanel, ScriptEditor
 from src.app.ui.library.garden import GardenView
 from src.app.ui.library.library_page import LibraryPage, export_file_name
 from src.app.ui.library.pack_detail import RUNNING_ROLE, PackDetail
-from src.app.ui.library.pack_form import PackForm
+from src.app.ui.library.pack_form import PAGE_BACKGROUND, PackForm
 from src.app.ui.library.pack_status import (
     asset_progress,
     fallback_template,
@@ -219,15 +221,81 @@ def test_detail_panel_shows_loading_for_finished_asset(qapp):
 
 
 # ---- 新建表单 ----
-def test_form_builds_request_with_fields_and_paste(qapp):
+class _Memory:
+    """记住上次选择的内存版：测试不读写用户真实的 config/setting.json。"""
+
+    def __init__(self):
+        self.store = {}
+
+    def load(self, template_id):
+        return dict(self.store.get(template_id, {}))
+
+    def save(self, template_id, defaults, preset):
+        self.store[template_id] = {"defaults": defaults, "preset": preset}
+
+
+@pytest.fixture(autouse=True)
+def _isolated_form_memory(monkeypatch):
+    monkeypatch.setattr("src.app.ui.library.pack_form.FormMemory", _Memory)
+
+
+SCENE_FORM = TemplateInfo(
+    id="scene_background", type="scene", name="场景", summary="整张场景图",
+    fields=[TemplateFieldInfo(id="length", label="长度", default="1",
+                              options=[FieldOption(value="1", label="单屏"),
+                                       FieldOption(value="2", label="2 屏")]),
+            TemplateFieldInfo(id="segment_desc", label="分段描述（用 | 分隔）",
+                              segments_field="length")],
+    steps=["generate"], step_details=[TemplateStepInfo(id="generate", type="image.generate")])
+PROPS = TemplateInfo(id="scene_props", type="scene", name="道具", steps=["generate"],
+                     step_details=[TemplateStepInfo(id="generate", type="image.generate")])
+
+
+def _prompts(form) -> list[str]:
+    table = form.items_table
+    return [table.cell_text(row, 0) for row in table.filled_rows()]
+
+
+EFFECT_FORM = TemplateInfo(
+    id="effect_skill", type="effect", name="技能", prompt_label="画面 / 动画描述",
+    fields=[TemplateFieldInfo(id="sfx", label="音效描述", required=True),
+            TemplateFieldInfo(id="reference", label="导入图片", kind="image")],
+    steps=["icon"], step_details=[TemplateStepInfo(id="icon", type="image.generate")])
+
+
+def test_form_image_column_is_not_typed_and_delete_only_clears_it(qapp):
+    form = PackForm()
+    form.set_templates([EFFECT_FORM])
+    table = form.items_table
+    column = table.columns()[2]
+    assert column.id == "reference" and column.is_image
+    table.paste_rows("a fire spell\twhoosh")
+    # 手打路径容易写错，图片格只能双击选文件
+    assert not table.item(0, 2).flags() & Qt.ItemFlag.ItemIsEditable
+
+    table.set_cell_text(0, 2, "C:/pics/fire.png")
+    assert form.build_request().items[0].fields == {"sfx": "whoosh", "reference": "C:/pics/fire.png"}
+
+    table.setCurrentCell(0, 2)
+    QTest.keyClick(table, Qt.Key.Key_Delete)
+    assert table.cell_text(0, 0) == "a fire spell" and table.cell_text(0, 2) == ""
+    assert "reference" not in form.build_request().items[0].fields
+
+
+def test_form_optional_dropdowns_move_to_pack_defaults(qapp):
     form = PackForm()
     form.set_templates([CHARACTER, DIALOGUE])
     form.preselect_category("character")
     assert form.cast_section.isHidden()
-    assert form.items_table.columnCount() == 3
+    # 可选的"姿势"进了整包设置，表格只剩描述和必填的角色名
+    assert form.items_table.columnCount() == 2
+    assert form.defaults.values() == {"pose": "stand"}
 
     form.items_table.setCurrentCell(0, 0)
-    form.items_table.paste_rows("a knight\t亚瑟\t坐姿\na mage\t梅林\n")
+    form.items_table.paste_rows("a knight\t亚瑟\na mage\t梅林\n")
+    assert form.items_table.rowCount() == 3  # 末尾自动留一个空行
+    form.defaults.set_values({"pose": "sit"})
+    form.items_table.set_row_overrides(1, {"pose": "stand"})
     request = form.build_request()
     assert request.template == "character_basic"
     assert [(i.prompt, i.fields) for i in request.items] == [
@@ -236,13 +304,248 @@ def test_form_builds_request_with_fields_and_paste(qapp):
     ]
 
 
-def test_form_requires_items(qapp):
+def test_form_blank_row_grows_and_rows_can_be_removed(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER])
+    table = form.items_table
+    assert table.rowCount() == 1
+    table.set_cell_text(0, 0, "a knight")
+    assert table.rowCount() == 2 and table.is_empty_row(1)
+    table.remove_row(0)
+    assert table.rowCount() == 1 and table.is_empty_row(0)
+
+
+def test_form_create_button_counts_items(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER])
+    assert not form.create_btn.isEnabled()
+    with pytest.raises(ValueError):
+        form.build_request()
+    form.items_table.paste_rows("a knight\t亚瑟\na mage\t梅林")
+    assert form.create_btn.isEnabled() and "2" in form.create_btn.text()
+    form.set_busy(True)
+    assert not form.create_btn.isEnabled()
+
+
+def test_form_marks_missing_required_cell(qapp):
     form = PackForm()
     form.set_templates([CHARACTER])
     emitted = []
     form.create_requested.connect(emitted.append)
+    form.items_table.paste_rows("a knight")
     form.create_btn.click()
-    assert not emitted and form.error_label.text()
+    assert not emitted and "角色名" in form.error_label.text()
+    assert (0, 1) in form.items_table._errors
+    form.items_table.set_cell_text(0, 1, "亚瑟")
+    assert not form.items_table._errors
+
+
+def test_form_auto_names_pack_from_template_and_first_item(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER])
+    form.items_table.paste_rows("a very long knight description\t亚瑟")
+    assert form.build_request().name == "角色 · a very long "
+    form.name_edit.setText("骑士团")
+    assert form.build_request().name == "骑士团"
+
+
+def test_form_segment_column_follows_length(qapp):
+    form = PackForm()
+    form.set_templates([SCENE_FORM])
+    table = form.items_table
+    assert table.isColumnHidden(1)
+    form.defaults.set_values({"length": "2"})
+    assert not table.isColumnHidden(1)
+    form.defaults.set_values({"length": "1"})
+    assert table.isColumnHidden(1)
+    # 单独把某一行改成多屏，列也要出现
+    table.set_cell_text(0, 0, "幽暗森林")
+    table.set_row_overrides(0, {"length": "2"})
+    assert not table.isColumnHidden(1)
+    table.set_cell_text(0, 1, "森林|村庄|城堡")
+    with pytest.raises(ValueError):
+        form.build_request()
+    assert (0, 1) in table._errors
+    table.set_cell_text(0, 1, "森林|村庄")
+    assert form.build_request().items[0].fields == {
+        "length": "2", "segment_desc": "森林|村庄"}
+
+
+def test_form_single_column_hides_header_and_summary_is_shown(qapp):
+    form = PackForm()
+    form.set_templates([SCENE_FORM, PROPS])
+    form.picker.select_template("scene_props")
+    assert form.items_table.horizontalHeader().isHidden()
+    form.picker.select_template("scene_background")
+    assert not form.items_table.horizontalHeader().isHidden()
+    assert form.picker.summary_label.text() == "整张场景图"
+
+
+def test_form_keeps_prompts_within_category_and_clears_across(qapp):
+    form = PackForm()
+    form.set_templates([SCENE_FORM, PROPS, CHARACTER])
+    form.preselect_category("scene")
+    form.items_table.paste_rows("幽暗森林\n林间小屋")
+    form.picker.select_template("scene_props")
+    assert _prompts(form) == ["幽暗森林", "林间小屋"]
+    form.preselect_category("character")
+    assert _prompts(form) == []
+
+
+def test_form_remembers_pack_defaults_per_template(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER])
+    form.defaults.set_values({"pose": "sit"})
+    form.items_table.paste_rows("a knight\t亚瑟")
+    form._on_create()
+    # 后端还没确认创建成功（可能被拒绝），这时不记
+    assert form._memory.store == {}
+    form.reset()
+    assert form.defaults.values() == {"pose": "sit"}
+    assert _prompts(form) == []
+
+
+def test_form_does_not_remember_settings_of_a_rejected_pack(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER])
+    form.defaults.set_values({"pose": "sit"})
+    form.items_table.paste_rows("a knight\t亚瑟")
+    form._on_create()
+    form.set_error("创建失败")
+    form.reset()
+    assert form._memory.store == {}
+    # 改回站立后再成功创建：记住的是成功那次的设置
+    form.items_table.paste_rows("a knight\t亚瑟")
+    form.defaults.set_values({"pose": "stand"})
+    form._on_create()
+    form.reset()
+    assert form._memory.store["character_basic"]["defaults"] == {"pose": "stand"}
+
+
+@pytest.fixture
+def shown_form(qapp):
+    """显示并激活的表单：键盘测试要靠焦点；断言失败时也要关窗，否则后面的测试抢不到激活。"""
+    form = PackForm()
+    form.set_templates([PROPS])
+    form.resize(900, 700)
+    form.show()
+    form.activateWindow()
+    assert QTest.qWaitForWindowActive(form)
+    yield form
+    form.close()
+
+
+def test_form_enter_on_last_row_adds_a_row_and_keeps_typing(qapp, shown_form):
+    form = shown_form
+    table = form.items_table
+    table.setCurrentCell(0, 0)
+    table.editItem(table.item(0, 0))
+    # 编辑框不一定拿到焦点（前面的测试窗口可能还占着激活），直接从视口里找
+    editor = table.viewport().findChild(QLineEdit)
+    assert editor is not None
+    # keyClicks 逐字转成按键，非 ASCII 字符会让进程直接崩掉
+    QTest.keyClicks(editor, "lantern")
+    QTest.keyClick(editor, Qt.Key.Key_Return)
+    # 委托收到回车后是排队提交的
+    qapp.processEvents()
+    assert _prompts(form) == ["lantern"]
+    assert table.rowCount() == 2
+    # 光标落到新的空行，直接接着写下一条
+    assert table.currentRow() == 1
+    assert table.state() == QAbstractItemView.State.EditingState
+
+
+def test_form_delete_key_removes_selected_row(shown_form):
+    form = shown_form
+    table = form.items_table
+    table.paste_rows("石灯笼\n木桶\n")
+    table.setFocus()
+    table.selectRow(0)
+    QTest.keyClick(table, Qt.Key.Key_Delete)
+    assert _prompts(form) == ["木桶"]
+
+
+def test_form_escape_leaves_input_first_then_goes_back(shown_form):
+    form = shown_form
+    back = []
+    form.back_requested.connect(lambda: back.append(True))
+    form.name_edit.setFocus()
+    QTest.keyClick(form.name_edit, Qt.Key.Key_Escape)
+    assert back == [] and not form.name_edit.hasFocus()
+    QTest.keyClick(form, Qt.Key.Key_Escape)
+    assert back == [True]
+
+
+def test_form_ctrl_enter_creates(shown_form):
+    form = shown_form
+    emitted = []
+    form.create_requested.connect(emitted.append)
+    form.items_table.paste_rows("石灯笼\n")
+    form.name_edit.setFocus()
+    QTest.keyClick(form.name_edit, Qt.Key.Key_Return, Qt.KeyboardModifier.ControlModifier)
+    assert [request.items[0].prompt for request in emitted] == ["石灯笼"]
+
+
+def _run_animations(qapp, ms: int = 450):
+    timer = QElapsedTimer()
+    timer.start()
+    while timer.elapsed() < ms:
+        qapp.processEvents()
+
+
+def test_create_button_bounces_and_returns_to_its_place(qapp, shown_form):
+    form = shown_form
+    button = form.create_btn
+    form.items_table.paste_rows("石灯笼\n")
+    home = button.geometry()
+    sizes = []
+    timer = QElapsedTimer()
+    timer.start()
+    form._on_create()
+    while timer.elapsed() < 450:
+        qapp.processEvents()
+        sizes.append(button.width())
+    # 先缩小再弹回，最后严丝合缝停在原位
+    assert min(sizes) < home.width()
+    assert button.geometry() == home
+
+
+def test_page_slide_ends_exactly_in_place(qapp):
+    """切页的滑入动画结束后页面必须回到原位：偏了几十像素右边就被切掉，拖一下窗口才恢复。"""
+    stack = QStackedWidget()
+    pages = [QWidget(), QWidget()]
+    for page in pages:
+        stack.addWidget(page)
+    stack.resize(900, 600)
+    stack.show()
+    _run_animations(qapp, 50)
+    for forward in (True, False, True, False):
+        page = pages[1] if forward else pages[0]
+        stack.setCurrentWidget(page)
+        page_enter(page, PAGE_BACKGROUND, 12 if forward else -12)
+        _run_animations(qapp, 400)
+        assert page.geometry() == stack.contentsRect(), forward
+    stack.close()
+
+
+def test_form_blocks_stay_in_place_after_animated_switches(qapp):
+    """切到只有一个模板的分类时模板小块那排会隐藏、内容整体上移；
+    动画不能把内容留在旧位置，否则会和下面的"风格"重叠。"""
+    form = PackForm()
+    form.set_templates([SCENE_FORM, PROPS, DIALOGUE, CHARACTER])
+    form.resize(900, 700)
+    form.show()
+    _run_animations(qapp, 100)
+    for category in ("dialogue", "scene", "character", "dialogue"):
+        form.picker.tabs._buttons[category].click()
+        _run_animations(qapp)
+        before = form.content.pos()
+        layout = form.content.parentWidget().layout()
+        layout.invalidate()
+        layout.activate()
+        assert form.content.pos() == before, category
+        assert form.content.geometry().bottom() < form.style_toggle.geometry().top(), category
+    form.close()
 
 
 def test_form_draft_requires_theme(qapp):
@@ -252,6 +555,7 @@ def test_form_draft_requires_theme(qapp):
     form.draft_requested.connect(emitted.append)
     form.draft_btn.click()
     assert not emitted and form.error_label.text()
+    assert form.draft_panel.is_expanded()
 
 
 def test_form_draft_keeps_user_rows_and_replaces_untouched_drafts(qapp):
@@ -264,9 +568,9 @@ def test_form_draft_keeps_user_rows_and_replaces_untouched_drafts(qapp):
         NewCollectionItem(prompt="a thief", fields={"name": "罗宾"}),
     ])
     # 空行被换掉，手填的行保留在前
-    assert [form.items_table.cell_text(r, 0) for r in range(form.items_table.rowCount())] == [
-        "my own knight", "a mage", "a thief"]
-    assert form.items_table.cell_text(1, 2) == "sit"
+    assert _prompts(form) == ["my own knight", "a mage", "a thief"]
+    # 模型给这一条选了和整包不同的姿势：记成这一行的单独设置
+    assert form.items_table.row_overrides(1) == {"pose": "sit"}
 
     # 改过的起草行算用户的，再起草时保留；没动过的被换掉
     form.items_table.set_cell_text(1, 1, "大法师")
@@ -277,8 +581,7 @@ def test_form_draft_keeps_user_rows_and_replaces_untouched_drafts(qapp):
     assert emitted[0].exclude == ["my own knight", "a mage", "a thief"]
     assert emitted[0].theme == "奇幻冒险队" and emitted[0].template == "character_basic"
     form.apply_drafts("character_basic", [NewCollectionItem(prompt="a bard")])
-    assert [form.items_table.cell_text(r, 0) for r in range(form.items_table.rowCount())] == [
-        "my own knight", "a mage", "a bard"]
+    assert _prompts(form) == ["my own knight", "a mage", "a bard"]
 
 
 def test_form_ignores_drafts_for_another_template(qapp):
@@ -286,7 +589,7 @@ def test_form_ignores_drafts_for_another_template(qapp):
     form.set_templates([CHARACTER, DIALOGUE])
     form.preselect_category("dialogue")
     form.apply_drafts("character_basic", [NewCollectionItem(prompt="a mage")])
-    assert form.items_table.cell_text(0, 0) == ""
+    assert _prompts(form) == []
 
 
 def test_form_dialogue_cast_links_character(qapp):
@@ -296,8 +599,8 @@ def test_form_dialogue_cast_links_character(qapp):
     form.preselect_category("dialogue")
     assert not form.cast_section.isHidden()
     form.items_table.paste_rows("两人在酒馆相遇")
-    form.cast_table.setItem(0, 0, QTableWidgetItem("亚瑟"))
-    form.cast_table.cellWidget(0, 1).setCurrentIndex(1)
+    form.cast_chips.add_member(CastMember(name="亚瑟", character="c1/hero"))
+    form.cast_chips.add_member(CastMember(name=""))  # 什么都没填的不算
     request = form.build_request()
     assert request.cast == [CastMember(name="亚瑟", character="c1/hero")]
 
@@ -316,7 +619,7 @@ def test_form_motion_template_requires_source_character(qapp):
     form = PackForm()
     form.set_templates([CHARACTER, MOTION])
     form.preselect_category("character")
-    form.template_combo.setCurrentIndex(form.template_combo.findData("character_motion"))
+    form.picker.select_template("character_motion")
     assert not form.source_section.isHidden()
     form.items_table.paste_rows("walk to the right")
     with pytest.raises(ValueError):
@@ -324,7 +627,7 @@ def test_form_motion_template_requires_source_character(qapp):
     form.set_characters([("主角 / 亚瑟", "c1/hero")])
     assert form.build_request().source == "c1/hero"
 
-    form.template_combo.setCurrentIndex(form.template_combo.findData("character_basic"))
+    form.picker.select_template("character_basic")
     assert form.source_section.isHidden()
     form.items_table.paste_rows("a knight\t亚瑟")
     assert form.build_request().source == ""
@@ -334,23 +637,107 @@ def test_form_common_motions_drafts_for_the_bound_character(qapp):
     form = PackForm()
     form.set_templates([CHARACTER, MOTION])
     form.preselect_category("character")
-    assert form.common_motions_btn.isHidden()  # 普通角色包没有绑定的物体
-    form.template_combo.setCurrentIndex(form.template_combo.findData("character_motion"))
+    assert form.common_motions_btn.isHidden()
+    form.picker.select_template("character_motion")
     assert not form.common_motions_btn.isHidden()
+
     emitted = []
     form.draft_requested.connect(emitted.append)
     form.common_motions_btn.click()
-    assert not emitted and form.error_label.text()  # 还没有可绑定的角色
+    assert not emitted and form.error_label.text()
 
     form.set_characters([("球 / 红球", "c1/ball")])
     form.common_motions_btn.click()
     [request] = emitted
     assert request.template == "character_motion" and request.source == "c1/ball"
-    assert "待机" in request.theme and request.count == 6
-    # 自己写主题起草时也带上绑定的角色
+    assert request.theme and request.count == 6
+
     form.draft_theme_edit.setText("战斗动作")
     form.draft_btn.click()
     assert emitted[1].source == "c1/ball" and emitted[1].theme == "战斗动作"
+
+
+def _motion_form(qapp):
+    """带预设的动作模板：播放方式是必填下拉，每行一列。"""
+    from src.shared.schemas import FieldOption, TemplateFieldInfo, TemplatePresetInfo
+    modes = [FieldOption(value=v, label=v) for v in ("loop", "pingpong", "once")]
+    template = TemplateInfo(
+        id="motion_presets", type="character", source="character", cover="sheet",
+        prompt_label="Action",
+        fields=[TemplateFieldInfo(id="action", label="Action name"),
+                TemplateFieldInfo(id="loop_mode", label="Playback", required=True,
+                                  default="loop", options=modes)],
+        presets=[TemplatePresetInfo(name="待机", prompt="stands and breathes",
+                                    fields={"action": "idle", "loop_mode": "pingpong"}),
+                 TemplatePresetInfo(name="死亡", prompt="falls to the ground",
+                                    fields={"action": "death", "loop_mode": "once"})],
+        steps=["video", "sheet"],
+        step_details=[
+            TemplateStepInfo(id="video", type="animation.generate", inputs=["@source"]),
+            TemplateStepInfo(id="sheet", type="frames.sheet", deliverable=True, inputs=["video"]),
+        ])
+    form = PackForm()
+    form.set_templates([CHARACTER, template])
+    form.preselect_category("character")
+    form.picker.select_template("motion_presets")
+    form.set_characters([("主角 / 亚瑟", "c1/hero")])
+    return form
+
+
+def test_form_shows_the_presets_button_only_for_templates_that_have_presets(qapp):
+    form = _motion_form(qapp)
+    assert not form.preset_items_btn.isHidden()
+    form.picker.select_template("character_basic")
+    assert form.preset_items_btn.isHidden()
+
+
+def test_form_add_presets_fills_rows_with_their_own_loop_mode(qapp):
+    form = _motion_form(qapp)
+    form.add_presets()
+    request = form.build_request()
+    assert [(i.prompt, i.fields["action"], i.fields["loop_mode"]) for i in request.items] == [
+        ("stands and breathes", "idle", "pingpong"), ("falls to the ground", "death", "once")]
+
+
+def test_form_add_presets_twice_does_not_duplicate_rows(qapp):
+    form = _motion_form(qapp)
+    form.add_presets()
+    form.add_presets()
+    assert len(form.build_request().items) == 2
+
+
+def test_form_add_presets_keeps_rows_the_user_wrote_and_edited(qapp):
+    form = _motion_form(qapp)
+    form.items_table.paste_rows("jump over a box")
+    form.add_presets()
+    prompts = [i.prompt for i in form.build_request().items]
+    assert prompts[0] == "jump over a box" and len(prompts) == 3
+    # 改过的预设行和删掉的预设行：再点一次只补回被删的，不覆盖用户的修改
+    table = form.items_table
+    row = next(r for r in table.filled_rows() if table.cell_text(r, 0) == "stands and breathes")
+    table.set_cell_text(row, 0, "stands tall and sways")
+    table.removeRow(next(r for r in table.filled_rows() if table.cell_text(r, 0) == "falls to the ground"))
+    form.add_presets()
+    prompts = [i.prompt for i in form.build_request().items]
+    assert "stands tall and sways" in prompts and "falls to the ground" in prompts
+
+
+def test_form_add_presets_rows_survive_a_later_ai_draft(qapp):
+    form = _motion_form(qapp)
+    form.add_presets()
+    form.apply_drafts("motion_presets", [NewCollectionItem(
+        prompt="slides under a gap", fields={"action": "slide", "loop_mode": "once"})])
+    prompts = [i.prompt for i in form.build_request().items]
+    # AI 起草只换掉空行和上次起草的行；预设行不是 AI 写的，不能被清掉
+    assert prompts == ["stands and breathes", "falls to the ground", "slides under a gap"]
+
+
+def test_form_add_presets_does_nothing_for_templates_without_presets(qapp):
+    form = PackForm()
+    form.set_templates([CHARACTER])
+    form.preselect_category("character")
+    form.add_presets()
+    assert form.items_table.filled_rows() == []
 
 
 def test_media_kind_shows_frames_as_images():
@@ -506,6 +893,96 @@ def _page(qapp) -> LibraryPage:
     return page
 
 
+def test_new_pack_form_fills_the_page_after_switching(qapp):
+    page = _page(qapp)
+    page.resize(1000, 700)
+    page.show()
+    _run_animations(qapp, 50)
+    for show in (page._show_form, page._show_garden, page._show_form):
+        show()
+        _run_animations(qapp, 400)
+        assert page.stack.currentWidget().geometry() == page.stack.contentsRect()
+    page.close()
+
+
+def test_page_runs_new_pack_right_after_creating(qapp):
+    page = _page(qapp)
+    started = []
+    page._run_pack = started.append
+    page._on_created(_character_pack())
+    assert page.stack.currentWidget() is page.detail and started == ["c1"]
+
+    # 别的资源包正在执行时只打开，不抢着执行
+    page = _page(qapp)
+    started = []
+    page._run_pack = started.append
+    page._is_busy = lambda: True
+    page._on_created(_character_pack())
+    assert started == []
+
+
+def test_add_form_keeps_pack_settings_and_drafts_around_existing_items(qapp):
+    form = PackForm(append=True)
+    pack = _character_pack().manifest
+    pack.style.prompt = "teal"
+    form.set_target(pack, CHARACTER)
+    # 模板、名称、风格锁都沿用包里的，不再让用户选
+    assert form.picker.isHidden() and form.name_edit.isHidden() and form.style_toggle.isHidden()
+    assert "主角" in form.title_label.text()
+    form.items_table.setCurrentCell(0, 0)
+    form.items_table.paste_rows("a bard\t丹德里恩")
+    added = []
+    form.add_requested.connect(lambda pack_id, request: added.append((pack_id, request)))
+    form.create_btn.click()
+    assert added[0][0] == "c1"
+    assert [(i.prompt, i.fields["name"]) for i in added[0][1].items] == [("a bard", "丹德里恩")]
+
+    drafts = []
+    form.draft_requested.connect(drafts.append)
+    form.draft_theme_edit.setText("冒险队")
+    form.draft_btn.click()
+    # 包里已有的条目也告诉模型，避免起草出重复的
+    assert drafts[0].exclude == ["a bard", "a knight", "a mage"] and drafts[0].style == "teal"
+
+    # 回到同一个包保留没提交的行，换了包才清空
+    form.set_target(pack, CHARACTER)
+    assert _prompts(form) == ["a bard"]
+    other = pack.model_copy(update={"id": "c2"})
+    form.set_target(other, CHARACTER)
+    assert _prompts(form) == []
+
+
+def test_add_form_does_not_ask_for_source_character(qapp):
+    form = PackForm(append=True)
+    motion = Manifest(id="m1", type="character", template="character_motion", source="c1/hero",
+                      items=[CollectionItem(id="walk", prompt="walk")])
+    form.set_target(motion, MOTION)
+    assert form.source_section.isHidden()
+    form.items_table.setCurrentCell(0, 0)
+    form.items_table.paste_rows("run")
+    assert [i.prompt for i in form.build_add_request().items] == ["run"]
+
+
+def test_page_runs_pack_right_after_adding_items(qapp):
+    page = _page(qapp)
+    page._on_packs(PackListResponse(packs=[_character_pack()]))
+    page._open_pack("c1")
+    page.detail.add_btn.click()
+    assert page.stack.currentWidget() is page.add_form
+
+    started = []
+    page._run_pack = started.append
+    grown = _character_pack()
+    grown.manifest.items.append(CollectionItem(id="03", prompt="a bard"))
+    page._on_items_added(grown)
+    assert page.stack.currentWidget() is page.detail and started == ["c1"]
+    assert [i.id for i in page.detail.pack.manifest.items] == ["hero", "mage", "03"]
+
+    # 执行中不能追加
+    page._on_packs(PackListResponse(packs=[_character_pack(running=True)]))
+    assert not page.detail.add_btn.isEnabled()
+
+
 def test_page_run_state_follows_packs(qapp):
     page = _page(qapp)
     page._on_packs(PackListResponse(packs=[_character_pack(running=True)]))
@@ -535,6 +1012,81 @@ def test_page_reloads_thumbnails_for_rebuilt_cards(qapp):
     page._open_pack("c2")
     page._open_pack("c1")
     assert fetched.count(hero_thumb) == 3
+
+
+def test_delete_item_button_follows_pack_state(qapp):
+    panel = DetailPanel()
+    assert panel.delete_btn.isHidden()  # 没选素材时不显示
+    pack = _character_pack()
+    item = pack.manifest.items[0]
+    step = CHARACTER.step_details[1]
+    panel.show_asset(pack, CHARACTER, item, step, busy=False)
+    assert not panel.delete_btn.isHidden() and panel.delete_btn.isEnabled()
+    panel.set_busy(True)  # 执行中删条目会被执行器存盘时写回
+    assert not panel.delete_btn.isEnabled()
+    panel.set_busy(False)
+    assert panel.delete_btn.isEnabled()
+
+    pack.manifest.items = [item]  # 最后一个条目：要删就删整个资源包
+    panel.show_asset(pack, CHARACTER, item, step, busy=False)
+    assert not panel.delete_btn.isEnabled() and panel.delete_btn.toolTip()
+    panel.set_busy(False)
+    assert not panel.delete_btn.isEnabled()
+
+    emitted = []
+    panel.delete_requested.connect(emitted.append)
+    panel.delete_btn.setEnabled(True)
+    panel.delete_btn.click()
+    assert emitted == ["hero"]
+
+
+def _answer(monkeypatch, button):
+    monkeypatch.setattr(library_page.QMessageBox, "question", lambda *args, **kwargs: button)
+
+
+def test_page_deletes_item_only_after_confirmation(qapp, monkeypatch):
+    page = _page(qapp)
+    page._on_packs(PackListResponse(packs=[_character_pack()]))
+    page._open_pack("c1")
+    started = []
+    page._start = lambda fn, *args, **kwargs: started.append((fn.__name__, args))
+
+    _answer(monkeypatch, library_page.QMessageBox.StandardButton.No)
+    page._delete_item("hero")
+    assert started == []
+
+    _answer(monkeypatch, library_page.QMessageBox.StandardButton.Yes)
+    page._delete_item("nobody")  # 条目已经不在了：不发请求
+    assert started == []
+    page._delete_item("hero")
+    assert started == [("delete_item", ("c1", "hero"))]
+
+
+def test_page_shows_remaining_items_after_delete(qapp):
+    page = _page(qapp)
+    page._on_packs(PackListResponse(packs=[_character_pack()]))
+    page._open_pack("c1")
+    page.detail.select_asset("hero", "trim")
+    started = []
+    page._start = lambda fn, *args, **kwargs: started.append(fn)
+
+    remaining = _character_pack()
+    remaining.manifest.items = [remaining.manifest.items[1]]
+    page._on_item_deleted(remaining)
+    assert [i.id for i in page.detail.pack.manifest.items] == ["mage"]
+    assert page.detail.selected is None and page.detail.detail.key is None
+    assert ("hero", "trim") not in page.detail._cards
+    assert page.stack.currentWidget() is page.detail
+    assert not any(fn is page._client.run_pack for fn in started)  # 删除不触发执行
+
+
+def test_page_reports_delete_item_failure(qapp):
+    page = _page(qapp)
+    page._on_packs(PackListResponse(packs=[_character_pack()]))
+    page._open_pack("c1")
+    page._on_item_deleted(PackResponse.from_error("条目 hero 正被资源包 剧情 引用"))
+    assert "正被资源包 剧情 引用" in page.detail.error_label.text()
+    assert [i.id for i in page.detail.pack.manifest.items] == ["hero", "mage"]
 
 
 def test_export_button_needs_a_finished_deliverable(qapp):
@@ -644,6 +1196,35 @@ def test_condition_is_checked_before_the_pack_ever_ran():
     assert step_skipped(item, SCENE.step_details[4], SCENE)
     item.fields["layers"] = "4"
     assert not step_skipped(item, SCENE.step_details[4], SCENE)
+
+
+PROPS_EITHER = TemplateInfo(
+    id="scene_props", type="scene", name="场景道具", cover="trim",
+    fields=[TemplateFieldInfo(id="sheet", default="0",
+                              options=[FieldOption(value="0"), FieldOption(value="6")])],
+    steps=["trim", "sheet_upscale"],
+    step_details=[
+        TemplateStepInfo(id="trim", type="image.trim", deliverable=True, when="!sheet"),
+        TemplateStepInfo(id="sheet_upscale", type="image.upscale", deliverable=True,
+                         when="sheet"),
+    ])
+
+
+def test_negated_condition_skips_the_other_chain():
+    single, sheet = PROPS_EITHER.step_details
+    item = CollectionItem(id="01", prompt="mushroom")
+    assert not step_skipped(item, single, PROPS_EITHER) and step_skipped(item, sheet, PROPS_EITHER)
+    item.fields["sheet"] = "6"
+    assert step_skipped(item, single, PROPS_EITHER) and not step_skipped(item, sheet, PROPS_EITHER)
+
+
+def test_cover_falls_back_when_the_cover_step_was_skipped():
+    item = CollectionItem(id="01", prompt="mushrooms", fields={"sheet": "6"}, steps={
+        "trim": StepState(status="skipped"),
+        "sheet_upscale": StepState(status="done", outputs=["01/sheet_upscale_1.png",
+                                                           "01/sheet_upscale_2.png"])})
+    manifest = Manifest(id="p", type="scene", template="scene_props", items=[item])
+    assert pack_cover(manifest, PROPS_EITHER) == "01/sheet_upscale_1.png"
 
 
 def test_layer_thumbnail_is_the_bottom_layer():

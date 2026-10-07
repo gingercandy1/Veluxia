@@ -1,18 +1,21 @@
 import asyncio
 import os
-from pathlib import Path
 
 from src.backend.core.model_base import BaseTextGenerator
-from src.backend.core.model_utils import huggingface_token, get_temp_dir, hf_download_progress
+from src.backend.core.model_utils import (
+    get_temp_dir,
+    hf_download_progress,
+    huggingface_token,
+    models_root,
+)
 from src.backend.core.text.index_memory import ConversationMemory
-from src.shared.settings import PROJECT_ROOT
 
 
 class LlamaGenerator(BaseTextGenerator):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.llama_local  = Path(PROJECT_ROOT) / "models" / "text" / self.model_name
+        self.llama_local  = models_root() / "text" / self.model_name
         if isinstance(self.model_filename, str):
             self.llama_path = self.llama_local / self.model_filename
         else:

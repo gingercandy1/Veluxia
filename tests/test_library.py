@@ -59,7 +59,6 @@ class _InputsRunner(StepRunner):
     def run(self, ctx: StepContext):
         path = ctx.out_dir / f"{ctx.step_id}.txt"
         path.write_text("\n".join(str(p) for p in ctx.inputs), encoding="utf-8")
-        ctx.meta["subject"] = ctx.values.get("source_description", "")
         return [path]
 
 
@@ -107,6 +106,15 @@ def client(tmp_path, monkeypatch):
         "steps": [{"id": "base", "type": "test.echo", "deliverable": True},
                   {"id": "split", "type": "test.echo", "when": "layers", "inputs": ["base"]},
                   {"id": "parts", "type": "test.echo", "deliverable": True, "inputs": ["split"]}],
+    }), encoding="utf-8")
+    (templates / "either.json").write_text(json.dumps({
+        "id": "either", "type": "scene",
+        "fields": [{"id": "sheet", "default": "0",
+                    "options": [{"value": "0"}, {"value": "6"}]}],
+        "steps": [{"id": "single", "type": "test.echo", "deliverable": True, "when": "!sheet"},
+                  {"id": "sheet_gen", "type": "test.echo", "when": "sheet"},
+                  {"id": "pieces", "type": "test.echo", "deliverable": True, "when": "sheet",
+                   "inputs": ["sheet_gen"]}],
     }), encoding="utf-8")
     (templates / "panorama.json").write_text(json.dumps({
         "id": "panorama", "type": "scene",
@@ -283,6 +291,30 @@ def test_conditional_steps_are_skipped_and_can_be_turned_on_later(client):
     assert off["items"][0]["fields"] == {"layers": "0"}
 
 
+def test_negated_condition_picks_one_of_two_chains(client):
+    pack_id = _create(client, template="either", items=[
+        {"id": "a", "prompt": "mushroom"},
+        {"id": "b", "prompt": "mushrooms", "fields": {"sheet": "6"}}]).json()["manifest"]["id"]
+    items = {item["id"]: item["steps"] for item in _run(client, pack_id)["items"]}
+    assert {s: items["a"][s]["status"] for s in ("single", "sheet_gen", "pieces")} == {
+        "single": "done", "sheet_gen": "skipped", "pieces": "skipped"}
+    assert {s: items["b"][s]["status"] for s in ("single", "sheet_gen", "pieces")} == {
+        "single": "skipped", "sheet_gen": "done", "pieces": "done"}
+
+    # 事后切换出图方式：两条流程都受这个字段影响，切过去的那条变成待执行
+    switched = client.post(f"/library/packs/{pack_id}/fields",
+                           json={"item_id": "a", "fields": {"sheet": "6"}}).json()["manifest"]
+    states = _steps(switched)
+    assert states["single"]["status"] == "skipped"
+    assert states["sheet_gen"]["status"] == "pending" and states["pieces"]["status"] == "pending"
+
+
+def test_negated_condition_must_reference_a_declared_field():
+    with pytest.raises(ValueError, match="条件引用了未声明的字段"):
+        template.parse_template({"id": "bad", "steps": [
+            {"id": "a", "type": "test.echo", "when": "!missing"}]})
+
+
 def test_update_fields_only_touches_conditional_fields(client):
     pack_id = _create(client, template="layered", items=[{"id": "a", "prompt": "forest"}]
                       ).json()["manifest"]["id"]
@@ -425,6 +457,140 @@ def test_reset_step_marks_it_and_downstream_pending(client):
     assert states["draft"]["approved"] is False
 
 
+def test_add_items_to_finished_pack_runs_only_new_items(client):
+    pack_id = _create(client).json()["manifest"]["id"]
+    _run(client, pack_id)
+    old_file = library.pack_dir(pack_id) / "mushroom" / "write.txt"
+    old_mtime = old_file.stat().st_mtime_ns
+
+    added = client.post(f"/library/packs/{pack_id}/items",
+                        json={"items": [{"prompt": "fern"}, {"id": "rock", "prompt": "rock"}]})
+    assert added.status_code == 200
+    # 没填 id 的接着已有条目编号，不和 "02" 撞
+    assert [i["id"] for i in added.json()["manifest"]["items"]] == ["mushroom", "02", "03", "rock"]
+
+    items = {item["id"]: item["steps"] for item in _run(client, pack_id)["items"]}
+    assert all(steps["write"]["status"] == "done" for steps in items.values())
+    assert (library.pack_dir(pack_id) / "03" / "write.txt").read_text(
+        encoding="utf-8") == "fern, teal"
+    # 已生成的条目不重做
+    assert old_file.stat().st_mtime_ns == old_mtime
+
+
+@pytest.mark.parametrize("items", [
+    [],
+    [{"id": "mushroom", "prompt": "again"}],
+    [{"id": "../x", "prompt": "a"}],
+])
+def test_add_items_rejects_invalid_requests(client, items):
+    pack_id = _create(client).json()["manifest"]["id"]
+    assert client.post(f"/library/packs/{pack_id}/items", json={"items": items}).status_code == 400
+    assert len(client.get(f"/library/packs/{pack_id}").json()["manifest"]["items"]) == 2
+
+
+def test_add_items_is_rejected_while_running(client):
+    pack_id = _create(client).json()["manifest"]["id"]
+    _EchoRunner.gate.clear()
+    job = client.post("/library/run/submit", json={"pack_id": pack_id}).json()
+    assert _EchoRunner.started.wait(5)
+    body = {"items": [{"prompt": "fern"}]}
+    assert client.post(f"/library/packs/{pack_id}/items", json=body).status_code == 409
+    _EchoRunner.gate.set()
+    assert _wait_job(client, job["job_id"])["status"] == "done"
+    assert client.post("/library/packs/missing/items", json=body).status_code == 404
+
+
+def test_delete_item_removes_it_and_its_files(client):
+    pack_id = _create(client).json()["manifest"]["id"]
+    _run(client, pack_id)
+    removed_dir = library.pack_dir(pack_id) / "mushroom"
+    kept_file = library.pack_dir(pack_id) / "02" / "write.txt"
+    assert removed_dir.is_dir() and kept_file.is_file()
+
+    response = client.delete(f"/library/packs/{pack_id}/items/mushroom")
+    assert response.status_code == 200
+    assert [i["id"] for i in response.json()["manifest"]["items"]] == ["02"]
+    assert not removed_dir.exists()
+    assert kept_file.is_file()
+    # 存盘了，不只是返回值变了
+    stored = client.get(f"/library/packs/{pack_id}").json()["manifest"]
+    assert [i["id"] for i in stored["items"]] == ["02"]
+
+
+def test_delete_item_that_was_never_generated(client):
+    pack_id = _create(client).json()["manifest"]["id"]
+    assert not (library.pack_dir(pack_id) / "mushroom").exists()
+    assert client.delete(f"/library/packs/{pack_id}/items/mushroom").status_code == 200
+
+
+def test_delete_item_rejects_last_item_and_unknown_ids(client):
+    pack_id = _create(client, items=[{"id": "a", "prompt": "a"}]).json()["manifest"]["id"]
+    last = client.delete(f"/library/packs/{pack_id}/items/a")
+    assert last.status_code == 400 and "至少要保留一个条目" in last.json()["detail"]
+    assert len(client.get(f"/library/packs/{pack_id}").json()["manifest"]["items"]) == 1
+
+    pack_id = _create(client).json()["manifest"]["id"]
+    assert client.delete(f"/library/packs/{pack_id}/items/nobody").status_code == 400
+    assert client.delete("/library/packs/missing/items/a").status_code == 404
+    # 条目 id 不能带出资源包目录
+    assert client.delete(f"/library/packs/{pack_id}/items/..%5Cconfig").status_code == 400
+    assert len(client.get(f"/library/packs/{pack_id}").json()["manifest"]["items"]) == 2
+
+
+def test_delete_item_is_rejected_while_running(client):
+    pack_id = _create(client).json()["manifest"]["id"]
+    _EchoRunner.gate.clear()
+    job = client.post("/library/run/submit", json={"pack_id": pack_id}).json()
+    assert _EchoRunner.started.wait(5)
+    assert client.delete(f"/library/packs/{pack_id}/items/mushroom").status_code == 409
+    _EchoRunner.gate.set()
+    assert _wait_job(client, job["job_id"])["status"] == "done"
+    assert client.delete(f"/library/packs/{pack_id}/items/mushroom").status_code == 200
+
+
+def test_delete_item_rejected_when_other_packs_use_it(client):
+    character = _create(client, template="cast", items=[
+        {"id": "hero", "prompt": "knight"}, {"id": "mage", "prompt": "mage"}]
+                        ).json()["manifest"]["id"]
+    talk = _create(client, template="talk", items=[{"prompt": "相遇"}],
+                   cast=[{"name": "骑士", "character": f"{character}/hero"}]
+                   ).json()["manifest"]["id"]
+
+    in_cast = client.delete(f"/library/packs/{character}/items/hero")
+    # 提示里要点出是哪个包在用它，用户才知道该去删谁
+    assert in_cast.status_code == 400
+    assert "正被资源包 森林 引用" in in_cast.json()["detail"]
+    # 没被引用的条目照常能删
+    assert client.delete(f"/library/packs/{character}/items/mage").status_code == 200
+
+    # 引用它的包删掉后，同样的条目就能删了（先补回一个，避免撞上"最后一个条目"）
+    client.post(f"/library/packs/{character}/items", json={"items": [{"id": "rogue", "prompt": "r"}]})
+    assert client.delete(f"/library/packs/{talk}").status_code == 200
+    assert client.delete(f"/library/packs/{character}/items/hero").status_code == 200
+
+
+def test_delete_item_rejected_when_it_is_a_motion_source(client):
+    character = _create(client, template="portrait", items=[
+        {"id": "hero", "prompt": "knight"}, {"id": "mage", "prompt": "mage"}]
+                        ).json()["manifest"]["id"]
+    _create(client, template="motion", source=f"{character}/hero",
+            items=[{"id": "walk", "prompt": "walk"}])
+    rejected = client.delete(f"/library/packs/{character}/items/hero")
+    assert rejected.status_code == 400 and "正被资源包" in rejected.json()["detail"]
+
+
+def test_client_delete_item_returns_the_updated_pack(client, monkeypatch):
+    api = ApiClient.instance()
+    monkeypatch.setattr(api, "_session", client)
+    monkeypatch.setattr(api, "base_url", "http://testserver")
+    pack_id = _create(client).json()["manifest"]["id"]
+
+    deleted = api.delete_item(pack_id, "mushroom")
+    assert deleted.ok and [i.id for i in deleted.manifest.items] == ["02"]
+    failed = api.delete_item(pack_id, "02")
+    assert not failed.ok and "至少要保留一个条目" in failed.error
+
+
 def test_item_fields_are_validated_and_stored(client):
     items = [{"id": "hero", "prompt": "knight", "fields": {"voice": "低沉"}}]
     manifest = _create(client, template="cast", items=items).json()["manifest"]
@@ -522,8 +688,6 @@ def test_source_portrait_is_resolved_at_run_time(client):
         encoding="utf-8")
     portrait = library.pack_dir(character) / "hero" / f"{library.CHARACTER_PORTRAIT_STEP}.txt"
     assert written == str(portrait)
-    # 来源角色的描述也一起交给步骤，视频提示词才知道主体是什么
-    assert _steps(manifest)["video"]["meta"]["subject"] == "knight"
 
 
 def test_redone_source_portrait_is_noticed_and_refreshed(client):

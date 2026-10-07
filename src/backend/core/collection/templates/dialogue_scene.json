@@ -3,6 +3,7 @@
   "version": 1,
   "type": "dialogue",
   "name": "剧情对话",
+  "summary": "AI 写对话，再按角色声线逐句配音",
   "description": "按剧情让 AI 写一段对话，确认剧本后按出场角色的声线逐句配音。",
   "prompt_label": "剧情",
   "steps": [

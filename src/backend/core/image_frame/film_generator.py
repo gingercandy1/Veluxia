@@ -5,9 +5,8 @@ from typing import List, Optional
 import numpy as np
 from PIL import Image
 
-from src.shared.settings import PROJECT_ROOT
 from src.backend.core.model_base import BaseImageFrameGenerator
-from src.backend.core.model_utils import get_temp_dir
+from src.backend.core.model_utils import get_temp_dir, models_root
 
 
 def _load_frame_np(path: str, width: int, height: int) -> np.ndarray:
@@ -202,9 +201,6 @@ class FILMInterpolationGenerator(BaseImageFrameGenerator):
         backend="film"  精度高，适合小动作
         backend="rife"  幻影少，适合大动作（推荐角色运动场景）
     """
-    _FILM_MODEL_PATH = str(Path(PROJECT_ROOT) / "models" / "image_frame" / "film_net" / "Style" / "film_torchscript.pt")
-    _RIFE_MODEL_DIR = str(Path(PROJECT_ROOT) / "models" / "image_frame" / "rife" / "train_log")
-    _RIFE_REPO_DIR = str(Path(PROJECT_ROOT) / "models" / "image_frame" / "vendors" / "Practical-RIFE")
     _model_attrs = ("_interpolator",)
 
     def __init__(
@@ -222,10 +218,13 @@ class FILMInterpolationGenerator(BaseImageFrameGenerator):
         if getattr(self, "model_name", "") == "Rife":
             backend = "rife"
         self.backend = backend
-        self._film_model_path = film_model_path or self._FILM_MODEL_PATH
+        # 不能写成类属性：import 时就会把模型目录定死，设置里改了目录也读不到
+        frame_root = models_root() / "image_frame"
+        self._film_model_path = film_model_path or str(
+            frame_root / "film_net" / "Style" / "film_torchscript.pt")
         self._fp16            = fp16
-        self._rife_model_dir  = rife_model_dir or self._RIFE_MODEL_DIR
-        self._rife_repo_dir   = rife_repo_dir  or self._RIFE_REPO_DIR
+        self._rife_model_dir  = rife_model_dir or str(frame_root / "rife" / "train_log")
+        self._rife_repo_dir   = rife_repo_dir or str(frame_root / "vendors" / "Practical-RIFE")
         self._rife_scale      = rife_scale
         self._interpolator    = None
 

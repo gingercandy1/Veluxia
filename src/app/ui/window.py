@@ -1,21 +1,30 @@
 import subprocess
 import sys
-from typing import Optional
 
 from PySide6.QtCore import QProcess
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QStackedWidget, QVBoxLayout, QFrame
-from src.app.work import ApiWorker, BackendStartupWorker
+from PySide6.QtWidgets import (
+    QApplication,
+    QFrame,
+    QHBoxLayout,
+    QMainWindow,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
 from src.app.client import ApiClient
 from src.app.param import GenerationRequest
 from src.app.ui.base.action_button import ActionButton
+from src.app.ui.base.anim import WINDOW_BACKGROUND, page_enter, stack_cross_fade
 from src.app.ui.gen_page import GenerationPage
 from src.app.ui.library.library_page import LibraryPage
 from src.app.ui.loading_page import LoadingPage
+from src.app.ui.setting.page.log_page import log_error, log_info
 from src.app.ui.setting.setting import SettingPage
 from src.app.ui.window_data import WindowData
-from src.app.ui.setting.page.log_page import log_info, log_error
+from src.app.work import ApiWorker, BackendStartupWorker
+from src.shared.schemas import AnimationResponse, ImageResponse, SpeechResponse
 from src.shared.settings import ConfigManager
-from src.shared.schemas import ImageResponse, AnimationResponse, SpeechResponse
 
 
 class TopBar(QFrame):
@@ -73,7 +82,8 @@ class TopBar(QFrame):
         return btn
 
     def set_index(self, index):
-        self.stack_widget.setCurrentIndex(index)
+        # 和页面淡入同时进行：按钮瞬间跳变反而会把注意力引过去
+        stack_cross_fade(self.stack_widget, index)
 
 
 class MainWindow(QMainWindow):
@@ -137,7 +147,7 @@ class MainWindow(QMainWindow):
         self.debug_paint_areas()
 
         self._output_started = False
-        self._worker: Optional[ApiWorker] = None
+        self._worker: ApiWorker | None = None
 
     def debug_paint_areas(self):
         """ 调试方法：为主要区域和控件注入不同背景色，便于观察布局边界 """
@@ -199,16 +209,23 @@ class MainWindow(QMainWindow):
         self._go_to_setting()
         self._setting_page.show_backend_page()
 
+    def _switch_page(self, page: QWidget):
+        """生成 / 设置 / 资源库是平级页面，没有先后，只淡入不滑动。"""
+        if self._stack.currentWidget() is page:
+            return
+        self._stack.setCurrentWidget(page)
+        page_enter(page, WINDOW_BACKGROUND)
+
     def _on_back_btn_clicked(self):
-        self._stack.setCurrentIndex(0)
+        self._switch_page(self._gen_page)
         self._top_bar.set_index(0)
 
     def _go_to_setting(self):
-        self._stack.setCurrentIndex(1)
+        self._switch_page(self._setting_page)
         self._top_bar.set_index(1)
 
     def _go_to_library(self):
-        self._stack.setCurrentWidget(self._library_page)
+        self._switch_page(self._library_page)
         # 顶栏只有"主页 / 带返回按钮"两种形态，资料库复用设置页那一种
         self._top_bar.set_index(1)
         self._library_page.activate()
@@ -335,6 +352,8 @@ class MainWindow(QMainWindow):
         log_info("✅ Backend 已就緒")
         self._gen_page.setEnabled(True)
         self._outer_stack.setCurrentIndex(1)
+        # 只在启动时发生一次，比普通切页慢一点，像"准备好了"的过渡，不会显得闪一下
+        page_enter(self._outer_stack.currentWidget(), WINDOW_BACKGROUND, duration=350)
 
     def _on_backend_failed(self, msg: str):
         log_error(f"⚠️ Backend 不可用: {msg}")

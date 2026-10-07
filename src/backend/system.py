@@ -91,6 +91,8 @@ class SystemRouter:
 
     async def install_backend(self, payload: dict):
         extra = payload.get("extra", "cpu")
+        if extra not in ("cuda", "cpu"):
+            return {"status": "error", "message": f"未知的后端类型：{extra}（可选 cuda、cpu）"}
 
         if self._state["status"] == "running":
             return {"status": "already_running", "message": "安装正在进行中"}
@@ -155,15 +157,22 @@ class SystemRouter:
             self._set_failed(f"安装出错: {e}")
 
     def _build_cmd(self, uv: str, extra: str) -> list[str]:
-        if extra in ("cuda", "cpu"):
-            return [
-                uv, "pip", "install", "-e", f".[{extra}]",
-                "--reinstall-package", "torch",
-                "--reinstall-package", "torchvision",
-                "--reinstall-package", "torchaudio",
-                "--reinstall-package", "llama-cpp-python",
-            ]
-        return [uv, "pip", "install", "-e", f".[{extra}]"]
+        """源码模式下重装推理依赖（ADR 0007：依赖按分组声明，没有 extras 可装了）。
+
+        cuda：按 uv.lock 同步全部分组，并强制重装锁定的 cu128 torch 三件套和 llama-cpp。
+        --inexact 保留锁文件之外单独装的包（ACE-Step 走独立安装）。
+        cpu：锁文件只有 cu128 版本，--no-sources 绕过 pyproject 里指向 cu128 源的配置，
+        从 PyPI 装 CPU 版 torch（之后再 uv sync 会换回锁定的 cu128 版）。
+        """
+        packages = ("torch", "torchvision", "torchaudio")
+        if extra == "cuda":
+            cmd = [uv, "sync", "--all-groups", "--inexact"]
+            for name in (*packages, "llama-cpp-python"):
+                cmd += ["--reinstall-package", name]
+            return cmd
+        if extra == "cpu":
+            return [uv, "pip", "install", "--no-sources", "--reinstall", *packages]
+        raise ValueError(f"未知的后端类型：{extra}（可选 cuda、cpu）")
 
     def _reset_state(self):
         self._state.update({"status": "running", "log": [], "message": ""})

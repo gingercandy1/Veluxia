@@ -81,9 +81,10 @@ def _register_builtin_runners() -> None:
         frame_steps,
         image_steps,
         layer_steps,
+        sheet_steps,
     )
 
     for module in (image_steps, audio_steps, dialogue_steps, frame_steps, edit_steps,
-                   layer_steps):
+                   layer_steps, sheet_steps):
         for runner in module.BUILTIN_RUNNERS:
             _RUNNERS.setdefault(runner.type_name, runner)

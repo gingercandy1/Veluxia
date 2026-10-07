@@ -25,10 +25,8 @@ from src.backend.core.diffusers_utils import (
     load_gguf_transformer,
 )
 from src.backend.core.model_base import BaseImageGenerator
-from src.backend.core.model_utils import ensure_file, ensure_snapshot, get_temp_dir
-from src.shared.settings import PROJECT_ROOT
+from src.backend.core.model_utils import ensure_file, ensure_snapshot, get_temp_dir, models_root
 
-IMAGE_MODEL_ROOT = Path(PROJECT_ROOT) / "models" / "image"
 # 管线只支持这两档：输出图层的面积约为 档位²，1344×768 输入在 640 档得到 832×480 的图层
 RESOLUTIONS = (640, 1024)
 # 负向提示词：只用来开 CFG，内容为空格（官方示例的写法）
@@ -83,11 +81,12 @@ class QwenImageLayeredGenerator(BaseImageGenerator):
         extra = getattr(self, "model_extra", None) or {}
         self.gguf_filename = gguf_filename(self.model_filename)
         self.gguf_repo_id = extra.get("gguf_repo_id", "")
-        self.base_local = IMAGE_MODEL_ROOT / self.model_dir
+        image_root = models_root() / "image"
+        self.base_local = image_root / self.model_dir
         self.gguf_local = self.base_local / "gguf"
         encoder = extra.get("text_encoder") or {}
         self.text_encoder_repo_id = encoder.get("repo_id", "")
-        self.text_encoder_local = IMAGE_MODEL_ROOT / encoder["dir"] if encoder.get("dir") else None
+        self.text_encoder_local = image_root / encoder["dir"] if encoder.get("dir") else None
         # 提速实验要在实机上反复试，所以卸载方式、步数、CFG 都放在 models.json 里调，不用改代码
         self.offload = extra.get("offload") or {}
         self.defaults = {**_DEFAULTS, **(extra.get("defaults") or {})}

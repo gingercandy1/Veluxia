@@ -1,18 +1,32 @@
 {
   "id": "effect_skill",
-  "version": 1,
+  "version": 6,
   "type": "effect",
   "name": "技能",
-  "description": "技能图标加释放音效。特效序列帧需要图生视频，实机验证后再加入。",
-  "prompt_label": "技能画面描述",
+  "summary": "技能图标、黑底特效动画（单次或循环）和释放音效，也可以导入自己的特效图生成动画",
+  "description": "静态技能图标、黑底特效动画（序列帧精灵图 + GIF 预览，引擎里用叠加混合显示）和释放音效。释放、爆发类选单次播放；持续燃烧、光环类选循环播放，循环时首尾会叠化衔接，接缝处可能看到短暂重影。特效动画不是让图标动起来，而是另外生成一张黑底上只有特效本身的图，再图生视频：火焰、能量这类没有固定形状的东西才会真正燃烧、跳动。导入图片时直接用你的图生成动画，最好是深色底上只有特效、没有边框。描述里写清楚想要的动态（如火焰窜动、电光闪烁）。动感强弱和随机种子有关，不满意可以重新生成。动画一步用 Wan2.1 14B，约需 6 到 9 分钟，整条约需 10 分钟以上。",
+  "prompt_label": "画面 / 动态描述",
   "cover": "resize",
   "fields": [
-    {"id": "sfx", "label": "音效描述", "required": true}
+    {"id": "sfx", "label": "音效描述（英文效果更好）", "required": true},
+    {"id": "playback", "label": "播放方式", "default": "0", "options": [
+      {"value": "0", "label": "单次播放（释放、爆发）"},
+      {"value": "6", "label": "循环播放（持续燃烧、光环，接缝处可能有重影）"}
+    ]},
+    {"id": "reference", "label": "导入特效图（可选，填了就不生成）", "kind": "image", "draft": false}
   ],
   "steps": [
-    {"id": "icon", "type": "image.generate", "label": "生成图标", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "game skill icon, square composition, glowing magic effect, dark background"}},
-    {"id": "upscale", "type": "image.upscale", "label": "放大", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["icon"]},
-    {"id": "resize", "type": "image.resize", "label": "统一尺寸", "deliverable": true, "params": {"size": 256}, "inputs": ["upscale"]},
-    {"id": "sfx", "type": "speech.generate", "label": "音效", "deliverable": true, "params": {"model_name": "Stable-Audio-Open-1.0", "content": "{sfx}", "duration": 3}}
+    {"id": "icon", "type": "image.generate", "label": "生成图标", "when": "!reference", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "game skill icon, square composition, glowing magic effect, dark background"}},
+    {"id": "upscale", "type": "image.upscale", "label": "放大", "when": "!reference", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2}, "inputs": ["icon"]},
+    {"id": "resize", "type": "image.resize", "label": "统一尺寸", "deliverable": true, "when": "!reference", "params": {"size": 256}, "inputs": ["upscale"]},
+    {"id": "vfx", "type": "image.generate", "label": "生成特效图", "when": "!reference", "params": {"model_name": "Z-Image-Turbo", "prompt_suffix": "game VFX sprite, only the effect itself, isolated on pure black background, centered, no frame, no border, no icon tile, no ground"}},
+    {"id": "import", "type": "image.import", "label": "导入图片", "when": "reference", "params": {"field": "reference"}},
+    {"id": "video", "type": "animation.generate", "label": "生成动画", "when": "!reference", "inputs": ["vfx"], "params": {"model_name": "Wan2.1-I2V-14B", "width": 480, "height": 480, "num_frames": 33, "num_inference_steps": 4, "guidance_scale": 1.0, "scale": 1.0, "background": "auto", "prompt_suffix": "the effect moves vividly, it flickers, dances and leaps, constantly changing shape, glowing particles rise, fast lively motion"}},
+    {"id": "import_video", "type": "animation.generate", "label": "生成动画", "when": "reference", "inputs": ["import"], "params": {"model_name": "Wan2.1-I2V-14B", "width": 480, "height": 480, "num_frames": 33, "num_inference_steps": 4, "guidance_scale": 1.0, "scale": 1.0, "background": "auto", "prompt_suffix": "the effect moves vividly, it flickers, dances and leaps, constantly changing shape, glowing particles rise, fast lively motion"}},
+    {"id": "loop", "type": "frames.crossfade", "label": "首尾衔接（循环时）", "when": "!reference", "inputs": ["video"], "params": {"frames": "{playback}"}},
+    {"id": "import_loop", "type": "frames.crossfade", "label": "首尾衔接（循环时）", "when": "reference", "inputs": ["import_video"], "params": {"frames": "{playback}"}},
+    {"id": "sheet", "type": "frames.sheet", "label": "动画精灵图", "deliverable": true, "when": "!reference", "inputs": ["loop"], "params": {"fps": 16, "size": 256}},
+    {"id": "import_sheet", "type": "frames.sheet", "label": "动画精灵图", "deliverable": true, "when": "reference", "inputs": ["import_loop"], "params": {"fps": 16, "size": 256}},
+    {"id": "sfx", "type": "speech.generate", "label": "音效", "deliverable": true, "params": {"model_name": "Stable-Audio-Open-1.0", "content": "{sfx}", "duration": 3, "num_inference_steps": 100}}
   ]
 }

@@ -58,10 +58,13 @@ def _normalize(frames: List[Image.Image], trim: bool) -> List[Image.Image]:
 
 
 def export_sprite_sheet(frame_paths: Sequence[str], output_dir, name: str, columns: int = 0,
-                        padding: int = 0, trim: bool = False, fps: int = 12) -> SpriteSheetResult:
+                        padding: int = 0, trim: bool = False, fps: int = 12,
+                        loop: bool | None = None) -> SpriteSheetResult:
     """把序列帧拼成一张精灵图并写出 atlas JSON（帧坐标、网格、fps），供引擎直接导入。
 
     columns=0 时取接近正方形的列数，避免一长条超出部分引擎的纹理尺寸上限。
+    loop 不为 None 时写进 atlas：死亡、攻击这类单次动画导入引擎要设成不循环，
+    不然播完又从头来。
     """
     frames = _normalize(_load_frames(frame_paths), trim)
     count = len(frames)
@@ -91,6 +94,8 @@ def export_sprite_sheet(frame_paths: Sequence[str], output_dir, name: str, colum
         "columns": columns, "rows": rows, "padding": padding, "fps": fps,
         "frames": atlas_frames,
     }
+    if loop is not None:
+        atlas["loop"] = loop
     atlas_path.write_text(json.dumps(atlas, ensure_ascii=False, indent=2), encoding="utf-8")
     return SpriteSheetResult(sheet_path, atlas_path, columns, rows, cell_w, cell_h)
 

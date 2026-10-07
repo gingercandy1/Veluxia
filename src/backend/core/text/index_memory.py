@@ -9,7 +9,7 @@ from typing import List, Dict, Optional
 import numpy as np
 
 from src.backend.core.preloader import preloader
-from src.backend.core.model_utils import huggingface_token
+from src.backend.core.model_utils import huggingface_token, models_root
 from src.shared.settings import PROJECT_ROOT
 
 
@@ -46,7 +46,7 @@ class EmbedModel:
             return
         self.initialized = True
 
-        self.model_dir = Path(os.path.join(PROJECT_ROOT, "models", embed_model.split("/")[-1]))
+        self.model_dir = models_root() / embed_model.split("/")[-1]
         if not self.model_dir.exists():
             from huggingface_hub import snapshot_download
             snapshot_download(repo_id=embed_model,

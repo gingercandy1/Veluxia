@@ -388,6 +388,29 @@
       "gguf_repo_id": "hum-ma/Wan2.2-TI2V-5B-Turbo-GGUF",
       "tag": "video",
       "note": "Wan2.2-TI2V 图生视频蒸馏版，4 步、CFG 1"
+    },
+    "Wan2.1-I2V-14B": {
+      "generator": "animation.wan2_2:Wan2VideoGenerator",
+      "repo_id": "Wan-AI/Wan2.1-I2V-14B-480P-Diffusers",
+      "filename": "wan2.1-i2v-14b-480p-Q4_K_M.gguf",
+      "gguf_repo_id": "city96/Wan2.1-I2V-14B-480P-gguf",
+      "dir": "wan21",
+      "size_multiple": 16,
+      "loras": [
+        {
+          "repo_id": "Kijai/WanVideo_comfy",
+          "weight_name": "Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors",
+          "name": "lightx2v"
+        }
+      ],
+      "offload": {
+        "type": "block_level",
+        "blocks_per_group": 1,
+        "use_stream": false,
+        "leaf_components": ["text_encoder"]
+      },
+      "tag": "video",
+      "note": "Wan2.1 14B 图生视频（480P），GGUF Q4_K_M + lightx2v 蒸馏 LoRA，用 4 步、CFG 1；动作提示词要分步骤写（先下蹲、再弹起、再落回），输入图需留白（headroom），否则只会转头；循环模式用首尾帧"
     }
   },
   "image_frame": {
