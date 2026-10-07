@@ -17,6 +17,8 @@ from src.shared.schemas import PACK_TYPES, condition_met
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 # 主提示词也能在参数里引用：语音步骤要的是条目原文，而不是拼了风格锁的出图提示词
 PROMPT_FIELD = "prompt"
+# 动作包执行时放进 values 的来源角色描述：视频模型不知道主体是什么时会往人形上猜
+SOURCE_DESCRIPTION_FIELD = "source_description"
 # 步骤输入里的特殊引用：来源角色的立绘（ADR 0006），只有声明了 source 的模板能用
 SOURCE_INPUT = "@source"
 

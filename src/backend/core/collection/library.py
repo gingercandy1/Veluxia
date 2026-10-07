@@ -199,8 +199,10 @@ def run_pack(pack_id: str, cancel_event: threading.Event) -> Manifest:
         # 每次执行时现解析：角色包的声线可能是创建对话包之后才生成或重做的
         cast = [_resolve_cast_member(member) for member in manifest.cast]
         source = _source_portrait(manifest.source) if template.source else None
+        description = character_description(manifest.source) if template.source else ""
         return CollectionExecutor(directory, template, cancel_event=cancel_event,
-                                  cast=cast, source=source).run()
+                                  cast=cast, source=source,
+                                  source_description=description).run()
 
 
 def approve_step(pack_id: str, request: ApproveStepRequest) -> Manifest:
