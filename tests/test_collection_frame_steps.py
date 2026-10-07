@@ -107,6 +107,28 @@ def test_pingpong_plays_forward_then_back_without_repeating_ends(tmp_path):
     assert outputs[3].read_bytes() == frames[3].read_bytes()
 
 
+def test_pingpong_takes_a_short_window_near_the_start(tmp_path):
+    frames = _cyclic_frames(tmp_path, startup=2, period=3, cycles=4)  # 14 帧
+    ctx = _ctx(tmp_path, {"mode": "pingpong", "skip": 8, "pingpong_skip": 1,
+                          "pingpong_len": 4}, frames)
+    outputs = FramesLoopRunner().run(ctx)
+    # 往返只用 1..4：越往后的帧离参考图越远，待机里会出现特效消散、长出肢体
+    assert [p.read_bytes() for p in outputs] == [
+        frames[i].read_bytes() for i in (1, 2, 3, 4, 3, 2)]
+    assert ctx.meta["start"] == 1 and ctx.meta["end"] == 5
+
+
+def test_motion_template_keeps_subject_unchanged():
+    from src.backend.core.collection.template import load_template
+    template = load_template("character_motion")
+    suffix = template.step("video").params["prompt_suffix"]
+    # 后缀不能把主体往人形上引
+    assert not any(word in suffix for word in ("character", "full body", "treadmill", "sprite"))
+    assert "same shape" in suffix
+    loop = template.step("loop").params
+    assert loop["pingpong_skip"] < loop["skip"] and loop["pingpong_len"] > 0
+
+
 def test_loop_runner_rejects_unknown_mode(tmp_path):
     with pytest.raises(ValueError, match="mode"):
         FramesLoopRunner().run(_ctx(tmp_path, {"mode": "bounce"}, _cyclic_frames(tmp_path)))

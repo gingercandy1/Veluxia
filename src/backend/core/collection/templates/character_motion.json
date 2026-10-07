@@ -1,6 +1,6 @@
 {
   "id": "character_motion",
-  "version": 2,
+  "version": 3,
   "type": "character",
   "source": "character",
   "name": "角色动作",
@@ -14,8 +14,8 @@
     ]}
   ],
   "steps": [
-    {"id": "video", "type": "animation.generate", "label": "生成动作视频", "inputs": ["@source"], "params": {"model_name": "Wan2.2-TI2V-Turbo", "width": 544, "height": 960, "num_frames": 49, "num_inference_steps": 4, "guidance_scale": 1.0, "scale": 0.9, "prompt_suffix": "2D game sprite animation, plain white background, the subject stays in place, static camera, smooth cyclic motion"}},
-    {"id": "loop", "type": "frames.loop", "label": "截取循环段", "inputs": ["video"], "params": {"mode": "{loop_mode}", "skip": 8, "min_len": 8, "stride": 2}},
+    {"id": "video", "type": "animation.generate", "label": "生成动作视频", "inputs": ["@source"], "params": {"model_name": "Wan2.2-TI2V-Turbo", "width": 544, "height": 960, "num_frames": 49, "num_inference_steps": 4, "guidance_scale": 1.0, "scale": 0.9, "prompt_suffix": "2D game asset animation, plain white background, static camera, the subject stays in place and keeps exactly the same shape, size, colors and surface effects as in the first frame throughout, smooth cyclic motion"}},
+    {"id": "loop", "type": "frames.loop", "label": "截取循环段", "inputs": ["video"], "params": {"mode": "{loop_mode}", "skip": 8, "min_len": 8, "stride": 2, "pingpong_skip": 2, "pingpong_len": 24}},
     {"id": "remove_bg", "type": "frames.remove_bg", "label": "逐帧去背景", "inputs": ["loop"], "params": {"model_name": "rembg-birefnet"}},
     {"id": "sheet", "type": "frames.sheet", "label": "精灵图", "deliverable": true, "inputs": ["remove_bg"], "params": {"fps": 12}}
   ]

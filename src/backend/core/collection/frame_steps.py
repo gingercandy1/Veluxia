@@ -99,12 +99,19 @@ class FramesLoopRunner(StepRunner):
 
         frames = list(ctx.inputs)
         if mode == "pingpong":
-            # 待机这类幅度很小的动作找不到明显的周期，正放再倒放一定首尾相接
-            if len(frames) - skip < 3:
-                raise ValueError(f"只有 {len(frames)} 帧，跳过 {skip} 帧后不够做往返循环")
-            forward = frames[skip:][::stride]
+            # 待机这类幅度很小的动作找不到明显的周期，正放再倒放一定首尾相接。
+            # 视频越往后离参考图越远（特效消散、长出肢体），往返只需要一小段，取紧挨开头的部分
+            start = int(ctx.params.get("pingpong_skip", skip))
+            length = int(ctx.params.get("pingpong_len", 0))
+            if start < 0 or length < 0:
+                raise ValueError(f"{self.type_name} 参数不合法：pingpong_skip={start} pingpong_len={length}")
+            end = start + length if length else len(frames)
+            forward = frames[start:end][::stride]
+            if len(forward) < 3:
+                raise ValueError(f"只有 {len(frames)} 帧，跳过 {start} 帧后不够做往返循环")
             selected = forward + forward[-2:0:-1]
-            ctx.meta.update({"mode": mode, "start": skip, "frames": len(selected)})
+            ctx.meta.update({"mode": mode, "start": start, "end": min(end, len(frames)),
+                             "frames": len(selected)})
         else:
             loop = find_loop(load_signatures(frames), skip, min_len, stride)
             selected = frames[loop.start:loop.end:stride]

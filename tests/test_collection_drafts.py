@@ -195,8 +195,10 @@ def test_motion_messages_carry_the_subject_and_forbid_extra_limbs():
     system, user = (m["content"] for m in build_draft_messages(motion, request, "一个红色的球体"))
     assert "绑定的物体：一个红色的球体" in user
     # 没有四肢的主体要改用弹跳、滚动表现，不能写手脚
-    assert "手、脚" in system and "弹跳" in system
+    assert "没有四肢" in system and "弹跳" in system
     assert "loop（" in system and "pingpong（" in system
+    # 烟雾、火焰这类表面特效要一直在，待机只做流动
+    assert "消散" in system and "待机" in system
     # 其他模板的提示词不受影响
     plain_system, plain_user = (m["content"] for m in build_draft_messages(TEMPLATE, _request()))
     assert "绑定的物体" not in plain_user and "弹跳" not in plain_system
