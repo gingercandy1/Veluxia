@@ -435,9 +435,17 @@ class ApiClient:
 
     def export_pack(self, pack_id: str, target: Path) -> BaseResponse:
         """下载成品 zip 到 target。先写临时文件，下载中断时不会留下一个残缺的 zip。"""
+        return self._download(f"/library/packs/{pack_id}/export", target)
+
+    def export_asset(self, pack_id: str, item_id: str, step_id: str, target: Path) -> BaseResponse:
+        """下载一张素材卡片的成品到 target（单文件原样，多文件是 zip）。"""
+        return self._download(f"/library/packs/{pack_id}/items/{item_id}/steps/{step_id}/export",
+                              target)
+
+    def _download(self, path: str, target: Path) -> BaseResponse:
         partial = target.with_name(target.name + ".part")
         try:
-            with self._session.stream("GET", f"{self.base_url}/library/packs/{pack_id}/export",
+            with self._session.stream("GET", f"{self.base_url}{path}",
                                       timeout=self._timeout) as resp:
                 if resp.is_error:
                     resp.read()

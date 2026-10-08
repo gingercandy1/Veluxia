@@ -1,6 +1,13 @@
 from PySide6.QtCore import QRectF, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.app.ui.base.widget import BaseWidget
 from src.app.ui.library.activity import ProgressStrip, Shimmer
@@ -20,6 +27,8 @@ class Card(BaseWidget):
     """卡片：缩略图 + 名称 + 进度。没有图片的卡片（对话、音效）在缩略图位置显示分类文字。"""
     clicked = Signal()
     double_clicked = Signal()
+    export_requested = Signal()
+    delete_requested = Signal()
 
     def __init__(self, thumb_size: QSize, placeholder: str, category: str = "", parent=None):
         super().__init__(parent)
@@ -62,6 +71,45 @@ class Card(BaseWidget):
         layout.addWidget(self.progress)
 
         self.setFixedWidth(thumb_size.width() + 16)
+        self._actions: QWidget | None = None
+
+    def add_actions(self):
+        """缩略图右上角的导出 / 删除按钮：只在鼠标停在卡片上时显示，平时不挡图。
+        做成缩略图的子控件，点按钮不会冒泡成卡片的选中和双击放大。"""
+        self._actions = QWidget(self.thumb)
+        self._actions.setObjectName("card_actions")
+        row = QHBoxLayout(self._actions)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(4)
+        self.export_btn = self._action_button(
+            ":/svg/export.svg", "card_export_btn", self.export_requested)
+        self.delete_btn = self._action_button(
+            ":/svg/trash.svg", "card_delete_btn", self.delete_requested)
+        row.addWidget(self.export_btn)
+        row.addWidget(self.delete_btn)
+        self._actions.adjustSize()
+        self._actions.move(self._thumb_size.width() - self._actions.width() - 6, 6)
+        self._actions.hide()
+
+    def _action_button(self, icon: str, name: str, signal) -> QPushButton:
+        button = QPushButton(QIcon(icon), "")
+        button.setObjectName(name)
+        button.setCursor(Qt.CursorShape.PointingHandCursor)
+        button.setIconSize(QSize(14, 14))
+        button.setFixedSize(26, 26)
+        button.clicked.connect(signal)
+        return button
+
+    def enterEvent(self, event):
+        if self._actions is not None:
+            self._actions.show()
+            self._actions.raise_()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        if self._actions is not None:
+            self._actions.hide()
+        super().leaveEvent(event)
 
     def set_name(self, name: str):
         self.name_label.setToolTip(name)

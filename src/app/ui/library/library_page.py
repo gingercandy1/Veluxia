@@ -137,7 +137,8 @@ class LibraryPage(BaseWidget):
         self.detail.detail.reset_requested.connect(self._reset_step)
         self.detail.detail.approve_requested.connect(self._approve_step)
         self.detail.detail.fields_update_requested.connect(self._update_fields)
-        self.detail.detail.delete_requested.connect(self._delete_item)
+        self.detail.asset_delete_requested.connect(self._delete_item)
+        self.detail.asset_export_requested.connect(self._export_asset)
 
     # ---- 对外 ----
     def activate(self):
@@ -405,8 +406,9 @@ class LibraryPage(BaseWidget):
         reply = QMessageBox.question(
             self,
             self.tr("Delete item"),
-            self.tr("Delete item \"{0}\" and all its generated files? This cannot be undone.")
-            .format(item_title(item)),
+            self.tr("Delete item \"{0}\" with its {1} asset(s) and all generated files? "
+                    "This cannot be undone.")
+            .format(item_title(item), self.detail.item_asset_count(item_id)),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
@@ -443,6 +445,33 @@ class LibraryPage(BaseWidget):
         self.detail.set_error("")
         self.detail.set_exporting(True)
         self._start(self._client.export_pack, manifest.id, target,
+                    on_ok=lambda response: self._on_exported(response, target),
+                    on_error=lambda message: self._on_exported(
+                        PackResponse.from_error(message), target))
+
+    def _export_asset(self, item_id: str, step_id: str):
+        """导出一张素材卡片：一个文件按原格式另存，多个文件（如分层）打成 zip。"""
+        pack = self.detail.pack
+        item = next((i for i in pack.manifest.items if i.id == item_id), None) if pack else None
+        state = item.steps.get(step_id) if item else None
+        if state is None or not state.outputs:
+            return
+        step = next((s for s in self._templates[pack.manifest.template].step_details
+                     if s.id == step_id), None)
+        name = export_file_name(f"{item_title(item)}_{step.label or step_id}")
+        suffix = Path(state.outputs[0]).suffix if len(state.outputs) == 1 else ".zip"
+        folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation)
+        default = Path(folder or Path.home()) / f"{name}{suffix}"
+        kind = self.tr("Zip archive (*.zip)") if suffix == ".zip" \
+            else self.tr("Asset (*{0})").format(suffix)
+        path, _ = QFileDialog.getSaveFileName(self, self.tr("Export asset"), str(default), kind)
+        if not path:
+            return
+        target = Path(path)
+        if target.suffix.lower() != suffix:
+            target = target.with_name(target.name + suffix)
+        self.detail.set_error("")
+        self._start(self._client.export_asset, pack.manifest.id, item_id, step_id, target,
                     on_ok=lambda response: self._on_exported(response, target),
                     on_error=lambda message: self._on_exported(
                         PackResponse.from_error(message), target))

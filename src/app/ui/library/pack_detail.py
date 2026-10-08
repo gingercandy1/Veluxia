@@ -107,6 +107,8 @@ class PackDetail(BaseWidget):
     source_refresh_requested = Signal()
     asset_selected = Signal(str, str)              # item id, step id
     asset_opened = Signal(str, str)
+    asset_export_requested = Signal(str, str)      # item id, step id
+    asset_delete_requested = Signal(str)           # item id：删的是整个条目
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -121,6 +123,7 @@ class PackDetail(BaseWidget):
         self._styles: list[StylePreset] = []
         self._has_output = False
         self._exporting = False
+        self._busy = False
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -317,7 +320,7 @@ class PackDetail(BaseWidget):
             self.detail.clear()
             self._layout_key = []
             self.set_error("")
-        self.pack, self.template = pack, template
+        self.pack, self.template, self._busy = pack, template, busy
         manifest = pack.manifest
         self.title_label.setText(manifest.name or template.name or manifest.id)
         progress = pack_progress(manifest, template, running=pack.running)
@@ -388,6 +391,12 @@ class PackDetail(BaseWidget):
         self.refresh_source_btn.setEnabled(not running)
         # 确认剧本、重做只改本包的 manifest，别的包在跑也能改，改完等那边结束再执行
         self.detail.set_busy(running)
+        self._busy = running
+        self._update_card_actions()
+
+    def item_asset_count(self, item_id: str) -> int:
+        """一个条目在卡片墙上有几张卡片：删条目时会一起消失的素材数。"""
+        return sum(1 for card_item, _ in self._cards if card_item == item_id)
 
     def asset_card(self, item_id: str, step_id: str) -> Card | None:
         return self._cards.get((item_id, step_id))
@@ -436,6 +445,29 @@ class PackDetail(BaseWidget):
             # manifest 里残留的 running 不算：包真的在跑时才让卡片动起来
             card.set_progress(progress, f"{progress.done}/{progress.total}",
                               active=self.pack.running and progress.status == "running")
+        self._update_card_actions()
+
+    def _update_card_actions(self):
+        """导出要有已完成的产物；删除按钮的限制和后端一致，前端能判断的就直接置灰并说明原因。"""
+        if self.pack is None:
+            return
+        items = {item.id: item for item in self.pack.manifest.items}
+        is_last = len(items) <= 1
+        for (item_id, step_id), card in self._cards.items():
+            state = items[item_id].steps.get(step_id)
+            card.export_btn.setEnabled(state is not None and state.status == "done"
+                                       and bool(state.outputs))
+            card.export_btn.setToolTip(
+                self.tr("Export") if card.export_btn.isEnabled()
+                else self.tr("Nothing to export yet"))
+            card.delete_btn.setEnabled(not self._busy and not is_last)
+            if self._busy:
+                tip = self.tr("The pack is running; stop it before deleting")
+            elif is_last:
+                tip = self.tr("A pack needs at least one item; delete the whole pack instead")
+            else:
+                tip = self.tr("Delete this item and all its assets")
+            card.delete_btn.setToolTip(tip)
 
     def _rebuild_assets(
             self, groups: list[tuple[str, list[tuple[CollectionItem, TemplateStepInfo]]]]):
@@ -473,6 +505,9 @@ class PackDetail(BaseWidget):
         card.set_name(f"{title} · {step.label or step.id}" if steps_in_group > 1 else title)
         card.clicked.connect(lambda: self._on_card_clicked(item_id, step.id))
         card.double_clicked.connect(lambda: self.asset_opened.emit(item_id, step.id))
+        card.add_actions()
+        card.export_requested.connect(lambda: self.asset_export_requested.emit(item_id, step.id))
+        card.delete_requested.connect(lambda: self.asset_delete_requested.emit(item_id))
         self._cards[(item_id, step.id)] = card
         return card
 

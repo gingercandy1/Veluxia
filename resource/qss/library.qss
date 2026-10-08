@@ -157,6 +157,28 @@ QLabel#card_thumb[category="effect"] { background-color: rgba(198, 120, 221, 0.1
 QLabel#card_thumb[category="dialogue"] { background-color: rgba(86, 182, 194, 0.12); }
 QLabel#card_thumb[category="audio"] { background-color: rgba(224, 108, 117, 0.10); }
 
+/* 悬停在卡片上才出现的操作按钮：半透明深底，盖在缩略图上也看得清 */
+QPushButton#card_export_btn,
+QPushButton#card_delete_btn {
+    background-color: rgba(20, 22, 26, 0.72);
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 13px;
+    padding: 0;
+}
+
+QPushButton#card_export_btn:hover {
+    background-color: rgba(123, 157, 188, 0.55);
+}
+
+QPushButton#card_delete_btn:hover {
+    background-color: rgba(248, 113, 113, 0.55);
+}
+
+QPushButton#card_export_btn:disabled,
+QPushButton#card_delete_btn:disabled {
+    background-color: rgba(20, 22, 26, 0.45);
+}
+
 QLabel#card_name {
     font-size: 13px;
     color: #DCDCDC;

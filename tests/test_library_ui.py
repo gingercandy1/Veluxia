@@ -2,8 +2,8 @@
 import json
 
 import pytest
-from PySide6.QtCore import QElapsedTimer, QEvent, Qt
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QElapsedTimer, QEvent, QPointF, Qt
+from PySide6.QtGui import QEnterEvent, QPixmap
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QAbstractItemView, QLabel, QLineEdit, QStackedWidget, QWidget
 
@@ -1025,30 +1025,51 @@ def test_page_reloads_thumbnails_for_rebuilt_cards(qapp):
     assert fetched.count(hero_thumb) == 3
 
 
-def test_delete_item_button_follows_pack_state(qapp):
-    panel = DetailPanel()
-    assert panel.delete_btn.isHidden()  # 没选素材时不显示
+def test_card_action_buttons_follow_pack_state(qapp):
+    view = PackDetail()
     pack = _character_pack()
-    item = pack.manifest.items[0]
-    step = CHARACTER.step_details[1]
-    panel.show_asset(pack, CHARACTER, item, step, busy=False)
-    assert not panel.delete_btn.isHidden() and panel.delete_btn.isEnabled()
-    panel.set_busy(True)  # 执行中删条目会被执行器存盘时写回
-    assert not panel.delete_btn.isEnabled()
-    panel.set_busy(False)
-    assert panel.delete_btn.isEnabled()
+    view.show_pack(pack, CHARACTER, busy=False)
+    trim = view.asset_card("hero", "trim")
+    voice = view.asset_card("hero", "voice")
+    assert trim.delete_btn.isEnabled() and trim.export_btn.isEnabled()
+    # 没做完的素材没有东西可导出
+    assert not voice.export_btn.isEnabled() and voice.export_btn.toolTip()
 
-    pack.manifest.items = [item]  # 最后一个条目：要删就删整个资源包
-    panel.show_asset(pack, CHARACTER, item, step, busy=False)
-    assert not panel.delete_btn.isEnabled() and panel.delete_btn.toolTip()
-    panel.set_busy(False)
-    assert not panel.delete_btn.isEnabled()
+    view.set_running(True, other_running=False)  # 执行中删条目会被执行器存盘时写回
+    assert not trim.delete_btn.isEnabled() and trim.delete_btn.toolTip()
+    view.set_running(False, other_running=False)
+    assert trim.delete_btn.isEnabled()
 
-    emitted = []
-    panel.delete_requested.connect(emitted.append)
-    panel.delete_btn.setEnabled(True)
-    panel.delete_btn.click()
-    assert emitted == ["hero"]
+    pack.manifest.items = pack.manifest.items[:1]  # 最后一个条目：要删就删整个资源包
+    view.show_pack(pack, CHARACTER, busy=False)
+    assert not view.asset_card("hero", "trim").delete_btn.isEnabled()
+
+
+def test_card_actions_show_only_on_hover_and_emit_item_and_step(qapp):
+    view = PackDetail()
+    view.show_pack(_character_pack(), CHARACTER, busy=False)
+    card = view.asset_card("hero", "trim")
+    assert card._actions.isHidden()  # 平时不显示
+    card.enterEvent(QEnterEvent(QPointF(), QPointF(), QPointF()))
+    assert not card._actions.isHidden()
+    card.leaveEvent(QEvent(QEvent.Type.Leave))
+    assert card._actions.isHidden()
+
+    exported, deleted, selected = [], [], []
+    view.asset_export_requested.connect(lambda item, step: exported.append((item, step)))
+    view.asset_delete_requested.connect(deleted.append)
+    view.asset_selected.connect(lambda item, step: selected.append((item, step)))
+    card.export_btn.click()
+    card.delete_btn.click()
+    assert exported == [("hero", "trim")] and deleted == ["hero"]
+    assert selected == []  # 点按钮不触发卡片的选中
+
+
+def test_item_asset_count_is_the_cards_that_go_with_the_item(qapp):
+    view = PackDetail()
+    view.show_pack(_character_pack(), CHARACTER, busy=False)
+    assert view.item_asset_count("hero") == 2  # 立绘 + 声线
+    assert view.item_asset_count("nobody") == 0
 
 
 def _answer(monkeypatch, button):
@@ -1117,6 +1138,40 @@ def test_export_button_needs_a_finished_deliverable(qapp):
 def test_export_file_name_strips_illegal_characters():
     assert export_file_name('主角:第1版/草稿?') == "主角_第1版_草稿_"
     assert export_file_name(" ... ") == "pack"
+
+
+def test_page_exports_single_asset_with_its_own_format(qapp, monkeypatch, tmp_path):
+    page = _page(qapp)
+    page._on_packs(PackListResponse(packs=[_character_pack()]))
+    page._open_pack("c1")
+    seen = []
+    monkeypatch.setattr(library_page.QFileDialog, "getSaveFileName",
+                        lambda *args: seen.append(args[2]) or (str(tmp_path / "hero"), ""))
+    started = []
+    page._start = lambda fn, *args, **kwargs: started.append((fn, args))
+    page._export_asset("hero", "trim")
+    fn, args = started[0]
+    assert fn == page._client.export_asset
+    assert args == ("c1", "hero", "trim", tmp_path / "hero.png")  # 单文件沿用产物的扩展名
+    assert seen[0].endswith("_trim.png")  # 默认文件名：条目标题_步骤名
+
+    page._export_asset("hero", "voice")  # 没做完：没有产物，不弹保存框也不发请求
+    page._export_asset("nobody", "trim")
+    assert len(started) == 1 and len(seen) == 1
+
+
+def test_page_exports_layered_asset_as_zip(qapp, monkeypatch, tmp_path):
+    page = _page(qapp)
+    pack = _character_pack()
+    pack.manifest.items[0].steps["trim"].outputs = ["hero/trim_1.png", "hero/trim_2.png"]
+    page._on_packs(PackListResponse(packs=[pack]))
+    page._open_pack("c1")
+    monkeypatch.setattr(library_page.QFileDialog, "getSaveFileName",
+                        lambda *args: (str(tmp_path / "layers"), ""))
+    started = []
+    page._start = lambda fn, *args, **kwargs: started.append(args)
+    page._export_asset("hero", "trim")
+    assert started[0] == ("c1", "hero", "trim", tmp_path / "layers.zip")  # 多文件打成 zip
 
 
 def test_page_exports_to_chosen_zip(qapp, monkeypatch, tmp_path):

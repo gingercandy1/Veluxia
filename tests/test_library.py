@@ -394,6 +394,67 @@ def test_export_skips_missing_files_and_unknown_packs(client):
     assert client.get("/library/packs/..%5Cconfig/export").status_code == 400
 
 
+def test_export_asset_single_file_is_returned_as_is(client):
+    pack_id = _create(client, template="deliver", items=[{"id": "a", "prompt": "a"}]
+                      ).json()["manifest"]["id"]
+    url = f"/library/packs/{pack_id}/items/a/steps/final/export"
+    assert client.get(url).status_code == 400  # 还没生成
+    _run(client, pack_id)
+
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.content == b"a, teal"
+    assert "final.txt" in response.headers["content-disposition"]
+
+
+def test_export_asset_zips_several_files_by_name(client, tmp_path):
+    pack_id = _create(client, template="deliver", items=[{"id": "a", "prompt": "a"}]
+                      ).json()["manifest"]["id"]
+    _run(client, pack_id)
+    directory = library.pack_dir(pack_id)
+    (directory / "a" / "final_2.txt").write_text("second", encoding="utf-8")
+    state = library.load_manifest(directory)
+    state.items[0].steps["final"].outputs = ["a/final.txt", "a/final_2.txt", "a/gone.txt"]
+    library.save_manifest(directory, state)
+
+    response = client.get(f"/library/packs/{pack_id}/items/a/steps/final/export")
+    assert response.headers["content-type"] == "application/zip"
+    archive = tmp_path / "asset.zip"
+    archive.write_bytes(response.content)
+    with zipfile.ZipFile(archive) as zipped:
+        # 只放文件名不带条目目录；已丢失的文件跳过
+        assert sorted(zipped.namelist()) == ["final.txt", "final_2.txt"]
+    assert not list(Path(tempfile.gettempdir()).glob("veluxia_export_*.zip"))
+
+
+def test_export_asset_rejects_unknown_targets(client):
+    pack_id = _create(client, template="deliver", items=[{"id": "a", "prompt": "a"}]
+                      ).json()["manifest"]["id"]
+    _run(client, pack_id)
+    base = f"/library/packs/{pack_id}"
+    assert client.get(f"{base}/items/nope/steps/final/export").status_code == 400
+    assert client.get(f"{base}/items/a/steps/nope/export").status_code == 400
+    assert client.get("/library/packs/nothere/items/a/steps/final/export").status_code == 404
+    # 草稿这类非交付步骤没有卡片，但只要做完了照样能导出
+    assert client.get(f"{base}/items/a/steps/draft/export").status_code == 200
+
+
+def test_client_downloads_asset_export(client, tmp_path, monkeypatch):
+    api = ApiClient.instance()
+    monkeypatch.setattr(api, "_session", client)
+    monkeypatch.setattr(api, "base_url", "http://testserver")
+    pack_id = _create(client, template="deliver", items=[{"id": "a", "prompt": "a"}]
+                      ).json()["manifest"]["id"]
+    target = tmp_path / "out.txt"
+    failed = api.export_asset(pack_id, "a", "final", target)
+    assert not failed.ok and "还没有可导出的内容" in failed.error
+    assert not target.exists()
+
+    _run(client, pack_id)
+    assert api.export_asset(pack_id, "a", "final", target).ok
+    assert target.read_text(encoding="utf-8") == "a, teal"
+
+
 def test_review_step_blocks_downstream_until_approved(client):
     pack_id = _create(client, template="reviewed", items=[{"id": "a", "prompt": "hello"}]
                       ).json()["manifest"]["id"]

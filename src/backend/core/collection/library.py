@@ -242,6 +242,38 @@ def export_pack(pack_id: str, target: Path) -> int:
     return len(set(files))
 
 
+def asset_files(pack_id: str, item_id: str, step_id: str) -> list[Path]:
+    """一张素材卡片（条目 + 交付步骤）的成品文件，供单卡导出。
+
+    只收已完成且文件还在的产物，和整包导出的判断一致；一个都没有时报错，
+    让界面能提示"还没有可导出的内容"，而不是导出一个空文件。
+    """
+    directory = pack_dir(pack_id)
+    manifest = load_manifest(directory)
+    item = _find_item(manifest, item_id)
+    template = load_template(manifest.template)
+    if not any(step.id == step_id for step in template.steps):
+        raise ValueError(f"模板 {manifest.template} 没有步骤：{step_id}")
+    state = item.steps.get(step_id)
+    files = [directory / p for p in (state.outputs if state and state.status == "done" else [])
+             if (directory / p).is_file()]
+    if not files:
+        raise ValueError("这张素材还没有可导出的内容，先执行生成")
+    return files
+
+
+def export_asset(pack_id: str, item_id: str, step_id: str, target: Path) -> int:
+    """把一张素材卡片的多个成品文件打成 zip 写到 target，返回文件数。
+
+    zip 里只放文件名，不带包内的目录层级：导出的是单张素材，用户不需要条目目录。
+    """
+    files = asset_files(pack_id, item_id, step_id)
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_STORED) as archive:
+        for file in files:
+            archive.write(file, file.name)
+    return len(files)
+
+
 def run_pack(pack_id: str, cancel_event: threading.Event) -> Manifest:
     """阻塞执行整个资源包；runner 内部会 asyncio.run，必须在没有事件循环的线程里调用。"""
     directory = pack_dir(pack_id)

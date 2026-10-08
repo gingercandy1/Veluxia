@@ -121,6 +121,32 @@ class LibraryRouter(BaseRouter):
             return FileResponse(target, media_type="application/zip", filename=f"{pack_id}.zip",
                                 background=BackgroundTask(target.unlink, missing_ok=True))
 
+        @self.router.get("/packs/{pack_id}/items/{item_id}/steps/{step_id}/export",
+                         summary="导出一张素材卡片的成品：单文件原样返回，多文件打成 zip",
+                         response_class=FileResponse)
+        async def export_asset(pack_id: str, item_id: str, step_id: str) -> FileResponse:
+            try:
+                files = await asyncio.to_thread(library.asset_files, pack_id, item_id, step_id)
+            except FileNotFoundError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            if len(files) == 1:
+                return FileResponse(files[0], filename=files[0].name)
+            fd, name = tempfile.mkstemp(suffix=".zip", prefix="veluxia_export_")
+            os.close(fd)
+            target = Path(name)
+            try:
+                await asyncio.to_thread(library.export_asset, pack_id, item_id, step_id, target)
+            except (FileNotFoundError, ValueError) as exc:
+                # 刚才取文件列表之后文件又被删了：和上面一样当作"没有可导出的内容"
+                target.unlink(missing_ok=True)
+                status = 404 if isinstance(exc, FileNotFoundError) else 400
+                raise HTTPException(status_code=status, detail=str(exc)) from exc
+            return FileResponse(target, media_type="application/zip",
+                                filename=f"{pack_id}_{item_id}_{step_id}.zip",
+                                background=BackgroundTask(target.unlink, missing_ok=True))
+
         @self.router.post("/packs/{pack_id}/items", response_model=PackResponse,
                           summary="往已有资源包追加条目")
         async def add_items(pack_id: str, req: AddItemsRequest) -> PackResponse:
