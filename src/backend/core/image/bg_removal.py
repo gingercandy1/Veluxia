@@ -8,6 +8,30 @@ from src.backend.core.model_base import BaseImageGenerator
 from src.backend.core.model_utils import get_temp_dir
 
 
+def defringe(out: Image.Image, erode: int = 1, low: float = 0.15, high: float = 0.85) -> Image.Image:
+    """收边：去掉遮罩比真实轮廓略宽时留下的一圈半透明背景色（白底图上就是白边）。
+
+    decontaminate 只修颜色、不改 alpha，边缘 alpha 0.1~0.6 的背景像素仍会显出来，所以另外：
+    腐蚀 alpha → 两端拉伸（低于 low 归零、高于 high 拉满）→ 边缘 RGB 用内部不透明像素外推。
+    """
+    import numpy as np
+    from scipy import ndimage
+
+    data = np.asarray(out.convert("RGBA"), dtype=np.float32) / 255.0
+    rgb, alpha = data[..., :3], data[..., 3]
+    if erode > 0:
+        alpha = ndimage.grey_erosion(alpha, footprint=np.ones((2 * erode + 1,) * 2))
+    alpha = np.clip((alpha - low) / (high - low), 0.0, 1.0)
+
+    solid = ndimage.binary_erosion(alpha > 0.98, iterations=1)
+    if solid.any():
+        # 每个非实心像素取最近的实心像素颜色
+        nearest = ndimage.distance_transform_edt(~solid, return_distances=False, return_indices=True)
+        rgb = np.where(solid[..., None], rgb, rgb[nearest[0], nearest[1]])
+    result = np.dstack([rgb, alpha])
+    return Image.fromarray((result * 255.0 + 0.5).astype(np.uint8), "RGBA")
+
+
 class BgRemovalGenerator(BaseImageGenerator):
     """去背景：rembg + u2net（MIT，可商用），输入图 → 透明底 PNG"""
     # rembg 的会话（模型）名。单例按类区分，所以换模型要另写子类而不是靠 models.json 里的名字。
@@ -56,6 +80,8 @@ class BgRemovalGenerator(BaseImageGenerator):
             # 叠到别的图层上一圈脏边。decontaminate 反推边缘的真实前景色，透明区也填上外推色，
             # 后续放大、引擎双线性采样都不会再把黑色带进边缘
             out = remove(img, session=self.session, decontaminate=True)
+            if self.edge_erode >= 0:
+                out = defringe(out, erode=self.edge_erode)
             out.save(self.save_path)
             print(f"✅ 去背景完成: {self.save_path.name}")
             return self.save_path
@@ -75,6 +101,8 @@ class BgRemovalGenerator(BaseImageGenerator):
 
         self.input_path = raw.get("input_path", "") or raw.get("reference_image", "")
         self.ref_image_path = raw.get("reference_image", "")
+        # 收边腐蚀像素数；-1 关闭收边（像素风等需要保留原始 alpha 的场景）
+        self.edge_erode = int(raw.get("edge_erode", 1))
 
     def get_output_dir(self, output_dir):
         return Path(output_dir) / f"nobg_{str(uuid.uuid4())}.png"

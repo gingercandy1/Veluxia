@@ -159,9 +159,11 @@ def test_layer_steps_follow_the_layers_field(fields, active):
         assert template.step_active(step_id, fields) is active
 
 
-def test_layers_only_on_single_screen():
+def test_layers_allowed_on_multi_screen():
     template = load_template("scene_background")
-    template.check_item_fields({"layers": "4", "length": "1"})
+    for length in ("1", "2", "4"):
+        template.check_item_fields({"layers": "4", "length": length})
     template.check_item_fields({"layers": "0", "length": "3"})
-    with pytest.raises(ValueError, match="分层只支持单屏.*2 屏"):
-        template.check_item_fields({"layers": "4", "length": "2"})
+    # 分段描述的段数仍要和屏数一致，分层不改变这条规则
+    with pytest.raises(ValueError, match="两者要一致"):
+        template.check_item_fields({"layers": "4", "length": "2", "segment_desc": "森林"})

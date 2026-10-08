@@ -142,19 +142,6 @@ class Template:
             if allowed and fields.get(spec.id) and fields[spec.id] not in allowed:
                 raise ValueError(f"字段 {spec.label or spec.id} 的取值不在可选范围内：{fields[spec.id]}")
         self._check_segments(fields)
-        self._check_layers(fields)
-
-    def _check_layers(self, fields: dict[str, str]) -> None:
-        values = self.field_values("", fields)
-        layered = any("layers" in step.params and self.step_active(step.id, fields)
-                      for step in self.steps)
-        if not layered:
-            return
-        screens = max((int(render_params(step.params, values)["segments"])
-                       for step in self.steps if "segments" in step.params), default=1)
-        if screens > 1:
-            raise ValueError(f"分层只支持单屏，但长度选的是 {screens} 屏；"
-                             "请把长度改成单屏，或不分层")
 
     def _check_segments(self, fields: dict[str, str]) -> None:
         """分段描述的段数要和屏数一致，否则要跑到生成那一步才报错，条目多时很难定位是哪条填错了。
