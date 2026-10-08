@@ -132,8 +132,9 @@ class Template:
         unknown = sorted(set(fields) - declared)
         if unknown:
             raise ValueError(f"模板 {self.id} 没有这些字段：{', '.join(unknown)}")
+        # 有默认值的必填字段可以不传：field_values 会补默认值，旧条目和旧调用方才不会因新增的列报错
         missing = [spec.label or spec.id for spec in self.fields
-                   if spec.required and not fields.get(spec.id, "").strip()]
+                   if spec.required and not spec.default and not fields.get(spec.id, "").strip()]
         if missing:
             raise ValueError(f"缺少必填字段：{', '.join(missing)}")
         for spec in self.fields:
@@ -144,8 +145,6 @@ class Template:
         self._check_layers(fields)
 
     def _check_layers(self, fields: dict[str, str]) -> None:
-        """分层只支持单屏：多屏长卷拼起来太宽，分层模型只能按约 640 档的分辨率处理整张，
-        拆出来的图层会糊得没法用；与其跑十几分钟得到废图，不如建包时就拒绝。"""
         values = self.field_values("", fields)
         layered = any("layers" in step.params and self.step_active(step.id, fields)
                       for step in self.steps)

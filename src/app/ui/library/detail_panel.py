@@ -160,7 +160,6 @@ class DetailPanel(BaseWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("library_detail")
-        self.setFixedWidth(PANEL_WIDTH)
         self.key: AssetKey | None = None
         self._item_id = ""
         self._step: TemplateStepInfo | None = None

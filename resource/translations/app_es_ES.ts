@@ -433,7 +433,7 @@
     <message>
         <location line="+6"/>
         <source>Delete item</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminar elemento</translation>
     </message>
     <message>
         <location line="+31"/>
@@ -448,7 +448,7 @@
     <message>
         <location line="+25"/>
         <source>A pack needs at least one item; delete the whole pack instead</source>
-        <translation type="unfinished"></translation>
+        <translation>Un paquete necesita al menos un elemento; elimina el paquete completo en su lugar</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -923,7 +923,7 @@
     <message>
         <location line="+98"/>
         <source>Double-click to choose an image; Delete clears it</source>
-        <translation type="unfinished"></translation>
+        <translation>Doble clic para elegir una imagen; Supr la borra</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -933,7 +933,7 @@
     <message>
         <location line="+259"/>
         <source>Choose an image</source>
-        <translation type="unfinished"></translation>
+        <translation>Elegir una imagen</translation>
     </message>
 </context>
 <context>
@@ -1037,7 +1037,7 @@
     <message>
         <location line="+34"/>
         <source>Failed to add items: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>No se pudieron añadir los elementos: {0}</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -1057,17 +1057,17 @@
     <message>
         <location line="+18"/>
         <source>Delete item</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminar elemento</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Delete item &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
-        <translation type="unfinished"></translation>
+        <translation>¿Eliminar el elemento «{0}» y todos sus archivos generados? Esta acción no se puede deshacer.</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Failed to delete item: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>No se pudo eliminar el elemento: {0}</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -1301,12 +1301,12 @@
     <message>
         <location line="+1"/>
         <source>Add items</source>
-        <translation type="unfinished"></translation>
+        <translation>Añadir elementos</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Add more items to this pack with the same template, style and characters. Finished assets are kept; only the new items are generated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Añade más elementos a este paquete con la misma plantilla, estilo y personajes. Los recursos terminados se conservan; solo se generan los elementos nuevos.</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1436,12 +1436,12 @@
     <message>
         <location line="+16"/>
         <source>Add common items</source>
-        <translation type="unfinished"></translation>
+        <translation>Añadir elementos comunes</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Fill in the template&apos;s common items. Rows you already wrote are kept, and you can edit or delete any row afterwards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rellena los elementos comunes de la plantilla. Las filas que ya escribiste se conservan y después puedes editar o eliminar cualquier fila.</translation>
     </message>
     <message>
         <location line="+27"/>
@@ -1482,7 +1482,7 @@
     <message>
         <location line="+14"/>
         <source>Add to &quot;{0}&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Añadir a «{0}»</translation>
     </message>
     <message>
         <location line="+48"/>
@@ -1528,7 +1528,7 @@
     <message>
         <location line="+56"/>
         <source>Add and generate ({0})</source>
-        <translation type="unfinished"></translation>
+        <translation>Añadir y generar ({0})</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1862,27 +1862,27 @@
     <message>
         <location filename="../../src/app/ui/setting/page/storage_page.py" line="+57"/>
         <source>Model folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Carpeta de modelos</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Default: the models folder of the backend</source>
-        <translation type="unfinished"></translation>
+        <translation>Predeterminada: la carpeta models del backend</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Browse...</source>
-        <translation type="unfinished">Examinar...</translation>
+        <translation>Examinar...</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Models are read from and downloaded into this folder. Leave it empty to use the default. Takes effect after restarting the app. Models you already downloaded are not moved: move the old models folder here by hand to keep them. Only applies to the backend on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Los modelos se leen de esta carpeta y se descargan en ella. Déjala vacía para usar la predeterminada. Se aplica al reiniciar la aplicación. Los modelos que ya descargaste no se mueven: para conservarlos, mueve a mano el contenido de la antigua carpeta models aquí. Solo se aplica al backend de este equipo.</translation>
     </message>
     <message>
         <location line="+11"/>
         <source>Choose model folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Elegir carpeta de modelos</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -2323,7 +2323,7 @@
     <message>
         <location line="+4"/>
         <source>headroom</source>
-        <translation type="unfinished"></translation>
+        <translation>margen superior</translation>
     </message>
     <message>
         <location line="+4"/>

@@ -433,7 +433,7 @@
     <message>
         <location line="+6"/>
         <source>Delete item</source>
-        <translation type="unfinished"></translation>
+        <translation>删除条目</translation>
     </message>
     <message>
         <location line="+31"/>
@@ -448,7 +448,7 @@
     <message>
         <location line="+25"/>
         <source>A pack needs at least one item; delete the whole pack instead</source>
-        <translation type="unfinished"></translation>
+        <translation>资源包至少要有一个条目；要删除请直接删除整个资源包</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -921,7 +921,7 @@
     <message>
         <location line="+98"/>
         <source>Double-click to choose an image; Delete clears it</source>
-        <translation type="unfinished"></translation>
+        <translation>双击选择图片；按 Delete 清除</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -931,7 +931,7 @@
     <message>
         <location line="+259"/>
         <source>Choose an image</source>
-        <translation type="unfinished"></translation>
+        <translation>选择图片</translation>
     </message>
 </context>
 <context>
@@ -1035,7 +1035,7 @@
     <message>
         <location line="+34"/>
         <source>Failed to add items: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>添加条目失败：{0}</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -1055,17 +1055,17 @@
     <message>
         <location line="+18"/>
         <source>Delete item</source>
-        <translation type="unfinished"></translation>
+        <translation>删除条目</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Delete item &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
-        <translation type="unfinished"></translation>
+        <translation>删除条目“{0}”及其所有生成文件？此操作无法撤销。</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Failed to delete item: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>删除条目失败：{0}</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -1299,12 +1299,12 @@
     <message>
         <location line="+1"/>
         <source>Add items</source>
-        <translation type="unfinished"></translation>
+        <translation>添加条目</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Add more items to this pack with the same template, style and characters. Finished assets are kept; only the new items are generated.</source>
-        <translation type="unfinished"></translation>
+        <translation>按相同的模板、风格和角色，向这个资源包继续添加条目。已完成的素材会保留，只生成新增的条目。</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1434,12 +1434,12 @@
     <message>
         <location line="+16"/>
         <source>Add common items</source>
-        <translation type="unfinished"></translation>
+        <translation>添加常用条目</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Fill in the template&apos;s common items. Rows you already wrote are kept, and you can edit or delete any row afterwards.</source>
-        <translation type="unfinished"></translation>
+        <translation>填入模板的常用条目。你已经写好的行会保留，之后可以随意修改或删除任意一行。</translation>
     </message>
     <message>
         <location line="+27"/>
@@ -1480,7 +1480,7 @@
     <message>
         <location line="+14"/>
         <source>Add to &quot;{0}&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>添加到“{0}”</translation>
     </message>
     <message>
         <location line="+48"/>
@@ -1526,7 +1526,7 @@
     <message>
         <location line="+56"/>
         <source>Add and generate ({0})</source>
-        <translation type="unfinished"></translation>
+        <translation>添加并生成（{0}）</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1860,27 +1860,27 @@
     <message>
         <location filename="../../src/app/ui/setting/page/storage_page.py" line="+57"/>
         <source>Model folder</source>
-        <translation type="unfinished"></translation>
+        <translation>模型文件夹</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Default: the models folder of the backend</source>
-        <translation type="unfinished"></translation>
+        <translation>默认：后端的 models 文件夹</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Browse...</source>
-        <translation type="unfinished">浏览...</translation>
+        <translation>浏览...</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Models are read from and downloaded into this folder. Leave it empty to use the default. Takes effect after restarting the app. Models you already downloaded are not moved: move the old models folder here by hand to keep them. Only applies to the backend on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>模型从这个文件夹读取，也下载到这里。留空则使用默认文件夹。重启应用后生效。已下载的模型不会被移动：想继续使用请手动把旧的 models 文件夹内容移到这里。只对本机上的后端生效。</translation>
     </message>
     <message>
         <location line="+11"/>
         <source>Choose model folder</source>
-        <translation type="unfinished"></translation>
+        <translation>选择模型文件夹</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -2321,7 +2321,7 @@
     <message>
         <location line="+4"/>
         <source>headroom</source>
-        <translation type="unfinished"></translation>
+        <translation>头部留白</translation>
     </message>
     <message>
         <location line="+4"/>

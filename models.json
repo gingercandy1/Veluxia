@@ -405,7 +405,7 @@
       ],
       "offload": {
         "type": "block_level",
-        "blocks_per_group": 1,
+        "blocks_per_group": 2,
         "use_stream": false,
         "leaf_components": ["text_encoder"]
       },

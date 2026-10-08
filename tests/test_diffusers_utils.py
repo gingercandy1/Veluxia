@@ -9,11 +9,11 @@ from unittest.mock import MagicMock
 import pytest
 
 from src.backend.core.diffusers_utils import (
-    LORA_ROOT,
     LoraSpec,
     apply_loras,
     apply_offload,
     gguf_filename,
+    lora_root,
     parse_loras,
 )
 from src.shared.settings import PROJECT_ROOT
@@ -63,7 +63,7 @@ def test_parse_loras_defaults_and_names():
     # 没写名字要自动编号，否则 set_adapters 会把两个 LoRA 当成同一个
     assert specs[1].name == "lora_1"
     assert specs[1].scale == 1.0
-    assert specs[1].path == LORA_ROOT / "c--d" / "sub" / "y.safetensors"
+    assert specs[1].path == lora_root() / "c--d" / "sub" / "y.safetensors"
 
 
 def test_parse_loras_rejects_missing_fields():
@@ -77,7 +77,7 @@ def test_apply_loras_sets_every_adapter_with_scale():
     apply_loras(pipe, [LoraSpec("a/b", "sub/x.safetensors", "one", 1.0),
                        LoraSpec("c/d", "y.safetensors", "two", 0.5)])
     first = pipe.load_lora_weights.call_args_list[0]
-    assert first.args == (str(LORA_ROOT / "a--b" / "sub"),)
+    assert first.args == (str(lora_root() / "a--b" / "sub"),)
     assert first.kwargs == {"weight_name": "x.safetensors", "adapter_name": "one"}
     pipe.set_adapters.assert_called_once_with(["one", "two"], adapter_weights=[1.0, 0.5])
 

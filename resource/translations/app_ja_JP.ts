@@ -433,7 +433,7 @@
     <message>
         <location line="+6"/>
         <source>Delete item</source>
-        <translation type="unfinished"></translation>
+        <translation>アイテムを削除</translation>
     </message>
     <message>
         <location line="+31"/>
@@ -448,7 +448,7 @@
     <message>
         <location line="+25"/>
         <source>A pack needs at least one item; delete the whole pack instead</source>
-        <translation type="unfinished"></translation>
+        <translation>パックには少なくとも 1 つのアイテムが必要です。削除する場合はパック全体を削除してください</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -921,7 +921,7 @@
     <message>
         <location line="+98"/>
         <source>Double-click to choose an image; Delete clears it</source>
-        <translation type="unfinished"></translation>
+        <translation>ダブルクリックで画像を選択、Delete でクリア</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -931,7 +931,7 @@
     <message>
         <location line="+259"/>
         <source>Choose an image</source>
-        <translation type="unfinished"></translation>
+        <translation>画像を選択</translation>
     </message>
 </context>
 <context>
@@ -1035,7 +1035,7 @@
     <message>
         <location line="+34"/>
         <source>Failed to add items: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>アイテムの追加に失敗しました：{0}</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -1055,17 +1055,17 @@
     <message>
         <location line="+18"/>
         <source>Delete item</source>
-        <translation type="unfinished"></translation>
+        <translation>アイテムを削除</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Delete item &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
-        <translation type="unfinished"></translation>
+        <translation>アイテム「{0}」と生成済みのファイルをすべて削除しますか？この操作は元に戻せません。</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Failed to delete item: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>アイテムの削除に失敗しました：{0}</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -1299,12 +1299,12 @@
     <message>
         <location line="+1"/>
         <source>Add items</source>
-        <translation type="unfinished"></translation>
+        <translation>アイテムを追加</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Add more items to this pack with the same template, style and characters. Finished assets are kept; only the new items are generated.</source>
-        <translation type="unfinished"></translation>
+        <translation>同じテンプレート、スタイル、キャラクターでこのパックにアイテムを追加します。完成済みの素材は保持され、新しいアイテムだけが生成されます。</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1434,12 +1434,12 @@
     <message>
         <location line="+16"/>
         <source>Add common items</source>
-        <translation type="unfinished"></translation>
+        <translation>定番アイテムを追加</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Fill in the template&apos;s common items. Rows you already wrote are kept, and you can edit or delete any row afterwards.</source>
-        <translation type="unfinished"></translation>
+        <translation>テンプレートの定番アイテムを入力します。すでに書いた行は保持され、その後で任意の行を編集または削除できます。</translation>
     </message>
     <message>
         <location line="+27"/>
@@ -1480,7 +1480,7 @@
     <message>
         <location line="+14"/>
         <source>Add to &quot;{0}&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>「{0}」に追加</translation>
     </message>
     <message>
         <location line="+48"/>
@@ -1526,7 +1526,7 @@
     <message>
         <location line="+56"/>
         <source>Add and generate ({0})</source>
-        <translation type="unfinished"></translation>
+        <translation>追加して生成（{0}）</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1860,27 +1860,27 @@
     <message>
         <location filename="../../src/app/ui/setting/page/storage_page.py" line="+57"/>
         <source>Model folder</source>
-        <translation type="unfinished"></translation>
+        <translation>モデルフォルダ</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Default: the models folder of the backend</source>
-        <translation type="unfinished"></translation>
+        <translation>既定：バックエンドの models フォルダ</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Browse...</source>
-        <translation type="unfinished">参照...</translation>
+        <translation>参照...</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Models are read from and downloaded into this folder. Leave it empty to use the default. Takes effect after restarting the app. Models you already downloaded are not moved: move the old models folder here by hand to keep them. Only applies to the backend on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>モデルはこのフォルダから読み込まれ、ここにダウンロードされます。空欄にすると既定のフォルダを使います。アプリの再起動後に反映されます。ダウンロード済みのモデルは移動されません。引き続き使うには、古い models フォルダの中身を手動でここへ移してください。このコンピューター上のバックエンドにのみ適用されます。</translation>
     </message>
     <message>
         <location line="+11"/>
         <source>Choose model folder</source>
-        <translation type="unfinished"></translation>
+        <translation>モデルフォルダを選択</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -2321,7 +2321,7 @@
     <message>
         <location line="+4"/>
         <source>headroom</source>
-        <translation type="unfinished"></translation>
+        <translation>上部の余白</translation>
     </message>
     <message>
         <location line="+4"/>

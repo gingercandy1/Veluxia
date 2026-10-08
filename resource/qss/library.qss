@@ -17,9 +17,14 @@ QWidget#library_scroll_content {
     border: none;
 }
 
-QFrame#library_divider {
+/* QSS 画不出"窄线 + 宽热区"，手柄取 3px 兼顾分隔线观感和好抓取 */
+QSplitter#library_splitter::handle:horizontal {
+    width: 3px;
     background-color: rgba(100, 100, 100, 0.25);
-    border: none;
+}
+
+QSplitter#library_splitter::handle:horizontal:hover {
+    background-color: rgba(120, 160, 255, 0.5);
 }
 
 /* ────────────────────────────────────────────────────────────

@@ -433,7 +433,7 @@
     <message>
         <location line="+6"/>
         <source>Delete item</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить элемент</translation>
     </message>
     <message>
         <location line="+31"/>
@@ -448,7 +448,7 @@
     <message>
         <location line="+25"/>
         <source>A pack needs at least one item; delete the whole pack instead</source>
-        <translation type="unfinished"></translation>
+        <translation>В наборе должен быть хотя бы один элемент; чтобы удалить, удалите весь набор</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -925,7 +925,7 @@
     <message>
         <location line="+98"/>
         <source>Double-click to choose an image; Delete clears it</source>
-        <translation type="unfinished"></translation>
+        <translation>Двойной щелчок — выбрать изображение; Delete — очистить</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -935,7 +935,7 @@
     <message>
         <location line="+259"/>
         <source>Choose an image</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать изображение</translation>
     </message>
 </context>
 <context>
@@ -1039,7 +1039,7 @@
     <message>
         <location line="+34"/>
         <source>Failed to add items: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось добавить элементы: {0}</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -1059,17 +1059,17 @@
     <message>
         <location line="+18"/>
         <source>Delete item</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить элемент</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Delete item &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить элемент «{0}» и все его сгенерированные файлы? Это действие нельзя отменить.</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Failed to delete item: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось удалить элемент: {0}</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -1303,12 +1303,12 @@
     <message>
         <location line="+1"/>
         <source>Add items</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить элементы</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Add more items to this pack with the same template, style and characters. Finished assets are kept; only the new items are generated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить в этот набор ещё элементы с тем же шаблоном, стилем и персонажами. Готовые ассеты сохраняются, генерируются только новые элементы.</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1438,12 +1438,12 @@
     <message>
         <location line="+16"/>
         <source>Add common items</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить типовые элементы</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Fill in the template&apos;s common items. Rows you already wrote are kept, and you can edit or delete any row afterwards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Заполнить типовые элементы шаблона. Уже написанные строки сохраняются, а любую строку потом можно изменить или удалить.</translation>
     </message>
     <message>
         <location line="+27"/>
@@ -1484,7 +1484,7 @@
     <message>
         <location line="+14"/>
         <source>Add to &quot;{0}&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить в «{0}»</translation>
     </message>
     <message>
         <location line="+48"/>
@@ -1530,7 +1530,7 @@
     <message>
         <location line="+56"/>
         <source>Add and generate ({0})</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить и сгенерировать ({0})</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1864,27 +1864,27 @@
     <message>
         <location filename="../../src/app/ui/setting/page/storage_page.py" line="+57"/>
         <source>Model folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Папка моделей</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Default: the models folder of the backend</source>
-        <translation type="unfinished"></translation>
+        <translation>По умолчанию: папка models бэкенда</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Browse...</source>
-        <translation type="unfinished">Обзор...</translation>
+        <translation>Обзор...</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Models are read from and downloaded into this folder. Leave it empty to use the default. Takes effect after restarting the app. Models you already downloaded are not moved: move the old models folder here by hand to keep them. Only applies to the backend on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Модели читаются из этой папки и скачиваются в неё. Оставьте поле пустым, чтобы использовать папку по умолчанию. Изменение вступит в силу после перезапуска приложения. Уже скачанные модели не переносятся: чтобы сохранить их, переместите содержимое старой папки models сюда вручную. Действует только для бэкенда на этом компьютере.</translation>
     </message>
     <message>
         <location line="+11"/>
         <source>Choose model folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать папку моделей</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -2325,7 +2325,7 @@
     <message>
         <location line="+4"/>
         <source>headroom</source>
-        <translation type="unfinished"></translation>
+        <translation>запас сверху</translation>
     </message>
     <message>
         <location line="+4"/>

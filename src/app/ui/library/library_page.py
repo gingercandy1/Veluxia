@@ -103,9 +103,9 @@ class LibraryPage(BaseWidget):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         self.stack = QStackedWidget()
+
         self.garden = GardenView()
         self.form = PackForm()
-        # 追加条目单独一个表单：不会冲掉新建表单里填了一半的内容
         self.add_form = PackForm(append=True)
         self.detail = PackDetail()
         for page in (self.garden, self.form, self.add_form, self.detail):

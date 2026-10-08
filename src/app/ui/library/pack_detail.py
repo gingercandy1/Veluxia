@@ -3,11 +3,11 @@ import time
 from PySide6.QtCore import QPointF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
-    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QScrollArea,
+    QSplitter,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 from src.app.ui.base.widget import BaseWidget
 from src.app.ui.library.activity import ACCENT, FrameTicker, ProgressStrip
 from src.app.ui.library.cards import ASSET_THUMB, Card
-from src.app.ui.library.detail_panel import DetailPanel
+from src.app.ui.library.detail_panel import PANEL_WIDTH, DetailPanel
 from src.app.ui.library.flow_layout import FlowLayout
 from src.app.ui.library.pack_status import (
     MEDIA_ORDER,
@@ -125,18 +125,26 @@ class PackDetail(BaseWidget):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        layout.addWidget(self._build_tree())
-        layout.addWidget(self._divider())
-        layout.addWidget(self._build_center(), 1)
-        layout.addWidget(self._divider())
+        # 三栏宽度不固定（树的包名长短、详情的字段多少都不一样），交给用户拖分隔条调
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setObjectName("library_splitter")
+        splitter.setChildrenCollapsible(False)
+        splitter.setHandleWidth(3)
         self.detail = DetailPanel()
-        layout.addWidget(self.detail)
+        splitter.addWidget(self._build_tree())
+        splitter.addWidget(self._build_center())
+        splitter.addWidget(self.detail)
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
+        splitter.setStretchFactor(2, 0)
+        splitter.setSizes([TREE_WIDTH, 600, PANEL_WIDTH])
+        layout.addWidget(splitter)
 
     # ---- 构建 ----
     def _build_tree(self) -> QWidget:
         side = QWidget()
         side.setObjectName("library_tree_side")
-        side.setFixedWidth(TREE_WIDTH)
+        side.setMinimumWidth(140)
         layout = QVBoxLayout(side)
         layout.setContentsMargins(8, 12, 8, 12)
         layout.setSpacing(8)
@@ -201,6 +209,7 @@ class PackDetail(BaseWidget):
         self.add_btn.clicked.connect(self.add_items_requested)
         self.export_btn.clicked.connect(self.export_requested)
         self.delete_btn.clicked.connect(self.delete_requested)
+
         for button in (self.run_btn, self.stop_btn, self.add_btn, self.export_btn,
                        self.delete_btn):
             header.addWidget(button)
@@ -257,13 +266,6 @@ class PackDetail(BaseWidget):
         scroll.setWidget(content)
         layout.addWidget(scroll, 1)
         return self.center
-
-    @staticmethod
-    def _divider() -> QFrame:
-        line = QFrame()
-        line.setObjectName("library_divider")
-        line.setFixedWidth(1)
-        return line
 
     # ---- 对外 ----
     def set_error(self, message: str):

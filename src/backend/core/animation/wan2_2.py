@@ -172,7 +172,7 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
             latent = latent * self.pipe.vae.config.scaling_factor
         return latent
 
-    def _first_last_kwargs(self, image: Image.Image) -> dict:
+    def _first_last_kwargs(self, image: Image.Image, clip_last: bool = False) -> dict:
         """2.1 I2V 的循环：末帧也设成参考图，让动作从站姿出发、回到同一站姿。
 
         末帧只走管线的 last_image（潜变量条件 + mask）；CLIP 特征仍只用首帧：
@@ -184,7 +184,8 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
 
         def first_only(images, *args, **kwargs):
             if isinstance(images, (list, tuple)):
-                images = images[0]
+                # 倒放模式首帧是空白画布，角色外观要取自末帧
+                images = images[-1] if clip_last else images[0]
             return original(images, *args, **kwargs)
 
         self.pipe.encode_image = first_only
@@ -257,17 +258,30 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
 
         # 5B（expand_timesteps）靠改 mask 锚定末帧；2.1 I2V 走管线自带的 last_image
         anchored = self.loop and self.pipe.config.expand_timesteps
-        first_last = self.loop and not anchored
+        first_last = (self.loop or self.end_blank or self.reverse) and not anchored
+        if (self.end_blank or self.reverse) and anchored:
+            raise ValueError(f"{self.model_name} 不支持消失模式：只有 Wan2.1 I2V 能指定末帧")
+        # 消失：末帧钉成同底色的空画布，模型只能把主体一路淡出到什么都不剩；
+        # 不钉的话它要自己编"消散之后"的画面，实测会在烟雾散开后长出一个带手脚的人形
+        last_image = (Image.new("RGB", image.size, image.getpixel((0, 0)))
+                      if self.end_blank else image)
+        # 倒放：首帧空白、末帧是参考图，让模型生成"烟聚拢成主体"，生成后再倒过来播放。
+        # 朝着末帧锚点汇聚比"离开首帧"更听话，实测后者会一直保留实心主体
+        if self.reverse:
+            first_image = Image.new("RGB", image.size, image.getpixel((0, 0)))
+            last_image = image
+        else:
+            first_image = image
         pipe_kwargs = {}
         if anchored:
             self._anchor_last_frame()
         try:
             with self.torch.inference_mode():
                 if first_last:
-                    pipe_kwargs = self._first_last_kwargs(image)
+                    pipe_kwargs = self._first_last_kwargs(last_image, clip_last=self.reverse)
                 output = self.pipe(
                     **pipe_kwargs,
-                    image=image,
+                    image=first_image,
                     prompt=self.prompt,
                     negative_prompt=self._NEGATIVE_PROMPT,
                     height=self.height,
@@ -298,6 +312,8 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
             # 5B 发灰，2.1 14B 实测过曝（最后 4 帧近饱和像素从约 1% 跳到 20% 以上，正好是最后一个潜帧）。
             # 丢掉它们，循环播放时再由交叉淡化抹平接缝
             frames = frames[:-self.pipe.vae_scale_factor_temporal]
+        if self.reverse:
+            frames.reverse()
 
         cropped_frames = []
         for frame in frames:
@@ -346,6 +362,14 @@ class Wan2VideoGenerator(BaseAnimationGenerator):
         self.prompt = raw.get("content")
         # 循环动画：末帧也设成参考图。5B 见 _anchor_last_frame，2.1 14B 见 _first_last_kwargs
         self.loop = bool(raw.get("loop", False))
+        # 末帧设成空画布：消散、消失这类最后什么都不剩的动作，见 generate_animation
+        self.end_blank = bool(raw.get("end_blank", False))
+        if self.loop and self.end_blank:
+            raise ValueError("loop 和 end_blank 不能同时开：末帧只能是参考图或空画布")
+        # 倒放：从空白生成到参考图再倒序，见 generate_animation
+        self.reverse = bool(raw.get("reverse", False))
+        if self.reverse and (self.loop or self.end_blank):
+            raise ValueError("reverse 不能和 loop、end_blank 同时开")
         # 主体缩小的比例（0 = 不留白），给起跳 / 伸展这类出框的动作留空间
         self.headroom = float(raw.get("headroom", 0))
         if not 0 <= self.headroom < 0.7:

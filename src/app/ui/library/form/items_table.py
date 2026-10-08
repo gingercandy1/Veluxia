@@ -478,8 +478,17 @@ class ItemsTable(QTableWidget):
         cell = self.item(row, col)
         return cell.text().strip() if cell else ""
 
-    def set_cell_text(self, row: int, col: int, value: str):
+    def set_cell_text(self, row: int, col: int, value: str, quiet: bool = False):
+        """quiet：整批填行时不触发 itemChanged 的补空行，否则每填一行就在它后面多出一个空行，
+        下一行 add_row 只能接在空行之后，条目之间就隔着空行；批量填完统一补一次即可。"""
         if col >= self.columnCount():
+            return
+        if quiet:
+            self._building = True
+            try:
+                self.set_cell_text(row, col, value)
+            finally:
+                self._building = False
             return
         combo = self.cellWidget(row, col)
         if isinstance(combo, QComboBox):

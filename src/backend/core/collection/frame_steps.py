@@ -26,6 +26,29 @@ from src.shared.enum_type import FactoryType
 # 接缝差异超过"相邻两帧平均差异"的这个倍数时，界面提示需要人工检查
 _SEAM_CHECK_RATIO = 1.5
 
+# 画面比例 -> (宽, 高)。总像素都压在约 26 万，保证 8GB 显存下 Wan2.1 14B 的占用和竖屏一致；
+# 边长保持 16 的倍数，视频模型要求
+VIDEO_SIZES = {
+    "portrait": (384, 672),
+    "landscape": (672, 384),
+    "square": (512, 512),
+    # 体型小、占屏幕比例不大的角色（球、精灵）：像素只有竖屏的 40%，生成快得多
+    "compact": (320, 320),
+}
+# 小画布上角色要占得更满，否则脸和眼睛的像素不够；覆盖模板里的 scale
+SIZE_SCALES = {"compact": 0.8}
+
+# 播放方式。vanish 是"播完主体消失"（消散、传送）：视频把末帧钉成空画布让模型自己淡出，
+# 之后的截取、精灵图都按单次播放处理
+PLAYBACK_MODES = ("loop", "pingpong", "once", "vanish")
+
+
+def playback_mode(type_name: str, mode: str, key: str = "mode") -> str:
+    """校验播放方式，并折成下游步骤认的三种之一。"""
+    if mode not in PLAYBACK_MODES:
+        raise ValueError(f"{type_name} 的 {key} 只能是 {'、'.join(PLAYBACK_MODES)}：{mode}")
+    return "once" if mode == "vanish" else mode
+
 
 class AnimationGenerateRunner(GeneratorStepRunner):
     """立绘铺白底后图生视频，拆成帧序列。
@@ -39,11 +62,16 @@ class AnimationGenerateRunner(GeneratorStepRunner):
     def build_params(self, ctx: StepContext) -> dict[str, Any]:
         params = {k: v for k, v in ctx.params.items()
                   if k not in ("model_name", "prompt_suffix", "scale", "background")}
+        orientation = params.pop("orientation", "")
+        if orientation:
+            if orientation not in VIDEO_SIZES:
+                raise ValueError(f"{self.type_name} 的 orientation 无效：{orientation}")
+            params["width"], params["height"] = VIDEO_SIZES[orientation]
         loop_mode = params.pop("loop_mode", "")
         if loop_mode:
-            if loop_mode not in ("loop", "pingpong", "once"):
-                raise ValueError(f"{self.type_name} 的 loop_mode 无效：{loop_mode}")
-            params["loop"] = loop_mode != "once"
+            params["loop"] = playback_mode(self.type_name, loop_mode, "loop_mode") != "once"
+            if loop_mode == "vanish":
+                params["end_blank"] = True
         action = ctx.values.get(PROMPT_FIELD, "")
         parts = [action, ctx.params.get("prompt_suffix", "")]
         if loop_mode in ("loop", "pingpong"):
@@ -56,7 +84,8 @@ class AnimationGenerateRunner(GeneratorStepRunner):
 
     def run(self, ctx: StepContext) -> list[Path]:
         params = self.build_params(ctx)
-        scale = reference_scale(self.type_name, ctx, 0.8)
+        scale = SIZE_SCALES.get(ctx.params.get("orientation", "")) or reference_scale(
+            self.type_name, ctx, 0.8)
         reference = ctx.out_dir / f"{ctx.step_id}_reference.png"
         # 角色是竖长的，竖版画布让角色在画面里更大，脸和眼睛才有足够的像素不崩
         size = (params["width"], params["height"]) if "width" in params else None
@@ -103,9 +132,7 @@ class FramesLoopRunner(StepRunner):
     type_name = "frames.loop"
 
     def run(self, ctx: StepContext) -> list[Path]:
-        mode = ctx.params.get("mode", "loop")
-        if mode not in ("loop", "pingpong", "once"):
-            raise ValueError(f"{self.type_name} 的 mode 只能是 loop、pingpong 或 once：{mode}")
+        mode = playback_mode(self.type_name, ctx.params.get("mode", "loop"))
         skip = int(ctx.params.get("skip", 8))
         min_len = int(ctx.params.get("min_len", 8))
         stride = int(ctx.params.get("stride", 1))
@@ -121,12 +148,14 @@ class FramesLoopRunner(StepRunner):
             ctx.meta.update({"mode": mode, "start": once_skip, "frames": len(selected),
                              "needs_check": False})
         elif mode == "pingpong":
-            # 待机这类幅度很小的动作找不到明显的周期，正放再倒放一定首尾相接
-            if len(frames) - skip < 3:
-                raise ValueError(f"只有 {len(frames)} 帧，跳过 {skip} 帧后不够做往返循环")
+            # 待机这类幅度很小的动作找不到明显的周期。视频生成时末帧已经钉回起始姿势，
+            # 整段正放、结尾叠化进开头即可首尾相接；不倒放，烟雾、飘动倒着播运动方向会反，很怪
+            overlap = int(ctx.params.get("crossfade", 6))
             forward = frames[skip:][::stride]
-            selected = forward + forward[-2:0:-1]
-            ctx.meta.update({"mode": mode, "start": skip, "frames": len(selected)})
+            outputs = blend_loop_seam(self.type_name, forward, overlap, reset_frame_dir(ctx))
+            ctx.meta.update({"mode": mode, "start": skip, "frames": len(outputs),
+                             "crossfade": overlap})
+            return outputs
         else:
             loop = find_loop(load_signatures(frames), skip, min_len, stride)
             selected = frames[loop.start:loop.end:stride]
@@ -145,6 +174,30 @@ class FramesLoopRunner(StepRunner):
         return outputs
 
 
+def blend_loop_seam(type_name: str, paths: list[Path], overlap: int, target: Path) -> list[Path]:
+    """把结尾 overlap 帧淡化叠进开头，输出 len(paths) - overlap 帧到 target，首尾无缝。"""
+    import numpy as np
+
+    count = len(paths)
+    if overlap < 0 or count <= overlap * 2:
+        raise ValueError(f"{type_name} 的叠化帧数 {overlap} 不合适：只有 {count} 帧，"
+                         "不能为负且必须少于一半")
+    frames = []
+    for path in paths:
+        with Image.open(path) as image:
+            frames.append(np.asarray(image.convert("RGBA"), dtype=np.float32))
+    outputs = []
+    for index in range(count - overlap):
+        frame = frames[index]
+        if index < overlap:
+            weight = (index + 1) / (overlap + 1)
+            frame = frames[count - overlap + index] * (1 - weight) + frame * weight
+        path = target / f"{index:04d}.png"
+        Image.fromarray(frame.round().astype(np.uint8)).save(path)
+        outputs.append(path)
+    return outputs
+
+
 class FramesCrossfadeRunner(StepRunner):
     """把结尾 frames 帧淡化叠进开头，做成无缝循环（纯 CPU），思路和音乐的 audio.loop 一样。
 
@@ -157,27 +210,8 @@ class FramesCrossfadeRunner(StepRunner):
     type_name = "frames.crossfade"
 
     def run(self, ctx: StepContext) -> list[Path]:
-        import numpy as np
-
         overlap = int(ctx.params.get("frames", 6))
-        count = len(ctx.inputs)
-        if overlap < 0 or count <= overlap * 2:
-            raise ValueError(f"{self.type_name} 的叠化帧数 {overlap} 不合适：只有 {count} 帧，"
-                             "不能为负且必须少于一半")
-        frames = []
-        for path in ctx.inputs:
-            with Image.open(path) as image:
-                frames.append(np.asarray(image.convert("RGBA"), dtype=np.float32))
-        target = reset_frame_dir(ctx)
-        outputs = []
-        for index in range(count - overlap):
-            frame = frames[index]
-            if index < overlap:
-                weight = (index + 1) / (overlap + 1)
-                frame = frames[count - overlap + index] * (1 - weight) + frame * weight
-            path = target / f"{index:04d}.png"
-            Image.fromarray(frame.round().astype(np.uint8)).save(path)
-            outputs.append(path)
+        outputs = blend_loop_seam(self.type_name, list(ctx.inputs), overlap, reset_frame_dir(ctx))
         ctx.meta.update({"frames": len(outputs), "crossfade": overlap})
         return outputs
 
@@ -285,9 +319,7 @@ def _sheet_loop(type_name: str, mode: Any) -> bool | None:
     没传就不写，沿用以前不带这个字段的 atlas。"""
     if mode is None or mode == "":
         return None
-    if mode not in ("loop", "pingpong", "once"):
-        raise ValueError(f"{type_name} 的 mode 只能是 loop、pingpong 或 once：{mode}")
-    return mode != "once"
+    return playback_mode(type_name, mode) != "once"
 
 
 @dataclass(frozen=True)

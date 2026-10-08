@@ -98,13 +98,17 @@ def test_loop_runner_clears_stale_frames_on_rerun(tmp_path):
     assert not stale.exists()
 
 
-def test_pingpong_plays_forward_then_back_without_repeating_ends(tmp_path):
-    frames = _cyclic_frames(tmp_path, startup=2, period=3, cycles=1)  # 5 帧
-    ctx = _ctx(tmp_path, {"mode": "pingpong", "skip": 2}, frames)
+def test_pingpong_plays_forward_only_and_blends_the_seam(tmp_path):
+    frames = _cyclic_frames(tmp_path, startup=2, period=3, cycles=2)  # 8 帧
+    ctx = _ctx(tmp_path, {"mode": "pingpong", "skip": 2, "crossfade": 1}, frames)
     outputs = FramesLoopRunner().run(ctx)
-    # 正放 2,3,4 + 倒放 3（两端不重复）
-    assert len(outputs) == 4
-    assert outputs[3].read_bytes() == frames[3].read_bytes()
+    # 正放 2..7 共 6 帧，结尾 1 帧叠进开头：不倒放，输出 5 帧
+    assert len(outputs) == 5
+    # 没被叠化的帧原样保留，顺序和视频一致
+    for index in range(1, 5):
+        with Image.open(outputs[index]) as got, Image.open(frames[2 + index]) as want:
+            assert got.convert("RGBA").tobytes() == want.convert("RGBA").tobytes()
+    assert ctx.meta["crossfade"] == 1
 
 
 def test_loop_runner_rejects_unknown_mode(tmp_path):
@@ -246,6 +250,44 @@ def test_animation_runner_anchors_cyclic_modes_and_adds_seam_guidance(
     assert ("seamless repeating motion" in params["content"]) is expected_loop
     if expected_loop:
         assert "end in the same pose" in params["content"]
+
+
+def test_animation_runner_vanish_blanks_the_end_frame_without_looping(tmp_path):
+    ctx = _ctx(tmp_path, {"loop_mode": "vanish"}, step_id="video")
+    params = AnimationGenerateRunner().build_params(ctx)
+    assert params["loop"] is False and params["end_blank"] is True
+    assert "seamless repeating motion" not in params["content"]
+
+
+@pytest.mark.parametrize("loop_mode", ["loop", "pingpong", "once"])
+def test_animation_runner_only_vanish_blanks_the_end_frame(tmp_path, loop_mode):
+    ctx = _ctx(tmp_path, {"loop_mode": loop_mode}, step_id="video")
+    assert "end_blank" not in AnimationGenerateRunner().build_params(ctx)
+
+
+def test_vanish_is_played_once_by_the_downstream_steps():
+    from src.backend.core.collection.frame_steps import _sheet_loop, playback_mode
+    assert playback_mode("t", "vanish") == "once"
+    assert _sheet_loop("frames.sheet", "vanish") is False
+    with pytest.raises(ValueError, match="vanish"):
+        playback_mode("t", "bounce")
+
+
+@pytest.mark.parametrize(("orientation", "size"), [
+    ("portrait", (384, 672)), ("landscape", (672, 384)), ("square", (512, 512)),
+    ("compact", (320, 320)),
+])
+def test_animation_runner_maps_orientation_to_video_size(tmp_path, orientation, size):
+    ctx = _ctx(tmp_path, {"orientation": orientation}, step_id="video")
+    params = AnimationGenerateRunner().build_params(ctx)
+    assert (params["width"], params["height"]) == size
+    assert "orientation" not in params
+
+
+def test_animation_runner_rejects_unknown_orientation(tmp_path):
+    ctx = _ctx(tmp_path, {"orientation": "diagonal"}, step_id="video")
+    with pytest.raises(ValueError, match="orientation"):
+        AnimationGenerateRunner().build_params(ctx)
 
 
 def test_animation_runner_builds_reference_at_requested_size(tmp_path, fake_models):

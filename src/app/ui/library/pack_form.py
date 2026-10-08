@@ -456,10 +456,10 @@ class PackForm(BaseWidget):
         added = []
         for item in items:
             row = table.add_row()
-            table.set_cell_text(row, 0, item.prompt)
+            table.set_cell_text(row, 0, item.prompt, quiet=True)
             for col, column in enumerate(columns[1:], start=1):
                 if column.id in item.fields:
-                    table.set_cell_text(row, col, item.fields[column.id])
+                    table.set_cell_text(row, col, item.fields[column.id], quiet=True)
             # 模型给某条选了和整包不同的值（如某个场景要多屏），记成这一行的单独设置
             overrides = {field_id: value for field_id, value in item.fields.items()
                          if field_id in defaults and value and value != defaults[field_id]}

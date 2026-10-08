@@ -110,7 +110,8 @@ def test_motion_presets_support_round_characters_without_inventing_limbs():
     assert "hop" in by_action["walk"]
     suffix = motion.step("video").params["prompt_suffix"].lower()
     assert "preserve the exact character design" in suffix
-    assert "never invent arms, legs, hands, or feet" in suffix
+    # 不写"别长手脚"：T5 不懂否定，CFG 1 时负面提示词也不生效，提到这些词反而会把它们带进画面
+    assert "arms" not in suffix and "legs" not in suffix
 
 
 def test_motion_presets_loop_only_where_the_action_repeats():
@@ -128,14 +129,26 @@ def test_motion_loop_mode_is_a_per_item_column_not_a_pack_default():
     motion = LibraryRouter._template_info(load_template("character_motion"))
     loop_mode = next(f for f in motion.fields if f.id == "loop_mode")
     assert loop_mode.required and not pack_level(loop_mode)
-    assert [o.value for o in loop_mode.options] == ["loop", "pingpong", "once"]
+    assert [o.value for o in loop_mode.options] == ["loop", "pingpong", "once", "vanish"]
+
+
+def test_motion_orientation_is_a_per_item_column_defaulting_to_portrait():
+    from src.app.ui.library.form.defaults_bar import pack_level
+    motion = load_template("character_motion")
+    spec = next(f for f in motion.fields if f.id == "orientation")
+    assert spec.required and spec.default == "portrait" and not spec.draft
+    assert [v for v, _ in spec.options] == ["portrait", "landscape", "square", "compact"]
+    assert not pack_level(LibraryRouter._template_info(motion).fields[-1])
+    # 旧条目没有这个字段，按竖屏处理
+    assert motion.field_values("", {})["orientation"] == "portrait"
 
 
 def test_motion_video_prompt_does_not_force_a_cycle():
     step = load_template("character_motion").step("video")
     suffix = step.params["prompt_suffix"]
     assert "fixed locked camera" in suffix and "safety margins" in suffix
-    assert step.params["width"] == 384 and step.params["height"] == 672
+    assert step.params["orientation"] == "{orientation}"
+    assert "width" not in step.params and "height" not in step.params
     assert step.params["scale"] == 0.65
     assert step.params["loop_mode"] == "{loop_mode}"
     assert load_template("character_motion").step("sheet").params["mode"] == "{loop_mode}"

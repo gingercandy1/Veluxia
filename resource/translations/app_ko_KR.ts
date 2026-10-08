@@ -433,7 +433,7 @@
     <message>
         <location line="+6"/>
         <source>Delete item</source>
-        <translation type="unfinished"></translation>
+        <translation>항목 삭제</translation>
     </message>
     <message>
         <location line="+31"/>
@@ -448,7 +448,7 @@
     <message>
         <location line="+25"/>
         <source>A pack needs at least one item; delete the whole pack instead</source>
-        <translation type="unfinished"></translation>
+        <translation>팩에는 항목이 하나 이상 있어야 합니다. 삭제하려면 팩 전체를 삭제하세요</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -921,7 +921,7 @@
     <message>
         <location line="+98"/>
         <source>Double-click to choose an image; Delete clears it</source>
-        <translation type="unfinished"></translation>
+        <translation>더블 클릭하여 이미지 선택, Delete로 지우기</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -931,7 +931,7 @@
     <message>
         <location line="+259"/>
         <source>Choose an image</source>
-        <translation type="unfinished"></translation>
+        <translation>이미지 선택</translation>
     </message>
 </context>
 <context>
@@ -1035,7 +1035,7 @@
     <message>
         <location line="+34"/>
         <source>Failed to add items: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>항목 추가 실패: {0}</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -1055,17 +1055,17 @@
     <message>
         <location line="+18"/>
         <source>Delete item</source>
-        <translation type="unfinished"></translation>
+        <translation>항목 삭제</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Delete item &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
-        <translation type="unfinished"></translation>
+        <translation>항목 &quot;{0}&quot;과(와) 생성된 모든 파일을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Failed to delete item: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>항목 삭제 실패: {0}</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -1299,12 +1299,12 @@
     <message>
         <location line="+1"/>
         <source>Add items</source>
-        <translation type="unfinished"></translation>
+        <translation>항목 추가</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Add more items to this pack with the same template, style and characters. Finished assets are kept; only the new items are generated.</source>
-        <translation type="unfinished"></translation>
+        <translation>같은 템플릿, 스타일, 캐릭터로 이 팩에 항목을 더 추가합니다. 완성된 에셋은 유지되며 새 항목만 생성됩니다.</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1434,12 +1434,12 @@
     <message>
         <location line="+16"/>
         <source>Add common items</source>
-        <translation type="unfinished"></translation>
+        <translation>기본 항목 추가</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Fill in the template&apos;s common items. Rows you already wrote are kept, and you can edit or delete any row afterwards.</source>
-        <translation type="unfinished"></translation>
+        <translation>템플릿의 기본 항목을 채웁니다. 이미 작성한 행은 유지되며, 이후 어느 행이든 수정하거나 삭제할 수 있습니다.</translation>
     </message>
     <message>
         <location line="+27"/>
@@ -1480,7 +1480,7 @@
     <message>
         <location line="+14"/>
         <source>Add to &quot;{0}&quot;</source>
-        <translation type="unfinished"></translation>
+        <translation>&quot;{0}&quot;에 추가</translation>
     </message>
     <message>
         <location line="+48"/>
@@ -1526,7 +1526,7 @@
     <message>
         <location line="+56"/>
         <source>Add and generate ({0})</source>
-        <translation type="unfinished"></translation>
+        <translation>추가 및 생성 ({0})</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1860,27 +1860,27 @@
     <message>
         <location filename="../../src/app/ui/setting/page/storage_page.py" line="+57"/>
         <source>Model folder</source>
-        <translation type="unfinished"></translation>
+        <translation>모델 폴더</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Default: the models folder of the backend</source>
-        <translation type="unfinished"></translation>
+        <translation>기본값: 백엔드의 models 폴더</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Browse...</source>
-        <translation type="unfinished">찾아보기...</translation>
+        <translation>찾아보기...</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Models are read from and downloaded into this folder. Leave it empty to use the default. Takes effect after restarting the app. Models you already downloaded are not moved: move the old models folder here by hand to keep them. Only applies to the backend on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>모델을 이 폴더에서 읽고 이 폴더로 다운로드합니다. 비워 두면 기본 폴더를 사용합니다. 앱을 다시 시작하면 적용됩니다. 이미 받은 모델은 이동되지 않습니다. 계속 사용하려면 이전 models 폴더의 내용을 직접 이곳으로 옮기세요. 이 컴퓨터의 백엔드에만 적용됩니다.</translation>
     </message>
     <message>
         <location line="+11"/>
         <source>Choose model folder</source>
-        <translation type="unfinished"></translation>
+        <translation>모델 폴더 선택</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -2321,7 +2321,7 @@
     <message>
         <location line="+4"/>
         <source>headroom</source>
-        <translation type="unfinished"></translation>
+        <translation>상단 여백</translation>
     </message>
     <message>
         <location line="+4"/>

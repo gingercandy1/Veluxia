@@ -24,11 +24,6 @@ def _iter_models():
 
 
 def register_all() -> None:
-    """只读 models.json，不 import 任何生成器模块，毫秒级完成。
-
-    library_only 的模型（如一次产出多张图层的分层模型）只给资料库步骤用：照常注册生成器，
-    但不进模型清单，聊天页的下拉里选不到——聊天的图片接口只接收一张图。
-    """
     for ty, name, info, spec in _iter_models():
         GeneratorFactory.register_generator(ty, name, spec)
         if not info.get("library_only"):

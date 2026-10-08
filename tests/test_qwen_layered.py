@@ -12,13 +12,14 @@ from src.backend.core.image import qwen_layered
 from src.backend.core.image.qwen_layered import QwenImageLayeredGenerator
 from src.backend.core.model_base import GeneratorFactory, GeneratorSpec, SingletonMeta
 from src.shared.enum_type import FactoryType
+from src.shared.settings import MODELS_DIR_ENV
 
 MODEL_NAME = "Qwen-Image-Layered"
 
 
 @pytest.fixture
 def generator(tmp_path, monkeypatch):
-    monkeypatch.setattr(qwen_layered, "IMAGE_MODEL_ROOT", tmp_path)
+    monkeypatch.setenv(MODELS_DIR_ENV, str(tmp_path))
     SingletonMeta._instances.pop(QwenImageLayeredGenerator, None)
     yield QwenImageLayeredGenerator(model_name=MODEL_NAME, device="cpu")
     SingletonMeta._instances.pop(QwenImageLayeredGenerator, None)
@@ -39,7 +40,7 @@ def test_reads_shared_encoder_and_tuning_from_models_json(generator, tmp_path):
     assert generator.gguf_filename.endswith(".gguf")
     assert generator.gguf_repo_id and generator.model_id == "Qwen/Qwen-Image-Layered"
     # 文本编码器与 Edit-2509 共用，不写死在代码里
-    assert generator.text_encoder_local == tmp_path / "qwen-image-edit-2509"
+    assert generator.text_encoder_local == tmp_path / "image" / "qwen-image-edit-2509"
     assert generator.offload.get("type") in ("leaf_level", "block_level")
     assert generator.defaults["resolution"] in qwen_layered.RESOLUTIONS
     generator._load_model()  # 分段加载：通用入口不预先载入任何一段

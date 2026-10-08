@@ -60,9 +60,11 @@ def test_stable_audio_open_parse_params_defaults(tmp_path):
     g = StableAudioOpenGenerator.__new__(StableAudioOpenGenerator)
     g.parse_params({"content": "footsteps on gravel", "output_dir": str(tmp_path)})
     assert g.prompt == "footsteps on gravel"
-    assert g.negative_prompt is None
+    # 官方示例用 "Low quality." 做负面提示词，不给时用它兜底
+    assert g.negative_prompt == "Low quality."
     assert g.duration == 5.0
-    assert g.num_inference_steps == 8
+    # 非蒸馏模型，8 步去噪不充分，默认 100 步
+    assert g.num_inference_steps == 100
     assert g.save_path.parent == tmp_path
 
 

@@ -699,6 +699,17 @@ def test_form_add_presets_fills_rows_with_their_own_loop_mode(qapp):
         ("stands and breathes", "idle", "pingpong"), ("falls to the ground", "death", "once")]
 
 
+def test_form_filled_rows_are_contiguous_with_one_trailing_blank(qapp):
+    from src.shared.schemas import NewCollectionItem
+    form = _motion_form(qapp)
+    form.apply_drafts("motion_presets", [
+        NewCollectionItem(prompt=p, fields={"action": p, "loop_mode": "loop"}) for p in "abc"])
+    form.add_presets()
+    table = form.items_table
+    blanks = [row for row in range(table.rowCount()) if table.is_empty_row(row)]
+    assert blanks == [table.rowCount() - 1]
+
+
 def test_form_add_presets_twice_does_not_duplicate_rows(qapp):
     form = _motion_form(qapp)
     form.add_presets()
