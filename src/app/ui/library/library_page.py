@@ -140,6 +140,8 @@ class LibraryPage(BaseWidget):
         self.detail.ring_view_requested.connect(self._load_ring_preview)
         self.detail.ring_plan_requested.connect(
             lambda item_ids: self._run_ring_action("plan", item_ids=item_ids))
+        self.detail.ring_order_requested.connect(
+            lambda order: self._run_ring_action("order", order=order))
         self.detail.ring_generate_requested.connect(lambda: self._run_ring_action("generate"))
         self.detail.ring_render_requested.connect(lambda: self._run_ring_action("render"))
         self.detail.ring_candidates_requested.connect(self._load_ring_candidates)
@@ -372,19 +374,22 @@ class LibraryPage(BaseWidget):
         items = {item.id: item for item in pack.manifest.items}
         before, after = [], []
         rendered_count = 0
-        for item_id in status.order:
+        # 同一屏可以在环里出现多次：原图只取一次
+        originals: dict[str, QImage] = {}
+        for index, item_id in enumerate(status.order):
             item = items.get(item_id)
             state = item.steps.get("generate") if item else None
             if state is None or state.status != "done" or not state.outputs:
                 raise ValueError(self.tr("Screen {0} has no finished source image.").format(item_id))
-            original = self._fetch_ring_image(pack, state.outputs[0])
-            before.append(original)
-            rendered_path = status.rendered.get(item_id)
+            if item_id not in originals:
+                originals[item_id] = self._fetch_ring_image(pack, state.outputs[0])
+            before.append(originals[item_id])
+            rendered_path = status.rendered[index] if index < len(status.rendered) else ""
             if rendered_path:
                 after.append(self._fetch_ring_image(pack, rendered_path))
                 rendered_count += 1
             else:
-                after.append(original)
+                after.append(originals[item_id])
 
         candidate_count = sum(seam.has_candidates for seam in status.seams.values())
         stale_count = sum(seam.stale for seam in status.seams.values())
@@ -411,6 +416,13 @@ class LibraryPage(BaseWidget):
 
     def _adopt_seam(self, pack_id: str, key: str, candidate_id: str):
         response = self._client.adopt_ring(pack_id, key, candidate_id)
+        if not response.ok:
+            return response
+        return self._client.render_ring(pack_id)
+
+    def _set_order_and_render(self, pack_id: str, order: list[str]):
+        """改了顺序立刻合成：邻居变了的屏要换上对应的接缝补丁，否则预览里看不到新位置的效果。"""
+        response = self._client.set_ring_order(pack_id, order)
         if not response.ok:
             return response
         return self._client.render_ring(pack_id)
@@ -464,8 +476,9 @@ class LibraryPage(BaseWidget):
 
     def _run_ring_action(self, action: str, key: str = "", argument: str = "",
                          item_ids: list[str] | None = None, cuts: list[int] | None = None,
-                         indices: list[int] | None = None):
+                         indices: list[int] | None = None, order: list[str] | None = None):
         """argument：redo 时是追加的提示词，adopt 时是候选 id；item_ids：plan 时参与循环的条目；
+        order：order 时手动排的顺序（可重复同一屏）；
         cuts：confirm 时用户确认的切点；indices：layers 时要重做的段，空则做所有没分层的段。"""
         pack = self.detail.pack
         if pack is None or self._ring_worker is not None:
@@ -484,6 +497,8 @@ class LibraryPage(BaseWidget):
             fn, args = self._adopt_seam, (self._ring_pack_id, key, argument)
         elif action == "plan":
             fn, args = self._client.plan_ring, (self._ring_pack_id, item_ids)
+        elif action == "order":
+            fn, args = self._set_order_and_render, (self._ring_pack_id, order or [])
         elif action == "cuts":
             fn, args = self._client.auto_ring_cuts, (self._ring_pack_id, self._ring_stop)
         elif action == "confirm":
@@ -513,9 +528,10 @@ class LibraryPage(BaseWidget):
         if not response.ok:
             if not self._ring_stop.is_set():
                 self.detail.set_error(self.tr("Ring operation failed: {0}").format(response.error))
-            if self._ring_action == "layers" and self.detail.pack \
+            if self._ring_action in ("layers", "order") and self.detail.pack \
                     and self.detail.pack.manifest.id == pack_id:
-                # 分层每做完一段就存盘：停止或中途失败后，已完成的段也要显示出来
+                # 分层每做完一段就存盘：停止或中途失败后，已完成的段也要显示出来；
+                # 改顺序失败时卡片条要回到后端实际的环
                 self.detail.clear_segment_images()
                 self._load_ring_preview()
         else:
@@ -527,7 +543,7 @@ class LibraryPage(BaseWidget):
                 if self._ring_action in ("layers", "confirm"):
                     # 重做的段和重新导出的段图沿用原文件名：缓存的缩略图要作废
                     self.detail.clear_segment_images()
-                if self._ring_action in ("redo", "adopt", "render", "cuts", "confirm"):
+                if self._ring_action in ("redo", "adopt", "render", "cuts", "confirm", "order"):
                     # 刚改过接缝或切段：直接看拼接后的效果（切点就是在合成图上算的）
                     self.detail.ring_after_btn.setChecked(True)
                 self._load_ring_preview()

@@ -156,3 +156,10 @@ PySide6 desktop app  ──HTTP──▶  FastAPI backend  ──▶  Generator 
 Veluxia's own code is released under the [MIT License](LICENSE).
 
 Each AI model is distributed under **its own license** (Apache-2.0, the Llama Community License, the Stability AI Community License and others). Some models limit commercial use, for example by revenue threshold. Check the license of every model you use before shipping assets commercially.
+
+
+
+
+1. Selected card and make picture's border lighter
+2. The Layout is worse, and adjust button's layout to make interfence   
+3.    

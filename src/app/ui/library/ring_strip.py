@@ -5,11 +5,13 @@
 """
 from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QSizePolicy
+from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from src.app.ui.base.widget import BaseWidget
 
 SEAM_HIT_RADIUS = 24
+# 浮层离条带右上角的距离
+OVERLAY_MARGIN = 10
 CLICK_SLOP = 4
 # 缩放倍数的上下限：相对"图高适应控件高度"的倍数
 ZOOM_MIN = 0.2
@@ -51,12 +53,31 @@ class RingStrip(BaseWidget):
         self._cuts: list[int] = []
         self._cut_hits: list[tuple[int, int]] = []
         self._drag_cut: int | None = None
+        self._overlay: QWidget | None = None
+
+    def set_overlay(self, widget: QWidget):
+        """挂一个浮在条带右上角的控件（如前/后开关）：它盖在画面上，不占条带的行高。"""
+        self._overlay = widget
+        widget.setParent(self)
+        widget.show()
+        self._place_overlay()
+
+    def _place_overlay(self):
+        if self._overlay is None:
+            return
+        self._overlay.adjustSize()
+        self._overlay.move(self.width() - self._overlay.width() - OVERLAY_MARGIN, OVERLAY_MARGIN)
+        self._overlay.raise_()
 
     def set_images(self, images: list[QImage]):
         self._images = [image for image in images if not image.isNull()]
         if self._selected >= len(self._images):
             self._selected = -1
+        # 视角（偏移、纵向平移）保留：前后切换、轮询刷新都不该把画面拉回起点，换资源包时才 reset_view
         self._cache_key = None
+        self.update()
+
+    def reset_view(self):
         self._offset = 0.0
         self._pan_y = 0.0
         self.update()
@@ -275,4 +296,5 @@ class RingStrip(BaseWidget):
 
     def resizeEvent(self, event):
         self._cache_key = None
+        self._place_overlay()
         super().resizeEvent(event)

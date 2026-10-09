@@ -1,8 +1,3 @@
-"""序列帧类步骤的 runner（ADR 0006）：图生视频拆帧、循环检测、逐帧去背景、拼精灵图。
-
-这些步骤的产物是多个文件（帧序列），统一放在条目目录下以步骤 id 命名的子目录里，
-文件名用 0000.png 递增，manifest 里的顺序就是播放顺序。
-"""
 import random
 import shutil
 import tempfile

@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+103"/>
         <location line="+135"/>
-        <location line="+388"/>
+        <location line="+394"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>バックエンドに接続できません。サービスが起動しているか確認してください。</translation>
     </message>
     <message>
-        <location line="-519"/>
+        <location line="-525"/>
         <source>Connection timed out.</source>
         <translation>接続がタイムアウトしました。</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+379"/>
+        <location line="+385"/>
         <source>Cannot connect to the backend.</source>
         <translation>バックエンドに接続できません。</translation>
     </message>
     <message>
-        <location line="-263"/>
+        <location line="-269"/>
         <source>Generation stopped.</source>
         <translation>生成を停止しました。</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>バックエンドに接続できません：{0}</translation>
     </message>
     <message>
-        <location line="+284"/>
+        <location line="+290"/>
         <source>An install task is already running...</source>
         <translation>インストールタスクはすでに実行中です…</translation>
     </message>
@@ -1003,7 +1003,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+255"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+257"/>
         <source>Failed to load packs: {0}</source>
         <translation>パック一覧の読み込みに失敗しました：{0}</translation>
     </message>
@@ -1013,22 +1013,22 @@
         <translation>テンプレートの読み込みに失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+320"/>
+        <location line="+334"/>
         <source>Failed to create pack: {0}</source>
         <translation>パックの作成に失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="-202"/>
+        <location line="-216"/>
         <source>Run failed: {0}</source>
         <translation>実行に失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+55"/>
+        <location line="+58"/>
         <source>The seam produced no candidate.</source>
         <translation>このつなぎ目では候補が生成されませんでした。</translation>
     </message>
     <message>
-        <location line="+165"/>
+        <location line="+176"/>
         <source>Failed to add items: {0}</source>
         <translation>アイテムの追加に失敗しました：{0}</translation>
     </message>
@@ -1110,18 +1110,18 @@
         <translation>スタイルプリセット：{0}</translation>
     </message>
     <message>
-        <location line="-357"/>
-        <location line="+35"/>
+        <location line="-371"/>
+        <location line="+38"/>
         <source>Could not load ring status.</source>
         <translation>循環状態を読み込めません。</translation>
     </message>
     <message>
-        <location line="-27"/>
+        <location line="-28"/>
         <source>Screen {0} has no finished source image.</source>
         <translation>画面 {0} の元画像はまだ完成していません。</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+13"/>
         <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
         <translation>{0} 画面 · 候補のある継ぎ目 {1} · 古い候補 {2} · 合成済み {3}</translation>
     </message>
@@ -1131,13 +1131,13 @@
         <translation>まだ合成されていません</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+72"/>
         <source>Could not decode image: {0}</source>
         <translation>画像をデコードできません：{0}</translation>
     </message>
     <message>
-        <location line="+56"/>
-        <location line="+27"/>
+        <location line="+59"/>
+        <location line="+28"/>
         <source>Ring operation failed: {0}</source>
         <translation>循環処理に失敗しました：{0}</translation>
     </message>
@@ -1320,7 +1320,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+242"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+245"/>
         <source>Library</source>
         <translation>ライブラリ</translation>
     </message>
@@ -1346,13 +1346,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+337"/>
-        <location line="+436"/>
+        <location line="+347"/>
+        <location line="+446"/>
         <source>Export</source>
         <translation>書き出し</translation>
     </message>
     <message>
-        <location line="-771"/>
+        <location line="-791"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>完成したアセットを zip で保存します。アイテムごとに 1 フォルダーで、下書きや中間ファイルは含みません。</translation>
     </message>
@@ -1387,17 +1387,12 @@
         <translation>古い立ち絵から作ったステップと、それ以降のすべてをやり直します。</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+36"/>
         <source>Screens in the ring</source>
         <translation>ループに含める画面</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Plan order again to apply the screen selection.</source>
-        <translation>画面の選択を反映するには、もう一度順序を計画してください。</translation>
-    </message>
-    <message>
-        <location line="+38"/>
+        <location line="+53"/>
         <source>Auto cut</source>
         <translation>自動分割</translation>
     </message>
@@ -1432,7 +1427,7 @@
         <translation>このつなぎ目をやり直す</translation>
     </message>
     <message>
-        <location line="+97"/>
+        <location line="+98"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 完了</translation>
     </message>
@@ -1447,7 +1442,7 @@
         <translation>スタイルプリセット「{0}」はこのパックの作成後に変更されました。</translation>
     </message>
     <message>
-        <location line="+114"/>
+        <location line="+126"/>
         <source>Segment {0}</source>
         <translation>区間 {0}</translation>
     </message>
@@ -1497,12 +1492,17 @@
         <translation>{0} 区間の画像を保存しました</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Layering segments…</source>
         <translation>レイヤー分け中…</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+15"/>
+        <source>Updating the ring order…</source>
+        <translation>ループの順序を更新しています…</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Applying the chosen seam…</source>
         <translation>選択したつなぎ目を適用中…</translation>
     </message>
@@ -1517,7 +1517,7 @@
         <translation>区間を保存しています…</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+22"/>
         <source>Seam {0} → {1}</source>
         <translation>つなぎ目 {0} → {1}</translation>
     </message>
@@ -1537,7 +1537,7 @@
         <translation>{0} · シード {1}</translation>
     </message>
     <message>
-        <location line="+124"/>
+        <location line="+121"/>
         <source>Nothing to export yet</source>
         <translation>書き出せるものがまだありません</translation>
     </message>
@@ -1557,7 +1557,7 @@
         <translation>このアイテムとすべてのアセットを削除</translation>
     </message>
     <message>
-        <location line="-760"/>
+        <location line="-780"/>
         <source>Resources</source>
         <translation>素材</translation>
     </message>
@@ -1567,7 +1567,17 @@
         <translation>ループ</translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="+87"/>
+        <source>Auto arrange</source>
+        <translation>自動並べ替え</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Order the screens by how well their edges match. Screens added more than once are merged into one.</source>
+        <translation>端の一致度で画面を並べ替えます。複数回追加した画面は 1 つにまとめられます。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Before</source>
         <translation>合成前</translation>
     </message>
@@ -1577,18 +1587,7 @@
         <translation>合成後</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+585"/>
-        <source>Pause</source>
-        <translation>一時停止</translation>
-    </message>
-    <message>
-        <location line="-581"/>
-        <source>Plan order</source>
-        <translation>順序を計画</translation>
-    </message>
-    <message>
-        <location line="+3"/>
+        <location line="+20"/>
         <source>Generate seams</source>
         <translation>継ぎ目を生成</translation>
     </message>
@@ -1598,7 +1597,7 @@
         <translation>合成</translation>
     </message>
     <message>
-        <location line="+463"/>
+        <location line="+476"/>
         <source>Generating seams…</source>
         <translation>継ぎ目を生成中…</translation>
     </message>
@@ -1608,14 +1607,9 @@
         <translation>順序を計画中…</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+4"/>
         <source>Rendering ring…</source>
         <translation>ループを合成中…</translation>
-    </message>
-    <message>
-        <location line="+97"/>
-        <source>Resume</source>
-        <translation>再開</translation>
     </message>
 </context>
 <context>
@@ -1931,9 +1925,30 @@
     </message>
 </context>
 <context>
+    <name>RingCardBar</name>
+    <message>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+157"/>
+        <source>Add a screen. The same screen can be added again.</source>
+        <translation>画面を追加します。同じ画面を何度でも追加できます。</translation>
+    </message>
+</context>
+<context>
+    <name>RingItemPicker</name>
+    <message>
+        <location line="+114"/>
+        <source>Add screens to the ring</source>
+        <translation>ループに画面を追加</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Pick the screens to add. They are appended to the end of the ring; a screen already in the ring can be added again.</source>
+        <translation>追加する画面を選んでください。ループの末尾に追加されます。すでにループにある画面も再度追加できます。</translation>
+    </message>
+</context>
+<context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+134"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+135"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>完成したシーン画像を2枚以上用意して、ループを計画してください。</translation>
     </message>

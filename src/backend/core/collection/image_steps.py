@@ -1,4 +1,3 @@
-"""图片类步骤的 runner（ADR 0004）：文生图、去背景、放大、裁透明边、统一尺寸、切分组图。"""
 import re
 from pathlib import Path
 from typing import Any

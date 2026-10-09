@@ -1,9 +1,3 @@
-"""资源包执行器（ADR 0004）。
-
-外层循环按步骤、内层循环按条目：同一步骤的所有条目共用一次 runner.open()，
-8GB 单驻留下换模型的次数只和步骤数有关，和条目数无关。
-每处理完一个条目就写一次 manifest，断点续跑和界面进度都只读它。
-"""
 import threading
 import time
 from collections.abc import Mapping

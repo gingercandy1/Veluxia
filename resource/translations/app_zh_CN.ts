@@ -11,7 +11,7 @@
     <message>
         <location line="+1"/>
         <source>Generate text, images, animation, voice, music and sound effects entirely on your own computer. Private, free to run, and optimized for 8 GB GPUs.</source>
-        <translation>在你自己的电脑上生成文本、图片、动画、语音、音乐和音效。数据不出本机，无需付费，针对 8 GB 显存优化。</translation>
+        <translation>在本机生成文本、图片、动画、语音、音乐和音效。数据不会离开本机，无需付费，并针对 8 GB 显存优化。</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+103"/>
         <location line="+135"/>
-        <location line="+388"/>
+        <location line="+394"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>无法连接后端，请确认服务是否已启动。</translation>
     </message>
     <message>
-        <location line="-519"/>
+        <location line="-525"/>
         <source>Connection timed out.</source>
         <translation>连接超时。</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+379"/>
+        <location line="+385"/>
         <source>Cannot connect to the backend.</source>
         <translation>无法连接后端。</translation>
     </message>
     <message>
-        <location line="-263"/>
+        <location line="-269"/>
         <source>Generation stopped.</source>
         <translation>已停止生成。</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>无法连接后端：{0}</translation>
     </message>
     <message>
-        <location line="+284"/>
+        <location line="+290"/>
         <source>An install task is already running...</source>
         <translation>安装任务已在运行中…</translation>
     </message>
@@ -418,7 +418,7 @@
         <location filename="../../src/app/ui/library/detail_panel.py" line="+188"/>
         <location line="+65"/>
         <source>Select an asset to see how it was made</source>
-        <translation>选择一个素材，查看它是怎么生成的</translation>
+        <translation>选择一个素材，查看其生成过程</translation>
     </message>
     <message>
         <location line="-51"/>
@@ -468,7 +468,7 @@
     <message>
         <location line="+3"/>
         <source>Redo only the steps that depend on this option; the image itself is kept.</source>
-        <translation>只重做依赖这个选项的步骤，已生成的图保留不动。</translation>
+        <translation>仅重做依赖该选项的步骤，已生成的图片予以保留。</translation>
     </message>
     <message>
         <location line="+44"/>
@@ -737,7 +737,7 @@
     <message>
         <location line="+41"/>
         <source>The local service is not ready yet. Click Refresh in a moment.</source>
-        <translation>本机服务还没准备好，请稍后点击“刷新状态”。</translation>
+        <translation>本机服务尚未就绪，请稍后点击“刷新状态”。</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -862,7 +862,7 @@
     <message>
         <location line="+1"/>
         <source>Rewrite the prompt with a local model for better results</source>
-        <translation>用本地模型改写提示词，以获得更好的效果</translation>
+        <translation>使用本地模型改写提示词，以获得更好的效果</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -901,7 +901,7 @@
     <message>
         <location filename="../../src/app/ui/library/form/items_table.py" line="+263"/>
         <source>Settings for this item only</source>
-        <translation>只改这一条的设置</translation>
+        <translation>仅修改本条的设置</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -1003,7 +1003,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+255"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+257"/>
         <source>Failed to load packs: {0}</source>
         <translation>加载资源包列表失败：{0}</translation>
     </message>
@@ -1013,22 +1013,22 @@
         <translation>加载模板失败：{0}</translation>
     </message>
     <message>
-        <location line="+320"/>
+        <location line="+334"/>
         <source>Failed to create pack: {0}</source>
         <translation>创建资源包失败：{0}</translation>
     </message>
     <message>
-        <location line="-202"/>
+        <location line="-216"/>
         <source>Run failed: {0}</source>
         <translation>执行失败：{0}</translation>
     </message>
     <message>
-        <location line="+55"/>
+        <location line="+58"/>
         <source>The seam produced no candidate.</source>
         <translation>该接缝没有产生候选。</translation>
     </message>
     <message>
-        <location line="+165"/>
+        <location line="+176"/>
         <source>Failed to add items: {0}</source>
         <translation>添加条目失败：{0}</translation>
     </message>
@@ -1110,18 +1110,18 @@
         <translation>风格预设：{0}</translation>
     </message>
     <message>
-        <location line="-357"/>
-        <location line="+35"/>
+        <location line="-371"/>
+        <location line="+38"/>
         <source>Could not load ring status.</source>
         <translation>无法读取循环状态。</translation>
     </message>
     <message>
-        <location line="-27"/>
+        <location line="-28"/>
         <source>Screen {0} has no finished source image.</source>
         <translation>屏幕 {0} 尚无已完成的原图。</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+13"/>
         <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
         <translation>{0} 屏 · {1} 个接缝有候选 · {2} 个已失效 · {3} 屏已合成</translation>
     </message>
@@ -1131,13 +1131,13 @@
         <translation>尚未合成</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+72"/>
         <source>Could not decode image: {0}</source>
         <translation>无法解码图片：{0}</translation>
     </message>
     <message>
-        <location line="+56"/>
-        <location line="+27"/>
+        <location line="+59"/>
+        <location line="+28"/>
         <source>Ring operation failed: {0}</source>
         <translation>循环操作失败：{0}</translation>
     </message>
@@ -1320,7 +1320,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+242"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+245"/>
         <source>Library</source>
         <translation>资料库</translation>
     </message>
@@ -1342,19 +1342,19 @@
     <message>
         <location line="+2"/>
         <source>Add more items to this pack with the same template, style and characters. Finished assets are kept; only the new items are generated.</source>
-        <translation>按相同的模板、风格和角色，向这个资源包继续添加条目。已完成的素材会保留，只生成新增的条目。</translation>
+        <translation>按相同的模板、风格和角色，向该资源包继续添加条目。已完成的素材将保留，仅生成新增的条目。</translation>
     </message>
     <message>
         <location line="+2"/>
-        <location line="+337"/>
-        <location line="+436"/>
+        <location line="+347"/>
+        <location line="+446"/>
         <source>Export</source>
         <translation>导出</translation>
     </message>
     <message>
-        <location line="-771"/>
+        <location line="-791"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
-        <translation>把成品保存为 zip，每个条目一个文件夹，不含草稿和中间文件。</translation>
+        <translation>将成品保存为 zip，每个条目对应一个文件夹，不含草稿和中间文件。</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1369,12 +1369,12 @@
     <message>
         <location line="+2"/>
         <source>Replace this pack&apos;s style lock with the preset. Existing outputs are kept; redo the steps you want in the new style.</source>
-        <translation>用预设替换本资源包的风格锁。已有产物会保留，想用新风格的步骤请重做。</translation>
+        <translation>以预设替换本资源包的风格锁。已有产物将保留，如需应用新风格，请重做相应步骤。</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>The source character&apos;s portrait has changed since these assets were made.</source>
-        <translation>来源角色的立绘在这些素材生成之后被改过。</translation>
+        <translation>来源角色的立绘在这些素材生成之后已被修改。</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -1387,17 +1387,12 @@
         <translation>重做用旧立绘生成的步骤及其后续步骤。</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+36"/>
         <source>Screens in the ring</source>
         <translation>参与循环的屏</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Plan order again to apply the screen selection.</source>
-        <translation>重新规划顺序后，屏的选择才会生效。</translation>
-    </message>
-    <message>
-        <location line="+38"/>
+        <location line="+53"/>
         <source>Auto cut</source>
         <translation>自动切段</translation>
     </message>
@@ -1409,7 +1404,7 @@
     <message>
         <location line="+23"/>
         <source>Redo this segment</source>
-        <translation>重做这一段</translation>
+        <translation>重做此段</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1419,20 +1414,20 @@
     <message>
         <location line="+35"/>
         <source>Use this one</source>
-        <translation>用这个</translation>
+        <translation>采用此项</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>Add to the prompt for this seam (optional), e.g. a stream, fewer trees</source>
-        <translation>给这个接缝追加描述（可选），如：一条小溪、少一些树</translation>
+        <translation>为该接缝追加描述（可选），例如：一条小溪、减少树木</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Redo this seam</source>
-        <translation>重做这个接缝</translation>
+        <translation>重做接缝</translation>
     </message>
     <message>
-        <location line="+97"/>
+        <location line="+98"/>
         <source>{0}/{1} done</source>
         <translation>已完成 {0}/{1}</translation>
     </message>
@@ -1444,10 +1439,10 @@
     <message>
         <location line="+14"/>
         <source>Style preset &quot;{0}&quot; has changed since this pack was created.</source>
-        <translation>风格预设“{0}”在建包之后被修改过。</translation>
+        <translation>风格预设“{0}”在创建资源包之后已被修改。</translation>
     </message>
     <message>
-        <location line="+114"/>
+        <location line="+126"/>
         <source>Segment {0}</source>
         <translation>第 {0} 段</translation>
     </message>
@@ -1459,17 +1454,17 @@
     <message>
         <location line="+2"/>
         <source>about {0} min left</source>
-        <translation>约剩 {0} 分钟</translation>
+        <translation>预计剩余 {0} 分钟</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>layering… you can stop and continue later</source>
-        <translation>分层中…可以随时停止，之后接着做</translation>
+        <translation>分层中…可随时停止，之后可继续</translation>
     </message>
     <message>
         <location line="+11"/>
         <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
-        <translation>分层前要把环切成一段段：先合成，再点“自动切段”。</translation>
+        <translation>分层前需将循环切分为若干段：请先合成，再点击“自动切段”。</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -1479,17 +1474,17 @@
     <message>
         <location line="+6"/>
         <source>segment {0} is {1} px, keep each within {2}–{3} px</source>
-        <translation>第 {0} 段 {1} 像素，每段要在 {2}–{3} 像素之间</translation>
+        <translation>第 {0} 段为 {1} 像素，每段须在 {2}–{3} 像素之间</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>screens changed since cutting, auto cut again</source>
-        <translation>切段后屏的画面变了，请重新自动切段</translation>
+        <translation>切段后屏的画面已变化，请重新自动切段</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>drag the red lines to adjust, then confirm</source>
-        <translation>拖动红线调整，然后确认</translation>
+        <translation>拖动红线进行调整，然后确认</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1497,19 +1492,24 @@
         <translation>已保存 {0} 段图</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Layering segments…</source>
         <translation>正在分层…</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+15"/>
+        <source>Updating the ring order…</source>
+        <translation>正在更新循环顺序…</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Applying the chosen seam…</source>
         <translation>正在应用所选接缝…</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Finding cut points…</source>
-        <translation>正在找切段位置…</translation>
+        <translation>正在查找切段位置…</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1517,7 +1517,7 @@
         <translation>正在保存段图…</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+22"/>
         <source>Seam {0} → {1}</source>
         <translation>接缝 {0} → {1}</translation>
     </message>
@@ -1529,7 +1529,7 @@
     <message>
         <location line="+2"/>
         <source>no candidate yet</source>
-        <translation>还没有候选</translation>
+        <translation>暂无候选</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -1537,7 +1537,7 @@
         <translation>{0} · 种子 {1}</translation>
     </message>
     <message>
-        <location line="+124"/>
+        <location line="+121"/>
         <source>Nothing to export yet</source>
         <translation>暂无可导出的内容</translation>
     </message>
@@ -1549,7 +1549,7 @@
     <message>
         <location line="+2"/>
         <source>A pack needs at least one item; delete the whole pack instead</source>
-        <translation>资源包至少要保留一个条目，请改为删除整个资源包</translation>
+        <translation>资源包至少需保留一个条目，如需清除请删除整个资源包</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1557,7 +1557,7 @@
         <translation>删除此条目及其全部素材</translation>
     </message>
     <message>
-        <location line="-760"/>
+        <location line="-780"/>
         <source>Resources</source>
         <translation>资源</translation>
     </message>
@@ -1567,7 +1567,17 @@
         <translation>循环</translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="+87"/>
+        <source>Auto arrange</source>
+        <translation>自动排序</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Order the screens by how well their edges match. Screens added more than once are merged into one.</source>
+        <translation>按边缘的匹配程度对各屏排序。重复添加的屏将合并为一张。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Before</source>
         <translation>拼接前</translation>
     </message>
@@ -1577,18 +1587,7 @@
         <translation>拼接后</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+585"/>
-        <source>Pause</source>
-        <translation>暂停</translation>
-    </message>
-    <message>
-        <location line="-581"/>
-        <source>Plan order</source>
-        <translation>规划顺序</translation>
-    </message>
-    <message>
-        <location line="+3"/>
+        <location line="+20"/>
         <source>Generate seams</source>
         <translation>生成接缝</translation>
     </message>
@@ -1598,7 +1597,7 @@
         <translation>合成</translation>
     </message>
     <message>
-        <location line="+463"/>
+        <location line="+476"/>
         <source>Generating seams…</source>
         <translation>正在生成接缝…</translation>
     </message>
@@ -1608,14 +1607,9 @@
         <translation>正在规划顺序…</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+4"/>
         <source>Rendering ring…</source>
         <translation>正在合成循环…</translation>
-    </message>
-    <message>
-        <location line="+97"/>
-        <source>Resume</source>
-        <translation>继续</translation>
     </message>
 </context>
 <context>
@@ -1628,7 +1622,7 @@
     <message>
         <location line="+107"/>
         <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
-        <translation>风格锁，会追加到每个条目的提示词后，例如 hand-painted, dark teal tones</translation>
+        <translation>风格锁，将追加到每个条目的提示词之后，例如 hand-painted, dark teal tones</translation>
     </message>
     <message>
         <location line="-21"/>
@@ -1639,7 +1633,7 @@
     <message>
         <location line="-345"/>
         <source>Save the style and negative above as a project preset. Using an existing name overwrites that preset.</source>
-        <translation>把上面的风格和反向提示词存为项目预设。使用已有名称会覆盖该预设。</translation>
+        <translation>将上方的风格和反向提示词存为项目预设。使用已有名称将覆盖该预设。</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -1654,12 +1648,12 @@
     <message>
         <location line="+3"/>
         <source>Link a character pack to reuse its voice, or describe the voice for a new role.</source>
-        <translation>绑定角色包可复用它的声线；新角色填写音色描述即可。</translation>
+        <translation>绑定角色包可复用其声线；新角色请填写音色描述。</translation>
     </message>
     <message>
         <location line="+69"/>
         <source>One row per asset. Paste rows from Excel or text, or let AI draft them.</source>
-        <translation>每行一个素材。可以从 Excel 或文本粘贴多行，也可以让 AI 起草。</translation>
+        <translation>每行一个素材。可从 Excel 或文本粘贴多行，也可由 AI 起草。</translation>
     </message>
     <message>
         <location line="+27"/>
@@ -1694,7 +1688,7 @@
     <message>
         <location line="+4"/>
         <source>Fill in the template&apos;s common items. Rows you already wrote are kept, and you can edit or delete any row afterwards.</source>
-        <translation>填入模板的常用条目。你已经写好的行会保留，之后可以随意修改或删除任意一行。</translation>
+        <translation>填入模板的常用条目。已填写的行将保留，之后可任意修改或删除。</translation>
     </message>
     <message>
         <location line="+27"/>
@@ -1705,7 +1699,7 @@
     <message>
         <location line="-162"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
-        <translation>替换空行和未改动过的 AI 条目；你手动输入或修改过的行会保留。首次运行需加载文本模型，约一分钟。</translation>
+        <translation>替换空行和未改动过的 AI 条目；手动输入或修改过的行将保留。首次运行需加载文本模型，约需一分钟。</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -1715,7 +1709,7 @@
     <message>
         <location line="+3"/>
         <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
-        <translation>按选中的角色起草待机、移动、跳跃、受击、攻击、死亡。AI 会按角色的样子写每个动作，建包前请检查并修改。</translation>
+        <translation>按选中的角色起草待机、移动、跳跃、受击、攻击、死亡。AI 会依据角色外观撰写每个动作，创建资源包前请检查并修改。</translation>
     </message>
     <message>
         <location line="+47"/>
@@ -1750,13 +1744,13 @@
     <message>
         <location line="+7"/>
         <source>{0} has {1} segments but the length is {2} screens</source>
-        <translation>{0}有 {1} 段，但长度是 {2} 屏</translation>
+        <translation>{0}共有 {1} 段，但长度为 {2} 屏</translation>
     </message>
     <message>
         <location line="-40"/>
         <location line="+197"/>
         <source>Create a character pack first, then pick a character here.</source>
-        <translation>请先创建角色包，再在这里选择角色。</translation>
+        <translation>请先创建角色包，再在此处选择角色。</translation>
     </message>
     <message>
         <location line="-65"/>
@@ -1813,7 +1807,7 @@
         <location line="+21"/>
         <location line="+175"/>
         <source>No template available. Is the backend running?</source>
-        <translation>没有可用的模板，后端是否已启动？</translation>
+        <translation>没有可用的模板，请确认后端是否已启动。</translation>
     </message>
     <message>
         <location line="-145"/>
@@ -1931,9 +1925,30 @@
     </message>
 </context>
 <context>
+    <name>RingCardBar</name>
+    <message>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+157"/>
+        <source>Add a screen. The same screen can be added again.</source>
+        <translation>添加一屏。同一屏可以重复添加。</translation>
+    </message>
+</context>
+<context>
+    <name>RingItemPicker</name>
+    <message>
+        <location line="+114"/>
+        <source>Add screens to the ring</source>
+        <translation>向循环添加屏</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Pick the screens to add. They are appended to the end of the ring; a screen already in the ring can be added again.</source>
+        <translation>选择要添加的屏。它们会接在循环末尾；已经在循环里的屏也可以再次添加。</translation>
+    </message>
+</context>
+<context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+134"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+135"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>请先准备至少两张已完成的场景图，再规划循环。</translation>
     </message>
@@ -2138,7 +2153,7 @@
     <message>
         <location line="+6"/>
         <source>Models are read from and downloaded into this folder. Leave it empty to use the default. Takes effect after restarting the app. Models you already downloaded are not moved: move the old models folder here by hand to keep them. Only applies to the backend on this computer.</source>
-        <translation>模型从这个文件夹读取，也下载到这里。留空则使用默认文件夹。重启应用后生效。已下载的模型不会被移动：想继续使用请手动把旧的 models 文件夹内容移到这里。只对本机上的后端生效。</translation>
+        <translation>模型从该文件夹读取，也下载至此。留空则使用默认文件夹。重启应用后生效。已下载的模型不会被移动：如需继续使用，请手动将旧 models 文件夹中的内容移至此处。仅对本机上的后端生效。</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -2188,7 +2203,7 @@
     <message>
         <location line="+3"/>
         <source>This model is NOT downloaded automatically. You will have to put the files back by hand before frame interpolation works again.</source>
-        <translation>这个模型不会自动下载。删除后需要手动把文件放回去，插帧功能才能再次使用。</translation>
+        <translation>该模型不会自动下载。删除后需手动将文件放回原处，插帧功能方可再次使用。</translation>
     </message>
     <message>
         <location line="+3"/>

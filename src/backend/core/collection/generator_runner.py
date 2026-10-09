@@ -1,8 +1,3 @@
-"""由生成器驱动的步骤 runner 基类（ADR 0004）：图片、语音、文本步骤共用同一套租约和产物处理。
-
-生成器的生成方法有的是协程、有的是同步函数，这里统一用 asyncio.run 驱动协程，
-所以执行器必须跑在没有事件循环的线程里（任务里用 asyncio.to_thread 调用）。
-"""
 import asyncio
 import inspect
 import os

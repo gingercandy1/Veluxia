@@ -141,7 +141,7 @@ def test_auto_cut_confirm_export_and_stale(tmp_path, monkeypatch):
     assert ring.plan_ring("pack").ring.cuts == [500, 1700]
 
     # 合成图变了：切点失效
-    Image.new("RGB", (1200, 64), "yellow").save(directory / "s0" / "ring.png")
+    Image.new("RGB", (1200, 64), "yellow").save(directory / ring.ring_status("pack")["rendered"][0])
     assert ring.ring_status("pack")["cuts_stale"] is True
 
     with pytest.raises(ValueError, match="每段要在"):
@@ -277,6 +277,6 @@ def test_layer_segments_needs_confirmed_fresh_cuts(tmp_path, monkeypatch):
     _fake_depth(monkeypatch, [504, 1704])
     ring.auto_cuts("pack")
     ring.confirm_cuts("pack", [504, 1704])
-    Image.new("RGB", (1200, 64), "yellow").save(directory / "s0" / "ring.png")
+    Image.new("RGB", (1200, 64), "yellow").save(directory / ring.ring_status("pack")["rendered"][0])
     with pytest.raises(ValueError, match="合成图变了"):
         ring.layer_segments("pack")

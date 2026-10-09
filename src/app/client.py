@@ -13,7 +13,7 @@ from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, Animat
     AddItemsRequest, CreatePackRequest, PackListResponse, PackResponse, TemplateListResponse, \
     ApproveStepRequest, ResetStepRequest, DraftItemsRequest, DraftItemsResponse, \
     StyleListResponse, StylePreset, ModelStorageResponse, UpdateItemFieldsRequest, \
-    AdoptSeamRequest, RingGenerateRequest, RingPlanRequest, RingStatusResponse, \
+    AdoptSeamRequest, RingGenerateRequest, RingOrderRequest, RingPlanRequest, RingStatusResponse, \
     RingCutsRequest, ConfirmCutsRequest, RingLayersRequest
 
 _DEFAULT_LIMITS = httpx.Limits(
@@ -427,6 +427,12 @@ class ApiClient:
         """item_ids 为空时沿用上次规划的成员。"""
         request = RingPlanRequest(item_ids=item_ids)
         return self._post(f"/library/packs/{pack_id}/ring/plan", request.model_dump(),
+                          PackResponse)
+
+    def set_ring_order(self, pack_id: str, order: list[str]) -> PackResponse:
+        """手动排的顺序，同一屏可以重复出现。"""
+        request = RingOrderRequest(order=order)
+        return self._post(f"/library/packs/{pack_id}/ring/order", request.model_dump(),
                           PackResponse)
 
     def generate_ring(self, pack_id: str, stop_event: Optional[threading.Event] = None,

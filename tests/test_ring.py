@@ -190,6 +190,63 @@ def test_plan_ring_rejects_unknown_or_too_few_items(tmp_path, monkeypatch):
         ring.plan_ring("pack", ["a"])
 
 
+def test_set_order_allows_repeats_and_keeps_seams_between_unchanged_neighbours(
+        tmp_path, monkeypatch):
+    directory, manifest = _make_pack(tmp_path, monkeypatch)
+    ordered = ring.set_order("pack", ["a", "b", "a", "c"])
+    assert ordered.ring.order == ["a", "b", "a", "c"]
+    # 相邻关系决定接缝；同样的 a>b 出现一次就够了
+    assert set(ordered.ring.seams) == {"a>b", "b>a", "a>c", "c>a"}
+
+    kept = SeamState(adopted="c1")
+    ordered.ring.seams["a>b"] = kept
+    ordered.ring.cuts, ordered.ring.cuts_sig = [10], "sig"
+    save_manifest(directory, ordered)
+    # 挪动 c：a>b 还在，顺序变了所以切点作废
+    moved = ring.set_order("pack", ["a", "b", "c", "a"])
+    assert moved.ring.seams["a>b"] == kept
+    assert moved.ring.cuts == []
+    # 顺序没变，切点保留
+    ordered.ring.cuts = [10]
+    save_manifest(directory, ordered)
+    same = ring.set_order("pack", ["a", "b", "a", "c"])
+    assert same.ring.cuts == [10]
+
+
+def test_set_order_rejects_unknown_unfinished_and_too_short(tmp_path, monkeypatch):
+    directory, manifest = _make_pack(tmp_path, monkeypatch)
+    with pytest.raises(ValueError, match="没有这些条目：x"):
+        ring.set_order("pack", ["a", "x"])
+    with pytest.raises(ValueError, match="至少需要两个条目"):
+        ring.set_order("pack", ["a"])
+    manifest.items[1].steps["generate"].status = "pending"
+    save_manifest(directory, manifest)
+    with pytest.raises(ValueError, match="条目 b"):
+        ring.set_order("pack", ["a", "b"])
+
+
+def test_render_keeps_a_separate_image_for_each_repeat_of_a_screen(tmp_path, monkeypatch):
+    directory, _ = _make_pack(tmp_path, monkeypatch, item_ids=("a", "b"))
+    manifest = ring.set_order("pack", ["a", "b", "a", "b"])
+    fake = _FakeGenerator(directory)
+    _mock_generator(monkeypatch, fake)
+    generated = ring.generate_seams("pack", ["a>b"], cancel_event=threading.Event())
+    ring.adopt_seam("pack", "a>b", generated.ring.seams["a>b"].candidates[0].id)
+    ring.render_ring("pack")
+
+    rendered = ring.ring_status("pack")["rendered"]
+    # 四个位置都有合成图；邻居相同的位置共用一个文件（a、b 各出现两次，邻居都一样）
+    assert len(rendered) == 4 and all(rendered)
+    assert rendered[0] == rendered[2] and rendered[1] == rendered[3]
+    assert manifest.ring.order == ["a", "b", "a", "b"]
+
+    # 位置变了、邻居也变了而还没重新合成：长图的素材缺失要明确报错
+    ring.set_order("pack", ["a", "a", "b", "b"])
+    assert ring.ring_status("pack")["rendered"].count("") >= 1
+    with pytest.raises(ValueError, match="还没合成"):
+        ring.auto_cuts("pack")
+
+
 class _FakeGenerator:
     def __init__(self, directory, fail_after=None):
         self.directory = directory
@@ -271,7 +328,7 @@ def test_adopt_render_and_stale_detection(tmp_path, monkeypatch):
     _mock_generator(monkeypatch, fake)
     generated = ring.generate_seams("pack", [key], cancel_event=threading.Event())
     candidate = generated.ring.seams[key].candidates[0]
-    assert ring.ring_status("pack")["rendered"] == {}
+    assert ring.ring_status("pack")["rendered"] == ["", ""]
     assert ring.ring_status("pack")["seams"][key].stale is False
     adopted = ring.adopt_seam("pack", key, candidate.id)
     assert adopted.ring.seams[key].adopted == candidate.id
@@ -279,12 +336,13 @@ def test_adopt_render_and_stale_detection(tmp_path, monkeypatch):
         ring.adopt_seam("pack", key, "missing")
 
     ring.render_ring("pack")
-    assert set(ring.ring_status("pack")["rendered"]) == {"left", "right"}
+    rendered = ring.ring_status("pack")["rendered"]
+    assert len(rendered) == 2 and all(rendered)
     left_id, right_id = key.split(">")
     left_original = np.asarray(Image.open(directory / left_id / "generate.png"))
-    left_rendered = np.asarray(Image.open(directory / left_id / "ring.png"))
+    left_rendered = np.asarray(Image.open(directory / rendered[0]))
     right_original = np.asarray(Image.open(directory / right_id / "generate.png"))
-    right_rendered = np.asarray(Image.open(directory / right_id / "ring.png"))
+    right_rendered = np.asarray(Image.open(directory / rendered[1]))
     assert np.array_equal(left_rendered[:, :-152], left_original[:, :-152])
     assert np.array_equal(right_rendered[:, 152:], right_original[:, 152:])
     assert not np.array_equal(left_rendered[:, -1], left_original[:, -1])

@@ -24,14 +24,12 @@ class EditEncodeRunner(GeneratorStepRunner):
     指令只用条目原文 + 后缀，不拼风格锁：画风已经由参考图决定。
     """
     type_name = "image.edit_encode"
-    # 生成器分段加载，用到哪段加载哪段，open() 时不预先加载
     load_on_open = False
 
     def build_params(self, ctx: StepContext) -> dict[str, Any]:
         params = {k: v for k, v in ctx.params.items()
                   if k not in ("model_name", "prompt_suffix", "scale", "instruction")}
         # 转面包的条目原文就是视角指令；角色立绘这类条目原文是外观描述，
-        # 视角指令只能写在步骤参数里（同一个条目一次转好几个视角）
         instruction = ctx.params.get("instruction") or ctx.values.get(PROMPT_FIELD, "")
         params["content"] = ", ".join(
             p.strip() for p in (instruction, ctx.params.get("prompt_suffix", "")) if p.strip())

@@ -5,8 +5,8 @@ from PySide6.QtCore import QPointF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QButtonGroup,
-    QCheckBox,
     QComboBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -44,6 +44,7 @@ from src.app.ui.library.pack_status import (
     step_fraction,
     step_skipped,
 )
+from src.app.ui.library.ring_cards import RingCardBar, RingItemPicker
 from src.app.ui.library.ring_strip import RingStrip
 from src.app.ui.message.image_preview import ImagePreviewOverlay
 from src.shared.schemas import (
@@ -63,8 +64,6 @@ RING_SOURCE_STEP = "generate"
 # 手动调整后每段的宽度范围，与后端 ring_cuts.MIN_MANUAL_SEGMENT / MAX_SEGMENT 一致
 MIN_SEGMENT_WIDTH = 256
 MAX_SEGMENT_WIDTH = 1536
-MEMBER_THUMB_SIZE = QSize(72, 44)
-MEMBER_ROW_HEIGHT = 74
 
 
 def segment_widths(cuts: list[int], total: int) -> list[int]:
@@ -168,7 +167,8 @@ class PackDetail(BaseWidget):
     asset_export_requested = Signal(str, str)      # item id, step id
     asset_delete_requested = Signal(str)           # item id：删的是整个条目
     ring_view_requested = Signal()
-    ring_plan_requested = Signal(list)             # 参与循环的条目 id
+    ring_plan_requested = Signal(list)             # 自动排序：参与的条目 id（去重）
+    ring_order_requested = Signal(list)            # 手动排的顺序：环上从左到右的条目 id，可重复
     ring_generate_requested = Signal()
     ring_render_requested = Signal()
     ring_candidates_requested = Signal(str)        # seam key：要预览它的各个候选
@@ -200,8 +200,9 @@ class PackDetail(BaseWidget):
         self._ring_operation: str | None = None
         self._ring_order: list[str] = []
         self._ring_seams: dict = {}
-        # 条目 id → 勾选框；用户改过的勾选在轮询刷新时要保住
-        self._ring_member_boxes: dict[str, QCheckBox] = {}
+        # 卡片条上从左到右的条目 id（同一屏可重复）。后端已有环时等于 _ring_order；
+        # 还没凑够两屏时只存在这里，等第二张卡片加进来才发给后端
+        self._ring_cards: list[str] = []
         self._member_thumbs: dict[str, QPixmap] = {}
         # 后端存的切点；条带上的切点被拖过后和它不同，就是"还没确认"
         self._saved_cuts: list[int] = []
@@ -388,31 +389,29 @@ class PackDetail(BaseWidget):
         ring_layout.setSpacing(10)
         self.ring_strip = RingStrip()
         ring_layout.addWidget(self.ring_strip, 1)
-        # 参与循环的屏：只列 generate 已完成的条目，勾选结果在"规划顺序"时才生效
-        members_row = QHBoxLayout()
-        members_label = QLabel(self.tr("Screens in the ring"))
-        members_label.setObjectName("detail_muted")
-        members_row.addWidget(members_label, 0, Qt.AlignmentFlag.AlignTop)
-        # 单行横向滚动：屏多时不换行、不挤占条带的高度
-        members_scroll = QScrollArea()
-        members_scroll.setObjectName("ring_members_scroll")
-        members_scroll.setWidgetResizable(True)
-        members_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-        members_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        members_scroll.setFixedHeight(MEMBER_ROW_HEIGHT)
-        members_host = QWidget()
-        members_host.setObjectName("ring_members_host")
-        self.ring_members_layout = QHBoxLayout(members_host)
-        self.ring_members_layout.setContentsMargins(0, 0, 0, 0)
-        self.ring_members_layout.setSpacing(10)
-        members_scroll.setWidget(members_host)
-        members_row.addWidget(members_scroll, 1)
-        ring_layout.addLayout(members_row)
-        self.ring_members_hint = QLabel(self.tr("Plan order again to apply the screen selection."))
-        self.ring_members_hint.setObjectName("detail_muted")
-        self.ring_members_hint.hide()
-        ring_layout.addWidget(self.ring_members_hint)
-        ring_controls = QHBoxLayout()
+        # 环里的屏：卡片从左到右就是条带上的拼接顺序，可拖动换位；同一屏能加多次。
+        # 每次改动立刻交给后端（纯 CPU），条带随之更新
+
+
+        # 自动排序留作一键起步：按边缘相似度重排，重复的屏会合并成一张
+        cards_row = QHBoxLayout()
+        self.ring_plan_btn = QPushButton(self.tr("Auto arrange"))
+        self.ring_plan_btn.setToolTip(self.tr(
+            "Order the screens by how well their edges match. "
+            "Screens added more than once are merged into one."))
+        self.ring_plan_btn.clicked.connect(
+            lambda: self.ring_plan_requested.emit(self.ring_plan_ids()))
+        cards_row.addStretch()
+        cards_row.addWidget(self.ring_plan_btn, 0, Qt.AlignmentFlag.AlignTop)
+        ring_layout.addLayout(cards_row)
+
+        self.ring_cards = RingCardBar()
+        self.ring_cards.add_requested.connect(self._on_add_card)
+        self.ring_cards.remove_requested.connect(self._on_remove_card)
+        self.ring_cards.reordered.connect(self._set_ring_cards)
+        ring_layout.addWidget(self.ring_cards)
+
+        # 拼接前/后：浮在条带右上角，点哪个切哪张图，切换时保持画面位置不动
         self.ring_before_btn = QPushButton(self.tr("Before"))
         self.ring_after_btn = QPushButton(self.tr("After"))
         self.ring_before_btn.setCheckable(True)
@@ -424,16 +423,30 @@ class PackDetail(BaseWidget):
         self.ring_before_btn.setChecked(True)
         self.ring_before_btn.clicked.connect(lambda: self._show_ring_images(False))
         self.ring_after_btn.clicked.connect(lambda: self._show_ring_images(True))
-        self.ring_plan_btn = QPushButton(self.tr("Plan order"))
-        self.ring_plan_btn.clicked.connect(
-            lambda: self.ring_plan_requested.emit(self.ring_member_ids()))
+        self.ring_compare_bar = QFrame()
+        self.ring_compare_bar.setObjectName("ring_compare_bar")
+        compare_layout = QHBoxLayout(self.ring_compare_bar)
+        compare_layout.setContentsMargins(3, 3, 3, 3)
+        compare_layout.setSpacing(2)
+        for button in (self.ring_before_btn, self.ring_after_btn):
+            button.setObjectName("library_view_toggle")
+            compare_layout.addWidget(button)
+        self.ring_strip.set_overlay(self.ring_compare_bar)
+        ring_controls = QHBoxLayout()
         self.ring_generate_btn = QPushButton(self.tr("Generate seams"))
         self.ring_generate_btn.setObjectName("library_primary_btn")
         self.ring_generate_btn.clicked.connect(self.ring_generate_requested)
         self.ring_render_btn = QPushButton(self.tr("Render"))
         self.ring_render_btn.clicked.connect(self.ring_render_requested)
-        for button in (self.ring_before_btn, self.ring_after_btn,
-                       self.ring_plan_btn,self.ring_generate_btn, self.ring_render_btn):
+
+        self.ring_auto_cut_btn = QPushButton(self.tr("Auto cut"))
+        self.ring_auto_cut_btn.clicked.connect(self.ring_cuts_auto_requested)
+        self.ring_confirm_cut_btn = QPushButton(self.tr("Confirm cuts"))
+        self.ring_confirm_cut_btn.clicked.connect(
+            lambda: self.ring_cuts_confirm_requested.emit(self.ring_strip.cuts()))
+        
+        for button in (self.ring_generate_btn, self.ring_render_btn,
+                       self.ring_auto_cut_btn, self.ring_confirm_cut_btn):
             ring_controls.addWidget(button)
         ring_layout.addLayout(ring_controls)
 
@@ -442,14 +455,8 @@ class PackDetail(BaseWidget):
         self.ring_cut_info = QLabel()
         self.ring_cut_info.setObjectName("detail_muted")
         self.ring_cut_info.setWordWrap(True)
-        self.ring_auto_cut_btn = QPushButton(self.tr("Auto cut"))
-        self.ring_auto_cut_btn.clicked.connect(self.ring_cuts_auto_requested)
-        self.ring_confirm_cut_btn = QPushButton(self.tr("Confirm cuts"))
-        self.ring_confirm_cut_btn.clicked.connect(
-            lambda: self.ring_cuts_confirm_requested.emit(self.ring_strip.cuts()))
+
         cut_row.addWidget(self.ring_cut_info, 1)
-        cut_row.addWidget(self.ring_auto_cut_btn)
-        cut_row.addWidget(self.ring_confirm_cut_btn)
         ring_layout.addLayout(cut_row)
         self.ring_strip.cuts_edited.connect(self._on_ring_cuts_edited)
 
@@ -518,7 +525,6 @@ class PackDetail(BaseWidget):
             "Add to the prompt for this seam (optional), e.g. a stream, fewer trees"))
         self.seam_redo_btn = QPushButton(self.tr("Redo this seam"))
         self.seam_redo_btn.setObjectName("library_primary_btn")
-        seam_body.addWidget(self.seam_preview)
         seam_body.addWidget(self.seam_prompt, 1, Qt.AlignmentFlag.AlignVCenter)
         seam_body.addWidget(self.seam_redo_btn, 0, Qt.AlignmentFlag.AlignVCenter)
         seam_layout.addLayout(seam_body)
@@ -593,15 +599,16 @@ class PackDetail(BaseWidget):
             self.resources_view_btn.setChecked(True)
             self.center_stack.setCurrentIndex(0)
             # 接缝状态属于上一个包，换包后全部作废
-            self._ring_order, self._ring_seams = [], {}
+            self._ring_order, self._ring_seams, self._ring_cards = [], {}, []
             self._seam_key, self._candidate_images = "", {}
             self._saved_cuts, self._cuts_stale, self._segment_count = [], False, 0
             self._segments, self._segment_layers, self._segment_images = [], [], {}
             self.ring_strip.set_cuts([])
+            self.ring_strip.reset_view()
             self.seam_panel.hide()
         self.pack, self.template, self._busy = pack, template, busy
         manifest = pack.manifest
-        self._sync_ring_members(reset=pack_changed)
+        self._refresh_ring_cards()
         # 分层要跑几个小时：轮询刷新 manifest 时顺带更新"已分层 x/y 段"
         self._update_layer_controls()
         ring_available = manifest.type == "scene" and len(manifest.items) >= 2
@@ -683,7 +690,7 @@ class PackDetail(BaseWidget):
         self._busy = running
         for button in (self.ring_plan_btn, self.ring_generate_btn, self.ring_render_btn):
             button.setEnabled(not running and not self._ring_running)
-        self._update_ring_members_state()
+        self._update_ring_cards_state()
         self._update_cut_controls()
         self._update_seam_buttons()
         self._update_card_actions()
@@ -694,11 +701,12 @@ class PackDetail(BaseWidget):
         self._ring_images_after = images_after
         self.ring_status_label.setText(status_text)
         if status is not None:
-            # 环成员变了（刚规划过或换了包）才按新成员重勾，否则保留用户正在改的勾选
-            order_changed = list(status.order) != self._ring_order
             self._ring_order = list(status.order)
             self._ring_seams = dict(status.seams)
-            self._sync_ring_members(reset=order_changed)
+            if status.order:
+                # 后端的环是准的；还没有环时保留卡片条上用户已经加的那一张
+                self._ring_cards = list(status.order)
+            self._refresh_ring_cards()
             self._saved_cuts = list(status.cuts)
             self._cuts_stale = status.cuts_stale
             self._segment_count = len(status.segments)
@@ -714,42 +722,52 @@ class PackDetail(BaseWidget):
     def ring_seam(self, key: str):
         return self._ring_seams.get(key)
 
-    def ring_member_ids(self) -> list[str]:
-        return [item_id for item_id, box in self._ring_member_boxes.items() if box.isChecked()]
+    def ring_card_ids(self) -> list[str]:
+        return list(self._ring_cards)
 
-    def _sync_ring_members(self, reset: bool = False):
-        """按 generate 已完成的条目重建勾选框。
+    def ring_plan_ids(self) -> list[str]:
+        """自动排序用的屏：卡片条上的屏去重；条上还没有卡片时用全部可用的屏。"""
+        chosen = list(dict.fromkeys(self._ring_cards))
+        return chosen or [item.id for item in self._ready_items()]
 
-        reset：按当前环成员重勾（没规划过就全勾）；否则只给新出现的条目补框，已有的勾选不动。
-        """
+    def _ready_items(self) -> list[CollectionItem]:
+        """generate 已完成的条目：只有它们能进环。"""
         items = self.pack.manifest.items if self.pack is not None else []
-        ready = [item for item in items
-                 if (state := item.steps.get(RING_SOURCE_STEP)) is not None
-                 and state.status == "done"]
-        previous = {item_id: box.isChecked() for item_id, box in self._ring_member_boxes.items()}
-        if not reset and [item.id for item in ready] == list(previous):
-            self._update_ring_members_state()
-            return
-        while (child := self.ring_members_layout.takeAt(0)) is not None:
-            if child.widget() is not None:
-                child.widget().deleteLater()
-        self._ring_member_boxes = {}
-        for item in ready:
-            # 缩略图 + 编号，一眼认出是哪一屏；完整描述放提示里
-            box = QCheckBox(item.id)
-            box.setIconSize(MEMBER_THUMB_SIZE)
-            if (thumb := self._member_thumbs.get(item.id)) is not None:
-                box.setIcon(QIcon(thumb))
-            box.setToolTip(f"{item_title(item)}\n{item.prompt}")
-            if reset or item.id not in previous:
-                box.setChecked(item.id in self._ring_order if self._ring_order else True)
-            else:
-                box.setChecked(previous[item.id])
-            box.toggled.connect(self._update_ring_members_state)
-            self.ring_members_layout.addWidget(box)
-            self._ring_member_boxes[item.id] = box
-        self.ring_members_layout.addStretch(1)
-        self._update_ring_members_state()
+        return [item for item in items
+                if (state := item.steps.get(RING_SOURCE_STEP)) is not None
+                and state.status == "done"]
+
+    def _refresh_ring_cards(self):
+        ready = {item.id: item for item in self._ready_items()}
+        # 条目被删或重做后不再可用：从卡片里拿掉（后端那边的环由下一次状态刷新纠正）
+        self._ring_cards = [item_id for item_id in self._ring_cards if item_id in ready]
+        self.ring_cards.set_cards([
+            (item_id, f"{item_title(ready[item_id])}\n{ready[item_id].prompt}")
+            for item_id in self._ring_cards])
+        self._update_ring_cards_state()
+
+    def _set_ring_cards(self, order: list[str]):
+        """卡片条上的改动（加、删、换位）：更新卡片，凑够两屏就立刻交给后端。"""
+        self._ring_cards = list(order)
+        self._refresh_ring_cards()
+        if len(order) >= 2 and order != self._ring_order:
+            self.ring_order_requested.emit(list(order))
+
+    def add_ring_cards(self, item_ids: list[str]):
+        """追加到环的末尾；已经在环里的屏也可以再加。"""
+        if item_ids:
+            self._set_ring_cards([*self._ring_cards, *item_ids])
+
+    def _on_add_card(self):
+        entries = [(item.id, item_title(item), f"{item_title(item)}\n{item.prompt}",
+                    self._member_thumbs.get(item.id)) for item in self._ready_items()]
+        picker = RingItemPicker(entries, self)
+        if picker.exec():
+            self.add_ring_cards(picker.selected_ids())
+
+    def _on_remove_card(self, index: int):
+        if 0 <= index < len(self._ring_cards):
+            self._set_ring_cards(self._ring_cards[:index] + self._ring_cards[index + 1:])
 
     def _on_ring_cuts_edited(self, _cuts: list):
         self._update_cut_controls()
@@ -874,12 +892,13 @@ class PackDetail(BaseWidget):
             and (edited or self._cuts_stale or not self._segment_count))
         self._update_layer_controls()
 
-    def _update_ring_members_state(self):
-        chosen = set(self.ring_member_ids())
-        self.ring_members_hint.setVisible(bool(self._ring_order)
-                                          and chosen != set(self._ring_order))
+    def _update_ring_cards_state(self):
         idle = not self._busy and not self._ring_running and self._ring_operation is None
-        self.ring_plan_btn.setEnabled(idle and len(chosen) >= 2)
+        ready = len(self._ready_items())
+        self.ring_plan_btn.setEnabled(idle and ready >= 2)
+        # 环里只剩两屏时不能再删：后端要求至少两屏
+        self.ring_cards.set_editable(
+            idle, can_add=ready > 0, removable=len(self._ring_cards) != 2)
 
     def set_ring_candidate_images(self, key: str, images: dict[str, QImage]):
         self._candidate_images[key] = images
@@ -897,7 +916,7 @@ class PackDetail(BaseWidget):
                 self.tr("Layering segments…") if layering else self.tr("Generating seams…"))
         self.stop_btn.setVisible(self._busy or running)
         self.stop_btn.setEnabled(self._busy or running)
-        self._update_ring_members_state()
+        self._update_ring_cards_state()
         self._update_cut_controls()
         self._update_seam_buttons()
 
@@ -908,6 +927,8 @@ class PackDetail(BaseWidget):
             button.setEnabled(not active and not self._busy)
         if operation == "plan":
             self.ring_status_label.setText(self.tr("Planning order…"))
+        elif operation == "order":
+            self.ring_status_label.setText(self.tr("Updating the ring order…"))
         elif operation == "render":
             self.ring_status_label.setText(self.tr("Rendering ring…"))
         elif operation == "adopt":
@@ -917,7 +938,7 @@ class PackDetail(BaseWidget):
             self.ring_status_label.setText(self.tr("Finding cut points…"))
         elif operation == "confirm":
             self.ring_status_label.setText(self.tr("Saving segments…"))
-        self._update_ring_members_state()
+        self._update_ring_cards_state()
         self._update_cut_controls()
         self._update_seam_buttons()
 
@@ -1013,9 +1034,7 @@ class PackDetail(BaseWidget):
             card.set_thumbnail(pixmap)
         if step_id == RING_SOURCE_STEP:
             self._member_thumbs[item_id] = pixmap
-            box = self._ring_member_boxes.get(item_id)
-            if box is not None:
-                box.setIcon(QIcon(pixmap))
+            self.ring_cards.set_thumb(item_id, pixmap)
 
     def show_image(self, path: str) -> ImagePreviewOverlay:
         # 宿主是中间区域而不是整页：放大时右侧详情仍然可见

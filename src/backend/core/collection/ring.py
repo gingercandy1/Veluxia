@@ -46,6 +46,7 @@ MAX_CANDIDATES = 4
 HARMONIZE_STRENGTH = 0.3
 GENERATE_STEP = "generate"
 SEGMENT_DIR = Path("ring") / "segments"
+SLOT_DIR = Path("ring") / "slots"
 # 每段的分层结果放在各自目录：按段身份命名，切点变了旧目录不会被新段误用
 LAYER_DIR = Path("ring") / "layers"
 LAYER_STEP = "layer"
@@ -72,23 +73,49 @@ def plan_ring(pack_id: str, item_ids: list[str] | None = None) -> Manifest:
         strips = [edge_strips(path) for path in sources]
         order_ids = [members[index].id
                      for index in order_loop(edge_cost_matrix(strips))]
-        old_seams = manifest.ring.seams if manifest.ring else {}
-        ordered_keys = [
-            _seam_key(order_ids[index], order_ids[(index + 1) % len(order_ids)])
-            for index in range(len(order_ids))
-        ]
-        seams = {key: old_seams[key] for key in ordered_keys if key in old_seams}
-        for key in ordered_keys:
-            seams.setdefault(key, SeamState())
-        previous = manifest.ring
-        new_ring = RingState(order=order_ids, seams=seams)
-        if previous is not None and previous.order == order_ids:
-            # 顺序没变，长图坐标也没变：切点和已导出的段继续有效（图变了由签名判断）
-            new_ring.cuts, new_ring.cuts_sig = previous.cuts, previous.cuts_sig
-            new_ring.segments = previous.segments
-        manifest.ring = new_ring
-        save_manifest(directory, manifest)
+        _commit_order(directory, manifest, order_ids)
         return manifest
+
+
+def set_order(pack_id: str, order: list[str]) -> Manifest:
+    """用户手动排的顺序：同一屏可以出现多次，位置就是它在环上的位置。
+
+    和 plan_ring 的区别是不重新排序；接缝按相邻关系保留，所以挪动一张图只影响它前后的接缝。
+    """
+    directory = library.pack_dir(pack_id)
+    with library._claim(pack_id):
+        manifest = load_manifest(directory)
+        if manifest.type != "scene":
+            raise ValueError("循环拼接只支持场景资源包")
+        if len(order) < 2:
+            raise ValueError("循环拼接至少需要两个条目")
+        items = {item.id: item for item in manifest.items}
+        unknown = sorted(set(order) - set(items))
+        if unknown:
+            raise ValueError(f"资源包里没有这些条目：{', '.join(unknown)}")
+        for item_id in dict.fromkeys(order):
+            _generate_source(directory, items[item_id])
+        _commit_order(directory, manifest, list(order))
+        return manifest
+
+
+def _commit_order(directory: Path, manifest: Manifest, order_ids: list[str]) -> None:
+    old_seams = manifest.ring.seams if manifest.ring else {}
+    ordered_keys = [
+        _seam_key(order_ids[index], order_ids[(index + 1) % len(order_ids)])
+        for index in range(len(order_ids))
+    ]
+    seams = {key: old_seams[key] for key in ordered_keys if key in old_seams}
+    for key in ordered_keys:
+        seams.setdefault(key, SeamState())
+    previous = manifest.ring
+    new_ring = RingState(order=order_ids, seams=seams)
+    if previous is not None and previous.order == order_ids:
+        # 顺序没变，长图坐标也没变：切点和已导出的段继续有效（图变了由签名判断）
+        new_ring.cuts, new_ring.cuts_sig = previous.cuts, previous.cuts_sig
+        new_ring.segments = previous.segments
+    manifest.ring = new_ring
+    save_manifest(directory, manifest)
 
 
 def generate_seams(pack_id: str, keys: list[str] | None = None,
@@ -223,7 +250,8 @@ def render_ring(pack_id: str) -> Manifest:
             if following:
                 with Image.open(_safe_pack_path(directory, following.file)) as patch:
                     rendered = apply_patch(rendered, patch, side="right")
-            target = _safe_pack_path(directory, Path(item_id) / "ring.png")
+            target = _safe_pack_path(
+                directory, _slot_file(item_id, previous_id, next_id))
             target.parent.mkdir(parents=True, exist_ok=True)
             rendered.save(target, format="PNG")
         return manifest
@@ -346,7 +374,7 @@ def ring_status(pack_id: str) -> dict[str, Any]:
     directory = library.pack_dir(pack_id)
     manifest = load_manifest(directory)
     if manifest.ring is None:
-        return {"order": [], "seams": {}, "rendered": _rendered_files(directory, manifest)}
+        return {"order": [], "seams": {}, "rendered": []}
     signatures: dict[str, str] = {}
     for item in manifest.items:
         state = item.steps.get(GENERATE_STEP)
@@ -358,7 +386,7 @@ def ring_status(pack_id: str) -> dict[str, Any]:
     return {
         "order": list(ring.order),
         "seams": _statuses(ring, signatures),
-        "rendered": _rendered_files(directory, manifest),
+        "rendered": _rendered_files(directory, ring),
         "cuts": list(ring.cuts),
         "cuts_stale": bool(ring.cuts) and _current_cuts_signature(directory, ring) != ring.cuts_sig,
         "segments": [path for path in ring.segments
@@ -459,12 +487,19 @@ def _rendered_sources(directory: Path, ring: RingState) -> list[Path]:
     if len(ring.order) < 2:
         raise ValueError("循环拼接至少需要两个条目，请先规划循环顺序")
     paths = []
-    for item_id in ring.order:
-        path = _safe_pack_path(directory, Path(item_id) / "ring.png")
+    for index, item_id in enumerate(ring.order):
+        path = _safe_pack_path(directory, _slot_file(
+            item_id, ring.order[index - 1], ring.order[(index + 1) % len(ring.order)]))
         if not path.is_file():
-            raise ValueError(f"屏 {item_id} 还没合成，请先点“合成”")
+            raise ValueError(f"第 {index + 1} 屏（{item_id}）还没合成，请先点“合成”")
         paths.append(path)
     return paths
+
+
+def _slot_file(item_id: str, previous_id: str, next_id: str) -> Path:
+    # 同一屏可以在环上出现多次，前后邻居不同合成结果就不同：按“屏 + 左右邻居”命名，
+    # 邻居没变的位置沿用旧文件，挪动一张图只需重合成它自己和相邻的几屏
+    return SLOT_DIR / item_id / f"{previous_id}~{next_id}.png"
 
 
 def _ring_long_image(paths: list[Path]) -> Image.Image:
@@ -487,13 +522,16 @@ def _current_cuts_signature(directory: Path, ring: RingState) -> str:
         return ""
 
 
-def _rendered_files(directory: Path, manifest: Manifest) -> dict[str, str]:
-    rendered = {}
-    for item in manifest.items:
-        relative = Path(item.id) / "ring.png"
-        if _safe_pack_path(directory, relative).is_file():
-            rendered[item.id] = relative.as_posix()
-    return rendered
+def _rendered_files(directory: Path, ring: RingState | None) -> list[str]:
+    """与 ring.order 一一对应的合成图；还没合成的位置是空串。"""
+    if ring is None:
+        return []
+    files = []
+    for index, item_id in enumerate(ring.order):
+        relative = _slot_file(
+            item_id, ring.order[index - 1], ring.order[(index + 1) % len(ring.order)])
+        files.append(relative.as_posix() if _safe_pack_path(directory, relative).is_file() else "")
+    return files
 
 
 def _statuses(ring: RingState, signatures: dict[str, str]) -> dict[str, RingSeamStatus]:

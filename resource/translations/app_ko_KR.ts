@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+103"/>
         <location line="+135"/>
-        <location line="+388"/>
+        <location line="+394"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>백엔드에 연결할 수 없습니다. 서비스가 실행 중인지 확인하세요.</translation>
     </message>
     <message>
-        <location line="-519"/>
+        <location line="-525"/>
         <source>Connection timed out.</source>
         <translation>연결 시간이 초과되었습니다.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+379"/>
+        <location line="+385"/>
         <source>Cannot connect to the backend.</source>
         <translation>백엔드에 연결할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="-263"/>
+        <location line="-269"/>
         <source>Generation stopped.</source>
         <translation>생성을 중지했습니다.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>백엔드에 연결할 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location line="+284"/>
+        <location line="+290"/>
         <source>An install task is already running...</source>
         <translation>설치 작업이 이미 실행 중입니다…</translation>
     </message>
@@ -1003,7 +1003,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+255"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+257"/>
         <source>Failed to load packs: {0}</source>
         <translation>팩 목록을 불러오지 못했습니다: {0}</translation>
     </message>
@@ -1013,22 +1013,22 @@
         <translation>템플릿을 불러오지 못했습니다: {0}</translation>
     </message>
     <message>
-        <location line="+320"/>
+        <location line="+334"/>
         <source>Failed to create pack: {0}</source>
         <translation>팩을 만들지 못했습니다: {0}</translation>
     </message>
     <message>
-        <location line="-202"/>
+        <location line="-216"/>
         <source>Run failed: {0}</source>
         <translation>실행 실패: {0}</translation>
     </message>
     <message>
-        <location line="+55"/>
+        <location line="+58"/>
         <source>The seam produced no candidate.</source>
         <translation>이 이음새에서 후보가 만들어지지 않았습니다.</translation>
     </message>
     <message>
-        <location line="+165"/>
+        <location line="+176"/>
         <source>Failed to add items: {0}</source>
         <translation>항목 추가 실패: {0}</translation>
     </message>
@@ -1110,18 +1110,18 @@
         <translation>스타일 프리셋: {0}</translation>
     </message>
     <message>
-        <location line="-357"/>
-        <location line="+35"/>
+        <location line="-371"/>
+        <location line="+38"/>
         <source>Could not load ring status.</source>
         <translation>링 상태를 불러올 수 없습니다.</translation>
     </message>
     <message>
-        <location line="-27"/>
+        <location line="-28"/>
         <source>Screen {0} has no finished source image.</source>
         <translation>화면 {0}의 원본 이미지가 아직 완료되지 않았습니다.</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+13"/>
         <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
         <translation>화면 {0}개 · 후보가 있는 이음새 {1}개 · 오래된 후보 {2}개 · 합성 완료 {3}개</translation>
     </message>
@@ -1131,13 +1131,13 @@
         <translation>아직 합성되지 않음</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+72"/>
         <source>Could not decode image: {0}</source>
         <translation>이미지를 디코딩할 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location line="+56"/>
-        <location line="+27"/>
+        <location line="+59"/>
+        <location line="+28"/>
         <source>Ring operation failed: {0}</source>
         <translation>링 작업 실패: {0}</translation>
     </message>
@@ -1320,7 +1320,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+242"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+245"/>
         <source>Library</source>
         <translation>라이브러리</translation>
     </message>
@@ -1346,13 +1346,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+337"/>
-        <location line="+436"/>
+        <location line="+347"/>
+        <location line="+446"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-771"/>
+        <location line="-791"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>완성된 에셋을 zip으로 저장합니다. 항목마다 폴더 하나이며 초안과 중간 파일은 포함하지 않습니다.</translation>
     </message>
@@ -1387,17 +1387,12 @@
         <translation>이전 일러스트로 만든 단계와 그 이후 단계를 모두 다시 합니다.</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+36"/>
         <source>Screens in the ring</source>
         <translation>루프에 포함할 화면</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Plan order again to apply the screen selection.</source>
-        <translation>화면 선택을 적용하려면 순서를 다시 계획하세요.</translation>
-    </message>
-    <message>
-        <location line="+38"/>
+        <location line="+53"/>
         <source>Auto cut</source>
         <translation>자동 분할</translation>
     </message>
@@ -1432,7 +1427,7 @@
         <translation>이 이음새 다시 만들기</translation>
     </message>
     <message>
-        <location line="+97"/>
+        <location line="+98"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 완료</translation>
     </message>
@@ -1447,7 +1442,7 @@
         <translation>스타일 프리셋 &quot;{0}&quot;이(가) 이 팩을 만든 뒤 변경되었습니다.</translation>
     </message>
     <message>
-        <location line="+114"/>
+        <location line="+126"/>
         <source>Segment {0}</source>
         <translation>{0}번 구간</translation>
     </message>
@@ -1497,12 +1492,17 @@
         <translation>구간 이미지 {0}개를 저장했습니다</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Layering segments…</source>
         <translation>레이어 분리 중…</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+15"/>
+        <source>Updating the ring order…</source>
+        <translation>루프 순서를 업데이트하는 중…</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Applying the chosen seam…</source>
         <translation>선택한 이음새 적용 중…</translation>
     </message>
@@ -1517,7 +1517,7 @@
         <translation>구간을 저장하는 중…</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+22"/>
         <source>Seam {0} → {1}</source>
         <translation>이음새 {0} → {1}</translation>
     </message>
@@ -1537,7 +1537,7 @@
         <translation>{0} · 시드 {1}</translation>
     </message>
     <message>
-        <location line="+124"/>
+        <location line="+121"/>
         <source>Nothing to export yet</source>
         <translation>아직 내보낼 항목이 없습니다</translation>
     </message>
@@ -1557,7 +1557,7 @@
         <translation>이 항목과 모든 에셋 삭제</translation>
     </message>
     <message>
-        <location line="-760"/>
+        <location line="-780"/>
         <source>Resources</source>
         <translation>리소스</translation>
     </message>
@@ -1567,7 +1567,17 @@
         <translation>링</translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="+87"/>
+        <source>Auto arrange</source>
+        <translation>자동 정렬</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Order the screens by how well their edges match. Screens added more than once are merged into one.</source>
+        <translation>가장자리가 잘 맞는 순서로 화면을 정렬합니다. 여러 번 추가한 화면은 하나로 합쳐집니다.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Before</source>
         <translation>합성 전</translation>
     </message>
@@ -1577,18 +1587,7 @@
         <translation>합성 후</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+585"/>
-        <source>Pause</source>
-        <translation>일시 정지</translation>
-    </message>
-    <message>
-        <location line="-581"/>
-        <source>Plan order</source>
-        <translation>순서 계획</translation>
-    </message>
-    <message>
-        <location line="+3"/>
+        <location line="+20"/>
         <source>Generate seams</source>
         <translation>이음새 생성</translation>
     </message>
@@ -1598,7 +1597,7 @@
         <translation>합성</translation>
     </message>
     <message>
-        <location line="+463"/>
+        <location line="+476"/>
         <source>Generating seams…</source>
         <translation>이음새 생성 중…</translation>
     </message>
@@ -1608,14 +1607,9 @@
         <translation>순서 계획 중…</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+4"/>
         <source>Rendering ring…</source>
         <translation>링 합성 중…</translation>
-    </message>
-    <message>
-        <location line="+97"/>
-        <source>Resume</source>
-        <translation>계속</translation>
     </message>
 </context>
 <context>
@@ -1931,9 +1925,30 @@
     </message>
 </context>
 <context>
+    <name>RingCardBar</name>
+    <message>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+157"/>
+        <source>Add a screen. The same screen can be added again.</source>
+        <translation>화면을 추가합니다. 같은 화면을 여러 번 추가할 수 있습니다.</translation>
+    </message>
+</context>
+<context>
+    <name>RingItemPicker</name>
+    <message>
+        <location line="+114"/>
+        <source>Add screens to the ring</source>
+        <translation>루프에 화면 추가</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Pick the screens to add. They are appended to the end of the ring; a screen already in the ring can be added again.</source>
+        <translation>추가할 화면을 선택하세요. 루프 끝에 추가되며, 이미 루프에 있는 화면도 다시 추가할 수 있습니다.</translation>
+    </message>
+</context>
+<context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+134"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+135"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>완료된 장면 화면을 두 개 이상 준비한 다음 링을 계획하세요.</translation>
     </message>

@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+103"/>
         <location line="+135"/>
-        <location line="+388"/>
+        <location line="+394"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>No se puede conectar con el backend. Comprueba que el servicio esté en ejecución.</translation>
     </message>
     <message>
-        <location line="-519"/>
+        <location line="-525"/>
         <source>Connection timed out.</source>
         <translation>Se agotó el tiempo de conexión.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+379"/>
+        <location line="+385"/>
         <source>Cannot connect to the backend.</source>
         <translation>No se puede conectar con el backend.</translation>
     </message>
     <message>
-        <location line="-263"/>
+        <location line="-269"/>
         <source>Generation stopped.</source>
         <translation>Generación detenida.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>No se puede conectar con el backend: {0}</translation>
     </message>
     <message>
-        <location line="+284"/>
+        <location line="+290"/>
         <source>An install task is already running...</source>
         <translation>Ya hay una instalación en curso…</translation>
     </message>
@@ -1005,7 +1005,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+255"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+257"/>
         <source>Failed to load packs: {0}</source>
         <translation>No se pudieron cargar los paquetes: {0}</translation>
     </message>
@@ -1015,28 +1015,28 @@
         <translation>No se pudieron cargar las plantillas: {0}</translation>
     </message>
     <message>
-        <location line="+320"/>
+        <location line="+334"/>
         <source>Failed to create pack: {0}</source>
         <translation>No se pudo crear el paquete: {0}</translation>
     </message>
     <message>
-        <location line="-202"/>
+        <location line="-216"/>
         <source>Run failed: {0}</source>
         <translation>Error de ejecución: {0}</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location line="+35"/>
+        <location line="+38"/>
         <source>Could not load ring status.</source>
         <translation>No se pudo cargar el estado del bucle.</translation>
     </message>
     <message>
-        <location line="-27"/>
+        <location line="-28"/>
         <source>Screen {0} has no finished source image.</source>
         <translation>La pantalla {0} no tiene imagen de origen terminada.</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+13"/>
         <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
         <translation>{0} pantallas · {1} uniones con candidatos · {2} obsoletas · {3} compuestas</translation>
     </message>
@@ -1051,13 +1051,13 @@
         <translation>La unión no produjo ningún candidato.</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+57"/>
         <source>Could not decode image: {0}</source>
         <translation>No se pudo decodificar la imagen: {0}</translation>
     </message>
     <message>
-        <location line="+56"/>
-        <location line="+27"/>
+        <location line="+59"/>
+        <location line="+28"/>
         <source>Ring operation failed: {0}</source>
         <translation>Falló la operación del bucle: {0}</translation>
     </message>
@@ -1322,7 +1322,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+242"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+245"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
@@ -1348,13 +1348,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+337"/>
-        <location line="+436"/>
+        <location line="+347"/>
+        <location line="+446"/>
         <source>Export</source>
         <translation>Exportar</translation>
     </message>
     <message>
-        <location line="-771"/>
+        <location line="-791"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Guarda los recursos terminados en un zip, una carpeta por elemento, sin borradores ni archivos intermedios.</translation>
     </message>
@@ -1399,17 +1399,12 @@
         <translation>Rehace los pasos creados con el retrato anterior y todo lo que viene después.</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+36"/>
         <source>Screens in the ring</source>
         <translation>Pantallas del bucle</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Plan order again to apply the screen selection.</source>
-        <translation>Vuelve a planificar el orden para aplicar la selección de pantallas.</translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location line="+18"/>
         <source>Before</source>
         <translation>Antes</translation>
     </message>
@@ -1419,18 +1414,17 @@
         <translation>Después</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+585"/>
-        <source>Pause</source>
-        <translation>Pausa</translation>
+        <location line="-10"/>
+        <source>Auto arrange</source>
+        <translation>Ordenar automáticamente</translation>
     </message>
     <message>
-        <location line="-581"/>
-        <source>Plan order</source>
-        <translation>Planificar orden</translation>
+        <location line="+2"/>
+        <source>Order the screens by how well their edges match. Screens added more than once are merged into one.</source>
+        <translation>Ordena las pantallas según lo bien que encajan sus bordes. Las pantallas añadidas más de una vez se fusionan en una.</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+28"/>
         <source>Generate seams</source>
         <translation>Generar uniones</translation>
     </message>
@@ -1440,7 +1434,7 @@
         <translation>Componer</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+11"/>
         <source>Auto cut</source>
         <translation>Corte automático</translation>
     </message>
@@ -1475,7 +1469,7 @@
         <translation>Rehacer esta unión</translation>
     </message>
     <message>
-        <location line="+97"/>
+        <location line="+98"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} listos</translation>
     </message>
@@ -1490,7 +1484,7 @@
         <translation>El ajuste de estilo «{0}» ha cambiado desde que se creó este paquete.</translation>
     </message>
     <message>
-        <location line="+114"/>
+        <location line="+126"/>
         <source>Segment {0}</source>
         <translation>Tramo {0}</translation>
     </message>
@@ -1540,7 +1534,7 @@
         <translation>{0} imágenes de tramo guardadas</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <source>Generating seams…</source>
         <translation>Generando uniones…</translation>
     </message>
@@ -1553,6 +1547,11 @@
         <location line="+13"/>
         <source>Planning order…</source>
         <translation>Planificando orden…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Updating the ring order…</source>
+        <translation>Actualizando el orden del bucle…</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -1575,12 +1574,7 @@
         <translation>Guardando tramos…</translation>
     </message>
     <message>
-        <location line="+90"/>
-        <source>Resume</source>
-        <translation>Reanudar</translation>
-    </message>
-    <message>
-        <location line="-66"/>
+        <location line="+22"/>
         <source>Seam {0} → {1}</source>
         <translation>Unión {0} → {1}</translation>
     </message>
@@ -1600,7 +1594,7 @@
         <translation>{0} · semilla {1}</translation>
     </message>
     <message>
-        <location line="+124"/>
+        <location line="+121"/>
         <source>Nothing to export yet</source>
         <translation>Aún no hay nada que exportar</translation>
     </message>
@@ -1933,9 +1927,30 @@
     </message>
 </context>
 <context>
+    <name>RingCardBar</name>
+    <message>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+157"/>
+        <source>Add a screen. The same screen can be added again.</source>
+        <translation>Añadir una pantalla. La misma pantalla se puede añadir de nuevo.</translation>
+    </message>
+</context>
+<context>
+    <name>RingItemPicker</name>
+    <message>
+        <location line="+114"/>
+        <source>Add screens to the ring</source>
+        <translation>Añadir pantallas al bucle</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Pick the screens to add. They are appended to the end of the ring; a screen already in the ring can be added again.</source>
+        <translation>Elige las pantallas que quieres añadir. Se añaden al final del bucle; una pantalla que ya está en el bucle se puede añadir otra vez.</translation>
+    </message>
+</context>
+<context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+134"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+135"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>Prepara al menos dos pantallas de escena terminadas y luego planifica el bucle.</translation>
     </message>

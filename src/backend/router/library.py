@@ -31,6 +31,7 @@ from src.shared.schemas import (
     RingCutsRequest,
     RingGenerateRequest,
     RingLayersRequest,
+    RingOrderRequest,
     RingPlanRequest,
     RingStatusResponse,
     RunPackRequest,
@@ -131,7 +132,12 @@ class LibraryRouter(BaseRouter):
             return await self._update_pack(
                 ring.plan_ring, pack_id, req.item_ids if req is not None else None)
 
-        @self.router.post("/packs/{pack_id}/ring/adopt", response_model=PackResponse,
+        @self.router.post("/packs/{pack_id}/ring/order", response_model=PackResponse,
+                          summary="手动设定循环拼接的顺序（可重复同一屏）")
+        async def set_ring_order(pack_id: str, req: RingOrderRequest) -> PackResponse:
+            return await self._update_pack(ring.set_order, pack_id, req.order)
+
+        @self.router.post("/packs/{pack_id}/ring/adopt",response_model=PackResponse,
                           summary="采用一个接缝候选")
         async def adopt_ring_seam(pack_id: str, req: AdoptSeamRequest) -> PackResponse:
             return await self._update_pack(

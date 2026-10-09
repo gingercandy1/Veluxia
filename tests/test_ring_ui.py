@@ -4,10 +4,12 @@ import threading
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QColor, QImage
 from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QWidget
 
 from src.app.ui.library.library_page import LibraryPage
 from src.app.ui.library.pack_detail import PackDetail
-from src.app.ui.library.ring_strip import ZOOM_MAX, ZOOM_MIN, RingStrip
+from src.app.ui.library.ring_cards import RingCardBar, RingItemPicker
+from src.app.ui.library.ring_strip import OVERLAY_MARGIN, ZOOM_MAX, ZOOM_MIN, RingStrip
 from src.shared.schemas import (
     CollectionItem,
     Manifest,
@@ -101,37 +103,102 @@ def test_pack_detail_ring_view_visibility_signals_and_busy_state(qapp):
     assert detail.center_stack.currentWidget() is detail.scroll
 
 
-def test_ring_members_choose_screens_and_survive_refresh(qapp):
+def test_ring_cards_add_repeat_remove_and_send_the_order(qapp):
     detail = PackDetail()
     pack, template = _scene_pack(item_count=4)
-    # 没完成 generate 的屏不能参与循环，不出勾选框
+    # 没完成 generate 的屏不能进环
     pack.manifest.items[3].steps["generate"].status = "pending"
     detail.show_pack(pack, template, busy=False)
-    assert detail.ring_member_ids() == ["screen0", "screen1", "screen2"]
+    assert detail.ring_card_ids() == []
 
+    orders = []
+    detail.ring_order_requested.connect(orders.append)
+    # 一屏时还不是环：只留在卡片条上，不发给后端
+    detail.add_ring_cards(["screen0"])
+    assert detail.ring_card_ids() == ["screen0"] and orders == []
+    # 同一屏可以再加；凑够两屏就发
+    detail.add_ring_cards(["screen0", "screen2"])
+    assert detail.ring_card_ids() == ["screen0", "screen0", "screen2"]
+    assert orders == [["screen0", "screen0", "screen2"]]
+    # 没完成的屏加不进去
+    detail.add_ring_cards(["screen3"])
+    assert detail.ring_card_ids() == ["screen0", "screen0", "screen2"]
+
+    # 删第二张；删到只剩两张后不能再删
+    detail.ring_cards._cards[1].remove_btn.click()
+    assert detail.ring_card_ids() == ["screen0", "screen2"]
+    assert orders[-1] == ["screen0", "screen2"]
+    assert not detail.ring_cards._cards[0].remove_btn.isEnabled()
+
+    # 卡片条上的屏顺序对应后端的环；后端状态回来后以它为准
+    status = RingStatusResponse(order=["screen2", "screen0", "screen1"], seams={})
+    detail.set_ring([], [], "", status)
+    assert detail.ring_card_ids() == ["screen2", "screen0", "screen1"]
+    assert detail.ring_cards.ids() == ["screen2", "screen0", "screen1"]
+    # 轮询刷新同一个包不改卡片
+    detail.show_pack(pack, template, busy=False)
+    assert detail.ring_card_ids() == ["screen2", "screen0", "screen1"]
+
+
+def test_ring_cards_drag_moves_a_card_to_the_slot_under_the_drop(qapp):
+    bar = RingCardBar()
+    bar.set_cards([("a", ""), ("b", ""), ("c", "")])
+    bar.resize(600, 130)
+    bar.show()
+    qapp.processEvents()
+    moved = []
+    bar.reordered.connect(moved.append)
+
+    def x_between(left: int, right: int) -> int:
+        # 两张卡片之间的缝；-1 / len 表示最左 / 最右
+        edges = bar._cards
+        lo = edges[left].geometry().right() if left >= 0 else -10
+        hi = edges[right].x() if right < len(edges) else lo + 20
+        return (lo + hi) // 2
+
+    bar.move_card(0, bar.slot_at(x_between(2, 3)))      # a 拖到最后
+    assert moved[-1] == ["b", "c", "a"]
+    bar.move_card(2, bar.slot_at(x_between(-1, 0)))     # c 拖到最前
+    assert moved[-1] == ["c", "a", "b"]
+    n = len(moved)
+    bar.move_card(1, bar.slot_at(x_between(1, 2)))      # 放回原位：不算换位
+    bar.move_card(1, bar.slot_at(x_between(0, 1)))      # 放在自己前面一格：也是原位
+    assert len(moved) == n
+
+
+def test_ring_cards_are_locked_while_busy(qapp):
+    bar = RingCardBar()
+    bar.set_cards([("a", ""), ("b", ""), ("c", "")])
+    removed = []
+    bar.remove_requested.connect(removed.append)
+    bar.set_editable(False)
+    assert not bar.add_btn.isEnabled()
+    assert not bar._cards[0].remove_btn.isEnabled()
+    bar.set_editable(True)
+    bar._cards[2].remove_btn.click()
+    assert removed == [2]
+
+
+def test_ring_item_picker_returns_the_ticked_screens_in_pack_order(qapp):
+    picker = RingItemPicker([("a", "A", "", None), ("b", "B", "", None), ("c", "C", "", None)])
+    assert not picker.buttons.button(picker.buttons.StandardButton.Ok).isEnabled()
+    picker.list.item(2).setSelected(True)
+    picker.list.item(0).setSelected(True)
+    assert picker.selected_ids() == ["a", "c"]
+    assert picker.buttons.button(picker.buttons.StandardButton.Ok).isEnabled()
+
+
+def test_auto_arrange_sends_each_screen_once_or_all_when_empty(qapp):
+    detail = PackDetail()
+    pack, template = _scene_pack(item_count=3)
+    detail.show_pack(pack, template, busy=False)
     planned = []
     detail.ring_plan_requested.connect(planned.append)
-    detail._ring_member_boxes["screen1"].setChecked(False)
     detail.ring_plan_btn.click()
-    assert planned == [["screen0", "screen2"]]
-
-    # 少于两屏不能规划
-    detail._ring_member_boxes["screen2"].setChecked(False)
-    assert not detail.ring_plan_btn.isEnabled()
-    detail._ring_member_boxes["screen2"].setChecked(True)
-    assert detail.ring_plan_btn.isEnabled()
-
-    # 轮询刷新同一个包不能把用户的勾选冲掉
-    detail.show_pack(pack, template, busy=False)
-    assert detail.ring_member_ids() == ["screen0", "screen2"]
-
-    # 规划结果回来后按环成员重勾；勾选和环不一致时提示要重新规划
-    status = RingStatusResponse(order=["screen2", "screen0"], seams={})
-    detail.set_ring([], [], "", status)
-    assert detail.ring_member_ids() == ["screen0", "screen2"]
-    assert detail.ring_members_hint.isHidden()
-    detail._ring_member_boxes["screen1"].setChecked(True)
-    assert not detail.ring_members_hint.isHidden()
+    assert planned == [["screen0", "screen1", "screen2"]]
+    detail.add_ring_cards(["screen1", "screen1", "screen0"])
+    detail.ring_plan_btn.click()
+    assert planned[-1] == ["screen1", "screen0"]
 
 
 def test_strip_cut_lines_drag_and_emit_sorted_cuts(qapp):
@@ -458,6 +525,47 @@ def test_strip_lines_only_span_the_image_height(qapp):
     assert target.pixelColor(0, 20) == target.pixelColor(5, 20)
     assert target.pixelColor(0, 170) == target.pixelColor(5, 170)
     assert target.pixelColor(0, 100) != target.pixelColor(5, 100)
+
+
+def test_compare_toggle_floats_top_right_and_plan_sits_with_the_members(qapp):
+    """前/后开关浮在条带右上角，规划顺序和屏幕选择同一行。"""
+    detail = PackDetail()
+    pack, template = _scene_pack(item_count=2)
+    detail.show_pack(pack, template, busy=False)
+    detail.resize(800, 600)
+    detail.ring_view_btn.click()
+    detail.ring_strip.resize(400, 180)
+    # 未显示的控件不发 resizeEvent，要先 show 让浮层按新尺寸重新定位
+    detail.show()
+    qapp.processEvents()
+    # 前/后开关是条带的子控件，贴右上角（离边 OVERLAY_MARGIN）
+    bar = detail.ring_compare_bar
+    assert bar.parent() is detail.ring_strip
+    assert bar.x() + bar.width() == detail.ring_strip.width() - OVERLAY_MARGIN
+    assert bar.y() == OVERLAY_MARGIN
+    # 规划顺序和屏幕选择在同一行（纵向中心对齐到屏幕选择区），不在按钮行里
+    members = detail.ring_cards
+    plan_top = detail.ring_plan_btn.mapTo(detail, detail.ring_plan_btn.rect().topLeft()).y()
+    members_top = members.mapTo(detail, members.rect().topLeft()).y()
+    assert abs(plan_top - members_top) < members.height()
+    assert detail.ring_plan_btn.y() < detail.ring_generate_btn.mapTo(
+        detail, detail.ring_generate_btn.rect().topLeft()).y()
+
+
+def test_switching_before_after_keeps_the_view_position(qapp):
+    strip = RingStrip()
+    strip.resize(300, 180)
+    strip.set_images(_two_screens())
+    strip.set_offset(40)
+    strip._pan_y = -20
+    strip.grab()
+    # 前/后切换（换一组同样的图）和轮询刷新都不能把画面拉回起点
+    strip.set_images(_two_screens())
+    strip.grab()
+    assert strip._offset == 40
+    assert strip._pan_y == -20
+    strip.reset_view()
+    assert strip._offset == 0.0 and strip._pan_y == 0.0
 
 
 def test_strip_double_click_resets_zoom_and_offset(qapp):

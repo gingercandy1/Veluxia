@@ -189,7 +189,7 @@ class RingState(BaseModel):
     cuts: List[int] = Field(default_factory=list)
     cuts_sig: str = Field("", description="切点对应的各屏 ring.png 签名；对不上说明图变了，切点已失效")
     segments: List[str] = Field(default_factory=list, description="确认切段后导出的段图，相对资源包目录")
-    # 键是 "起点+宽度"（长图像素），见 SegmentLayers
+    # order 里同一个条目可以出现多次（用户手动排的）；键是 "起点+宽度"（长图像素），见 SegmentLayers
     segment_layers: Dict[str, SegmentLayers] = Field(default_factory=dict)
 
 
@@ -281,6 +281,11 @@ class RingPlanRequest(BaseModel):
         None, description="参与循环的条目；为空时沿用上次规划的成员，从没规划过则用全部条目")
 
 
+class RingOrderRequest(BaseModel):
+    order: List[str] = Field(
+        ..., description="环上从左到右的条目 id；同一个条目可以出现多次，至少两个")
+
+
 class AdoptSeamRequest(BaseModel):
     key: str
     candidate_id: str
@@ -296,7 +301,8 @@ class RingSeamStatus(BaseModel):
 class RingStatusResponse(BaseResponse):
     order: List[str] = Field(default_factory=list)
     seams: Dict[str, RingSeamStatus] = Field(default_factory=dict)
-    rendered: Dict[str, str] = Field(default_factory=dict)
+    # 与 order 一一对应的合成图（相对资源包目录）；还没合成的位置是空串
+    rendered: List[str] = Field(default_factory=list)
     cuts: List[int] = Field(default_factory=list)
     cuts_stale: bool = False
     segments: List[str] = Field(default_factory=list)

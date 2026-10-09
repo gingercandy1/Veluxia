@@ -25,6 +25,74 @@ QWidget#ring_strip {
     border-radius: 6px;
 }
 
+/* 条带右上角的前/后开关：半透明底色，压在画面上也看得清 */
+QFrame#ring_compare_bar {
+    background-color: rgba(13, 17, 23, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
+}
+
+/* 环里的屏幕卡片条：卡片从左到右就是条带上的顺序 */
+QScrollArea#ring_cards,
+QWidget#ring_cards_host {
+    background-color: transparent;
+    border: none;
+}
+
+QFrame#ring_card {
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
+}
+
+QFrame#ring_card:hover {
+    border-color: #35434f;
+}
+
+QLabel#ring_card_thumb {
+    background-color: rgba(255, 255, 255, 0.04);
+    border-radius: 3px;
+}
+
+QToolButton#ring_card_remove {
+    border: none;
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 14px;
+    padding: 0 2px;
+}
+
+QToolButton#ring_card_remove:hover {
+    color: #ff6b6b;
+}
+
+QToolButton#ring_card_remove:disabled {
+    color: rgba(255, 255, 255, 0.15);
+}
+
+QPushButton#ring_card_add {
+    background-color: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 22px;
+}
+
+QPushButton#ring_card_add:hover {
+    border-color: #7B9DBC;
+    color: #7B9DBC;
+}
+
+QPushButton#ring_card_add:disabled {
+    border-color: rgba(255, 255, 255, 0.10);
+    color: rgba(255, 255, 255, 0.20);
+}
+
+QFrame#ring_card_drop_marker {
+    background-color: #7B9DBC;
+    border: none;
+}
+
 QPushButton#library_view_toggle {
     background-color: transparent;
     border: 1px solid transparent;
