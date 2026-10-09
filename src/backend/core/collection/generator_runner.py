@@ -101,5 +101,14 @@ def call_blocking(result):
 def move_into(source: Path, target: Path) -> Path:
     """生成器写在默认输出目录，移进资源包并用固定文件名，manifest 里的路径才稳定。"""
     target.parent.mkdir(parents=True, exist_ok=True)
-    os.replace(source, target)
+    try:
+        os.replace(source, target)
+    except PermissionError:
+        aside = target.with_name(f"{target.name}.{os.getpid()}.old")
+        os.replace(target, aside)
+        os.replace(source, target)
+        try:
+            aside.unlink()
+        except PermissionError:
+            print(f"⚠️ 旧文件仍被占用，稍后可手动删除：{aside}")
     return target

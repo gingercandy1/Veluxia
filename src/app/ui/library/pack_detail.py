@@ -63,7 +63,8 @@ RING_SOURCE_STEP = "generate"
 # 手动调整后每段的宽度范围，与后端 ring_cuts.MIN_MANUAL_SEGMENT / MAX_SEGMENT 一致
 MIN_SEGMENT_WIDTH = 256
 MAX_SEGMENT_WIDTH = 1536
-MEMBER_TITLE_CHARS = 10
+MEMBER_THUMB_SIZE = QSize(72, 44)
+MEMBER_ROW_HEIGHT = 74
 
 
 def segment_widths(cuts: list[int], total: int) -> list[int]:
@@ -201,6 +202,7 @@ class PackDetail(BaseWidget):
         self._ring_seams: dict = {}
         # 条目 id → 勾选框；用户改过的勾选在轮询刷新时要保住
         self._ring_member_boxes: dict[str, QCheckBox] = {}
+        self._member_thumbs: dict[str, QPixmap] = {}
         # 后端存的切点；条带上的切点被拖过后和它不同，就是"还没确认"
         self._saved_cuts: list[int] = []
         self._cuts_stale = False
@@ -391,9 +393,20 @@ class PackDetail(BaseWidget):
         members_label = QLabel(self.tr("Screens in the ring"))
         members_label.setObjectName("detail_muted")
         members_row.addWidget(members_label, 0, Qt.AlignmentFlag.AlignTop)
+        # 单行横向滚动：屏多时不换行、不挤占条带的高度
+        members_scroll = QScrollArea()
+        members_scroll.setObjectName("ring_members_scroll")
+        members_scroll.setWidgetResizable(True)
+        members_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        members_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        members_scroll.setFixedHeight(MEMBER_ROW_HEIGHT)
         members_host = QWidget()
-        self.ring_members_layout = FlowLayout(members_host, spacing=8)
-        members_row.addWidget(members_host, 1)
+        members_host.setObjectName("ring_members_host")
+        self.ring_members_layout = QHBoxLayout(members_host)
+        self.ring_members_layout.setContentsMargins(0, 0, 0, 0)
+        self.ring_members_layout.setSpacing(10)
+        members_scroll.setWidget(members_host)
+        members_row.addWidget(members_scroll, 1)
         ring_layout.addLayout(members_row)
         self.ring_members_hint = QLabel(self.tr("Plan order again to apply the screen selection."))
         self.ring_members_hint.setObjectName("detail_muted")
@@ -411,10 +424,6 @@ class PackDetail(BaseWidget):
         self.ring_before_btn.setChecked(True)
         self.ring_before_btn.clicked.connect(lambda: self._show_ring_images(False))
         self.ring_after_btn.clicked.connect(lambda: self._show_ring_images(True))
-        self.ring_pause_btn = QPushButton(self.tr("Pause"))
-        self.ring_pause_btn.clicked.connect(self._toggle_ring_playing)
-        # 条带自己暂停（拖动、选中接缝）时，按钮文字要跟着变
-        self.ring_strip.playing_changed.connect(self._sync_ring_pause_text)
         self.ring_plan_btn = QPushButton(self.tr("Plan order"))
         self.ring_plan_btn.clicked.connect(
             lambda: self.ring_plan_requested.emit(self.ring_member_ids()))
@@ -423,8 +432,8 @@ class PackDetail(BaseWidget):
         self.ring_generate_btn.clicked.connect(self.ring_generate_requested)
         self.ring_render_btn = QPushButton(self.tr("Render"))
         self.ring_render_btn.clicked.connect(self.ring_render_requested)
-        for button in (self.ring_before_btn, self.ring_after_btn, self.ring_pause_btn,
-                       self.ring_plan_btn, self.ring_generate_btn, self.ring_render_btn):
+        for button in (self.ring_before_btn, self.ring_after_btn,
+                       self.ring_plan_btn,self.ring_generate_btn, self.ring_render_btn):
             ring_controls.addWidget(button)
         ring_layout.addLayout(ring_controls)
 
@@ -726,12 +735,12 @@ class PackDetail(BaseWidget):
                 child.widget().deleteLater()
         self._ring_member_boxes = {}
         for item in ready:
-            # 屏多时整行描述会挤成好几行、压扁条带：框上只放短名，完整描述放提示里
-            title = item_title(item)
-            short = title if len(title) <= MEMBER_TITLE_CHARS else \
-                title[:MEMBER_TITLE_CHARS - 1] + "…"
-            box = QCheckBox(f"{item.id} {short}")
-            box.setToolTip(item.prompt)
+            # 缩略图 + 编号，一眼认出是哪一屏；完整描述放提示里
+            box = QCheckBox(item.id)
+            box.setIconSize(MEMBER_THUMB_SIZE)
+            if (thumb := self._member_thumbs.get(item.id)) is not None:
+                box.setIcon(QIcon(thumb))
+            box.setToolTip(f"{item_title(item)}\n{item.prompt}")
             if reset or item.id not in previous:
                 box.setChecked(item.id in self._ring_order if self._ring_order else True)
             else:
@@ -739,6 +748,7 @@ class PackDetail(BaseWidget):
             box.toggled.connect(self._update_ring_members_state)
             self.ring_members_layout.addWidget(box)
             self._ring_member_boxes[item.id] = box
+        self.ring_members_layout.addStretch(1)
         self._update_ring_members_state()
 
     def _on_ring_cuts_edited(self, _cuts: list):
@@ -914,8 +924,6 @@ class PackDetail(BaseWidget):
     def _on_ring_seam_selected(self, index: int):
         if not self._ring_order:
             return
-        # 条带在滚动，交界一直在动：选中后停下来，方便看和点
-        self.ring_strip.set_playing(False)
         left = self._ring_order[index]
         right = self._ring_order[(index + 1) % len(self._ring_order)]
         self._seam_key = f"{left}>{right}"
@@ -992,12 +1000,6 @@ class PackDetail(BaseWidget):
         images = self._ring_images_after if after else self._ring_images_before
         self.ring_strip.set_images(images)
 
-    def _toggle_ring_playing(self):
-        self.ring_strip.set_playing(not self.ring_strip.is_playing())
-
-    def _sync_ring_pause_text(self, playing: bool):
-        self.ring_pause_btn.setText(self.tr("Pause") if playing else self.tr("Resume"))
-
     def item_asset_count(self, item_id: str) -> int:
         """一个条目在卡片墙上有几张卡片：删条目时会一起消失的素材数。"""
         return sum(1 for card_item, _ in self._cards if card_item == item_id)
@@ -1009,6 +1011,11 @@ class PackDetail(BaseWidget):
         card = self._cards.get((item_id, step_id))
         if card is not None:
             card.set_thumbnail(pixmap)
+        if step_id == RING_SOURCE_STEP:
+            self._member_thumbs[item_id] = pixmap
+            box = self._ring_member_boxes.get(item_id)
+            if box is not None:
+                box.setIcon(QIcon(pixmap))
 
     def show_image(self, path: str) -> ImagePreviewOverlay:
         # 宿主是中间区域而不是整页：放大时右侧详情仍然可见

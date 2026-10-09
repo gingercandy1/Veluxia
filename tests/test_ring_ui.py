@@ -7,7 +7,7 @@ from PySide6.QtTest import QTest
 
 from src.app.ui.library.library_page import LibraryPage
 from src.app.ui.library.pack_detail import PackDetail
-from src.app.ui.library.ring_strip import RingStrip
+from src.app.ui.library.ring_strip import ZOOM_MAX, ZOOM_MIN, RingStrip
 from src.shared.schemas import (
     CollectionItem,
     Manifest,
@@ -45,7 +45,6 @@ def test_ring_strip_empty_images_loop_playback_and_timer(qapp):
     strip.set_images([])
     strip.render(QImage(300, 180, QImage.Format.Format_ARGB32))
     assert strip.seam_count() == 0
-    assert not strip._ticker.is_running()
 
     images = [
         QImage(50, 180, QImage.Format.Format_RGB32),
@@ -55,8 +54,6 @@ def test_ring_strip_empty_images_loop_playback_and_timer(qapp):
     images[1].fill(QColor("blue"))
     strip.set_images(images)
     assert strip.seam_count() == 2
-    assert strip._ticker.is_running()
-    strip.set_playing(False)
 
     def frame(offset):
         strip.set_offset(offset)
@@ -67,13 +64,10 @@ def test_ring_strip_empty_images_loop_playback_and_timer(qapp):
 
     total_width = sum(image.width() for image in images)
     assert frame(0) == frame(total_width)
-    assert not strip.is_playing() and not strip._ticker.is_running()
-    strip.set_playing(True)
-    assert strip.is_playing() and strip._ticker.is_running()
-    strip._last_tick -= 0.5
-    old_offset = strip._offset
-    strip._advance()
-    assert strip._offset != old_offset
+    # 静止画布：不再自动滚动，偏移只随用户操作变
+    moved = frame(10)
+    assert strip._offset == 10
+    assert moved != frame(0)
 
 
 def test_pack_detail_ring_view_visibility_signals_and_busy_state(qapp):
@@ -146,7 +140,6 @@ def test_strip_cut_lines_drag_and_emit_sorted_cuts(qapp):
     # 两张 300×180 的图：控件高 180，缩放倍数 1，屏幕 x = 长图 x - 偏移
     images = [QImage(300, 180, QImage.Format.Format_RGB32) for _ in range(2)]
     strip.set_images(images)
-    strip.set_playing(False)
     strip.set_cuts([350, 100])
     assert strip.cuts() == [100, 350] and strip.source_width() == 600
     strip.set_offset(0)
@@ -283,7 +276,6 @@ def test_strip_click_selects_nearest_seam_and_ignores_far_clicks(qapp):
     strip = RingStrip()
     strip.resize(300, 180)
     strip.set_images(_two_screens())
-    strip.set_playing(False)
     strip.set_offset(0)
     strip.grab()
     selected = []
@@ -324,8 +316,7 @@ def test_seam_panel_adopt_redo_and_busy_state(qapp):
     detail.ring_redo_requested.connect(lambda key, extra: events.append(("redo", key, extra)))
     detail.ring_strip.seam_selected.emit(0)
     assert not detail.seam_panel.isHidden()
-    assert not detail.ring_strip.is_playing()
-    assert events == [("preview", "screen0>screen1")]
+    assert events ==[("preview", "screen0>screen1")]
     # 默认选中已采用的候选，所以"采用"不可点；换到另一个才可点
     assert detail.seam_candidate_box.currentData() == "c1"
     assert not detail.seam_adopt_btn.isEnabled()
@@ -391,44 +382,93 @@ def test_strip_wheel_zoom_keeps_anchor_point_still(qapp):
     strip = RingStrip()
     strip.resize(300, 180)
     strip.set_images(_two_screens())
-    strip.set_playing(False)
     strip.set_offset(40)
     strip.grab()
-    anchor = 120.0
+    anchor, anchor_y = 120.0, 60.0
     world_before = (strip._offset + anchor) / strip._total_width
-    strip.set_zoom(2.0, anchor)
+    # 锚点下方的图内纵向位置（占图高比例）也要不动
+    y_before = (anchor_y - strip._pan_y) / strip._image_height
+    strip.set_zoom(2.0, anchor, anchor_y)
     assert strip.zoom() == 2.0
     world_after = (strip._offset + anchor) / strip._total_width
     assert abs(world_before - world_after) < 1e-6
+    assert abs(y_before - (anchor_y - strip._pan_y) / strip._image_height) < 1e-6
 
 
-def test_strip_drag_pans_stops_playback_and_click_still_selects(qapp):
+def test_strip_zoom_range_is_wide_and_clamped(qapp):
     strip = RingStrip()
     strip.resize(300, 180)
     strip.set_images(_two_screens())
-    strip.set_playing(True)
     strip.grab()
-    states = []
-    strip.playing_changed.connect(states.append)
-    before = strip._offset
-    QTest.mousePress(strip, Qt.MouseButton.LeftButton, pos=QPoint(200, 90))
-    QTest.mouseMove(strip, QPoint(180, 90))
-    QTest.mouseMove(strip, QPoint(150, 90))
-    QTest.mouseRelease(strip, Qt.MouseButton.LeftButton, pos=QPoint(150, 90))
-    assert not strip.is_playing()
-    assert states == [False]
-    assert strip._offset != before
+    strip.set_zoom(100)
+    assert strip.zoom() == ZOOM_MAX
+    strip.set_zoom(0.0001)
+    assert strip.zoom() == ZOOM_MIN
+
+
+def test_strip_middle_drag_pans_both_axes_and_left_drag_does_not(qapp):
+    strip = RingStrip()
+    strip.resize(300, 180)
+    strip.set_images(_two_screens())
+    strip.grab()
+    before = (strip._offset, strip._pan_y)
+    # 左键在空白处拖：画面不动
+    QTest.mousePress(strip, Qt.MouseButton.LeftButton, pos=QPoint(50, 90))
+    QTest.mouseMove(strip, QPoint(20, 120))
+    QTest.mouseRelease(strip, Qt.MouseButton.LeftButton, pos=QPoint(20, 120))
+    assert (strip._offset, strip._pan_y) == before
+    # 中键拖：横向、纵向都能移，图不再钉在控件顶部
+    QTest.mousePress(strip, Qt.MouseButton.MiddleButton, pos=QPoint(200, 90))
+    QTest.mouseMove(strip, QPoint(180, 100))
+    QTest.mouseMove(strip, QPoint(150, 120))
+    QTest.mouseRelease(strip, Qt.MouseButton.MiddleButton, pos=QPoint(150, 120))
+    assert strip._offset != before[0]
+    assert strip._pan_y == before[1] + 30
     assert strip.selected_seam() == -1
+
+
+def test_strip_middle_drag_near_a_cut_line_pans_instead_of_moving_it(qapp):
+    strip = RingStrip()
+    strip.resize(400, 180)
+    strip.set_images([QImage(300, 180, QImage.Format.Format_RGB32) for _ in range(2)])
+    strip.set_cuts([100])
+    strip.set_offset(0)
+    strip.grab()
+    edited = []
+    strip.cuts_edited.connect(edited.append)
+    QTest.mousePress(strip, Qt.MouseButton.MiddleButton, pos=QPoint(101, 90))
+    QTest.mouseMove(strip, QPoint(60, 90))
+    QTest.mouseRelease(strip, Qt.MouseButton.MiddleButton, pos=QPoint(60, 90))
+    assert strip.cuts() == [100] and edited == []
+    assert strip._offset == 41
+
+
+def test_strip_lines_only_span_the_image_height(qapp):
+    strip = RingStrip()
+    strip.resize(300, 180)
+    strip.set_images(_two_screens())
+    strip.set_cuts([50])
+    strip.set_zoom(0.5)
+    strip._pan_y = 60
+    strip.set_offset(0)
+    target = QImage(strip.size(), QImage.Format.Format_ARGB32)
+    target.fill(Qt.GlobalColor.transparent)
+    strip.render(target)
+    # 图高 90：在 y 60～150 之间；接缝线（x=0）在上下两侧的空白处不画，和旁边的背景一样
+    assert target.pixelColor(0, 20) == target.pixelColor(5, 20)
+    assert target.pixelColor(0, 170) == target.pixelColor(5, 170)
+    assert target.pixelColor(0, 100) != target.pixelColor(5, 100)
 
 
 def test_strip_double_click_resets_zoom_and_offset(qapp):
     strip = RingStrip()
     strip.resize(300, 180)
     strip.set_images(_two_screens())
-    strip.set_playing(False)
     strip.set_offset(77)
     strip.set_zoom(2.0)
+    strip._pan_y = 33
     strip.grab()
     QTest.mouseDClick(strip, Qt.MouseButton.LeftButton, pos=QPoint(150, 90))
     assert strip.zoom() == 1.0
     assert strip._offset == 0.0
+    assert strip._pan_y == 0.0
