@@ -40,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+101"/>
+        <location filename="../../src/app/client.py" line="+103"/>
         <location line="+135"/>
-        <location line="+334"/>
+        <location line="+388"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>No se puede conectar con el backend. Comprueba que el servicio esté en ejecución.</translation>
     </message>
     <message>
-        <location line="-465"/>
+        <location line="-519"/>
         <source>Connection timed out.</source>
         <translation>Se agotó el tiempo de conexión.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+323"/>
+        <location line="+379"/>
         <source>Cannot connect to the backend.</source>
         <translation>No se puede conectar con el backend.</translation>
     </message>
     <message>
-        <location line="-207"/>
+        <location line="-263"/>
         <source>Generation stopped.</source>
         <translation>Generación detenida.</translation>
     </message>
@@ -98,12 +98,12 @@
         <translation>No se puede conectar con el backend: {0}</translation>
     </message>
     <message>
-        <location line="+228"/>
+        <location line="+284"/>
         <source>An install task is already running...</source>
         <translation>Ya hay una instalación en curso…</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+5"/>
         <source>Install request accepted: {0}</source>
         <translation>Solicitud de instalación aceptada: {0}</translation>
     </message>
@@ -415,13 +415,13 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+191"/>
-        <location line="+71"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+188"/>
+        <location line="+65"/>
         <source>Select an asset to see how it was made</source>
         <translation>Selecciona un recurso para ver cómo se generó</translation>
     </message>
     <message>
-        <location line="-57"/>
+        <location line="-51"/>
         <source>Prompt</source>
         <translation>Prompt</translation>
     </message>
@@ -429,11 +429,6 @@
         <location line="+9"/>
         <source>Flow</source>
         <translation>Flujo</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Delete item</source>
-        <translation>Eliminar elemento</translation>
     </message>
     <message>
         <location line="+31"/>
@@ -446,12 +441,7 @@
         <translation>Cargando vista previa…</translation>
     </message>
     <message>
-        <location line="+25"/>
-        <source>A pack needs at least one item; delete the whole pack instead</source>
-        <translation>Un paquete necesita al menos un elemento; elimina el paquete completo en su lugar</translation>
-    </message>
-    <message>
-        <location line="+16"/>
+        <location line="+34"/>
         <source>Double-click the card to enlarge</source>
         <translation>Doble clic en la tarjeta para ampliar</translation>
     </message>
@@ -801,12 +791,12 @@
 <context>
     <name>ImagePreviewOverlay</name>
     <message>
-        <location filename="../../src/app/ui/message/image_preview.py" line="+52"/>
+        <location filename="../../src/app/ui/message/image_preview.py" line="+63"/>
         <source>Failed to load image</source>
         <translation>No se pudo cargar la imagen</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+104"/>
         <source>Copy image</source>
         <translation>Copiar imagen</translation>
     </message>
@@ -931,7 +921,7 @@
         <translation>Predeterminado: {0}</translation>
     </message>
     <message>
-        <location line="+259"/>
+        <location line="+268"/>
         <source>Choose an image</source>
         <translation>Elegir una imagen</translation>
     </message>
@@ -1015,7 +1005,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+229"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+255"/>
         <source>Failed to load packs: {0}</source>
         <translation>No se pudieron cargar los paquetes: {0}</translation>
     </message>
@@ -1025,17 +1015,54 @@
         <translation>No se pudieron cargar las plantillas: {0}</translation>
     </message>
     <message>
-        <location line="+128"/>
+        <location line="+320"/>
         <source>Failed to create pack: {0}</source>
         <translation>No se pudo crear el paquete: {0}</translation>
     </message>
     <message>
-        <location line="-16"/>
+        <location line="-202"/>
         <source>Run failed: {0}</source>
         <translation>Error de ejecución: {0}</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+17"/>
+        <location line="+35"/>
+        <source>Could not load ring status.</source>
+        <translation>No se pudo cargar el estado del bucle.</translation>
+    </message>
+    <message>
+        <location line="-27"/>
+        <source>Screen {0} has no finished source image.</source>
+        <translation>La pantalla {0} no tiene imagen de origen terminada.</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
+        <translation>{0} pantallas · {1} uniones con candidatos · {2} obsoletas · {3} compuestas</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Not rendered yet</source>
+        <translation>Aún sin componer</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>The seam produced no candidate.</source>
+        <translation>La unión no produjo ningún candidato.</translation>
+    </message>
+    <message>
+        <location line="+50"/>
+        <source>Could not decode image: {0}</source>
+        <translation>No se pudo decodificar la imagen: {0}</translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <location line="+27"/>
+        <source>Ring operation failed: {0}</source>
+        <translation>Falló la operación del bucle: {0}</translation>
+    </message>
+    <message>
+        <location line="+32"/>
         <source>Failed to add items: {0}</source>
         <translation>No se pudieron añadir los elementos: {0}</translation>
     </message>
@@ -1061,27 +1088,38 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>Delete item &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
-        <translation>¿Eliminar el elemento «{0}» y todos sus archivos generados? Esta acción no se puede deshacer.</translation>
+        <source>Delete item &quot;{0}&quot; with its {1} asset(s) and all generated files? This cannot be undone.</source>
+        <translation>¿Eliminar el elemento «{0}», sus {1} recursos y todos los archivos generados? No se puede deshacer.</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Failed to delete item: {0}</source>
         <translation>No se pudo eliminar el elemento: {0}</translation>
     </message>
     <message>
         <location line="+16"/>
-        <location line="+18"/>
+        <location line="+45"/>
         <source>Export pack</source>
         <translation>Exportar paquete</translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location line="-45"/>
+        <location line="+26"/>
         <source>Zip archive (*.zip)</source>
         <translation>Archivo Zip (*.zip)</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+1"/>
+        <source>Asset (*{0})</source>
+        <translation>Recurso (*{0})</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Export asset</source>
+        <translation>Exportar recurso</translation>
+    </message>
+    <message>
+        <location line="+15"/>
         <source>Export failed: {0}</source>
         <translation>Error al exportar: {0}</translation>
     </message>
@@ -1276,7 +1314,7 @@
 <context>
     <name>OverridePopup</name>
     <message>
-        <location filename="../../src/app/ui/library/form/items_table.py" line="-434"/>
+        <location filename="../../src/app/ui/library/form/items_table.py" line="-443"/>
         <source>Use pack settings</source>
         <translation>Usar ajustes del paquete</translation>
     </message>
@@ -1284,7 +1322,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+143"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+242"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
@@ -1310,12 +1348,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+152"/>
+        <location line="+337"/>
+        <location line="+436"/>
         <source>Export</source>
         <translation>Exportar</translation>
     </message>
     <message>
-        <location line="-150"/>
+        <location line="-771"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Guarda los recursos terminados en un zip, una carpeta por elemento, sin borradores ni archivos intermedios.</translation>
     </message>
@@ -1325,7 +1364,17 @@
         <translation>Eliminar</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+17"/>
+        <source>Resources</source>
+        <translation>Recursos</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Ring</source>
+        <translation>Bucle</translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <source>Use new style</source>
         <translation>Usar el nuevo estilo</translation>
     </message>
@@ -1350,7 +1399,83 @@
         <translation>Rehace los pasos creados con el retrato anterior y todo lo que viene después.</translation>
     </message>
     <message>
-        <location line="+86"/>
+        <location line="+35"/>
+        <source>Screens in the ring</source>
+        <translation>Pantallas del bucle</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Plan order again to apply the screen selection.</source>
+        <translation>Vuelve a planificar el orden para aplicar la selección de pantallas.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Before</source>
+        <translation>Antes</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>After</source>
+        <translation>Después</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <location line="+585"/>
+        <source>Pause</source>
+        <translation>Pausa</translation>
+    </message>
+    <message>
+        <location line="-581"/>
+        <source>Plan order</source>
+        <translation>Planificar orden</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Generate seams</source>
+        <translation>Generar uniones</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Render</source>
+        <translation>Componer</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Auto cut</source>
+        <translation>Corte automático</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Confirm cuts</source>
+        <translation>Confirmar cortes</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Redo this segment</source>
+        <translation>Rehacer este tramo</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Layer segments</source>
+        <translation>Separar en capas</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>Use this one</source>
+        <translation>Usar este</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Add to the prompt for this seam (optional), e.g. a stream, fewer trees</source>
+        <translation>Añade a la descripción de esta unión (opcional), p. ej.: un arroyo, menos árboles</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Redo this seam</source>
+        <translation>Rehacer esta unión</translation>
+    </message>
+    <message>
+        <location line="+97"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} listos</translation>
     </message>
@@ -1364,6 +1489,136 @@
         <source>Style preset &quot;{0}&quot; has changed since this pack was created.</source>
         <translation>El ajuste de estilo «{0}» ha cambiado desde que se creó este paquete.</translation>
     </message>
+    <message>
+        <location line="+114"/>
+        <source>Segment {0}</source>
+        <translation>Tramo {0}</translation>
+    </message>
+    <message>
+        <location line="+70"/>
+        <source>Layered {0}/{1} segments</source>
+        <translation>{0}/{1} tramos separados en capas</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>about {0} min left</source>
+        <translation>quedan unos {0} min</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>layering… you can stop and continue later</source>
+        <translation>separando… puedes detenerlo y continuar más tarde</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
+        <translation>Antes de separar capas, corta el bucle en tramos: compón primero y luego pulsa «Corte automático».</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>{0} segments · {1}–{2} px wide</source>
+        <translation>{0} tramos · {1}–{2} px de ancho</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>segment {0} is {1} px, keep each within {2}–{3} px</source>
+        <translation>el tramo {0} mide {1} px; cada uno debe medir entre {2} y {3} px</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>screens changed since cutting, auto cut again</source>
+        <translation>las pantallas cambiaron tras cortar; vuelve a cortar automáticamente</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>drag the red lines to adjust, then confirm</source>
+        <translation>arrastra las líneas rojas para ajustar y luego confirma</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>{0} segment images saved</source>
+        <translation>{0} imágenes de tramo guardadas</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Generating seams…</source>
+        <translation>Generando uniones…</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Layering segments…</source>
+        <translation>Separando tramos en capas…</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Planning order…</source>
+        <translation>Planificando orden…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Rendering ring…</source>
+        <translation>Componiendo bucle…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Applying the chosen seam…</source>
+        <translation>Aplicando la unión elegida…</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Finding cut points…</source>
+        <translation>Buscando puntos de corte…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Saving segments…</source>
+        <translation>Guardando tramos…</translation>
+    </message>
+    <message>
+        <location line="+90"/>
+        <source>Resume</source>
+        <translation>Reanudar</translation>
+    </message>
+    <message>
+        <location line="-66"/>
+        <source>Seam {0} → {1}</source>
+        <translation>Unión {0} → {1}</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>source image changed, redo this seam</source>
+        <translation>la imagen de origen cambió, rehaz esta unión</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>no candidate yet</source>
+        <translation>aún no hay candidatos</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>{0} · seed {1}</source>
+        <translation>{0} · semilla {1}</translation>
+    </message>
+    <message>
+        <location line="+124"/>
+        <source>Nothing to export yet</source>
+        <translation>Aún no hay nada que exportar</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The pack is running; stop it before deleting</source>
+        <translation>El paquete se está ejecutando; deténlo antes de eliminarlo</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>A pack needs at least one item; delete the whole pack instead</source>
+        <translation>Un paquete necesita al menos un elemento; elimina el paquete completo</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Delete this item and all its assets</source>
+        <translation>Eliminar este elemento y todos sus recursos</translation>
+    </message>
 </context>
 <context>
     <name>PackForm</name>
@@ -1373,7 +1628,7 @@
         <translation>Nuevo paquete</translation>
     </message>
     <message>
-        <location line="+106"/>
+        <location line="+107"/>
         <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
         <translation>Estilo fijo, se añade a cada elemento, p. ej., hand-painted, dark teal tones</translation>
     </message>
@@ -1394,7 +1649,7 @@
         <translation>Eliminar ajuste</translation>
     </message>
     <message>
-        <location line="-144"/>
+        <location line="-145"/>
         <source>Cast</source>
         <translation>Reparto</translation>
     </message>
@@ -1445,12 +1700,12 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+164"/>
+        <location line="+165"/>
         <source>Draft</source>
         <translation>Redactar</translation>
     </message>
     <message>
-        <location line="-161"/>
+        <location line="-162"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>Reemplaza las filas vacías y las filas de IA sin tocar; las filas que escribiste o editaste se conservan. La primera vez carga el modelo de texto y tarda cerca de un minuto.</translation>
     </message>
@@ -1460,7 +1715,7 @@
         <translation>Añadir movimientos comunes</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
         <translation>Genera movimientos de reposo, desplazamiento, salto, daño, ataque y muerte para el personaje elegido. La IA adapta cada movimiento al personaje; revisa y edita las filas antes de crear el paquete.</translation>
     </message>
@@ -1501,12 +1756,12 @@
     </message>
     <message>
         <location line="-40"/>
-        <location line="+198"/>
+        <location line="+197"/>
         <source>Create a character pack first, then pick a character here.</source>
         <translation>Crea primero un paquete de personajes y luego elige un personaje aquí.</translation>
     </message>
     <message>
-        <location line="-66"/>
+        <location line="-65"/>
         <source>Fill in the style or negative before saving a preset.</source>
         <translation>Rellena el estilo o el negativo antes de guardar un ajuste.</translation>
     </message>
@@ -1526,7 +1781,7 @@
         <translation>Estilo</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+55"/>
         <source>Add and generate ({0})</source>
         <translation>Añadir y generar ({0})</translation>
     </message>
@@ -1536,7 +1791,7 @@
         <translation>Crear y generar ({0})</translation>
     </message>
     <message>
-        <location line="-153"/>
+        <location line="-152"/>
         <source>Prompt</source>
         <translation>Prompt</translation>
     </message>
@@ -1546,7 +1801,7 @@
         <translation>Introduce un tema para que la IA redacte los elementos.</translation>
     </message>
     <message>
-        <location line="-463"/>
+        <location line="-464"/>
         <source>Items</source>
         <translation>Elementos</translation>
     </message>
@@ -1556,7 +1811,7 @@
         <translation>Biblioteca</translation>
     </message>
     <message>
-        <location line="+300"/>
+        <location line="+301"/>
         <location line="+21"/>
         <location line="+175"/>
         <source>No template available. Is the backend running?</source>
@@ -1678,6 +1933,14 @@
     </message>
 </context>
 <context>
+    <name>RingStrip</name>
+    <message>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+134"/>
+        <source>Add at least two finished scene screens, then plan the ring.</source>
+        <translation>Prepara al menos dos pantallas de escena terminadas y luego planifica el bucle.</translation>
+    </message>
+</context>
+<context>
     <name>SDXLPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/image/sdxl_panel.py" line="+20"/>
@@ -1743,7 +2006,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-368"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-352"/>
         <source>Speaker</source>
         <translation>Hablante</translation>
     </message>

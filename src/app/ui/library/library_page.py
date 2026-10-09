@@ -2,6 +2,7 @@ import hashlib
 import json
 import re
 import threading
+import uuid
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -58,6 +59,8 @@ THUMB_CACHE_DIR = LIBRARY_CACHE_DIR / "thumbs"
 # 同时下载并解码的图片数：打开资料库会为每个包、每张素材各起一个线程，
 # 全部同时解码会占满 CPU，把界面线程的绘制挤得卡顿
 _DECODE_SLOTS = threading.Semaphore(2)
+# 会占用显存、要能中途停止的循环操作；其余（规划、采用、合成）是秒级的纯 CPU 操作
+RING_GENERATING = ("generate", "redo", "layers")
 CHARACTER_TYPE = "character"
 # 切页时新页面滑入的距离：只是一点方向感，滑太远会显得拖沓
 PAGE_SLIDE = 12
@@ -95,6 +98,10 @@ class LibraryPage(BaseWidget):
         self._run_worker: LibraryTaskWorker | None = None
         self._run_pack_id = ""
         self._run_stop = threading.Event()
+        self._ring_worker: LibraryTaskWorker | None = None
+        self._ring_pack_id = ""
+        self._ring_action = ""
+        self._ring_stop = threading.Event()
 
         self._poll_timer = QTimer(self)
         self._poll_timer.setInterval(POLL_INTERVAL_MS)
@@ -130,6 +137,23 @@ class LibraryPage(BaseWidget):
         self.detail.pack_selected.connect(self._open_pack)
         self.detail.run_requested.connect(self._run_current)
         self.detail.stop_requested.connect(self._stop_run)
+        self.detail.ring_view_requested.connect(self._load_ring_preview)
+        self.detail.ring_plan_requested.connect(
+            lambda item_ids: self._run_ring_action("plan", item_ids=item_ids))
+        self.detail.ring_generate_requested.connect(lambda: self._run_ring_action("generate"))
+        self.detail.ring_render_requested.connect(lambda: self._run_ring_action("render"))
+        self.detail.ring_candidates_requested.connect(self._load_ring_candidates)
+        self.detail.ring_cuts_auto_requested.connect(lambda: self._run_ring_action("cuts"))
+        self.detail.ring_cuts_confirm_requested.connect(
+            lambda cuts: self._run_ring_action("confirm", cuts=cuts))
+        self.detail.ring_layers_requested.connect(
+            lambda indices: self._run_ring_action("layers", indices=indices))
+        self.detail.ring_segment_requested.connect(self._load_segment_images)
+        self.detail.ring_layer_opened.connect(self._open_ring_file)
+        self.detail.ring_adopt_requested.connect(
+            lambda key, candidate_id: self._run_ring_action("adopt", key, candidate_id))
+        self.detail.ring_redo_requested.connect(
+            lambda key, extra: self._run_ring_action("redo", key, extra))
         self.detail.delete_requested.connect(self._delete_current)
         self.detail.export_requested.connect(self._export_current)
         self.detail.asset_selected.connect(self._on_asset_selected)
@@ -154,6 +178,7 @@ class LibraryPage(BaseWidget):
         """关窗口时调用：停止执行并等 worker 退出，否则运行中的 QThread 被回收会直接崩溃。"""
         self._poll_timer.stop()
         self._run_stop.set()
+        self._ring_stop.set()
         for worker in list(self._workers):
             worker.wait(3000)
 
@@ -270,6 +295,8 @@ class LibraryPage(BaseWidget):
         ids = {p.manifest.id for p in self._packs if p.running}
         if self._run_worker is not None:
             ids.add(self._run_pack_id)
+        if self._ring_worker is not None and self._ring_action in RING_GENERATING:
+            ids.add(self._ring_pack_id)
         return ids
 
     def _is_busy(self) -> bool:
@@ -313,6 +340,10 @@ class LibraryPage(BaseWidget):
         self._refresh_packs()
 
     def _stop_run(self):
+        if self._ring_worker is not None and self._ring_action in RING_GENERATING:
+            self._ring_stop.set()
+            self.detail.stop_btn.setEnabled(False)
+            return
         self._run_stop.set()
         self.detail.stop_btn.setEnabled(False)
 
@@ -326,6 +357,192 @@ class LibraryPage(BaseWidget):
 
     def _on_run_error(self, message: str):
         self._on_run_finished(PackResponse.from_error(message))
+
+    def _load_ring_preview(self):
+        pack = self.detail.pack
+        if pack is None or pack.manifest.type != "scene" or len(pack.manifest.items) < 2:
+            return
+        self._start(self._fetch_ring_preview, pack,
+                    on_ok=self._on_ring_preview_loaded, on_error=self._on_worker_error)
+
+    def _fetch_ring_preview(self, pack: PackResponse):
+        status = self._client.ring_status(pack.manifest.id)
+        if not status.ok:
+            raise RuntimeError(status.error or self.tr("Could not load ring status."))
+        items = {item.id: item for item in pack.manifest.items}
+        before, after = [], []
+        rendered_count = 0
+        for item_id in status.order:
+            item = items.get(item_id)
+            state = item.steps.get("generate") if item else None
+            if state is None or state.status != "done" or not state.outputs:
+                raise ValueError(self.tr("Screen {0} has no finished source image.").format(item_id))
+            original = self._fetch_ring_image(pack, state.outputs[0])
+            before.append(original)
+            rendered_path = status.rendered.get(item_id)
+            if rendered_path:
+                after.append(self._fetch_ring_image(pack, rendered_path))
+                rendered_count += 1
+            else:
+                after.append(original)
+
+        candidate_count = sum(seam.has_candidates for seam in status.seams.values())
+        stale_count = sum(seam.stale for seam in status.seams.values())
+        text = self.tr("{0} screens · {1} seams with candidates · {2} stale · {3} rendered")
+        status_text = text.format(len(status.order), candidate_count, stale_count, rendered_count)
+        if rendered_count < len(status.order):
+            status_text += "\n" + self.tr("Not rendered yet")
+        return before, after, status_text, status
+
+    def _redo_seam(self, pack_id: str, key: str, extra: str, stop_event: threading.Event):
+        """重做一个接缝并立刻采用、合成：用户点"重做"就是想马上在滚动条里看到新结果，
+        不满意再用候选下拉换回旧的。"""
+        response = self._client.generate_ring(
+            pack_id, stop_event=stop_event, keys=[key], extra_prompt=extra or None)
+        if not response.ok:
+            return response
+        status = self._client.ring_status(pack_id)
+        if not status.ok:
+            return PackResponse.from_error(status.error or self.tr("Could not load ring status."))
+        seam = status.seams.get(key)
+        if seam is None or not seam.candidates:
+            return PackResponse.from_error(self.tr("The seam produced no candidate."))
+        return self._adopt_seam(pack_id, key, seam.candidates[-1].id)
+
+    def _adopt_seam(self, pack_id: str, key: str, candidate_id: str):
+        response = self._client.adopt_ring(pack_id, key, candidate_id)
+        if not response.ok:
+            return response
+        return self._client.render_ring(pack_id)
+
+    def _load_ring_candidates(self, key: str):
+        seam = self.detail.ring_seam(key)
+        if seam is None or not seam.candidates:
+            return
+        self._start(self._fetch_candidate_images, list(seam.candidates),
+                    on_ok=lambda images: self.detail.set_ring_candidate_images(key, images),
+                    on_error=self._on_worker_error)
+
+    def _load_segment_images(self, index: int):
+        pack = self.detail.pack
+        paths = self.detail.segment_paths(index)
+        if pack is None or not paths:
+            return
+        self._start(self._fetch_segment_images, pack, paths,
+                    on_ok=self.detail.set_segment_images, on_error=self._on_worker_error)
+
+    def _fetch_segment_images(self, pack: PackResponse, paths: list[str]) -> dict[str, QImage]:
+        return {relative: self._fetch_ring_image(pack, relative) for relative in paths}
+
+    def _open_ring_file(self, relative: str):
+        pack = self.detail.pack
+        if pack is None:
+            return
+        # 段图、图层重做后文件名不变，manifest 里也没有能区分新旧的签名：每次放大都重新下载，
+        # 一张图约 1MB，不值得为它记版本
+        self._start(self._download, pack, relative, uuid.uuid4().hex,
+                    on_ok=lambda path: self.detail.show_image(str(path)),
+                    on_error=self._on_worker_error)
+
+    def _fetch_candidate_images(self, candidates) -> dict[str, QImage]:
+        images = {}
+        for candidate in candidates:
+            with _DECODE_SLOTS:
+                images[candidate.id] = QImage.fromData(self._client.fetch_media(candidate.file))
+        return images
+
+    def _fetch_ring_image(self, pack: PackResponse, relative: str) -> QImage:
+        url = f"{pack.media_base}/{relative}"
+        with _DECODE_SLOTS:
+            image = QImage.fromData(self._client.fetch_media(url))
+        if image.isNull():
+            raise ValueError(self.tr("Could not decode image: {0}").format(url))
+        return image
+
+    def _on_ring_preview_loaded(self, result):
+        self.detail.set_ring(*result)
+
+    def _run_ring_action(self, action: str, key: str = "", argument: str = "",
+                         item_ids: list[str] | None = None, cuts: list[int] | None = None,
+                         indices: list[int] | None = None):
+        """argument：redo 时是追加的提示词，adopt 时是候选 id；item_ids：plan 时参与循环的条目；
+        cuts：confirm 时用户确认的切点；indices：layers 时要重做的段，空则做所有没分层的段。"""
+        pack = self.detail.pack
+        if pack is None or self._ring_worker is not None:
+            return
+        self.detail.set_error("")
+        self._ring_action = action
+        self._ring_pack_id = pack.manifest.id
+        self._ring_stop = threading.Event()
+        kwargs = {}
+        if action == "generate":
+            fn, args, kwargs = self._client.generate_ring, (self._ring_pack_id,), {
+                "stop_event": self._ring_stop}
+        elif action == "redo":
+            fn, args = self._redo_seam, (self._ring_pack_id, key, argument, self._ring_stop)
+        elif action == "adopt":
+            fn, args = self._adopt_seam, (self._ring_pack_id, key, argument)
+        elif action == "plan":
+            fn, args = self._client.plan_ring, (self._ring_pack_id, item_ids)
+        elif action == "cuts":
+            fn, args = self._client.auto_ring_cuts, (self._ring_pack_id, self._ring_stop)
+        elif action == "confirm":
+            fn, args = self._client.confirm_ring_cuts, (self._ring_pack_id, cuts or [])
+        elif action == "layers":
+            fn, args, kwargs = self._client.layer_ring, (self._ring_pack_id,), {
+                "stop_event": self._ring_stop, "indices": indices or None}
+        else:
+            fn, args = self._client.render_ring, (self._ring_pack_id,)
+        if action in RING_GENERATING:
+            self.detail.set_ring_running(True, layering=action == "layers")
+        else:
+            self.detail.set_ring_operation(action)
+        self._ring_worker = self._start(
+            fn, *args, on_ok=self._on_ring_action_finished,
+            on_error=self._on_ring_action_error, **kwargs)
+        self._update_run_state()
+        if action in RING_GENERATING:
+            self._update_polling()
+            self._refresh_packs()
+
+    def _on_ring_action_finished(self, response: PackResponse):
+        pack_id = self._ring_pack_id
+        self._ring_worker = None
+        self.detail.set_ring_running(False)
+        self.detail.set_ring_operation(None)
+        if not response.ok:
+            if not self._ring_stop.is_set():
+                self.detail.set_error(self.tr("Ring operation failed: {0}").format(response.error))
+            if self._ring_action == "layers" and self.detail.pack \
+                    and self.detail.pack.manifest.id == pack_id:
+                # 分层每做完一段就存盘：停止或中途失败后，已完成的段也要显示出来
+                self.detail.clear_segment_images()
+                self._load_ring_preview()
+        else:
+            self._packs = [
+                response if pack.manifest.id == pack_id else pack for pack in self._packs
+            ]
+            if self.detail.pack and self.detail.pack.manifest.id == pack_id:
+                self._show_detail(response)
+                if self._ring_action in ("layers", "confirm"):
+                    # 重做的段和重新导出的段图沿用原文件名：缓存的缩略图要作废
+                    self.detail.clear_segment_images()
+                if self._ring_action in ("redo", "adopt", "render", "cuts", "confirm"):
+                    # 刚改过接缝或切段：直接看拼接后的效果（切点就是在合成图上算的）
+                    self.detail.ring_after_btn.setChecked(True)
+                self._load_ring_preview()
+        self._ring_action = ""
+        self._update_run_state()
+        self._update_polling()
+
+    def _on_ring_action_error(self, message: str):
+        self._ring_worker = None
+        self.detail.set_ring_running(False)
+        self.detail.set_ring_operation(None)
+        self.detail.set_error(self.tr("Ring operation failed: {0}").format(message))
+        self._ring_action = ""
+        self._update_run_state()
+        self._update_polling()
 
     # ---- 新建 / 删除 ----
     def _create_pack(self, request: CreatePackRequest):

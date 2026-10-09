@@ -22,7 +22,6 @@ class LayerEncodeRunner(GeneratorStepRunner):
     """编码分层用的描述：直接用生成整图时的提示词（条目描述 + 风格锁 + 后缀），
     不让模型看图重写，既省一个模型，也保证描述和画面对得上。"""
     type_name = "image.layer_encode"
-    # 生成器分段加载，用到哪段加载哪段，open() 时不预先加载
     load_on_open = False
 
     def build_params(self, ctx: StepContext) -> dict[str, Any]:

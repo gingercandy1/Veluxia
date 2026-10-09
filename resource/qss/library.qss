@@ -10,11 +10,33 @@ QWidget#pack_form {
 
 QWidget#library_tree_side,
 QWidget#library_center,
+QStackedWidget#library_center_stack,
+QWidget#library_ring_page,
 QWidget#library_detail,
 QScrollArea#library_scroll,
 QWidget#library_scroll_content {
     background-color: transparent;
     border: none;
+}
+
+QWidget#ring_strip {
+    background-color: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
+}
+
+QPushButton#library_view_toggle {
+    background-color: transparent;
+    border: 1px solid transparent;
+    color: rgba(255, 255, 255, 0.55);
+    padding: 4px 10px;
+}
+
+QPushButton#library_view_toggle:checked {
+    background-color: rgba(123, 157, 188, 0.15);
+    border-color: #35434f;
+    border-radius: 5px;
+    color: #7B9DBC;
 }
 
 /* QSS 画不出"窄线 + 宽热区"，手柄取 3px 兼顾分隔线观感和好抓取 */
@@ -275,6 +297,13 @@ QLabel#detail_heading {
 QLabel#detail_text {
     font-size: 13px;
     color: rgba(255, 255, 255, 0.80);
+}
+
+QLabel#ring_layer_thumb {
+    /* 图层是透明图：深灰底才看得出哪里有内容 */
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
 }
 
 QLabel#detail_muted {

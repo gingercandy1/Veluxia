@@ -40,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+101"/>
+        <location filename="../../src/app/client.py" line="+103"/>
         <location line="+135"/>
-        <location line="+334"/>
+        <location line="+388"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>Не удаётся подключиться к серверу. Проверьте, запущена ли служба.</translation>
     </message>
     <message>
-        <location line="-465"/>
+        <location line="-519"/>
         <source>Connection timed out.</source>
         <translation>Время ожидания подключения истекло.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+323"/>
+        <location line="+379"/>
         <source>Cannot connect to the backend.</source>
         <translation>Не удаётся подключиться к серверу.</translation>
     </message>
     <message>
-        <location line="-207"/>
+        <location line="-263"/>
         <source>Generation stopped.</source>
         <translation>Генерация остановлена.</translation>
     </message>
@@ -98,12 +98,12 @@
         <translation>Не удаётся подключиться к серверу: {0}</translation>
     </message>
     <message>
-        <location line="+228"/>
+        <location line="+284"/>
         <source>An install task is already running...</source>
         <translation>Установка уже выполняется…</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+5"/>
         <source>Install request accepted: {0}</source>
         <translation>Запрос на установку принят: {0}</translation>
     </message>
@@ -415,13 +415,13 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+191"/>
-        <location line="+71"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+188"/>
+        <location line="+65"/>
         <source>Select an asset to see how it was made</source>
         <translation>Выберите ассет, чтобы увидеть, как он создан</translation>
     </message>
     <message>
-        <location line="-57"/>
+        <location line="-51"/>
         <source>Prompt</source>
         <translation>Промпт</translation>
     </message>
@@ -429,11 +429,6 @@
         <location line="+9"/>
         <source>Flow</source>
         <translation>Процесс</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Delete item</source>
-        <translation>Удалить элемент</translation>
     </message>
     <message>
         <location line="+31"/>
@@ -446,12 +441,7 @@
         <translation>Загрузка превью…</translation>
     </message>
     <message>
-        <location line="+25"/>
-        <source>A pack needs at least one item; delete the whole pack instead</source>
-        <translation>В наборе должен быть хотя бы один элемент; чтобы удалить, удалите весь набор</translation>
-    </message>
-    <message>
-        <location line="+16"/>
+        <location line="+34"/>
         <source>Double-click the card to enlarge</source>
         <translation>Дважды щёлкните карточку, чтобы увеличить</translation>
     </message>
@@ -803,12 +793,12 @@
 <context>
     <name>ImagePreviewOverlay</name>
     <message>
-        <location filename="../../src/app/ui/message/image_preview.py" line="+52"/>
+        <location filename="../../src/app/ui/message/image_preview.py" line="+63"/>
         <source>Failed to load image</source>
         <translation>Не удалось загрузить изображение</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+104"/>
         <source>Copy image</source>
         <translation>Копировать изображение</translation>
     </message>
@@ -933,7 +923,7 @@
         <translation>По умолчанию: {0}</translation>
     </message>
     <message>
-        <location line="+259"/>
+        <location line="+268"/>
         <source>Choose an image</source>
         <translation>Выбрать изображение</translation>
     </message>
@@ -1017,7 +1007,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+229"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+255"/>
         <source>Failed to load packs: {0}</source>
         <translation>Не удалось загрузить пакеты: {0}</translation>
     </message>
@@ -1027,17 +1017,54 @@
         <translation>Не удалось загрузить шаблоны: {0}</translation>
     </message>
     <message>
-        <location line="+128"/>
+        <location line="+320"/>
         <source>Failed to create pack: {0}</source>
         <translation>Не удалось создать пакет: {0}</translation>
     </message>
     <message>
-        <location line="-16"/>
+        <location line="-202"/>
         <source>Run failed: {0}</source>
         <translation>Ошибка выполнения: {0}</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+17"/>
+        <location line="+35"/>
+        <source>Could not load ring status.</source>
+        <translation>Не удалось загрузить состояние кольца.</translation>
+    </message>
+    <message>
+        <location line="-27"/>
+        <source>Screen {0} has no finished source image.</source>
+        <translation>У экрана {0} нет готового исходного изображения.</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
+        <translation>Экранов: {0} · швов с вариантами: {1} · устаревших: {2} · собрано: {3}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Not rendered yet</source>
+        <translation>Ещё не собрано</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>The seam produced no candidate.</source>
+        <translation>Для этого шва не получилось вариантов.</translation>
+    </message>
+    <message>
+        <location line="+50"/>
+        <source>Could not decode image: {0}</source>
+        <translation>Не удалось декодировать изображение: {0}</translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <location line="+27"/>
+        <source>Ring operation failed: {0}</source>
+        <translation>Не удалось выполнить операцию с кольцом: {0}</translation>
+    </message>
+    <message>
+        <location line="+32"/>
         <source>Failed to add items: {0}</source>
         <translation>Не удалось добавить элементы: {0}</translation>
     </message>
@@ -1063,27 +1090,38 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>Delete item &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
-        <translation>Удалить элемент «{0}» и все его сгенерированные файлы? Это действие нельзя отменить.</translation>
+        <source>Delete item &quot;{0}&quot; with its {1} asset(s) and all generated files? This cannot be undone.</source>
+        <translation>Удалить элемент «{0}», его ресурсы ({1}) и все созданные файлы? Это действие нельзя отменить.</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Failed to delete item: {0}</source>
         <translation>Не удалось удалить элемент: {0}</translation>
     </message>
     <message>
         <location line="+16"/>
-        <location line="+18"/>
+        <location line="+45"/>
         <source>Export pack</source>
         <translation>Экспорт пакета</translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location line="-45"/>
+        <location line="+26"/>
         <source>Zip archive (*.zip)</source>
         <translation>Архив Zip (*.zip)</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+1"/>
+        <source>Asset (*{0})</source>
+        <translation>Ресурс (*{0})</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Export asset</source>
+        <translation>Экспортировать ресурс</translation>
+    </message>
+    <message>
+        <location line="+15"/>
         <source>Export failed: {0}</source>
         <translation>Ошибка экспорта: {0}</translation>
     </message>
@@ -1278,7 +1316,7 @@
 <context>
     <name>OverridePopup</name>
     <message>
-        <location filename="../../src/app/ui/library/form/items_table.py" line="-434"/>
+        <location filename="../../src/app/ui/library/form/items_table.py" line="-443"/>
         <source>Use pack settings</source>
         <translation>Как у всего набора</translation>
     </message>
@@ -1286,7 +1324,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+143"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+242"/>
         <source>Library</source>
         <translation>Библиотека</translation>
     </message>
@@ -1312,12 +1350,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+152"/>
+        <location line="+337"/>
+        <location line="+436"/>
         <source>Export</source>
         <translation>Экспорт</translation>
     </message>
     <message>
-        <location line="-150"/>
+        <location line="-771"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Сохранить готовые ассеты в zip: по папке на элемент, без черновиков и промежуточных файлов.</translation>
     </message>
@@ -1327,7 +1366,17 @@
         <translation>Удалить</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+17"/>
+        <source>Resources</source>
+        <translation>Ресурсы</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Ring</source>
+        <translation>Кольцо</translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <source>Use new style</source>
         <translation>Применить новый стиль</translation>
     </message>
@@ -1352,7 +1401,83 @@
         <translation>Переделать шаги, сделанные по старому портрету, и все последующие.</translation>
     </message>
     <message>
-        <location line="+86"/>
+        <location line="+35"/>
+        <source>Screens in the ring</source>
+        <translation>Экраны в кольце</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Plan order again to apply the screen selection.</source>
+        <translation>Спланируйте порядок заново, чтобы применить выбор экранов.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Before</source>
+        <translation>До</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>After</source>
+        <translation>После</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <location line="+585"/>
+        <source>Pause</source>
+        <translation>Пауза</translation>
+    </message>
+    <message>
+        <location line="-581"/>
+        <source>Plan order</source>
+        <translation>Спланировать порядок</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Generate seams</source>
+        <translation>Создать швы</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Render</source>
+        <translation>Собрать</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Auto cut</source>
+        <translation>Авторазрез</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Confirm cuts</source>
+        <translation>Подтвердить разрезы</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Redo this segment</source>
+        <translation>Переделать участок</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Layer segments</source>
+        <translation>Разбить на слои</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>Use this one</source>
+        <translation>Использовать этот</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Add to the prompt for this seam (optional), e.g. a stream, fewer trees</source>
+        <translation>Дополнение к запросу для этого шва (необязательно), например: ручей, меньше деревьев</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Redo this seam</source>
+        <translation>Переделать этот шов</translation>
+    </message>
+    <message>
+        <location line="+97"/>
         <source>{0}/{1} done</source>
         <translation>Готово {0}/{1}</translation>
     </message>
@@ -1366,6 +1491,136 @@
         <source>Style preset &quot;{0}&quot; has changed since this pack was created.</source>
         <translation>Пресет стиля «{0}» изменился после создания пакета.</translation>
     </message>
+    <message>
+        <location line="+114"/>
+        <source>Segment {0}</source>
+        <translation>Участок {0}</translation>
+    </message>
+    <message>
+        <location line="+70"/>
+        <source>Layered {0}/{1} segments</source>
+        <translation>Разбито на слои: {0}/{1} участков</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>about {0} min left</source>
+        <translation>осталось около {0} мин</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>layering… you can stop and continue later</source>
+        <translation>разбиение… можно остановить и продолжить позже</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
+        <translation>Перед разбиением на слои разрежьте кольцо на участки: сначала соберите, затем «Авторазрез».</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>{0} segments · {1}–{2} px wide</source>
+        <translation>Участков: {0} · ширина {1}–{2} px</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>segment {0} is {1} px, keep each within {2}–{3} px</source>
+        <translation>участок {0} шириной {1} px, ширина каждого должна быть {2}–{3} px</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>screens changed since cutting, auto cut again</source>
+        <translation>экраны изменились после разреза, выполните авторазрез снова</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>drag the red lines to adjust, then confirm</source>
+        <translation>перетащите красные линии и подтвердите</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>{0} segment images saved</source>
+        <translation>сохранено изображений участков: {0}</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Generating seams…</source>
+        <translation>Создание швов…</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Layering segments…</source>
+        <translation>Разбиение на слои…</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Planning order…</source>
+        <translation>Планирование порядка…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Rendering ring…</source>
+        <translation>Сборка кольца…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Applying the chosen seam…</source>
+        <translation>Применяется выбранный шов…</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Finding cut points…</source>
+        <translation>Поиск мест разреза…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Saving segments…</source>
+        <translation>Сохранение участков…</translation>
+    </message>
+    <message>
+        <location line="+90"/>
+        <source>Resume</source>
+        <translation>Продолжить</translation>
+    </message>
+    <message>
+        <location line="-66"/>
+        <source>Seam {0} → {1}</source>
+        <translation>Шов {0} → {1}</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>source image changed, redo this seam</source>
+        <translation>исходное изображение изменилось, переделайте этот шов</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>no candidate yet</source>
+        <translation>вариантов пока нет</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>{0} · seed {1}</source>
+        <translation>{0} · зерно {1}</translation>
+    </message>
+    <message>
+        <location line="+124"/>
+        <source>Nothing to export yet</source>
+        <translation>Пока нечего экспортировать</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The pack is running; stop it before deleting</source>
+        <translation>Набор выполняется; остановите его перед удалением</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>A pack needs at least one item; delete the whole pack instead</source>
+        <translation>В наборе должен остаться хотя бы один элемент; удалите набор целиком</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Delete this item and all its assets</source>
+        <translation>Удалить этот элемент и все его ресурсы</translation>
+    </message>
 </context>
 <context>
     <name>PackForm</name>
@@ -1375,7 +1630,7 @@
         <translation>Новый пакет</translation>
     </message>
     <message>
-        <location line="+106"/>
+        <location line="+107"/>
         <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
         <translation>Фиксированный стиль, добавляется к каждому элементу, например hand-painted, dark teal tones</translation>
     </message>
@@ -1396,7 +1651,7 @@
         <translation>Удалить пресет</translation>
     </message>
     <message>
-        <location line="-144"/>
+        <location line="-145"/>
         <source>Cast</source>
         <translation>Персонажи</translation>
     </message>
@@ -1447,12 +1702,12 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+164"/>
+        <location line="+165"/>
         <source>Draft</source>
         <translation>Черновик</translation>
     </message>
     <message>
-        <location line="-161"/>
+        <location line="-162"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>Заменяет пустые строки и нетронутые строки ИИ; введённые или изменённые вами строки сохраняются. Первый запуск загружает текстовую модель и занимает около минуты.</translation>
     </message>
@@ -1462,7 +1717,7 @@
         <translation>Добавить типовые движения</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
         <translation>Создаёт движения покоя, перемещения, прыжка, получения урона, атаки и смерти для выбранного персонажа. ИИ подстраивает их под персонажа; проверьте и отредактируйте строки перед созданием набора.</translation>
     </message>
@@ -1503,12 +1758,12 @@
     </message>
     <message>
         <location line="-40"/>
-        <location line="+198"/>
+        <location line="+197"/>
         <source>Create a character pack first, then pick a character here.</source>
         <translation>Сначала создайте пакет персонажей, затем выберите персонажа здесь.</translation>
     </message>
     <message>
-        <location line="-66"/>
+        <location line="-65"/>
         <source>Fill in the style or negative before saving a preset.</source>
         <translation>Перед сохранением пресета заполните стиль или негатив.</translation>
     </message>
@@ -1528,7 +1783,7 @@
         <translation>Стиль</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+55"/>
         <source>Add and generate ({0})</source>
         <translation>Добавить и сгенерировать ({0})</translation>
     </message>
@@ -1538,7 +1793,7 @@
         <translation>Создать и сгенерировать ({0})</translation>
     </message>
     <message>
-        <location line="-153"/>
+        <location line="-152"/>
         <source>Prompt</source>
         <translation>Промпт</translation>
     </message>
@@ -1548,7 +1803,7 @@
         <translation>Введите тему, по которой ИИ составит элементы.</translation>
     </message>
     <message>
-        <location line="-463"/>
+        <location line="-464"/>
         <source>Items</source>
         <translation>Элементы</translation>
     </message>
@@ -1558,7 +1813,7 @@
         <translation>Библиотека</translation>
     </message>
     <message>
-        <location line="+300"/>
+        <location line="+301"/>
         <location line="+21"/>
         <location line="+175"/>
         <source>No template available. Is the backend running?</source>
@@ -1680,6 +1935,14 @@
     </message>
 </context>
 <context>
+    <name>RingStrip</name>
+    <message>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+134"/>
+        <source>Add at least two finished scene screens, then plan the ring.</source>
+        <translation>Подготовьте не менее двух готовых сцен, затем спланируйте кольцо.</translation>
+    </message>
+</context>
+<context>
     <name>SDXLPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/image/sdxl_panel.py" line="+20"/>
@@ -1745,7 +2008,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-368"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-352"/>
         <source>Speaker</source>
         <translation>Говорящий</translation>
     </message>

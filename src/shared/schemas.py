@@ -118,8 +118,7 @@ def when_field(when: str) -> str:
 
 def when_met(when: str, value: str) -> bool:
     """按字段值判断带 when 条件的步骤要不要执行；value 是 when_field(when) 字段的值。"""
-    return condition_met(value) != when.startswith(WHEN_NOT)
-# 资源包分类，界面按这个顺序分区排列：按游戏里的东西分，而不是按文件类型分
+    return condition_met(value) != when.startswith(WHEN_NOT)# 资源包分类，界面按这个顺序分区排列：按游戏里的东西分，而不是按文件类型分
 PackType = Literal["scene", "character", "item", "effect", "dialogue", "audio"]
 PACK_TYPES: tuple[str, ...] = ("scene", "character", "item", "effect", "dialogue", "audio")
 # 模板字段的类型：图片字段由界面选本地文件，后端建包时复制进资源包
@@ -160,6 +159,40 @@ class CastMember(BaseModel):
     character: str = Field("", description="绑定的角色包条目，格式 <资源包 id>/<条目 id>")
 
 
+class SeamCandidate(BaseModel):
+    id: str
+    file: str = Field(..., description="补丁文件，相对资源包目录")
+    seed: int
+    prompt: str
+    left_sig: str
+    right_sig: str
+    harmonize: float
+
+
+class SeamState(BaseModel):
+    candidates: List[SeamCandidate] = Field(default_factory=list)
+    adopted: str = ""
+
+
+class SegmentLayers(BaseModel):
+    """一段的分层结果。按段的身份（起点 + 宽度）存：拖动一条切线只让相邻两段失效。"""
+    source_sig: str = Field(..., description="分层时的 cuts_sig；对不上说明合成图变了")
+    prompt: str = ""
+    embeds: str = Field("", description="编码文件，相对资源包目录；只重做去噪时复用")
+    layers: List[str] = Field(default_factory=list, description="从底到顶的透明图层，相对资源包目录")
+
+
+class RingState(BaseModel):
+    order: List[str] = Field(default_factory=list)
+    seams: Dict[str, SeamState] = Field(default_factory=dict)
+    # 切段：长图（按 order 拼起来的各屏 ring.png）上的 x 坐标，升序；每段交给 Qwen-Layered 分层
+    cuts: List[int] = Field(default_factory=list)
+    cuts_sig: str = Field("", description="切点对应的各屏 ring.png 签名；对不上说明图变了，切点已失效")
+    segments: List[str] = Field(default_factory=list, description="确认切段后导出的段图，相对资源包目录")
+    # 键是 "起点+宽度"（长图像素），见 SegmentLayers
+    segment_layers: Dict[str, SegmentLayers] = Field(default_factory=dict)
+
+
 class Manifest(BaseModel):
     id: str
     name: str = ""
@@ -173,6 +206,8 @@ class Manifest(BaseModel):
     # 模板声明了 source 时绑定的来源角色（ADR 0006），如动作包的角色，格式同 CastMember.character
     source: str = ""
     items: List[CollectionItem] = Field(default_factory=list)
+    # 旧 manifest 不包含此字段，保持可选以兼容既有资源包
+    ring: Optional[RingState] = None
 
 
 class NewCollectionItem(BaseModel):
@@ -230,6 +265,57 @@ class DraftItemsResponse(BaseResponse):
 
 class RunPackRequest(BaseModel):
     pack_id: str
+
+
+class RingGenerateRequest(BaseModel):
+    pack_id: str
+    keys: Optional[List[str]] = Field(
+        None, description="为空时生成尚未采用或已失效的接缝")
+    prompt: Optional[str] = Field(None, description="覆盖按条目提示词、风格锁和视角拼出的默认提示词")
+    extra_prompt: Optional[str] = Field(
+        None, description="追加在默认提示词后面的一句话；同时给了 prompt 时以 prompt 为准")
+
+
+class RingPlanRequest(BaseModel):
+    item_ids: Optional[List[str]] = Field(
+        None, description="参与循环的条目；为空时沿用上次规划的成员，从没规划过则用全部条目")
+
+
+class AdoptSeamRequest(BaseModel):
+    key: str
+    candidate_id: str
+
+
+class RingSeamStatus(BaseModel):
+    candidates: List[SeamCandidate] = Field(default_factory=list)
+    adopted: str = ""
+    stale: bool = False
+    has_candidates: bool = False
+
+
+class RingStatusResponse(BaseResponse):
+    order: List[str] = Field(default_factory=list)
+    seams: Dict[str, RingSeamStatus] = Field(default_factory=dict)
+    rendered: Dict[str, str] = Field(default_factory=dict)
+    cuts: List[int] = Field(default_factory=list)
+    cuts_stale: bool = False
+    segments: List[str] = Field(default_factory=list)
+    # 与 segments 一一对应：该段已完成的图层（从底到顶）；没分层或已失效为空列表
+    segment_layers: List[List[str]] = Field(default_factory=list)
+
+
+class RingCutsRequest(BaseModel):
+    pack_id: str
+
+
+class RingLayersRequest(BaseModel):
+    pack_id: str
+    indices: Optional[List[int]] = Field(
+        None, description="要重做的段序号（从 0 起）；为空时只做还没分层或已失效的段")
+
+
+class ConfirmCutsRequest(BaseModel):
+    cuts: List[int]
 
 
 class ApproveStepRequest(BaseModel):

@@ -12,7 +12,9 @@ from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, Animat
     ModelInfoResponse, TranslateResponse, RefineResponse, SpriteSheetResponse, TranscriptionResponse, \
     AddItemsRequest, CreatePackRequest, PackListResponse, PackResponse, TemplateListResponse, \
     ApproveStepRequest, ResetStepRequest, DraftItemsRequest, DraftItemsResponse, \
-    StyleListResponse, StylePreset, ModelStorageResponse, UpdateItemFieldsRequest
+    StyleListResponse, StylePreset, ModelStorageResponse, UpdateItemFieldsRequest, \
+    AdoptSeamRequest, RingGenerateRequest, RingPlanRequest, RingStatusResponse, \
+    RingCutsRequest, ConfirmCutsRequest, RingLayersRequest
 
 _DEFAULT_LIMITS = httpx.Limits(
     max_connections=10,
@@ -417,6 +419,54 @@ class ApiClient:
         """整包执行可能跑一整夜；进度以 manifest 为准，由界面另行轮询 get_pack。"""
         return self._submit_and_poll("/library/run", {"pack_id": pack_id}, PackResponse,
                                      stop_event=stop_event, max_total_wait_seconds=24 * 3600)
+
+    def ring_status(self, pack_id: str) -> RingStatusResponse:
+        return self._get(f"/library/packs/{pack_id}/ring", response_cls=RingStatusResponse)
+
+    def plan_ring(self, pack_id: str, item_ids: Optional[list[str]] = None) -> PackResponse:
+        """item_ids 为空时沿用上次规划的成员。"""
+        request = RingPlanRequest(item_ids=item_ids)
+        return self._post(f"/library/packs/{pack_id}/ring/plan", request.model_dump(),
+                          PackResponse)
+
+    def generate_ring(self, pack_id: str, stop_event: Optional[threading.Event] = None,
+                      keys: Optional[list[str]] = None,
+                      extra_prompt: Optional[str] = None) -> PackResponse:
+        """keys 为空时生成所有还没采用或已失效的接缝；重做单个接缝传它的 key。"""
+        request = RingGenerateRequest(pack_id=pack_id, keys=keys, extra_prompt=extra_prompt)
+        return self._submit_and_poll(
+            "/library/ring/generate",
+            request.model_dump(),
+            PackResponse,
+            stop_event=stop_event,
+            max_total_wait_seconds=24 * 3600,
+        )
+
+    def render_ring(self, pack_id: str) -> PackResponse:
+        return self._post(f"/library/packs/{pack_id}/ring/render", {}, PackResponse)
+
+    def adopt_ring(self, pack_id: str, key: str, candidate_id: str) -> PackResponse:
+        request = AdoptSeamRequest(key=key, candidate_id=candidate_id)
+        return self._post(f"/library/packs/{pack_id}/ring/adopt", request.model_dump(),
+                          PackResponse)
+
+    def auto_ring_cuts(self, pack_id: str,
+                       stop_event: Optional[threading.Event] = None) -> PackResponse:
+        """估深度自动找切段位置；首次会下载深度模型，所以走任务轮询。"""
+        return self._submit_and_poll("/library/ring/cuts/auto",
+                                     RingCutsRequest(pack_id=pack_id).model_dump(),
+                                     PackResponse, stop_event=stop_event)
+
+    def layer_ring(self, pack_id: str, stop_event: Optional[threading.Event] = None,
+                   indices: Optional[list[int]] = None) -> PackResponse:
+        """每段约 18 分钟，十几段要几个小时；indices 为空时只做还没分层的段。"""
+        request = RingLayersRequest(pack_id=pack_id, indices=indices)
+        return self._submit_and_poll("/library/ring/layers", request.model_dump(), PackResponse,
+                                     stop_event=stop_event, max_total_wait_seconds=24 * 3600)
+
+    def confirm_ring_cuts(self, pack_id: str, cuts: list[int]) -> PackResponse:
+        return self._post(f"/library/packs/{pack_id}/ring/cuts",
+                          ConfirmCutsRequest(cuts=cuts).model_dump(), PackResponse)
 
     def approve_step(self, pack_id: str, request: ApproveStepRequest) -> PackResponse:
         return self._post(f"/library/packs/{pack_id}/approve", request.model_dump(), PackResponse)

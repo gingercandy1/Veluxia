@@ -40,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+101"/>
+        <location filename="../../src/app/client.py" line="+103"/>
         <location line="+135"/>
-        <location line="+334"/>
+        <location line="+388"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>백엔드에 연결할 수 없습니다. 서비스가 실행 중인지 확인하세요.</translation>
     </message>
     <message>
-        <location line="-465"/>
+        <location line="-519"/>
         <source>Connection timed out.</source>
         <translation>연결 시간이 초과되었습니다.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+323"/>
+        <location line="+379"/>
         <source>Cannot connect to the backend.</source>
         <translation>백엔드에 연결할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="-207"/>
+        <location line="-263"/>
         <source>Generation stopped.</source>
         <translation>생성을 중지했습니다.</translation>
     </message>
@@ -98,12 +98,12 @@
         <translation>백엔드에 연결할 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location line="+228"/>
+        <location line="+284"/>
         <source>An install task is already running...</source>
         <translation>설치 작업이 이미 실행 중입니다…</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+5"/>
         <source>Install request accepted: {0}</source>
         <translation>설치 요청이 접수되었습니다: {0}</translation>
     </message>
@@ -415,13 +415,13 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+191"/>
-        <location line="+71"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+188"/>
+        <location line="+65"/>
         <source>Select an asset to see how it was made</source>
         <translation>소재를 선택하면 생성 과정을 볼 수 있습니다</translation>
     </message>
     <message>
-        <location line="-57"/>
+        <location line="-51"/>
         <source>Prompt</source>
         <translation>프롬프트</translation>
     </message>
@@ -429,11 +429,6 @@
         <location line="+9"/>
         <source>Flow</source>
         <translation>실행 흐름</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Delete item</source>
-        <translation>항목 삭제</translation>
     </message>
     <message>
         <location line="+31"/>
@@ -446,12 +441,7 @@
         <translation>미리보기 불러오는 중…</translation>
     </message>
     <message>
-        <location line="+25"/>
-        <source>A pack needs at least one item; delete the whole pack instead</source>
-        <translation>팩에는 항목이 하나 이상 있어야 합니다. 삭제하려면 팩 전체를 삭제하세요</translation>
-    </message>
-    <message>
-        <location line="+16"/>
+        <location line="+34"/>
         <source>Double-click the card to enlarge</source>
         <translation>카드를 더블클릭하면 확대됩니다</translation>
     </message>
@@ -799,12 +789,12 @@
 <context>
     <name>ImagePreviewOverlay</name>
     <message>
-        <location filename="../../src/app/ui/message/image_preview.py" line="+52"/>
+        <location filename="../../src/app/ui/message/image_preview.py" line="+63"/>
         <source>Failed to load image</source>
         <translation>이미지를 불러오지 못했습니다</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+104"/>
         <source>Copy image</source>
         <translation>이미지 복사</translation>
     </message>
@@ -929,7 +919,7 @@
         <translation>기본값: {0}</translation>
     </message>
     <message>
-        <location line="+259"/>
+        <location line="+268"/>
         <source>Choose an image</source>
         <translation>이미지 선택</translation>
     </message>
@@ -1013,7 +1003,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+229"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+255"/>
         <source>Failed to load packs: {0}</source>
         <translation>팩 목록을 불러오지 못했습니다: {0}</translation>
     </message>
@@ -1023,17 +1013,22 @@
         <translation>템플릿을 불러오지 못했습니다: {0}</translation>
     </message>
     <message>
-        <location line="+128"/>
+        <location line="+320"/>
         <source>Failed to create pack: {0}</source>
         <translation>팩을 만들지 못했습니다: {0}</translation>
     </message>
     <message>
-        <location line="-16"/>
+        <location line="-202"/>
         <source>Run failed: {0}</source>
         <translation>실행 실패: {0}</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+55"/>
+        <source>The seam produced no candidate.</source>
+        <translation>이 이음새에서 후보가 만들어지지 않았습니다.</translation>
+    </message>
+    <message>
+        <location line="+165"/>
         <source>Failed to add items: {0}</source>
         <translation>항목 추가 실패: {0}</translation>
     </message>
@@ -1059,27 +1054,38 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>Delete item &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
-        <translation>항목 &quot;{0}&quot;과(와) 생성된 모든 파일을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</translation>
+        <source>Delete item &quot;{0}&quot; with its {1} asset(s) and all generated files? This cannot be undone.</source>
+        <translation>&quot;{0}&quot; 항목과 에셋 {1}개 및 생성된 모든 파일을 삭제할까요? 이 작업은 되돌릴 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Failed to delete item: {0}</source>
         <translation>항목 삭제 실패: {0}</translation>
     </message>
     <message>
         <location line="+16"/>
-        <location line="+18"/>
+        <location line="+45"/>
         <source>Export pack</source>
         <translation>팩 내보내기</translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location line="-45"/>
+        <location line="+26"/>
         <source>Zip archive (*.zip)</source>
         <translation>Zip 압축 파일 (*.zip)</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+1"/>
+        <source>Asset (*{0})</source>
+        <translation>에셋 (*{0})</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Export asset</source>
+        <translation>에셋 내보내기</translation>
+    </message>
+    <message>
+        <location line="+15"/>
         <source>Export failed: {0}</source>
         <translation>내보내기 실패: {0}</translation>
     </message>
@@ -1102,6 +1108,38 @@
         <location line="+17"/>
         <source>Style presets: {0}</source>
         <translation>스타일 프리셋: {0}</translation>
+    </message>
+    <message>
+        <location line="-357"/>
+        <location line="+35"/>
+        <source>Could not load ring status.</source>
+        <translation>링 상태를 불러올 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="-27"/>
+        <source>Screen {0} has no finished source image.</source>
+        <translation>화면 {0}의 원본 이미지가 아직 완료되지 않았습니다.</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
+        <translation>화면 {0}개 · 후보가 있는 이음새 {1}개 · 오래된 후보 {2}개 · 합성 완료 {3}개</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Not rendered yet</source>
+        <translation>아직 합성되지 않음</translation>
+    </message>
+    <message>
+        <location line="+65"/>
+        <source>Could not decode image: {0}</source>
+        <translation>이미지를 디코딩할 수 없습니다: {0}</translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <location line="+27"/>
+        <source>Ring operation failed: {0}</source>
+        <translation>링 작업 실패: {0}</translation>
     </message>
 </context>
 <context>
@@ -1274,7 +1312,7 @@
 <context>
     <name>OverridePopup</name>
     <message>
-        <location filename="../../src/app/ui/library/form/items_table.py" line="-434"/>
+        <location filename="../../src/app/ui/library/form/items_table.py" line="-443"/>
         <source>Use pack settings</source>
         <translation>팩 설정으로 되돌리기</translation>
     </message>
@@ -1282,7 +1320,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+143"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+242"/>
         <source>Library</source>
         <translation>라이브러리</translation>
     </message>
@@ -1308,12 +1346,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+152"/>
+        <location line="+337"/>
+        <location line="+436"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-150"/>
+        <location line="-771"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>완성된 에셋을 zip으로 저장합니다. 항목마다 폴더 하나이며 초안과 중간 파일은 포함하지 않습니다.</translation>
     </message>
@@ -1323,7 +1362,7 @@
         <translation>삭제</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+40"/>
         <source>Use new style</source>
         <translation>새 스타일 사용</translation>
     </message>
@@ -1348,7 +1387,52 @@
         <translation>이전 일러스트로 만든 단계와 그 이후 단계를 모두 다시 합니다.</translation>
     </message>
     <message>
-        <location line="+86"/>
+        <location line="+35"/>
+        <source>Screens in the ring</source>
+        <translation>루프에 포함할 화면</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Plan order again to apply the screen selection.</source>
+        <translation>화면 선택을 적용하려면 순서를 다시 계획하세요.</translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <source>Auto cut</source>
+        <translation>자동 분할</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Confirm cuts</source>
+        <translation>분할 확정</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Redo this segment</source>
+        <translation>이 구간 다시 하기</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Layer segments</source>
+        <translation>레이어 분리</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>Use this one</source>
+        <translation>이것 사용</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Add to the prompt for this seam (optional), e.g. a stream, fewer trees</source>
+        <translation>이 이음새에 프롬프트 추가(선택). 예: 시냇물, 나무 줄이기</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Redo this seam</source>
+        <translation>이 이음새 다시 만들기</translation>
+    </message>
+    <message>
+        <location line="+97"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 완료</translation>
     </message>
@@ -1362,6 +1446,177 @@
         <source>Style preset &quot;{0}&quot; has changed since this pack was created.</source>
         <translation>스타일 프리셋 &quot;{0}&quot;이(가) 이 팩을 만든 뒤 변경되었습니다.</translation>
     </message>
+    <message>
+        <location line="+114"/>
+        <source>Segment {0}</source>
+        <translation>{0}번 구간</translation>
+    </message>
+    <message>
+        <location line="+70"/>
+        <source>Layered {0}/{1} segments</source>
+        <translation>{0}/{1}개 구간 레이어 분리 완료</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>about {0} min left</source>
+        <translation>약 {0}분 남음</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>layering… you can stop and continue later</source>
+        <translation>레이어 분리 중… 언제든 중지하고 나중에 이어서 할 수 있습니다</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
+        <translation>레이어 분리 전에 루프를 구간으로 나눕니다. 먼저 합성한 뒤 &apos;자동 분할&apos;을 누르세요.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>{0} segments · {1}–{2} px wide</source>
+        <translation>{0}개 구간 · 너비 {1}–{2} px</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>segment {0} is {1} px, keep each within {2}–{3} px</source>
+        <translation>{0}번 구간이 {1} px입니다. 각 구간은 {2}–{3} px 사이여야 합니다</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>screens changed since cutting, auto cut again</source>
+        <translation>분할 후 화면이 바뀌었습니다. 다시 자동 분할하세요</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>drag the red lines to adjust, then confirm</source>
+        <translation>빨간 선을 드래그해 조정한 뒤 확정하세요</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>{0} segment images saved</source>
+        <translation>구간 이미지 {0}개를 저장했습니다</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Layering segments…</source>
+        <translation>레이어 분리 중…</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Applying the chosen seam…</source>
+        <translation>선택한 이음새 적용 중…</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Finding cut points…</source>
+        <translation>분할 위치를 찾는 중…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Saving segments…</source>
+        <translation>구간을 저장하는 중…</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Seam {0} → {1}</source>
+        <translation>이음새 {0} → {1}</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>source image changed, redo this seam</source>
+        <translation>원본 이미지가 바뀌었습니다. 이 이음새를 다시 만드세요</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>no candidate yet</source>
+        <translation>아직 후보가 없습니다</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>{0} · seed {1}</source>
+        <translation>{0} · 시드 {1}</translation>
+    </message>
+    <message>
+        <location line="+124"/>
+        <source>Nothing to export yet</source>
+        <translation>아직 내보낼 항목이 없습니다</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The pack is running; stop it before deleting</source>
+        <translation>팩이 실행 중입니다. 삭제하기 전에 중지하세요</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>A pack needs at least one item; delete the whole pack instead</source>
+        <translation>팩에는 항목이 하나 이상 있어야 합니다. 대신 팩 전체를 삭제하세요</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Delete this item and all its assets</source>
+        <translation>이 항목과 모든 에셋 삭제</translation>
+    </message>
+    <message>
+        <location line="-760"/>
+        <source>Resources</source>
+        <translation>리소스</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Ring</source>
+        <translation>링</translation>
+    </message>
+    <message>
+        <location line="+89"/>
+        <source>Before</source>
+        <translation>합성 전</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>After</source>
+        <translation>합성 후</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <location line="+585"/>
+        <source>Pause</source>
+        <translation>일시 정지</translation>
+    </message>
+    <message>
+        <location line="-581"/>
+        <source>Plan order</source>
+        <translation>순서 계획</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Generate seams</source>
+        <translation>이음새 생성</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Render</source>
+        <translation>합성</translation>
+    </message>
+    <message>
+        <location line="+463"/>
+        <source>Generating seams…</source>
+        <translation>이음새 생성 중…</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Planning order…</source>
+        <translation>순서 계획 중…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Rendering ring…</source>
+        <translation>링 합성 중…</translation>
+    </message>
+    <message>
+        <location line="+97"/>
+        <source>Resume</source>
+        <translation>계속</translation>
+    </message>
 </context>
 <context>
     <name>PackForm</name>
@@ -1371,7 +1626,7 @@
         <translation>새 팩</translation>
     </message>
     <message>
-        <location line="+106"/>
+        <location line="+107"/>
         <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
         <translation>스타일 고정. 모든 항목 프롬프트에 덧붙습니다. 예: hand-painted, dark teal tones</translation>
     </message>
@@ -1392,7 +1647,7 @@
         <translation>프리셋 삭제</translation>
     </message>
     <message>
-        <location line="-144"/>
+        <location line="-145"/>
         <source>Cast</source>
         <translation>등장인물</translation>
     </message>
@@ -1443,12 +1698,12 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+164"/>
+        <location line="+165"/>
         <source>Draft</source>
         <translation>초안 작성</translation>
     </message>
     <message>
-        <location line="-161"/>
+        <location line="-162"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>빈 행과 수정하지 않은 AI 행을 교체합니다. 직접 입력하거나 수정한 행은 유지됩니다. 첫 실행 시 텍스트 모델을 불러오느라 약 1분 걸립니다.</translation>
     </message>
@@ -1458,7 +1713,7 @@
         <translation>일반 동작 추가</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
         <translation>선택한 캐릭터의 대기, 이동, 점프, 피격, 공격, 사망 동작을 작성합니다. AI가 캐릭터에 맞게 동작을 작성하므로 팩을 만들기 전에 행을 확인하고 수정하세요.</translation>
     </message>
@@ -1499,12 +1754,12 @@
     </message>
     <message>
         <location line="-40"/>
-        <location line="+198"/>
+        <location line="+197"/>
         <source>Create a character pack first, then pick a character here.</source>
         <translation>먼저 캐릭터 팩을 만든 다음 여기에서 캐릭터를 고르세요.</translation>
     </message>
     <message>
-        <location line="-66"/>
+        <location line="-65"/>
         <source>Fill in the style or negative before saving a preset.</source>
         <translation>프리셋을 저장하기 전에 스타일이나 네거티브를 입력하세요.</translation>
     </message>
@@ -1524,7 +1779,7 @@
         <translation>스타일</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+55"/>
         <source>Add and generate ({0})</source>
         <translation>추가 및 생성 ({0})</translation>
     </message>
@@ -1534,7 +1789,7 @@
         <translation>만들고 생성 ({0})</translation>
     </message>
     <message>
-        <location line="-153"/>
+        <location line="-152"/>
         <source>Prompt</source>
         <translation>프롬프트</translation>
     </message>
@@ -1544,7 +1799,7 @@
         <translation>AI가 항목을 작성할 주제를 입력하세요.</translation>
     </message>
     <message>
-        <location line="-463"/>
+        <location line="-464"/>
         <source>Items</source>
         <translation>항목</translation>
     </message>
@@ -1554,7 +1809,7 @@
         <translation>라이브러리</translation>
     </message>
     <message>
-        <location line="+300"/>
+        <location line="+301"/>
         <location line="+21"/>
         <location line="+175"/>
         <source>No template available. Is the backend running?</source>
@@ -1676,6 +1931,14 @@
     </message>
 </context>
 <context>
+    <name>RingStrip</name>
+    <message>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+134"/>
+        <source>Add at least two finished scene screens, then plan the ring.</source>
+        <translation>완료된 장면 화면을 두 개 이상 준비한 다음 링을 계획하세요.</translation>
+    </message>
+</context>
+<context>
     <name>SDXLPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/image/sdxl_panel.py" line="+20"/>
@@ -1741,7 +2004,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-368"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-352"/>
         <source>Speaker</source>
         <translation>화자</translation>
     </message>

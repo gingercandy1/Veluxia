@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
-from src.backend.core.collection import library
+from src.backend.core.collection import library, ring
 from src.backend.core.collection.drafts import draft_items
 from src.backend.core.collection.template import Template, list_templates
 from src.backend.core.exceptions import GeneratorBusyError
@@ -16,8 +16,10 @@ from src.backend.core.model_utils import to_media_url
 from src.backend.router_base import BaseRouter
 from src.shared.schemas import (
     AddItemsRequest,
+    AdoptSeamRequest,
     ApproveStepRequest,
     BaseResponse,
+    ConfirmCutsRequest,
     CreatePackRequest,
     DraftItemsRequest,
     DraftItemsResponse,
@@ -26,6 +28,11 @@ from src.shared.schemas import (
     PackListResponse,
     PackResponse,
     ResetStepRequest,
+    RingCutsRequest,
+    RingGenerateRequest,
+    RingLayersRequest,
+    RingPlanRequest,
+    RingStatusResponse,
     RunPackRequest,
     StyleListResponse,
     StylePreset,
@@ -46,6 +53,14 @@ class LibraryRouter(BaseRouter):
     def _register_routes(self) -> None:
         # 执行进度以 manifest 为准（GET /packs/{id}），任务状态只用来判断结束和取消
         self._register_async_generate_routes(self.handle_run, RunPackRequest, path="/run")
+        self._register_async_generate_routes(
+            self.handle_ring_generate, RingGenerateRequest, path="/ring/generate")
+        # 首次要下载深度模型，耗时说不准，走任务提交 + 轮询
+        self._register_async_generate_routes(
+            self.handle_ring_cuts, RingCutsRequest, path="/ring/cuts/auto")
+        # 每段约 18 分钟，十几段要跑几个小时
+        self._register_async_generate_routes(
+            self.handle_ring_layers, RingLayersRequest, path="/ring/layers")
 
         @self.router.get("/templates", response_model=TemplateListResponse, summary="可用模板")
         async def templates() -> TemplateListResponse:
@@ -90,6 +105,47 @@ class LibraryRouter(BaseRouter):
             except ValueError as exc:
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
             return self._pack_response(manifest)
+
+        @self.router.get("/packs/{pack_id}/ring", response_model=RingStatusResponse,
+                         summary="读取循环拼接状态")
+        async def get_ring(pack_id: str) -> RingStatusResponse:
+            try:
+                status = await asyncio.to_thread(ring.ring_status, pack_id)
+            except FileNotFoundError as exc:
+                raise HTTPException(status_code=404, detail=str(exc)) from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            directory = library.pack_dir(pack_id)
+            for seam in status["seams"].values():
+                seam.candidates = [
+                    candidate.model_copy(update={
+                        "file": to_media_url(directory / candidate.file)
+                    })
+                    for candidate in seam.candidates
+                ]
+            return RingStatusResponse(**status)
+
+        @self.router.post("/packs/{pack_id}/ring/plan", response_model=PackResponse,
+                          summary="规划循环拼接顺序")
+        async def plan_ring(pack_id: str, req: RingPlanRequest | None = None) -> PackResponse:
+            return await self._update_pack(
+                ring.plan_ring, pack_id, req.item_ids if req is not None else None)
+
+        @self.router.post("/packs/{pack_id}/ring/adopt", response_model=PackResponse,
+                          summary="采用一个接缝候选")
+        async def adopt_ring_seam(pack_id: str, req: AdoptSeamRequest) -> PackResponse:
+            return await self._update_pack(
+                ring.adopt_seam, pack_id, req.key, req.candidate_id)
+
+        @self.router.post("/packs/{pack_id}/ring/render", response_model=PackResponse,
+                          summary="把采用的接缝贴回各条目")
+        async def render_ring(pack_id: str) -> PackResponse:
+            return await self._update_pack(ring.render_ring, pack_id)
+
+        @self.router.post("/packs/{pack_id}/ring/cuts", response_model=PackResponse,
+                          summary="确认切段位置并导出每段图")
+        async def confirm_ring_cuts(pack_id: str, req: ConfirmCutsRequest) -> PackResponse:
+            return await self._update_pack(ring.confirm_cuts, pack_id, req.cuts)
 
         @self.router.delete("/packs/{pack_id}", response_model=BaseResponse, summary="删除资源包")
         async def delete_pack(pack_id: str) -> BaseResponse:
@@ -223,6 +279,22 @@ class LibraryRouter(BaseRouter):
     async def handle_run(self, req: RunPackRequest, job: Job) -> PackResponse:
         # runner 内部用 asyncio.run 驱动生成器，必须放到没有事件循环的线程里执行
         manifest = await asyncio.to_thread(library.run_pack, req.pack_id, job.cancel_event)
+        return self._pack_response(manifest)
+
+    async def handle_ring_generate(self, req: RingGenerateRequest, job: Job) -> PackResponse:
+        manifest = await asyncio.to_thread(
+            ring.generate_seams, req.pack_id, req.keys, req.prompt, job.cancel_event,
+            extra_prompt=req.extra_prompt)
+        return self._pack_response(manifest)
+
+    async def handle_ring_cuts(self, req: RingCutsRequest, job: Job) -> PackResponse:
+        manifest = await asyncio.to_thread(ring.auto_cuts, req.pack_id, job.cancel_event)
+        return self._pack_response(manifest)
+
+    async def handle_ring_layers(self, req: RingLayersRequest, job: Job) -> PackResponse:
+        # 生成器内部用 asyncio.run 驱动，必须放到没有事件循环的线程里
+        manifest = await asyncio.to_thread(
+            ring.layer_segments, req.pack_id, req.indices, job.cancel_event)
         return self._pack_response(manifest)
 
     @staticmethod

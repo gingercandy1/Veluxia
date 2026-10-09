@@ -40,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+101"/>
+        <location filename="../../src/app/client.py" line="+103"/>
         <location line="+135"/>
-        <location line="+334"/>
+        <location line="+388"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>バックエンドに接続できません。サービスが起動しているか確認してください。</translation>
     </message>
     <message>
-        <location line="-465"/>
+        <location line="-519"/>
         <source>Connection timed out.</source>
         <translation>接続がタイムアウトしました。</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+323"/>
+        <location line="+379"/>
         <source>Cannot connect to the backend.</source>
         <translation>バックエンドに接続できません。</translation>
     </message>
     <message>
-        <location line="-207"/>
+        <location line="-263"/>
         <source>Generation stopped.</source>
         <translation>生成を停止しました。</translation>
     </message>
@@ -98,12 +98,12 @@
         <translation>バックエンドに接続できません：{0}</translation>
     </message>
     <message>
-        <location line="+228"/>
+        <location line="+284"/>
         <source>An install task is already running...</source>
         <translation>インストールタスクはすでに実行中です…</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+5"/>
         <source>Install request accepted: {0}</source>
         <translation>インストール要求を受け付けました：{0}</translation>
     </message>
@@ -415,13 +415,13 @@
 <context>
     <name>DetailPanel</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="+191"/>
-        <location line="+71"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="+188"/>
+        <location line="+65"/>
         <source>Select an asset to see how it was made</source>
         <translation>素材を選ぶと生成の過程を確認できます</translation>
     </message>
     <message>
-        <location line="-57"/>
+        <location line="-51"/>
         <source>Prompt</source>
         <translation>プロンプト</translation>
     </message>
@@ -429,11 +429,6 @@
         <location line="+9"/>
         <source>Flow</source>
         <translation>実行フロー</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Delete item</source>
-        <translation>アイテムを削除</translation>
     </message>
     <message>
         <location line="+31"/>
@@ -446,12 +441,7 @@
         <translation>プレビューを読み込み中…</translation>
     </message>
     <message>
-        <location line="+25"/>
-        <source>A pack needs at least one item; delete the whole pack instead</source>
-        <translation>パックには少なくとも 1 つのアイテムが必要です。削除する場合はパック全体を削除してください</translation>
-    </message>
-    <message>
-        <location line="+16"/>
+        <location line="+34"/>
         <source>Double-click the card to enlarge</source>
         <translation>カードをダブルクリックで拡大</translation>
     </message>
@@ -799,12 +789,12 @@
 <context>
     <name>ImagePreviewOverlay</name>
     <message>
-        <location filename="../../src/app/ui/message/image_preview.py" line="+52"/>
+        <location filename="../../src/app/ui/message/image_preview.py" line="+63"/>
         <source>Failed to load image</source>
         <translation>画像を読み込めませんでした</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+104"/>
         <source>Copy image</source>
         <translation>画像をコピー</translation>
     </message>
@@ -929,7 +919,7 @@
         <translation>既定値：{0}</translation>
     </message>
     <message>
-        <location line="+259"/>
+        <location line="+268"/>
         <source>Choose an image</source>
         <translation>画像を選択</translation>
     </message>
@@ -1013,7 +1003,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+229"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+255"/>
         <source>Failed to load packs: {0}</source>
         <translation>パック一覧の読み込みに失敗しました：{0}</translation>
     </message>
@@ -1023,17 +1013,22 @@
         <translation>テンプレートの読み込みに失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+128"/>
+        <location line="+320"/>
         <source>Failed to create pack: {0}</source>
         <translation>パックの作成に失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="-16"/>
+        <location line="-202"/>
         <source>Run failed: {0}</source>
         <translation>実行に失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+55"/>
+        <source>The seam produced no candidate.</source>
+        <translation>このつなぎ目では候補が生成されませんでした。</translation>
+    </message>
+    <message>
+        <location line="+165"/>
         <source>Failed to add items: {0}</source>
         <translation>アイテムの追加に失敗しました：{0}</translation>
     </message>
@@ -1059,27 +1054,38 @@
     </message>
     <message>
         <location line="+1"/>
-        <source>Delete item &quot;{0}&quot; and all its generated files? This cannot be undone.</source>
-        <translation>アイテム「{0}」と生成済みのファイルをすべて削除しますか？この操作は元に戻せません。</translation>
+        <source>Delete item &quot;{0}&quot; with its {1} asset(s) and all generated files? This cannot be undone.</source>
+        <translation>「{0}」とその {1} 個のアセット、および生成済みファイルをすべて削除しますか？この操作は元に戻せません。</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Failed to delete item: {0}</source>
         <translation>アイテムの削除に失敗しました：{0}</translation>
     </message>
     <message>
         <location line="+16"/>
-        <location line="+18"/>
+        <location line="+45"/>
         <source>Export pack</source>
         <translation>パックをエクスポート</translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location line="-45"/>
+        <location line="+26"/>
         <source>Zip archive (*.zip)</source>
         <translation>Zip アーカイブ (*.zip)</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+1"/>
+        <source>Asset (*{0})</source>
+        <translation>アセット (*{0})</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Export asset</source>
+        <translation>アセットを書き出す</translation>
+    </message>
+    <message>
+        <location line="+15"/>
         <source>Export failed: {0}</source>
         <translation>エクスポートに失敗しました：{0}</translation>
     </message>
@@ -1102,6 +1108,38 @@
         <location line="+17"/>
         <source>Style presets: {0}</source>
         <translation>スタイルプリセット：{0}</translation>
+    </message>
+    <message>
+        <location line="-357"/>
+        <location line="+35"/>
+        <source>Could not load ring status.</source>
+        <translation>循環状態を読み込めません。</translation>
+    </message>
+    <message>
+        <location line="-27"/>
+        <source>Screen {0} has no finished source image.</source>
+        <translation>画面 {0} の元画像はまだ完成していません。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
+        <translation>{0} 画面 · 候補のある継ぎ目 {1} · 古い候補 {2} · 合成済み {3}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Not rendered yet</source>
+        <translation>まだ合成されていません</translation>
+    </message>
+    <message>
+        <location line="+65"/>
+        <source>Could not decode image: {0}</source>
+        <translation>画像をデコードできません：{0}</translation>
+    </message>
+    <message>
+        <location line="+56"/>
+        <location line="+27"/>
+        <source>Ring operation failed: {0}</source>
+        <translation>循環処理に失敗しました：{0}</translation>
     </message>
 </context>
 <context>
@@ -1274,7 +1312,7 @@
 <context>
     <name>OverridePopup</name>
     <message>
-        <location filename="../../src/app/ui/library/form/items_table.py" line="-434"/>
+        <location filename="../../src/app/ui/library/form/items_table.py" line="-443"/>
         <source>Use pack settings</source>
         <translation>パック全体の設定に戻す</translation>
     </message>
@@ -1282,7 +1320,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+143"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+242"/>
         <source>Library</source>
         <translation>ライブラリ</translation>
     </message>
@@ -1308,12 +1346,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+152"/>
+        <location line="+337"/>
+        <location line="+436"/>
         <source>Export</source>
         <translation>書き出し</translation>
     </message>
     <message>
-        <location line="-150"/>
+        <location line="-771"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>完成したアセットを zip で保存します。アイテムごとに 1 フォルダーで、下書きや中間ファイルは含みません。</translation>
     </message>
@@ -1323,7 +1362,7 @@
         <translation>削除</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+40"/>
         <source>Use new style</source>
         <translation>新しいスタイルを使う</translation>
     </message>
@@ -1348,7 +1387,52 @@
         <translation>古い立ち絵から作ったステップと、それ以降のすべてをやり直します。</translation>
     </message>
     <message>
-        <location line="+86"/>
+        <location line="+35"/>
+        <source>Screens in the ring</source>
+        <translation>ループに含める画面</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Plan order again to apply the screen selection.</source>
+        <translation>画面の選択を反映するには、もう一度順序を計画してください。</translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <source>Auto cut</source>
+        <translation>自動分割</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Confirm cuts</source>
+        <translation>分割を確定</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Redo this segment</source>
+        <translation>この区間をやり直す</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Layer segments</source>
+        <translation>レイヤー分け</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>Use this one</source>
+        <translation>これを使う</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Add to the prompt for this seam (optional), e.g. a stream, fewer trees</source>
+        <translation>このつなぎ目のプロンプトに追記（任意）。例：小川、木を少なく</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Redo this seam</source>
+        <translation>このつなぎ目をやり直す</translation>
+    </message>
+    <message>
+        <location line="+97"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 完了</translation>
     </message>
@@ -1362,6 +1446,177 @@
         <source>Style preset &quot;{0}&quot; has changed since this pack was created.</source>
         <translation>スタイルプリセット「{0}」はこのパックの作成後に変更されました。</translation>
     </message>
+    <message>
+        <location line="+114"/>
+        <source>Segment {0}</source>
+        <translation>区間 {0}</translation>
+    </message>
+    <message>
+        <location line="+70"/>
+        <source>Layered {0}/{1} segments</source>
+        <translation>{0}/{1} 区間をレイヤー分け済み</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>about {0} min left</source>
+        <translation>残り約 {0} 分</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>layering… you can stop and continue later</source>
+        <translation>レイヤー分け中…途中で停止して後で続けられます</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
+        <translation>レイヤー分けの前にループを区間に分割します。先に合成してから「自動分割」を押してください。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>{0} segments · {1}–{2} px wide</source>
+        <translation>{0} 区間 · 幅 {1}–{2} px</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>segment {0} is {1} px, keep each within {2}–{3} px</source>
+        <translation>区間 {0} は {1} px です。各区間は {2}–{3} px にしてください</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>screens changed since cutting, auto cut again</source>
+        <translation>分割後に画面が変わりました。もう一度自動分割してください</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>drag the red lines to adjust, then confirm</source>
+        <translation>赤い線をドラッグして調整し、確定してください</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>{0} segment images saved</source>
+        <translation>{0} 区間の画像を保存しました</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Layering segments…</source>
+        <translation>レイヤー分け中…</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Applying the chosen seam…</source>
+        <translation>選択したつなぎ目を適用中…</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Finding cut points…</source>
+        <translation>分割位置を探しています…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Saving segments…</source>
+        <translation>区間を保存しています…</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Seam {0} → {1}</source>
+        <translation>つなぎ目 {0} → {1}</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>source image changed, redo this seam</source>
+        <translation>元画像が変わりました。このつなぎ目をやり直してください</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>no candidate yet</source>
+        <translation>候補はまだありません</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>{0} · seed {1}</source>
+        <translation>{0} · シード {1}</translation>
+    </message>
+    <message>
+        <location line="+124"/>
+        <source>Nothing to export yet</source>
+        <translation>書き出せるものがまだありません</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The pack is running; stop it before deleting</source>
+        <translation>パックを実行中です。削除する前に停止してください</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>A pack needs at least one item; delete the whole pack instead</source>
+        <translation>パックには少なくとも 1 つのアイテムが必要です。代わりにパック全体を削除してください</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Delete this item and all its assets</source>
+        <translation>このアイテムとすべてのアセットを削除</translation>
+    </message>
+    <message>
+        <location line="-760"/>
+        <source>Resources</source>
+        <translation>素材</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Ring</source>
+        <translation>ループ</translation>
+    </message>
+    <message>
+        <location line="+89"/>
+        <source>Before</source>
+        <translation>合成前</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>After</source>
+        <translation>合成後</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <location line="+585"/>
+        <source>Pause</source>
+        <translation>一時停止</translation>
+    </message>
+    <message>
+        <location line="-581"/>
+        <source>Plan order</source>
+        <translation>順序を計画</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Generate seams</source>
+        <translation>継ぎ目を生成</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Render</source>
+        <translation>合成</translation>
+    </message>
+    <message>
+        <location line="+463"/>
+        <source>Generating seams…</source>
+        <translation>継ぎ目を生成中…</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Planning order…</source>
+        <translation>順序を計画中…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Rendering ring…</source>
+        <translation>ループを合成中…</translation>
+    </message>
+    <message>
+        <location line="+97"/>
+        <source>Resume</source>
+        <translation>再開</translation>
+    </message>
 </context>
 <context>
     <name>PackForm</name>
@@ -1371,7 +1626,7 @@
         <translation>新しいパック</translation>
     </message>
     <message>
-        <location line="+106"/>
+        <location line="+107"/>
         <source>Style lock, appended to every item, e.g. hand-painted, dark teal tones</source>
         <translation>スタイル固定。各アイテムのプロンプトに追加されます。例：hand-painted, dark teal tones</translation>
     </message>
@@ -1392,7 +1647,7 @@
         <translation>プリセットを削除</translation>
     </message>
     <message>
-        <location line="-144"/>
+        <location line="-145"/>
         <source>Cast</source>
         <translation>登場人物</translation>
     </message>
@@ -1443,12 +1698,12 @@
     </message>
     <message>
         <location line="+27"/>
-        <location line="+164"/>
+        <location line="+165"/>
         <source>Draft</source>
         <translation>下書き</translation>
     </message>
     <message>
-        <location line="-161"/>
+        <location line="-162"/>
         <source>Replaces empty rows and untouched AI rows; rows you typed or edited are kept. The first run loads the text model and takes about a minute.</source>
         <translation>空の行と未編集の AI 行を置き換えます。入力・編集した行は残ります。初回はテキストモデルの読み込みに約 1 分かかります。</translation>
     </message>
@@ -1458,7 +1713,7 @@
         <translation>一般的な動作を追加</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>Drafts idle, move, jump, hit, attack and death for the chosen character. The AI writes each motion to fit what the character is, so check and edit the rows before creating the pack.</source>
         <translation>選択したキャラクターの待機、移動、ジャンプ、被弾、攻撃、死亡の動作を下書きします。AI がキャラクターに合わせて動作を作成するので、パック作成前に行を確認・編集してください。</translation>
     </message>
@@ -1499,12 +1754,12 @@
     </message>
     <message>
         <location line="-40"/>
-        <location line="+198"/>
+        <location line="+197"/>
         <source>Create a character pack first, then pick a character here.</source>
         <translation>先にキャラクターパックを作成してから、ここでキャラクターを選んでください。</translation>
     </message>
     <message>
-        <location line="-66"/>
+        <location line="-65"/>
         <source>Fill in the style or negative before saving a preset.</source>
         <translation>プリセットを保存する前に、スタイルまたはネガティブを入力してください。</translation>
     </message>
@@ -1524,7 +1779,7 @@
         <translation>スタイル</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+55"/>
         <source>Add and generate ({0})</source>
         <translation>追加して生成（{0}）</translation>
     </message>
@@ -1534,7 +1789,7 @@
         <translation>作成して生成（{0}）</translation>
     </message>
     <message>
-        <location line="-153"/>
+        <location line="-152"/>
         <source>Prompt</source>
         <translation>プロンプト</translation>
     </message>
@@ -1544,7 +1799,7 @@
         <translation>AI が項目を下書きするためのテーマを入力してください。</translation>
     </message>
     <message>
-        <location line="-463"/>
+        <location line="-464"/>
         <source>Items</source>
         <translation>アイテム</translation>
     </message>
@@ -1554,7 +1809,7 @@
         <translation>ライブラリ</translation>
     </message>
     <message>
-        <location line="+300"/>
+        <location line="+301"/>
         <location line="+21"/>
         <location line="+175"/>
         <source>No template available. Is the backend running?</source>
@@ -1676,6 +1931,14 @@
     </message>
 </context>
 <context>
+    <name>RingStrip</name>
+    <message>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+134"/>
+        <source>Add at least two finished scene screens, then plan the ring.</source>
+        <translation>完成したシーン画像を2枚以上用意して、ループを計画してください。</translation>
+    </message>
+</context>
+<context>
     <name>SDXLPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/image/sdxl_panel.py" line="+20"/>
@@ -1741,7 +2004,7 @@
 <context>
     <name>ScriptEditor</name>
     <message>
-        <location filename="../../src/app/ui/library/detail_panel.py" line="-368"/>
+        <location filename="../../src/app/ui/library/detail_panel.py" line="-352"/>
         <source>Speaker</source>
         <translation>話者</translation>
     </message>

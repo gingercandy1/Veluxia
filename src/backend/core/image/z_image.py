@@ -4,8 +4,9 @@ from contextlib import nullcontext
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
 import torch.nn.functional as F
-from PIL import Image
+from PIL import Image, ImageFilter
 
 from src.backend.core.diffusers_utils import apply_offload, gguf_filename, load_gguf_transformer
 from src.backend.core.exceptions import GenerationCancelled
@@ -251,6 +252,104 @@ class ZImageGenerator(BaseImageGenerator):
             finally:
                 self.torch.cuda.empty_cache()
         return None
+
+    def repaint_seam(self, window: Image.Image, prompt: str, seed: int,
+                     harmonize: float) -> tuple[Image.Image, Image.Image | None]:
+        """用带外 latent 回填的 RePaint 方式只重画 1024×768 接缝窗口中央。"""
+        width, height = 1024, 768
+        if window.size != (width, height):
+            raise ValueError(f"接缝窗口必须为 {width}×{height}，实际为 {window.width}×{window.height}")
+        self._load_img2img()
+        pipe = self.pipe_img2img
+        torch = self.torch
+        vae = None
+        try:
+            with torch.inference_mode():
+                from diffusers import AutoencoderKL
+
+                vae = AutoencoderKL.from_pretrained(
+                    str(self.base_local),
+                    subfolder="vae",
+                    torch_dtype=torch.bfloat16,
+                    local_files_only=True,
+                ).to(self.device)
+                tensor = pipe.image_processor.preprocess(
+                    window, height=height, width=width).to(self.device, torch.bfloat16)
+                known_latents = vae.encode(tensor).latent_dist.mode()
+                known_latents = (
+                    (known_latents - vae.config.shift_factor) * vae.config.scaling_factor
+                ).float().cpu()
+                del vae, tensor
+                vae = None
+                torch.cuda.empty_cache()
+
+                mask = Image.new("L", (width, height), 0)
+                mask.paste(255, (width // 2 - 128, 0, width // 2 + 128, height))
+                latent_mask = np.asarray(
+                    mask.resize((width // 8, height // 8), Image.Resampling.BOX)
+                    .filter(ImageFilter.GaussianBlur(2)),
+                    dtype=np.float32,
+                ) / 255.0
+                latent_mask = torch.from_numpy(latent_mask)[None, None]
+                noise = torch.randn(
+                    known_latents.shape,
+                    generator=torch.Generator(device="cpu").manual_seed(seed + 1),
+                )
+
+                def keep_known(pipeline, _step_index, _timestep, callback_kwargs):
+                    self.check_cancelled()
+                    latents = callback_kwargs["latents"]
+                    sigma = float(pipeline.scheduler.sigmas[pipeline.scheduler.step_index])
+                    known = ((1 - sigma) * known_latents + sigma * noise).to(
+                        latents.device, latents.dtype)
+                    active_mask = latent_mask.to(latents.device, latents.dtype)
+                    callback_kwargs["latents"] = active_mask * latents + (1 - active_mask) * known
+                    return callback_kwargs
+
+                raw = pipe(
+                    prompt=prompt,
+                    image=window,
+                    height=height,
+                    width=width,
+                    strength=0.9,
+                    num_inference_steps=9,
+                    guidance_scale=0.0,
+                    generator=torch.Generator(device="cpu").manual_seed(seed),
+                    callback_on_step_end=keep_known,
+                ).images[0]
+
+                fade = np.linspace(0.0, 1.0, 24, dtype=np.float32)
+                band_alpha = np.concatenate((fade, np.ones(256, dtype=np.float32), fade[::-1]))
+                # alpha 要和整窗同宽才能 composite：带及两侧羽化放在窗口正中，其余为 0
+                pixel_alpha = np.zeros(width, dtype=np.float32)
+                start = (width - len(band_alpha)) // 2
+                pixel_alpha[start:start + len(band_alpha)] = band_alpha
+                alpha_pixels = np.broadcast_to(pixel_alpha[None, :], (height, width))
+                alpha = Image.fromarray(np.round(alpha_pixels * 255).astype(np.uint8))
+                inpainted = Image.composite(
+                    raw.convert("RGB"),
+                    window.convert("RGB"),
+                    alpha,
+                )
+                if harmonize <= 0:
+                    return inpainted, None
+                self.check_cancelled()
+                harmonized = pipe(
+                    prompt=prompt,
+                    image=inpainted,
+                    height=height,
+                    width=width,
+                    strength=harmonize,
+                    num_inference_steps=9,
+                    guidance_scale=0.0,
+                    generator=torch.Generator(device="cpu").manual_seed(seed + 100),
+                    callback_on_step_end=self.make_cancel_callback(),
+                ).images[0]
+                return inpainted, harmonized
+        finally:
+            if vae is not None:
+                del vae
+            torch.cuda.empty_cache()
 
     def parse_params(self, raw: dict):
         self.output_dir = get_temp_dir(raw.get("output_dir", ""))
