@@ -1,6 +1,8 @@
 <RCC version="1.0">
     <qresource prefix="/">
         <file>svg/edit.svg</file>
+        <file>svg/eye.svg</file>
+        <file>svg/eye_off.svg</file>
         <file>svg/paste.svg</file>
         <file>svg/copy.svg</file>
         <file>svg/refresh.svg</file>

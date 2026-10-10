@@ -40,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+103"/>
-        <location line="+135"/>
-        <location line="+394"/>
+        <location filename="../../src/app/client.py" line="+104"/>
+        <location line="+136"/>
+        <location line="+412"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>Cannot connect to the backend. Please check that the service is running.</translation>
     </message>
     <message>
-        <location line="-525"/>
+        <location line="-544"/>
         <source>Connection timed out.</source>
         <translation>Connection timed out.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+385"/>
+        <location line="+404"/>
         <source>Cannot connect to the backend.</source>
         <translation>Cannot connect to the backend.</translation>
     </message>
     <message>
-        <location line="-269"/>
+        <location line="-287"/>
         <source>Generation stopped.</source>
         <translation>Generation stopped.</translation>
     </message>
@@ -78,7 +78,7 @@
         <translation>Lost connection to the backend; the generation result is unknown.</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+20"/>
         <source>Generation failed.</source>
         <translation>Generation failed.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>Cannot connect to the backend: {0}</translation>
     </message>
     <message>
-        <location line="+290"/>
+        <location line="+306"/>
         <source>An install task is already running...</source>
         <translation>An install task is already running...</translation>
     </message>
@@ -363,6 +363,14 @@
         <location line="+6"/>
         <source>Loading model list...</source>
         <translation>Loading model list...</translation>
+    </message>
+</context>
+<context>
+    <name>Card</name>
+    <message>
+        <location filename="../../src/app/ui/library/cards.py" line="+103"/>
+        <source>Layers</source>
+        <translation>Layers</translation>
     </message>
 </context>
 <context>
@@ -1003,9 +1011,70 @@
     </message>
 </context>
 <context>
+    <name>LayerPanel</name>
+    <message>
+        <location filename="../../src/app/ui/library/layer_panel.py" line="+221"/>
+        <source>Merge</source>
+        <translation>Merge</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Merge the selected layers into a new layer</source>
+        <translation>Merge the selected layers into a new layer</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete merged layer</source>
+        <translation>Delete merged layer</translation>
+    </message>
+    <message>
+        <location line="+92"/>
+        <source>Merged</source>
+        <translation>Merged</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Layers</source>
+        <translation>Layers</translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>Merged {0}</source>
+        <translation>Merged {0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Layer {0}</source>
+        <translation>Layer {0}</translation>
+    </message>
+    <message>
+        <location line="-2"/>
+        <source>from {0}</source>
+        <translation>from {0}</translation>
+    </message>
+    <message>
+        <location line="-23"/>
+        <source>Segment image</source>
+        <translation>Segment image</translation>
+    </message>
+</context>
+<context>
+    <name>LayerRow</name>
+    <message>
+        <location line="-220"/>
+        <source>Show or hide this layer in the preview</source>
+        <translation>Show or hide this layer in the preview</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Click to select · Ctrl/Shift to select several · double-click to enlarge</source>
+        <translation>Click to select · Ctrl/Shift to select several · double-click to enlarge</translation>
+    </message>
+</context>
+<context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+257"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+273"/>
         <source>Failed to load packs: {0}</source>
         <translation>Failed to load packs: {0}</translation>
     </message>
@@ -1015,22 +1084,22 @@
         <translation>Failed to load templates: {0}</translation>
     </message>
     <message>
-        <location line="+334"/>
+        <location line="+398"/>
         <source>Failed to create pack: {0}</source>
         <translation>Failed to create pack: {0}</translation>
     </message>
     <message>
-        <location line="-216"/>
+        <location line="-279"/>
         <source>Run failed: {0}</source>
         <translation>Run failed: {0}</translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+88"/>
         <source>The seam produced no candidate.</source>
         <translation>The seam produced no candidate.</translation>
     </message>
     <message>
-        <location line="+176"/>
+        <location line="+209"/>
         <source>Failed to add items: {0}</source>
         <translation>Failed to add items: {0}</translation>
     </message>
@@ -1112,18 +1181,18 @@
         <translation>Style presets: {0}</translation>
     </message>
     <message>
-        <location line="-371"/>
-        <location line="+38"/>
+        <location line="-434"/>
+        <location line="+68"/>
         <source>Could not load ring status.</source>
         <translation>Could not load ring status.</translation>
     </message>
     <message>
-        <location line="-28"/>
+        <location line="-56"/>
         <source>Screen {0} has no finished source image.</source>
         <translation>Screen {0} has no finished source image.</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+25"/>
         <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
         <translation>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</translation>
     </message>
@@ -1133,13 +1202,13 @@
         <translation>Not rendered yet</translation>
     </message>
     <message>
-        <location line="+72"/>
+        <location line="+93"/>
         <source>Could not decode image: {0}</source>
         <translation>Could not decode image: {0}</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <location line="+28"/>
+        <location line="+81"/>
+        <location line="+34"/>
         <source>Ring operation failed: {0}</source>
         <translation>Ring operation failed: {0}</translation>
     </message>
@@ -1322,7 +1391,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+245"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+230"/>
         <source>Library</source>
         <translation>Library</translation>
     </message>
@@ -1348,13 +1417,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+347"/>
-        <location line="+446"/>
+        <location line="+369"/>
+        <location line="+566"/>
         <source>Export</source>
         <translation>Export</translation>
     </message>
     <message>
-        <location line="-791"/>
+        <location line="-933"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</translation>
     </message>
@@ -1364,7 +1433,12 @@
         <translation>Delete</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+20"/>
+        <source>Layers</source>
+        <translation>Layers</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>Use new style</source>
         <translation>Use new style</translation>
     </message>
@@ -1389,12 +1463,7 @@
         <translation>Redo the steps made from the old portrait, and everything after them.</translation>
     </message>
     <message>
-        <location line="+36"/>
-        <source>Screens in the ring</source>
-        <translation>Screens in the ring</translation>
-    </message>
-    <message>
-        <location line="+53"/>
+        <location line="+82"/>
         <source>Auto cut</source>
         <translation>Auto cut</translation>
     </message>
@@ -1404,7 +1473,7 @@
         <translation>Confirm cuts</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+29"/>
         <source>Redo this segment</source>
         <translation>Redo this segment</translation>
     </message>
@@ -1414,7 +1483,7 @@
         <translation>Layer segments</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+49"/>
         <source>Use this one</source>
         <translation>Use this one</translation>
     </message>
@@ -1429,7 +1498,7 @@
         <translation>Redo this seam</translation>
     </message>
     <message>
-        <location line="+98"/>
+        <location line="+103"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} done</translation>
     </message>
@@ -1444,12 +1513,12 @@
         <translation>Style preset &quot;{0}&quot; has changed since this pack was created.</translation>
     </message>
     <message>
-        <location line="+126"/>
+        <location line="+169"/>
         <source>Segment {0}</source>
         <translation>Segment {0}</translation>
     </message>
     <message>
-        <location line="+70"/>
+        <location line="+102"/>
         <source>Layered {0}/{1} segments</source>
         <translation>Layered {0}/{1} segments</translation>
     </message>
@@ -1464,7 +1533,22 @@
         <translation>layering… you can stop and continue later</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+2"/>
+        <source>encoding</source>
+        <translation>encoding</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>denoising</source>
+        <translation>denoising</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>segment {0}: {1}</source>
+        <translation>segment {0}: {1}</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
         <translation>Before layering, cut the ring into segments: render first, then Auto cut.</translation>
     </message>
@@ -1494,7 +1578,7 @@
         <translation>{0} segment images saved</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+42"/>
         <source>Layering segments…</source>
         <translation>Layering segments…</translation>
     </message>
@@ -1504,7 +1588,7 @@
         <translation>Updating the ring order…</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+2"/>
         <source>Applying the chosen seam…</source>
         <translation>Applying the chosen seam…</translation>
     </message>
@@ -1517,6 +1601,16 @@
         <location line="+2"/>
         <source>Saving segments…</source>
         <translation>Saving segments…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Merging layers…</source>
+        <translation>Merging layers…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Deleting the merged layer…</source>
+        <translation>Deleting the merged layer…</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -1539,7 +1633,7 @@
         <translation>{0} · seed {1}</translation>
     </message>
     <message>
-        <location line="+121"/>
+        <location line="+143"/>
         <source>Nothing to export yet</source>
         <translation>Nothing to export yet</translation>
     </message>
@@ -1559,7 +1653,7 @@
         <translation>Delete this item and all its assets</translation>
     </message>
     <message>
-        <location line="-780"/>
+        <location line="-922"/>
         <source>Resources</source>
         <translation>Resources</translation>
     </message>
@@ -1569,7 +1663,7 @@
         <translation>Ring</translation>
     </message>
     <message>
-        <location line="+87"/>
+        <location line="+85"/>
         <source>Auto arrange</source>
         <translation>Auto arrange</translation>
     </message>
@@ -1579,7 +1673,7 @@
         <translation>Order the screens by how well their edges match. Screens added more than once are merged into one.</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+16"/>
         <source>Before</source>
         <translation>Before</translation>
     </message>
@@ -1594,12 +1688,7 @@
         <translation>Generate seams</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Render</source>
-        <translation>Render</translation>
-    </message>
-    <message>
-        <location line="+476"/>
+        <location line="+590"/>
         <source>Generating seams…</source>
         <translation>Generating seams…</translation>
     </message>
@@ -1607,11 +1696,6 @@
         <location line="+13"/>
         <source>Planning order…</source>
         <translation>Planning order…</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Rendering ring…</source>
-        <translation>Rendering ring…</translation>
     </message>
 </context>
 <context>
@@ -1929,7 +2013,7 @@
 <context>
     <name>RingCardBar</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="+157"/>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+237"/>
         <source>Add a screen. The same screen can be added again.</source>
         <translation>Add a screen. The same screen can be added again.</translation>
     </message>
@@ -1937,7 +2021,7 @@
 <context>
     <name>RingItemPicker</name>
     <message>
-        <location line="+114"/>
+        <location line="+166"/>
         <source>Add screens to the ring</source>
         <translation>Add screens to the ring</translation>
     </message>
@@ -1950,7 +2034,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+135"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+146"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>Add at least two finished scene screens, then plan the ring.</translation>
     </message>
@@ -2054,6 +2138,42 @@
         <location line="+0"/>
         <source>Confirm and voice</source>
         <translation>Confirm and voice</translation>
+    </message>
+</context>
+<context>
+    <name>SeamLink</name>
+    <message>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="-239"/>
+        <source>Generating seam… {0}%</source>
+        <translation>Generating seam… {0}%</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Seam: not generated yet</source>
+        <translation>Seam: not generated yet</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seam: has candidates, none adopted</source>
+        <translation>Seam: has candidates, none adopted</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seam: adopted</source>
+        <translation>Seam: adopted</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seam: source image changed, redo it</source>
+        <translation>Seam: source image changed, redo it</translation>
+    </message>
+</context>
+<context>
+    <name>SegmentProgressBar</name>
+    <message>
+        <location filename="../../src/app/ui/library/segment_progress.py" line="+41"/>
+        <source>Segment {0}</source>
+        <translation>Segment {0}</translation>
     </message>
 </context>
 <context>

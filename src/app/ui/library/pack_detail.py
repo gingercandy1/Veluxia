@@ -28,6 +28,7 @@ from src.app.ui.library.activity import ACCENT, FrameTicker, ProgressStrip
 from src.app.ui.library.cards import ASSET_THUMB, Card
 from src.app.ui.library.detail_panel import PANEL_WIDTH, DetailPanel
 from src.app.ui.library.flow_layout import FlowLayout
+from src.app.ui.library.layer_panel import LayerPanel
 from src.app.ui.library.pack_status import (
     MEDIA_ORDER,
     asset_progress,
@@ -53,6 +54,7 @@ from src.app.ui.library.segment_progress import SegmentProgressBar, SegmentState
 from src.app.ui.message.image_preview import ImagePreviewOverlay
 from src.shared.schemas import (
     CollectionItem,
+    MergedLayer,
     PackResponse,
     RingLayerProgress,
     RingStatusResponse,
@@ -81,33 +83,6 @@ def segment_widths(cuts: list[int], total: int) -> list[int]:
 # 每段的图层数，与后端 ring.LAYER_COUNT 一致；一段分层约 18 分钟（640 档 4 层 20 步实测）
 LAYER_COUNT = 4
 LAYER_MINUTES = 18
-LAYER_THUMB_SIZE = QSize(150, 96)
-
-
-class LayerThumb(QLabel):
-    """段图或图层的缩略图；双击发出相对路径，交给页面下载后放大看。"""
-    opened = Signal(str)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setObjectName("ring_layer_thumb")
-        self.setFixedSize(LAYER_THUMB_SIZE)
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.relative = ""
-
-    def show_image(self, relative: str, image: QImage | None):
-        self.relative = relative
-        if image is None or image.isNull():
-            self.clear()
-            return
-        self.setPixmap(QPixmap.fromImage(image).scaled(
-            LAYER_THUMB_SIZE, Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation))
-
-    def mouseDoubleClickEvent(self, event):
-        if self.relative:
-            self.opened.emit(self.relative)
-        super().mouseDoubleClickEvent(event)
 
 
 # 树节点上标记"正在执行"：由委托在名字后面画跳动的三个点
@@ -175,7 +150,6 @@ class PackDetail(BaseWidget):
     ring_plan_requested = Signal(list)             # 自动排序：参与的条目 id（去重）
     ring_order_requested = Signal(list)            # 手动排的顺序：环上从左到右的条目 id，可重复
     ring_generate_requested = Signal()
-    ring_render_requested = Signal()
     ring_candidates_requested = Signal(str)        # seam key：要预览它的各个候选
     ring_adopt_requested = Signal(str, str)        # seam key, candidate id
     ring_redo_requested = Signal(str, str)         # seam key, 追加的提示词
@@ -183,6 +157,8 @@ class PackDetail(BaseWidget):
     ring_cuts_confirm_requested = Signal(list)     # 切点（长图原图像素）
     ring_layers_requested = Signal(list)           # 要重做的段序号；空列表 = 做所有没分层的段
     ring_segment_requested = Signal(int)           # 要看这一段的段图和图层
+    ring_layers_merge_requested = Signal(int, list)    # 段序号, 要合并的层编号
+    ring_merged_delete_requested = Signal(int, str)    # 段序号, 要删除的合并层编号
     ring_layer_opened = Signal(str)                # 双击放大：段图或图层的相对路径
 
     def __init__(self, parent=None):
@@ -215,7 +191,9 @@ class PackDetail(BaseWidget):
         # 段图和每段已完成的图层（相对路径），来自 ring_status；分层进行中进度另从 manifest 算
         self._segments: list[str] = []
         self._segment_layers: list[list[str]] = []
+        self._segment_merged: list[list[MergedLayer]] = []
         self._segment_images: dict[str, QImage] = {}
+        self._current_segment = -1
         self._ring_layering = False
         # 正在生成的接缝 (key, 0~1) 和分层任务回传的最新进度；任务结束即清空
         self._seam_running: tuple[str, float] | None = None
@@ -322,15 +300,19 @@ class PackDetail(BaseWidget):
         switch_layout.setSpacing(6)
         self.resources_view_btn = QPushButton(self.tr("Resources"))
         self.ring_view_btn = QPushButton(self.tr("Ring"))
-        for button in (self.resources_view_btn, self.ring_view_btn):
+        # 切段确认后才出现：一个场景 = 资源 / 循环 / 分层三页
+        self.layer_view_btn = QPushButton(self.tr("Layers"))
+        for button in (self.resources_view_btn, self.ring_view_btn, self.layer_view_btn):
             button.setCheckable(True)
             button.setObjectName("library_view_toggle")
             switch_layout.addWidget(button)
+        self.layer_view_btn.hide()
         switch_layout.addStretch(1)
         self.view_group = QButtonGroup(self)
         self.view_group.setExclusive(True)
         self.view_group.addButton(self.resources_view_btn, 0)
         self.view_group.addButton(self.ring_view_btn, 1)
+        self.view_group.addButton(self.layer_view_btn, 2)
         self.resources_view_btn.setChecked(True)
         layout.addWidget(self.view_switch)
         self.view_switch.hide()
@@ -444,8 +426,6 @@ class PackDetail(BaseWidget):
         self.ring_generate_btn = QPushButton(self.tr("Generate seams"))
         self.ring_generate_btn.setObjectName("library_primary_btn")
         self.ring_generate_btn.clicked.connect(self.ring_generate_requested)
-        self.ring_render_btn = QPushButton(self.tr("Render"))
-        self.ring_render_btn.clicked.connect(self.ring_render_requested)
 
         self.ring_auto_cut_btn = QPushButton(self.tr("Auto cut"))
         self.ring_auto_cut_btn.clicked.connect(self.ring_cuts_auto_requested)
@@ -453,8 +433,8 @@ class PackDetail(BaseWidget):
         self.ring_confirm_cut_btn.clicked.connect(
             lambda: self.ring_cuts_confirm_requested.emit(self.ring_strip.cuts()))
         
-        for button in (self.ring_generate_btn, self.ring_render_btn,
-                       self.ring_auto_cut_btn, self.ring_confirm_cut_btn):
+        for button in (self.ring_generate_btn, self.ring_auto_cut_btn,
+                       self.ring_confirm_cut_btn):
             ring_controls.addWidget(button)
         ring_layout.addLayout(ring_controls)
 
@@ -478,33 +458,41 @@ class PackDetail(BaseWidget):
         self.layer_info = QLabel()
         self.layer_info.setObjectName("detail_muted")
         self.layer_info.setWordWrap(True)
-        self.layer_segment_box = QComboBox()
-        self.layer_segment_box.setMinimumContentsLength(14)
-        self.layer_segment_box.setSizeAdjustPolicy(
-            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.layer_redo_btn = QPushButton(self.tr("Redo this segment"))
         self.layer_run_btn = QPushButton(self.tr("Layer segments"))
         self.layer_run_btn.setObjectName("library_primary_btn")
+        self.layer_stack = LayerPanel()
         layer_head.addWidget(self.layer_info, 1)
-        layer_head.addWidget(self.layer_segment_box)
         layer_head.addWidget(self.layer_redo_btn)
         layer_head.addWidget(self.layer_run_btn)
+        layer_head.addWidget(self.layer_stack.merge_btn)
+        layer_head.addWidget(self.layer_stack.delete_btn)
         layer_layout.addLayout(layer_head)
         self.layer_bar = SegmentProgressBar()
         layer_layout.addWidget(self.layer_bar)
-        thumbs_row = QHBoxLayout()
-        # 第一张是段图本身，后面是从底到顶的各层
-        self.layer_thumbs = [LayerThumb() for _ in range(LAYER_COUNT + 1)]
-        for thumb in self.layer_thumbs:
-            thumb.opened.connect(self.ring_layer_opened)
-            thumbs_row.addWidget(thumb)
-        thumbs_row.addStretch(1)
-        layer_layout.addLayout(thumbs_row)
-        self.layer_panel.hide()
-        ring_layout.addWidget(self.layer_panel)
+        # 一段一个小按钮，点哪个看哪段；已分层的带 ✓
+        self.layer_chip_box = QWidget()
+        self.layer_chips = QButtonGroup(self)
+        self.layer_chips.setExclusive(True)
+        self.layer_chip_layout = FlowLayout(self.layer_chip_box, spacing=4)
+        layer_layout.addWidget(self.layer_chip_box)
+        layer_layout.addWidget(self.layer_stack)
+        # 分层单独一页：循环页只管拼接和切段，不再挤在一起
+        self.layer_page = QWidget()
+        self.layer_page.setObjectName("library_layer_page")
+        layer_page_layout = QVBoxLayout(self.layer_page)
+        layer_page_layout.setContentsMargins(0, 4, 0, 12)
+        layer_page_layout.addWidget(self.layer_panel, 1)
         self.layer_run_btn.clicked.connect(lambda: self.ring_layers_requested.emit([]))
         self.layer_redo_btn.clicked.connect(self._emit_layer_redo)
-        self.layer_segment_box.currentIndexChanged.connect(self._on_layer_segment_changed)
+        self.layer_chips.idClicked.connect(self._on_layer_segment_changed)
+        self.layer_stack.layer_opened.connect(self.ring_layer_opened)
+        self.layer_stack.image_opened.connect(self.show_image)
+        self.layer_stack.merge_requested.connect(
+            lambda ids: self.ring_layers_merge_requested.emit(self.selected_segment(), ids))
+        self.layer_stack.delete_requested.connect(
+            lambda layer_id: self.ring_merged_delete_requested.emit(
+                self.selected_segment(), layer_id))
 
         # 选中接缝后才出现：挑候选、追加提示词重做。重做的是这一个接缝，别处不动
         self.seam_panel = QWidget()
@@ -550,9 +538,11 @@ class PackDetail(BaseWidget):
         self.ring_status_label.setWordWrap(True)
         ring_layout.addWidget(self.ring_status_label)
         self.center_stack.addWidget(ring_page)
+        self.center_stack.addWidget(self.layer_page)
         layout.addWidget(self.center_stack, 1)
         self.resources_view_btn.clicked.connect(lambda: self._set_center_view(0))
         self.ring_view_btn.clicked.connect(self._show_ring_view)
+        self.layer_view_btn.clicked.connect(lambda: self._set_center_view(2))
         return self.center
 
     # ---- 对外 ----
@@ -615,6 +605,7 @@ class PackDetail(BaseWidget):
             self._seam_key, self._candidate_images = "", {}
             self._saved_cuts, self._cuts_stale, self._segment_count = [], False, 0
             self._segments, self._segment_layers, self._segment_images = [], [], {}
+            self._segment_merged, self._current_segment = [], -1
             self.ring_strip.set_cuts([])
             self.ring_strip.reset_view()
             self.seam_panel.hide()
@@ -627,6 +618,7 @@ class PackDetail(BaseWidget):
         self.view_switch.setVisible(ring_available)
         self.ring_view_btn.setVisible(ring_available)
         if not ring_available:
+            self.layer_view_btn.hide()
             self.resources_view_btn.setChecked(True)
             self.center_stack.setCurrentIndex(0)
         self.title_label.setText(manifest.name or template.name or manifest.id)
@@ -700,7 +692,7 @@ class PackDetail(BaseWidget):
         # 确认剧本、重做只改本包的 manifest，别的包在跑也能改，改完等那边结束再执行
         self.detail.set_busy(running)
         self._busy = running
-        for button in (self.ring_plan_btn, self.ring_generate_btn, self.ring_render_btn):
+        for button in (self.ring_plan_btn, self.ring_generate_btn):
             button.setEnabled(not running and not self._ring_running)
         self._update_ring_cards_state()
         self._update_cut_controls()
@@ -723,7 +715,8 @@ class PackDetail(BaseWidget):
             self._cuts_stale = status.cuts_stale
             self._segment_count = len(status.segments)
             self.ring_strip.set_cuts(status.cuts)
-            self._set_segments(list(status.segments), [list(x) for x in status.segment_layers])
+            self._set_segments(list(status.segments), [list(x) for x in status.segment_layers],
+                               [list(x) for x in status.segment_merged])
         self._show_ring_images(self.ring_after_btn.isChecked())
         self._update_cut_controls()
         self._refresh_seam_panel()
@@ -811,62 +804,76 @@ class PackDetail(BaseWidget):
     def _on_ring_cuts_edited(self, _cuts: list):
         self._update_cut_controls()
 
-    def _set_segments(self, segments: list[str], layers: list[list[str]]):
-        changed = segments != self._segments or layers != self._segment_layers
-        current = self.layer_segment_box.currentIndex()
-        self._segments, self._segment_layers = segments, layers
+    def _set_segments(self, segments: list[str], layers: list[list[str]],
+                      merged: list[list[MergedLayer]]):
+        # 后端的三个列表本应一一对应；少了的按"没分层"补齐，不让下标越界
+        layers = layers + [[] for _ in range(len(segments) - len(layers))]
+        merged = merged + [[] for _ in range(len(segments) - len(merged))]
+        changed = (segments != self._segments or layers != self._segment_layers
+                   or merged != self._segment_merged)
+        self._segments, self._segment_layers, self._segment_merged = segments, layers, merged
         if not changed:
             return
-        self.layer_segment_box.blockSignals(True)
-        self.layer_segment_box.clear()
-        for index, done in enumerate(layers, start=1):
-            mark = " ✓" if done else ""
-            self.layer_segment_box.addItem(self.tr("Segment {0}").format(index) + mark)
-        self.layer_segment_box.setCurrentIndex(
-            current if 0 <= current < len(segments) else (0 if segments else -1))
-        self.layer_segment_box.blockSignals(False)
-        self._on_layer_segment_changed(self.layer_segment_box.currentIndex())
+        current = self._current_segment
+        self._current_segment = current if 0 <= current < len(segments) else (
+            0 if segments else -1)
+        self._rebuild_segment_chips()
+        self._show_segment()
+
+    def _rebuild_segment_chips(self):
+        for button in self.layer_chips.buttons():
+            self.layer_chips.removeButton(button)
+        self.layer_chip_layout.clear()
+        for index, done in enumerate(self._segment_layers):
+            chip = QPushButton(f"{index + 1} ✓" if done else str(index + 1))
+            chip.setObjectName("ring_segment_chip")
+            chip.setCheckable(True)
+            chip.setChecked(index == self._current_segment)
+            chip.setToolTip(self.tr("Segment {0}").format(index + 1))
+            self.layer_chips.addButton(chip, index)
+            self.layer_chip_layout.addWidget(chip)
 
     def clear_segment_images(self):
         self._segment_images = {}
-        # 让下一次 set_ring 一定重建下拉并重新取当前段的图
-        self._segments, self._segment_layers = [], []
+        # 让下一次 set_ring 一定重建选段按钮并重新取当前段的图
+        self._segments, self._segment_layers, self._segment_merged = [], [], []
 
     def set_segment_images(self, images: dict[str, QImage]):
         """页面取回的段图 / 图层，键是相对路径；只更新当前选中那段用得上的。"""
         self._segment_images.update(images)
-        self._show_segment_thumbs()
+        self.layer_stack.set_images(self._segment_images)
 
     def _on_layer_segment_changed(self, index: int):
-        self._show_segment_thumbs()
+        self._current_segment = index
+        self._show_segment()
+
+    def _show_segment(self):
+        """当前段的段图、图层和合并层交给图层面板；还没取回的图先去取。"""
+        index = self._current_segment
         if 0 <= index < len(self._segments):
-            wanted = [self._segments[index], *self._segment_layers[index]]
-            if any(path not in self._segment_images for path in wanted):
+            self.layer_stack.set_segment(
+                index, self._segments[index], self._segment_layers[index],
+                self._segment_merged[index])
+            if any(path not in self._segment_images for path in self.segment_paths(index)):
                 self.ring_segment_requested.emit(index)
+        else:
+            self.layer_stack.set_segment(-1, "", [], [])
+        self.layer_stack.set_images(self._segment_images)
         self._update_layer_controls()
 
-    def _show_segment_thumbs(self):
-        index = self.layer_segment_box.currentIndex()
-        paths = []
-        if 0 <= index < len(self._segments):
-            paths = [self._segments[index], *self._segment_layers[index]]
-        for slot, thumb in enumerate(self.layer_thumbs):
-            relative = paths[slot] if slot < len(paths) else ""
-            thumb.show_image(relative, self._segment_images.get(relative))
-            thumb.setVisible(bool(relative))
-
     def selected_segment(self) -> int:
-        return self.layer_segment_box.currentIndex()
+        return self._current_segment
 
     def segment_paths(self, index: int) -> list[str]:
+        """段图 + 原层 + 合并层：这一段要显示的所有图。"""
         if not 0 <= index < len(self._segments):
             return []
-        return [self._segments[index], *self._segment_layers[index]]
+        return [self._segments[index], *self._segment_layers[index],
+                *(merged.path for merged in self._segment_merged[index])]
 
     def _emit_layer_redo(self):
-        index = self.layer_segment_box.currentIndex()
-        if index >= 0:
-            self.ring_layers_requested.emit([index])
+        if self._current_segment >= 0:
+            self.ring_layers_requested.emit([self._current_segment])
 
     def _layer_done_flags(self) -> list[bool]:
         """每段是否已分好层。分层要跑几个小时，直接从轮询刷新的 manifest 里算，
@@ -882,6 +889,11 @@ class PackDetail(BaseWidget):
             flags.append(state is not None and state.source_sig == ring.cuts_sig
                          and len(state.layers) == LAYER_COUNT)
         return flags
+
+    def layers_pending(self) -> bool:
+        """还有没分层的段：确认切段后据此决定要不要自动开始分层。"""
+        done, total = self._layer_progress()
+        return done < total
 
     def _layer_progress(self) -> tuple[int, int]:
         """(已完成段数, 总段数)。"""
@@ -910,8 +922,12 @@ class PackDetail(BaseWidget):
 
     def _update_layer_controls(self):
         has_segments = bool(self._segments) and not self._cuts_stale
-        self.layer_panel.setVisible(has_segments)
+        self.layer_view_btn.setVisible(has_segments)
         if not has_segments:
+            # 正看着分层页时切点失效了：页签没了，退回循环页
+            if self.center_stack.currentIndex() == 2:
+                self.ring_view_btn.setChecked(True)
+                self.center_stack.setCurrentIndex(1)
             return
         done, total = self._layer_progress()
         idle = not self._busy and not self._ring_running and self._ring_operation is None
@@ -928,7 +944,8 @@ class PackDetail(BaseWidget):
         self.layer_bar.set_segments(self._segment_bar_widths())
         self.layer_bar.set_states(self._segment_states())
         self.layer_run_btn.setEnabled(idle and done < total)
-        self.layer_redo_btn.setEnabled(idle and self.layer_segment_box.currentIndex() >= 0)
+        self.layer_redo_btn.setEnabled(idle and self._current_segment >= 0)
+        self.layer_stack.set_idle(idle)
 
     def _update_cut_controls(self):
         cuts = self.ring_strip.cuts()
@@ -992,7 +1009,7 @@ class PackDetail(BaseWidget):
             self._refresh_seam_links()
         self._ring_running = running
         self._ring_layering = running and layering
-        for button in (self.ring_plan_btn, self.ring_generate_btn, self.ring_render_btn):
+        for button in (self.ring_plan_btn, self.ring_generate_btn):
             button.setEnabled(not running and not self._busy)
         if running:
             self.ring_status_label.setText(
@@ -1006,14 +1023,12 @@ class PackDetail(BaseWidget):
     def set_ring_operation(self, operation: str | None):
         self._ring_operation = operation
         active = operation is not None
-        for button in (self.ring_plan_btn, self.ring_generate_btn, self.ring_render_btn):
+        for button in (self.ring_plan_btn, self.ring_generate_btn):
             button.setEnabled(not active and not self._busy)
         if operation == "plan":
             self.ring_status_label.setText(self.tr("Planning order…"))
         elif operation == "order":
             self.ring_status_label.setText(self.tr("Updating the ring order…"))
-        elif operation == "render":
-            self.ring_status_label.setText(self.tr("Rendering ring…"))
         elif operation == "adopt":
             self.ring_status_label.setText(self.tr("Applying the chosen seam…"))
         elif operation == "cuts":
@@ -1021,6 +1036,10 @@ class PackDetail(BaseWidget):
             self.ring_status_label.setText(self.tr("Finding cut points…"))
         elif operation == "confirm":
             self.ring_status_label.setText(self.tr("Saving segments…"))
+        elif operation == "merge":
+            self.ring_status_label.setText(self.tr("Merging layers…"))
+        elif operation == "delete_merged":
+            self.ring_status_label.setText(self.tr("Deleting the merged layer…"))
         self._update_ring_cards_state()
         self._update_cut_controls()
         self._update_seam_buttons()

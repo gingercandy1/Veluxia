@@ -34,9 +34,11 @@ from src.backend.core.collection.template import load_template
 from src.backend.core.image.depth import estimate_ring_depth
 from src.backend.core.model_base import GeneratorFactory
 from src.shared.enum_type import FactoryType
+from src.shared.layer_stack import stack_key
 from src.shared.schemas import (
     CollectionItem,
     Manifest,
+    MergedLayer,
     RingSeamStatus,
     RingState,
     SeamCandidate,
@@ -207,6 +209,8 @@ def generate_seams(pack_id: str, keys: list[str] | None = None,
                         if not seam.adopted:
                             seam.adopted = candidate_id
                         _prune_candidates(directory, seam)
+                        # 做完一条就合成：界面刷新时预览里已经带着这条接缝，不必等全部做完
+                        _render_seam_slots(directory, manifest, ring, key)
                         save_manifest(directory, manifest)
                 finally:
                     generator.cancel_event = None
@@ -240,29 +244,44 @@ def render_ring(pack_id: str) -> Manifest:
         ring = _require_ring(manifest)
         if len(ring.order) < 2:
             raise ValueError("循环拼接至少需要两个条目，请先规划循环顺序")
-        items = {item.id: item for item in manifest.items}
-        for index, item_id in enumerate(ring.order):
-            item = items.get(item_id)
-            if item is None:
-                raise ValueError(f"循环顺序引用了不存在的条目：{item_id}")
-            source = _generate_source(directory, item)
-            with Image.open(source) as source_image:
-                rendered = source_image.convert("RGB")
-            previous_id = ring.order[index - 1]
-            next_id = ring.order[(index + 1) % len(ring.order)]
-            previous = _adopted_candidate(directory, ring, _seam_key(previous_id, item_id))
-            following = _adopted_candidate(directory, ring, _seam_key(item_id, next_id))
-            if previous:
-                with Image.open(_safe_pack_path(directory, previous.file)) as patch:
-                    rendered = apply_patch(rendered, patch, side="left")
-            if following:
-                with Image.open(_safe_pack_path(directory, following.file)) as patch:
-                    rendered = apply_patch(rendered, patch, side="right")
-            target = _safe_pack_path(
-                directory, _slot_file(item_id, previous_id, next_id))
-            target.parent.mkdir(parents=True, exist_ok=True)
-            rendered.save(target, format="PNG")
+        for index in range(len(ring.order)):
+            _render_slot(directory, manifest, ring, index)
         return manifest
+
+
+def _render_slot(directory: Path, manifest: Manifest, ring: RingState, index: int) -> None:
+    """合成环上第 index 个位置：原图贴上左右两条接缝已采用的补丁。"""
+    item_id = ring.order[index]
+    item = next((candidate for candidate in manifest.items if candidate.id == item_id), None)
+    if item is None:
+        raise ValueError(f"循环顺序引用了不存在的条目：{item_id}")
+    with Image.open(_generate_source(directory, item)) as source_image:
+        rendered = source_image.convert("RGB")
+    previous_id = ring.order[index - 1]
+    next_id = ring.order[(index + 1) % len(ring.order)]
+    previous = _adopted_candidate(directory, ring, _seam_key(previous_id, item_id))
+    following = _adopted_candidate(directory, ring, _seam_key(item_id, next_id))
+    if previous:
+        with Image.open(_safe_pack_path(directory, previous.file)) as patch:
+            rendered = apply_patch(rendered, patch, side="left")
+    if following:
+        with Image.open(_safe_pack_path(directory, following.file)) as patch:
+            rendered = apply_patch(rendered, patch, side="right")
+    target = _safe_pack_path(directory, _slot_file(item_id, previous_id, next_id))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    rendered.save(target, format="PNG")
+
+
+def _render_seam_slots(directory: Path, manifest: Manifest, ring: RingState, key: str) -> None:
+    """只重合成受这条接缝影响的位置（它左右两屏）。同一对相邻屏在环里出现多次时都要做。"""
+    left_id, right_id = _split_key(key)
+    count = len(ring.order)
+    if count < 2:
+        return
+    for index, item_id in enumerate(ring.order):
+        if (item_id == left_id and ring.order[(index + 1) % count] == right_id) \
+                or (item_id == right_id and ring.order[index - 1] == left_id):
+            _render_slot(directory, manifest, ring, index)
 
 
 def auto_cuts(pack_id: str, cancel_event: threading.Event | None = None) -> Manifest:
@@ -328,7 +347,9 @@ def layer_segments(pack_id: str, indices: list[int] | None = None,
                 raise ValueError(f"没有这些段：{', '.join(str(i + 1) for i in bad)}")
             todo = [segments[i] for i in dict.fromkeys(indices)]
             for key, *_ in todo:
-                ring.segment_layers.pop(key, None)
+                old = ring.segment_layers.pop(key, None)
+                if old is not None:
+                    _drop_merged(directory, old)
         else:
             todo = [segment for segment in segments
                     if not _segment_done(directory, ring, segment[0])]
@@ -354,6 +375,9 @@ def layer_segments(pack_id: str, indices: list[int] | None = None,
                         if state is not None and state.prompt == prompt and state.embeds and \
                                 _safe_pack_path(directory, state.embeds).is_file():
                             continue
+                        if state is not None:
+                            # 描述变了，图层要重做，旧的合并层跟着作废
+                            _drop_merged(directory, state)
                         report("encode", current)
                         generator.parse_params({"content": prompt})
                         embeds = generator.save_prompt_embeds()
@@ -374,6 +398,7 @@ def layer_segments(pack_id: str, indices: list[int] | None = None,
                         outputs = call_blocking(generator.generate())
                         if not outputs or not all(Path(p).is_file() for p in outputs):
                             raise RuntimeError(f"段 {key} 没有生成图层，请查看后端日志")
+                        _drop_merged(directory, state)
                         state.layers = []
                         state.source_sig = ring.cuts_sig
                         for index, output in enumerate(outputs, start=1):
@@ -387,6 +412,85 @@ def layer_segments(pack_id: str, indices: list[int] | None = None,
             save_manifest(directory, manifest)
             raise
         return manifest
+
+
+def merge_layers(pack_id: str, segment: int, layer_ids: list[str]) -> Manifest:
+    """把一段里选中的几层按叠放顺序合成一张新图层，原层不动。纯 CPU，不碰模型租约。
+
+    来源可以是原层 L1…L4，也可以是已有的合并层；新层的位置取来源里最上面那层的位置。
+    """
+    ids = list(dict.fromkeys(layer_ids))
+    if len(ids) < 2:
+        raise ValueError("至少选两层才能合并")
+    directory = library.pack_dir(pack_id)
+    with library._claim(pack_id):
+        manifest = load_manifest(directory)
+        ring = _require_ring(manifest)
+        key, state = _layered_segment(directory, manifest, ring, segment)
+        stack = _layer_stack(state)
+        unknown = [layer_id for layer_id in ids if layer_id not in stack]
+        if unknown:
+            raise ValueError(f"这一段没有这些层：{', '.join(unknown)}")
+        chosen = sorted(ids, key=lambda layer_id: stack_key(layer_id, stack[layer_id][1]))
+        canvas = None
+        for layer_id in chosen:
+            with Image.open(_safe_pack_path(directory, stack[layer_id][0])) as opened:
+                layer = opened.convert("RGBA")
+            if canvas is None:
+                canvas = Image.new("RGBA", layer.size)
+            elif layer.size != canvas.size:
+                raise ValueError(f"{layer_id} 和其他层尺寸不同，无法合并")
+            canvas = Image.alpha_composite(canvas, layer)
+        number = max((int(merged.id[1:]) for merged in state.merged), default=0) + 1
+        relative = _layer_dir(key) / f"merged_{number}.png"
+        canvas.save(_safe_pack_path(directory, relative))
+        state.merged.append(MergedLayer(
+            id=f"M{number}", path=relative.as_posix(), sources=chosen,
+            z=max(stack[layer_id][1] for layer_id in chosen)))
+        save_manifest(directory, manifest)
+        return manifest
+
+
+def delete_merged(pack_id: str, segment: int, layer_id: str) -> Manifest:
+    """删掉一张合并层（只删它自己的文件，原层和别的合并层不受影响）。"""
+    directory = library.pack_dir(pack_id)
+    with library._claim(pack_id):
+        manifest = load_manifest(directory)
+        ring = _require_ring(manifest)
+        _, state = _layered_segment(directory, manifest, ring, segment)
+        target = next((merged for merged in state.merged if merged.id == layer_id), None)
+        if target is None:
+            raise ValueError(f"这一段没有合并层 {layer_id}")
+        _safe_pack_path(directory, target.path).unlink(missing_ok=True)
+        state.merged.remove(target)
+        save_manifest(directory, manifest)
+        return manifest
+
+
+def _layered_segment(directory: Path, manifest: Manifest, ring: RingState,
+                     segment: int) -> tuple[str, SegmentLayers]:
+    """第 segment 段的 (段身份, 分层结果)；段不存在或还没分完层时报错。"""
+    segments = _confirmed_segments(directory, manifest)
+    if not 0 <= segment < len(segments):
+        raise ValueError(f"没有第 {segment + 1} 段")
+    key = segments[segment][0]
+    if not _segment_done(directory, ring, key):
+        raise ValueError(f"第 {segment + 1} 段还没分层")
+    return key, ring.segment_layers[key]
+
+
+def _layer_stack(state: SegmentLayers) -> dict[str, tuple[str, int]]:
+    """层编号 -> (文件, 叠放位置)：原层 L1…L4 的位置就是 1…4。"""
+    stack = {f"L{index}": (path, index) for index, path in enumerate(state.layers, start=1)}
+    stack.update({merged.id: (merged.path, merged.z) for merged in state.merged})
+    return stack
+
+
+def _drop_merged(directory: Path, state: SegmentLayers) -> None:
+    """这一段的图层要重做了：合并层是从旧图层合成的，一并作废。"""
+    for merged in state.merged:
+        _safe_pack_path(directory, merged.path).unlink(missing_ok=True)
+    state.merged = []
 
 
 def ring_status(pack_id: str) -> dict[str, Any]:
@@ -403,6 +507,7 @@ def ring_status(pack_id: str) -> dict[str, Any]:
             if path.is_file():
                 signatures[item.id] = file_signature(path)
     ring = manifest.ring
+    states = _segment_states(directory, ring)
     return {
         "order": list(ring.order),
         "seams": _statuses(ring, signatures),
@@ -411,25 +516,29 @@ def ring_status(pack_id: str) -> dict[str, Any]:
         "cuts_stale": bool(ring.cuts) and _current_cuts_signature(directory, ring) != ring.cuts_sig,
         "segments": [path for path in ring.segments
                      if _safe_pack_path(directory, path).is_file()],
-        "segment_layers": _segment_layer_files(directory, ring),
+        "segment_layers": [list(state.layers) if state else [] for state in states],
+        "segment_merged": [
+            [merged for merged in state.merged
+             if _safe_pack_path(directory, merged.path).is_file()] if state else []
+            for state in states],
     }
 
 
-def _segment_layer_files(directory: Path, ring: RingState) -> list[list[str]]:
-    """与 ring.segments 一一对应的已完成图层；切点失效时全部为空。"""
+def _segment_states(directory: Path, ring: RingState) -> list[SegmentLayers | None]:
+    """与 ring.segments 一一对应的已完成分层；没分层或切点失效时是 None。"""
     try:
         paths = _rendered_sources(directory, ring)
     except ValueError:
-        return [[] for _ in ring.segments]
+        return [None for _ in ring.segments]
     total = 0
     for path in paths:
         with Image.open(path) as image:
             total += image.width
     if not ring.cuts or _cuts_signature(paths) != ring.cuts_sig:
-        return [[] for _ in ring.segments]
+        return [None for _ in ring.segments]
     keys = [segment_key(start, width)
             for start, width in zip(ring.cuts, segment_widths(ring.cuts, total))]
-    return [list(ring.segment_layers[key].layers) if _segment_done(directory, ring, key) else []
+    return [ring.segment_layers[key] if _segment_done(directory, ring, key) else None
             for key in keys[:len(ring.segments)]]
 
 
@@ -511,7 +620,7 @@ def _rendered_sources(directory: Path, ring: RingState) -> list[Path]:
         path = _safe_pack_path(directory, _slot_file(
             item_id, ring.order[index - 1], ring.order[(index + 1) % len(ring.order)]))
         if not path.is_file():
-            raise ValueError(f"第 {index + 1} 屏（{item_id}）还没合成，请先点“合成”")
+            raise ValueError(f"第 {index + 1} 屏（{item_id}）还没合成，请先生成接缝")
         paths.append(path)
     return paths
 

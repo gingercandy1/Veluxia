@@ -33,7 +33,7 @@ class RingStrip(BaseWidget):
         self.setMinimumHeight(180)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._images: list[QImage] = []
-        self._pixmaps: list[QPixmap] = []
+        self._pixmaps: list[QPixmap | None] = []
         self._widths: list[float] = []
         self._image_height = 0
         self._cache_key: tuple[int, float] | None = None
@@ -117,18 +117,25 @@ class RingStrip(BaseWidget):
             return
         self._cache_key = key
         self._image_height = max(1, round(self.height() * self._zoom))
-        # 缩小时先平滑缩到目标尺寸，避免直接降采样出锯齿；放大时用原图，细节不丢
-        self._pixmaps = [
-            QPixmap.fromImage(
-                image.scaledToHeight(self._image_height, Qt.TransformationMode.SmoothTransformation)
-                if self._image_height < image.height() else image)
-            for image in self._images
-        ]
+        # 位图按需生成（见 _pixmap）：滚轮缩放时只有画面里看得见的几屏要重新缩放，
+        # 不必把整个环的每一屏都缩一遍
+        self._pixmaps = [None] * len(self._images)
         self._widths = [image.width() * self._image_height / image.height()
                         for image in self._images]
         self._total_width = sum(self._widths)
         if self._total_width:
             self._offset %= self._total_width
+
+    def _pixmap(self, index: int) -> QPixmap:
+        pixmap = self._pixmaps[index]
+        if pixmap is None:
+            image = self._images[index]
+            # 缩小时先平滑缩到目标尺寸，避免直接降采样出锯齿；放大时用原图，细节不丢
+            pixmap = QPixmap.fromImage(
+                image.scaledToHeight(self._image_height, Qt.TransformationMode.SmoothTransformation)
+                if self._image_height < image.height() else image)
+            self._pixmaps[index] = pixmap
+        return pixmap
 
     def paintEvent(self, _event):
         painter = QPainter(self)
@@ -152,13 +159,13 @@ class RingStrip(BaseWidget):
         active_pen = QPen(QColor(255, 214, 102), 3)
         self._seam_hits = []
         while x < self.width():
-            pixmap = self._pixmaps[index]
+            pixmap = self._pixmap(index)
             width = self._widths[index]
             position = round(x)
             painter.drawPixmap(QRectF(x, top, width, self._image_height), pixmap,
                                QRectF(pixmap.rect()))
             # 当前图左边的交界属于上一张图的接缝（接缝归左屏）
-            seam = (index - 1) % len(self._pixmaps)
+            seam = (index - 1) % len(self._images)
             self._seam_hits.append((position, seam))
             # 接缝线只画在两张图相接的那段高度上，不画满整个控件
             painter.setPen(selected_pen if seam == self._selected else seam_pen)
@@ -167,7 +174,7 @@ class RingStrip(BaseWidget):
                 painter.setPen(active_pen)
                 painter.drawRect(QRectF(x + 1.5, top + 1.5, width - 3, self._image_height - 3))
             x += width
-            index = (index + 1) % len(self._pixmaps)
+            index = (index + 1) % len(self._images)
         self._paint_cuts(painter, offset, top, bottom)
 
     def _paint_cuts(self, painter: QPainter, offset: float, top: int, bottom: int):

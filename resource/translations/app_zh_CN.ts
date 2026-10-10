@@ -40,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+103"/>
-        <location line="+135"/>
-        <location line="+394"/>
+        <location filename="../../src/app/client.py" line="+104"/>
+        <location line="+136"/>
+        <location line="+412"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>无法连接后端，请确认服务是否已启动。</translation>
     </message>
     <message>
-        <location line="-525"/>
+        <location line="-544"/>
         <source>Connection timed out.</source>
         <translation>连接超时。</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+385"/>
+        <location line="+404"/>
         <source>Cannot connect to the backend.</source>
         <translation>无法连接后端。</translation>
     </message>
     <message>
-        <location line="-269"/>
+        <location line="-287"/>
         <source>Generation stopped.</source>
         <translation>已停止生成。</translation>
     </message>
@@ -78,7 +78,7 @@
         <translation>与后端失去连接，无法确认生成结果。</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+20"/>
         <source>Generation failed.</source>
         <translation>生成失败。</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>无法连接后端：{0}</translation>
     </message>
     <message>
-        <location line="+290"/>
+        <location line="+306"/>
         <source>An install task is already running...</source>
         <translation>安装任务已在运行中…</translation>
     </message>
@@ -363,6 +363,14 @@
         <location line="+6"/>
         <source>Loading model list...</source>
         <translation>正在加载模型列表…</translation>
+    </message>
+</context>
+<context>
+    <name>Card</name>
+    <message>
+        <location filename="../../src/app/ui/library/cards.py" line="+103"/>
+        <source>Layers</source>
+        <translation>分层</translation>
     </message>
 </context>
 <context>
@@ -1001,9 +1009,70 @@
     </message>
 </context>
 <context>
+    <name>LayerPanel</name>
+    <message>
+        <location filename="../../src/app/ui/library/layer_panel.py" line="+221"/>
+        <source>Merge</source>
+        <translation>合并</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Merge the selected layers into a new layer</source>
+        <translation>把选中的图层合成一个新图层</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete merged layer</source>
+        <translation>删除合并层</translation>
+    </message>
+    <message>
+        <location line="+92"/>
+        <source>Merged</source>
+        <translation>合并</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Layers</source>
+        <translation>分层</translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>Merged {0}</source>
+        <translation>合并层 {0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Layer {0}</source>
+        <translation>图层 {0}</translation>
+    </message>
+    <message>
+        <location line="-2"/>
+        <source>from {0}</source>
+        <translation>合并自 {0}</translation>
+    </message>
+    <message>
+        <location line="-23"/>
+        <source>Segment image</source>
+        <translation>段图</translation>
+    </message>
+</context>
+<context>
+    <name>LayerRow</name>
+    <message>
+        <location line="-220"/>
+        <source>Show or hide this layer in the preview</source>
+        <translation>在预览里显示或隐藏这一层</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Click to select · Ctrl/Shift to select several · double-click to enlarge</source>
+        <translation>点击选中 · Ctrl/Shift 多选 · 双击放大</translation>
+    </message>
+</context>
+<context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+257"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+273"/>
         <source>Failed to load packs: {0}</source>
         <translation>加载资源包列表失败：{0}</translation>
     </message>
@@ -1013,22 +1082,22 @@
         <translation>加载模板失败：{0}</translation>
     </message>
     <message>
-        <location line="+334"/>
+        <location line="+398"/>
         <source>Failed to create pack: {0}</source>
         <translation>创建资源包失败：{0}</translation>
     </message>
     <message>
-        <location line="-216"/>
+        <location line="-279"/>
         <source>Run failed: {0}</source>
         <translation>执行失败：{0}</translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+88"/>
         <source>The seam produced no candidate.</source>
         <translation>该接缝没有产生候选。</translation>
     </message>
     <message>
-        <location line="+176"/>
+        <location line="+209"/>
         <source>Failed to add items: {0}</source>
         <translation>添加条目失败：{0}</translation>
     </message>
@@ -1110,18 +1179,18 @@
         <translation>风格预设：{0}</translation>
     </message>
     <message>
-        <location line="-371"/>
-        <location line="+38"/>
+        <location line="-434"/>
+        <location line="+68"/>
         <source>Could not load ring status.</source>
         <translation>无法读取循环状态。</translation>
     </message>
     <message>
-        <location line="-28"/>
+        <location line="-56"/>
         <source>Screen {0} has no finished source image.</source>
         <translation>屏幕 {0} 尚无已完成的原图。</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+25"/>
         <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
         <translation>{0} 屏 · {1} 个接缝有候选 · {2} 个已失效 · {3} 屏已合成</translation>
     </message>
@@ -1131,13 +1200,13 @@
         <translation>尚未合成</translation>
     </message>
     <message>
-        <location line="+72"/>
+        <location line="+93"/>
         <source>Could not decode image: {0}</source>
         <translation>无法解码图片：{0}</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <location line="+28"/>
+        <location line="+81"/>
+        <location line="+34"/>
         <source>Ring operation failed: {0}</source>
         <translation>循环操作失败：{0}</translation>
     </message>
@@ -1320,7 +1389,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+245"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+230"/>
         <source>Library</source>
         <translation>资料库</translation>
     </message>
@@ -1346,13 +1415,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+347"/>
-        <location line="+446"/>
+        <location line="+369"/>
+        <location line="+566"/>
         <source>Export</source>
         <translation>导出</translation>
     </message>
     <message>
-        <location line="-791"/>
+        <location line="-933"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>将成品保存为 zip，每个条目对应一个文件夹，不含草稿和中间文件。</translation>
     </message>
@@ -1362,7 +1431,12 @@
         <translation>删除</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+20"/>
+        <source>Layers</source>
+        <translation>分层</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>Use new style</source>
         <translation>使用新风格</translation>
     </message>
@@ -1387,12 +1461,7 @@
         <translation>重做用旧立绘生成的步骤及其后续步骤。</translation>
     </message>
     <message>
-        <location line="+36"/>
-        <source>Screens in the ring</source>
-        <translation>参与循环的屏</translation>
-    </message>
-    <message>
-        <location line="+53"/>
+        <location line="+82"/>
         <source>Auto cut</source>
         <translation>自动切段</translation>
     </message>
@@ -1402,7 +1471,7 @@
         <translation>确认切段</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+29"/>
         <source>Redo this segment</source>
         <translation>重做此段</translation>
     </message>
@@ -1412,7 +1481,7 @@
         <translation>分层</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+49"/>
         <source>Use this one</source>
         <translation>采用此项</translation>
     </message>
@@ -1427,7 +1496,7 @@
         <translation>重做接缝</translation>
     </message>
     <message>
-        <location line="+98"/>
+        <location line="+103"/>
         <source>{0}/{1} done</source>
         <translation>已完成 {0}/{1}</translation>
     </message>
@@ -1442,12 +1511,12 @@
         <translation>风格预设“{0}”在创建资源包之后已被修改。</translation>
     </message>
     <message>
-        <location line="+126"/>
+        <location line="+169"/>
         <source>Segment {0}</source>
         <translation>第 {0} 段</translation>
     </message>
     <message>
-        <location line="+70"/>
+        <location line="+102"/>
         <source>Layered {0}/{1} segments</source>
         <translation>已分层 {0}/{1} 段</translation>
     </message>
@@ -1462,7 +1531,22 @@
         <translation>分层中…可随时停止，之后可继续</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+2"/>
+        <source>encoding</source>
+        <translation>编码中</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>denoising</source>
+        <translation>去噪中</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>segment {0}: {1}</source>
+        <translation>第 {0} 段：{1}</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
         <translation>分层前需将循环切分为若干段：请先合成，再点击“自动切段”。</translation>
     </message>
@@ -1492,7 +1576,7 @@
         <translation>已保存 {0} 段图</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+42"/>
         <source>Layering segments…</source>
         <translation>正在分层…</translation>
     </message>
@@ -1502,7 +1586,7 @@
         <translation>正在更新循环顺序…</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+2"/>
         <source>Applying the chosen seam…</source>
         <translation>正在应用所选接缝…</translation>
     </message>
@@ -1515,6 +1599,16 @@
         <location line="+2"/>
         <source>Saving segments…</source>
         <translation>正在保存段图…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Merging layers…</source>
+        <translation>正在合并图层…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Deleting the merged layer…</source>
+        <translation>正在删除合并层…</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -1537,7 +1631,7 @@
         <translation>{0} · 种子 {1}</translation>
     </message>
     <message>
-        <location line="+121"/>
+        <location line="+143"/>
         <source>Nothing to export yet</source>
         <translation>暂无可导出的内容</translation>
     </message>
@@ -1557,7 +1651,7 @@
         <translation>删除此条目及其全部素材</translation>
     </message>
     <message>
-        <location line="-780"/>
+        <location line="-922"/>
         <source>Resources</source>
         <translation>资源</translation>
     </message>
@@ -1567,7 +1661,7 @@
         <translation>循环</translation>
     </message>
     <message>
-        <location line="+87"/>
+        <location line="+85"/>
         <source>Auto arrange</source>
         <translation>自动排序</translation>
     </message>
@@ -1577,7 +1671,7 @@
         <translation>按边缘的匹配程度对各屏排序。重复添加的屏将合并为一张。</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+16"/>
         <source>Before</source>
         <translation>拼接前</translation>
     </message>
@@ -1592,12 +1686,7 @@
         <translation>生成接缝</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Render</source>
-        <translation>合成</translation>
-    </message>
-    <message>
-        <location line="+476"/>
+        <location line="+590"/>
         <source>Generating seams…</source>
         <translation>正在生成接缝…</translation>
     </message>
@@ -1605,11 +1694,6 @@
         <location line="+13"/>
         <source>Planning order…</source>
         <translation>正在规划顺序…</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Rendering ring…</source>
-        <translation>正在合成循环…</translation>
     </message>
 </context>
 <context>
@@ -1927,7 +2011,7 @@
 <context>
     <name>RingCardBar</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="+157"/>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+237"/>
         <source>Add a screen. The same screen can be added again.</source>
         <translation>添加一屏。同一屏可以重复添加。</translation>
     </message>
@@ -1935,7 +2019,7 @@
 <context>
     <name>RingItemPicker</name>
     <message>
-        <location line="+114"/>
+        <location line="+166"/>
         <source>Add screens to the ring</source>
         <translation>向循环添加屏</translation>
     </message>
@@ -1948,7 +2032,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+135"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+146"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>请先准备至少两张已完成的场景图，再规划循环。</translation>
     </message>
@@ -2052,6 +2136,42 @@
         <location line="+0"/>
         <source>Confirm and voice</source>
         <translation>确认剧本并配音</translation>
+    </message>
+</context>
+<context>
+    <name>SeamLink</name>
+    <message>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="-239"/>
+        <source>Generating seam… {0}%</source>
+        <translation>正在生成接缝… {0}%</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Seam: not generated yet</source>
+        <translation>接缝：还没生成</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seam: has candidates, none adopted</source>
+        <translation>接缝：有候选，尚未采用</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seam: adopted</source>
+        <translation>接缝：已采用</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seam: source image changed, redo it</source>
+        <translation>接缝：源图已变化，请重做</translation>
+    </message>
+</context>
+<context>
+    <name>SegmentProgressBar</name>
+    <message>
+        <location filename="../../src/app/ui/library/segment_progress.py" line="+41"/>
+        <source>Segment {0}</source>
+        <translation>第 {0} 段</translation>
     </message>
 </context>
 <context>

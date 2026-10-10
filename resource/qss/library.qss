@@ -425,11 +425,71 @@ QLabel#detail_text {
     color: rgba(255, 255, 255, 0.80);
 }
 
-QLabel#ring_layer_thumb {
+QPushButton#ring_segment_chip {
+    min-width: 34px;
+    padding: 3px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+QPushButton#ring_segment_chip:checked {
+    border-color: #ffd666;
+    background-color: rgba(255, 214, 102, 0.16);
+}
+
+QScrollArea#ring_layer_scroll,
+QScrollArea#ring_layer_scroll > QWidget > QWidget {
+    background: transparent;
+}
+
+QPushButton#ring_layer_group {
+    text-align: left;
+    padding: 4px 6px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12px;
+}
+
+QPushButton#ring_layer_group:hover {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+QFrame#ring_layer_row {
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+QFrame#ring_layer_row[selectable="true"]:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+QFrame#ring_layer_row[selected="true"] {
+    border-color: #ffd666;
+    background-color: rgba(255, 214, 102, 0.16);
+}
+
+QLabel#ring_layer_row_thumb {
     /* 图层是透明图：深灰底才看得出哪里有内容 */
     background-color: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+}
+
+QLabel#ring_layer_row_name {
+    background: transparent;
+    font-size: 12px;
+}
+
+QToolButton#ring_layer_eye {
+    border: none;
     border-radius: 4px;
+    background: transparent;
+}
+
+QToolButton#ring_layer_eye:hover {
+    background-color: rgba(255, 255, 255, 0.10);
 }
 
 QLabel#detail_muted {

@@ -107,7 +107,10 @@ class LibraryPage(BaseWidget):
         # 环卡片缩略图已发起加载的 (包 id, {条目 id: token})；换包时清空，同一张图不重复加载
         self._ring_thumb_pack = ""
         self._ring_thumb_tokens: dict[str, str] = {}
+        # 环预览的整图缓存：token（地址 + 内容版本）→ 解码后的图；每次刷新只保留用到的
+        self._ring_image_cache: dict[str, QImage] = {}
         self._ring_action = ""
+        self._seam_in_progress = ""     # 生成接缝时正在做的接缝 key，换了就说明上一条做完了
         self._ring_stop = threading.Event()
 
         self._poll_timer = QTimer(self)
@@ -150,7 +153,6 @@ class LibraryPage(BaseWidget):
         self.detail.ring_order_requested.connect(
             lambda order: self._run_ring_action("order", order=order))
         self.detail.ring_generate_requested.connect(lambda: self._run_ring_action("generate"))
-        self.detail.ring_render_requested.connect(lambda: self._run_ring_action("render"))
         self.detail.ring_candidates_requested.connect(self._load_ring_candidates)
         self.detail.ring_cuts_auto_requested.connect(lambda: self._run_ring_action("cuts"))
         self.detail.ring_cuts_confirm_requested.connect(
@@ -158,8 +160,13 @@ class LibraryPage(BaseWidget):
         self.detail.ring_layers_requested.connect(
             lambda indices: self._run_ring_action("layers", indices=indices))
         self.detail.ring_segment_requested.connect(self._load_segment_images)
+        self.detail.ring_layers_merge_requested.connect(
+            lambda segment, ids: self._run_ring_action("merge", segment=segment, layer_ids=ids))
+        self.detail.ring_merged_delete_requested.connect(
+            lambda segment, layer_id: self._run_ring_action(
+                "delete_merged", segment=segment, layer_ids=[layer_id]))
         self.detail.ring_layer_opened.connect(self._open_ring_file)
-        self.ring_progress.connect(self.detail.set_ring_progress)
+        self.ring_progress.connect(self._on_ring_progress)
         self.layer_progress.connect(self.detail.set_layer_progress)
         self.detail.ring_adopt_requested.connect(
             lambda key, candidate_id: self._run_ring_action("adopt", key, candidate_id))
@@ -386,20 +393,34 @@ class LibraryPage(BaseWidget):
         rendered_count = 0
         # 同一屏可以在环里出现多次：原图只取一次
         originals: dict[str, QImage] = {}
+        used: set[str] = set()
+        count = len(status.order)
         for index, item_id in enumerate(status.order):
             item = items.get(item_id)
             state = item.steps.get("generate") if item else None
             if state is None or state.status != "done" or not state.outputs:
                 raise ValueError(self.tr("Screen {0} has no finished source image.").format(item_id))
+            source_sig = state_signature(item, [RING_SOURCE_STEP])
             if item_id not in originals:
-                originals[item_id] = self._fetch_ring_image(pack, state.outputs[0])
+                originals[item_id] = self._fetch_cached_ring_image(
+                    pack, state.outputs[0], source_sig, used)
             before.append(originals[item_id])
             rendered_path = status.rendered[index] if index < len(status.rendered) else ""
             if rendered_path:
-                after.append(self._fetch_ring_image(pack, rendered_path))
+                # 合成图由原图和左右两条接缝采用的候选决定：这三样没变就是同一张图
+                left_key = f"{status.order[index - 1]}>{item_id}"
+                right_key = f"{item_id}>{status.order[(index + 1) % count]}"
+                signature = "|".join((
+                    source_sig, status.order[index - 1], status.order[(index + 1) % count],
+                    self._adopted_id(status, left_key), self._adopted_id(status, right_key)))
+                after.append(
+                    self._fetch_cached_ring_image(pack, rendered_path, signature, used))
                 rendered_count += 1
             else:
                 after.append(originals[item_id])
+        # 只留这次用到的图：换了顺序或重做后，旧的合成图不再占内存
+        for token in set(self._ring_image_cache) - used:
+            self._ring_image_cache.pop(token, None)
 
         candidate_count = sum(seam.has_candidates for seam in status.seams.values())
         stale_count = sum(seam.stale for seam in status.seams.values())
@@ -412,6 +433,13 @@ class LibraryPage(BaseWidget):
     def _emit_ring_progress(self, progress: dict):
         """在 worker 线程里被调用：经信号排队回主线程再更新连接器，不直接碰控件。"""
         self.ring_progress.emit(progress["key"], float(progress["fraction"]))
+
+    def _on_ring_progress(self, key: str, fraction: float):
+        self.detail.set_ring_progress(key, fraction)
+        # 换到下一条接缝说明上一条已经存盘并合成：刷新预览，不必等全部做完
+        if self._seam_in_progress and key != self._seam_in_progress:
+            self._load_ring_preview()
+        self._seam_in_progress = key
 
     def _emit_layer_progress(self, progress: dict):
         """同上，分层任务的进度。"""
@@ -482,6 +510,11 @@ class LibraryPage(BaseWidget):
                 images[candidate.id] = QImage.fromData(self._client.fetch_media(candidate.file))
         return images
 
+    @staticmethod
+    def _adopted_id(status, key: str) -> str:
+        seam = status.seams.get(key)
+        return seam.adopted if seam is not None else ""
+
     def _fetch_ring_image(self, pack: PackResponse, relative: str) -> QImage:
         url = f"{pack.media_base}/{relative}"
         with _DECODE_SLOTS:
@@ -490,15 +523,28 @@ class LibraryPage(BaseWidget):
             raise ValueError(self.tr("Could not decode image: {0}").format(url))
         return image
 
+    def _fetch_cached_ring_image(self, pack: PackResponse, relative: str, signature: str,
+                                 used: set[str]) -> QImage:
+        """环预览用的整图。signature 是内容版本（同名文件重写后它会变）：版本没变就直接用
+        缓存，生成接缝时每做完一条都会刷新预览，不能每次都把所有屏重下一遍。"""
+        token = f"{pack.media_base}/{relative}#{signature}"
+        used.add(token)
+        image = self._ring_image_cache.get(token)
+        if image is None:
+            image = self._ring_image_cache[token] = self._fetch_ring_image(pack, relative)
+        return image
+
     def _on_ring_preview_loaded(self, result):
         self.detail.set_ring(*result)
 
     def _run_ring_action(self, action: str, key: str = "", argument: str = "",
                          item_ids: list[str] | None = None, cuts: list[int] | None = None,
-                         indices: list[int] | None = None, order: list[str] | None = None):
+                         indices: list[int] | None = None, order: list[str] | None = None,
+                         segment: int = 0, layer_ids: list[str] | None = None):
         """argument：redo 时是追加的提示词，adopt 时是候选 id；item_ids：plan 时参与循环的条目；
         order：order 时手动排的顺序（可重复同一屏）；
-        cuts：confirm 时用户确认的切点；indices：layers 时要重做的段，空则做所有没分层的段。"""
+        cuts：confirm 时用户确认的切点；indices：layers 时要重做的段，空则做所有没分层的段；
+        segment / layer_ids：merge 时的段和要合并的层，delete_merged 时的段和要删的合并层。"""
         pack = self.detail.pack
         if pack is None or self._ring_worker is not None:
             return
@@ -506,6 +552,7 @@ class LibraryPage(BaseWidget):
         self._ring_action = action
         self._ring_pack_id = pack.manifest.id
         self._ring_stop = threading.Event()
+        self._seam_in_progress = ""
         kwargs = {}
         if action == "generate":
             fn, args, kwargs = self._client.generate_ring, (self._ring_pack_id,), {
@@ -522,12 +569,18 @@ class LibraryPage(BaseWidget):
             fn, args = self._client.auto_ring_cuts, (self._ring_pack_id, self._ring_stop)
         elif action == "confirm":
             fn, args = self._client.confirm_ring_cuts, (self._ring_pack_id, cuts or [])
+        elif action == "merge":
+            fn, args = self._client.merge_ring_layers, (
+                self._ring_pack_id, segment, layer_ids or [])
+        elif action == "delete_merged":
+            fn, args = self._client.delete_merged_layer, (
+                self._ring_pack_id, segment, (layer_ids or [""])[0])
         elif action == "layers":
             fn, args, kwargs = self._client.layer_ring, (self._ring_pack_id,), {
                 "stop_event": self._ring_stop, "indices": indices or None,
                 "on_progress": self._emit_layer_progress}
         else:
-            fn, args = self._client.render_ring, (self._ring_pack_id,)
+            raise ValueError(f"未知的环操作：{action}")
         if action in RING_GENERATING:
             self.detail.set_ring_running(True, layering=action == "layers")
         else:
@@ -542,15 +595,16 @@ class LibraryPage(BaseWidget):
 
     def _on_ring_action_finished(self, response: PackResponse):
         pack_id = self._ring_pack_id
+        start_layers = False
         self._ring_worker = None
         self.detail.set_ring_running(False)
         self.detail.set_ring_operation(None)
         if not response.ok:
             if not self._ring_stop.is_set():
                 self.detail.set_error(self.tr("Ring operation failed: {0}").format(response.error))
-            if self._ring_action in ("layers", "order") and self.detail.pack \
+            if self._ring_action in ("generate", "layers", "order") and self.detail.pack \
                     and self.detail.pack.manifest.id == pack_id:
-                # 分层每做完一段就存盘：停止或中途失败后，已完成的段也要显示出来；
+                # 接缝 / 分层每做完一个就存盘：停止或中途失败后，已完成的也要显示出来；
                 # 改顺序失败时卡片条要回到后端实际的环
                 self.detail.clear_segment_images()
                 self._load_ring_preview()
@@ -560,16 +614,22 @@ class LibraryPage(BaseWidget):
             ]
             if self.detail.pack and self.detail.pack.manifest.id == pack_id:
                 self._show_detail(response)
-                if self._ring_action in ("layers", "confirm"):
-                    # 重做的段和重新导出的段图沿用原文件名：缓存的缩略图要作废
+                if self._ring_action in ("layers", "confirm", "merge", "delete_merged"):
+                    # 重做的段和重新导出的段图沿用原文件名，删掉的合并层编号还会被下一次合并
+                    # 重新用上：缓存的缩略图要作废
                     self.detail.clear_segment_images()
-                if self._ring_action in ("redo", "adopt", "render", "cuts", "confirm", "order"):
+                if self._ring_action in ("generate", "redo", "adopt", "cuts", "confirm", "order"):
                     # 刚改过接缝或切段：直接看拼接后的效果（切点就是在合成图上算的）
                     self.detail.ring_after_btn.setChecked(True)
                 self._load_ring_preview()
+                # 用户点了"确认切段"就是要分层：不必再点一次。已分好的段后端会跳过，
+                # 所以只有拖动过切线的相邻段会重做；停止 / 失败后不自动续，由用户手动继续
+                start_layers = self._ring_action == "confirm" and self.detail.layers_pending()
         self._ring_action = ""
         self._update_run_state()
         self._update_polling()
+        if start_layers:
+            self._run_ring_action("layers")
 
     def _on_ring_action_error(self, message: str):
         self._ring_worker = None

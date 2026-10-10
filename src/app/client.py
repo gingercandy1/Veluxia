@@ -14,7 +14,8 @@ from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, Animat
     ApproveStepRequest, ResetStepRequest, DraftItemsRequest, DraftItemsResponse, \
     StyleListResponse, StylePreset, ModelStorageResponse, UpdateItemFieldsRequest, \
     AdoptSeamRequest, RingGenerateRequest, RingOrderRequest, RingPlanRequest, RingStatusResponse, \
-    RingCutsRequest, ConfirmCutsRequest, RingLayersRequest
+    RingCutsRequest, ConfirmCutsRequest, RingLayersRequest, MergeLayersRequest, \
+    DeleteMergedRequest
 
 _DEFAULT_LIMITS = httpx.Limits(
     max_connections=10,
@@ -482,6 +483,16 @@ class ApiClient:
     def confirm_ring_cuts(self, pack_id: str, cuts: list[int]) -> PackResponse:
         return self._post(f"/library/packs/{pack_id}/ring/cuts",
                           ConfirmCutsRequest(cuts=cuts).model_dump(), PackResponse)
+
+    def merge_ring_layers(self, pack_id: str, segment: int, layer_ids: list[str]) -> PackResponse:
+        request = MergeLayersRequest(segment=segment, layer_ids=layer_ids)
+        return self._post(f"/library/packs/{pack_id}/ring/layers/merge",
+                          request.model_dump(), PackResponse)
+
+    def delete_merged_layer(self, pack_id: str, segment: int, layer_id: str) -> PackResponse:
+        request = DeleteMergedRequest(segment=segment, layer_id=layer_id)
+        return self._post(f"/library/packs/{pack_id}/ring/layers/delete-merged",
+                          request.model_dump(), PackResponse)
 
     def approve_step(self, pack_id: str, request: ApproveStepRequest) -> PackResponse:
         return self._post(f"/library/packs/{pack_id}/approve", request.model_dump(), PackResponse)

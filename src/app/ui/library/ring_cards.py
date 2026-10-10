@@ -6,7 +6,7 @@
 from enum import Enum
 
 from PySide6.QtCore import QMimeData, QPoint, QSize, Qt, Signal
-from PySide6.QtGui import QDrag, QIcon, QPixmap
+from PySide6.QtGui import QColor, QDrag, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -381,6 +381,19 @@ class RingCardBar(QScrollArea):
             self.remove_requested.emit(self._cards.index(card))
 
 
+def _fit_in_canvas(pixmap: QPixmap, size: QSize) -> QPixmap:
+    """缩略图按各自比例缩小后大小不一：统一画到固定大小的底板中央，列表里才整齐。"""
+    canvas = QPixmap(size)
+    canvas.fill(QColor(255, 255, 255, 12))
+    scaled = pixmap.scaled(size, Qt.AspectRatioMode.KeepAspectRatio,
+                           Qt.TransformationMode.SmoothTransformation)
+    painter = QPainter(canvas)
+    painter.drawPixmap((size.width() - scaled.width()) // 2,
+                       (size.height() - scaled.height()) // 2, scaled)
+    painter.end()
+    return canvas
+
+
 class RingItemPicker(QDialog):
     """从资源包里挑要加进环的屏；点哪几个就加哪几个，已经在环里的也可以再加。"""
 
@@ -393,7 +406,7 @@ class RingItemPicker(QDialog):
             "Pick the screens to add. They are appended to the end of the ring; "
             "a screen already in the ring can be added again."))
         hint.setObjectName("detail_muted")
-        hint.setWordWrap(True)
+        hint.setWordWrap(True)  
         layout.addWidget(hint)
         self.list = QListWidget()
         self.list.setViewMode(QListWidget.ViewMode.IconMode)
@@ -403,7 +416,8 @@ class RingItemPicker(QDialog):
         self.list.setIconSize(PICKER_THUMB)
         self.list.setSpacing(8)
         for item_id, title, tooltip, pixmap in entries:
-            row = QListWidgetItem(QIcon(pixmap) if pixmap is not None else QIcon(),
+            row = QListWidgetItem(QIcon(_fit_in_canvas(pixmap, PICKER_THUMB))
+                                  if pixmap is not None else QIcon(),
                                   f"{item_id}\n{title}" if title and title != item_id
                                   else item_id)
             row.setData(Qt.ItemDataRole.UserRole, item_id)

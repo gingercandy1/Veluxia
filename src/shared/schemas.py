@@ -175,12 +175,21 @@ class SeamState(BaseModel):
     adopted: str = ""
 
 
+class MergedLayer(BaseModel):
+    """用户把一段里的几层合成的新图层：原层不动，重做这一段时一并作废。"""
+    id: str = Field(..., description="M1、M2…；原层的编号是 L1…L4")
+    path: str = Field(..., description="相对资源包目录")
+    sources: List[str] = Field(default_factory=list, description="被合并的层编号，按叠放顺序")
+    z: int = Field(..., description="叠放位置：取被合并层里最上面那层的位置，原层 L1…L4 是 1…4")
+
+
 class SegmentLayers(BaseModel):
     """一段的分层结果。按段的身份（起点 + 宽度）存：拖动一条切线只让相邻两段失效。"""
     source_sig: str = Field(..., description="分层时的 cuts_sig；对不上说明合成图变了")
     prompt: str = ""
     embeds: str = Field("", description="编码文件，相对资源包目录；只重做去噪时复用")
     layers: List[str] = Field(default_factory=list, description="从底到顶的透明图层，相对资源包目录")
+    merged: List[MergedLayer] = Field(default_factory=list, description="用户合并出来的层")
 
 
 class RingState(BaseModel):
@@ -309,6 +318,8 @@ class RingStatusResponse(BaseResponse):
     segments: List[str] = Field(default_factory=list)
     # 与 segments 一一对应：该段已完成的图层（从底到顶）；没分层或已失效为空列表
     segment_layers: List[List[str]] = Field(default_factory=list)
+    # 与 segments 一一对应：该段的合并层；没分层或已失效为空列表
+    segment_merged: List[List[MergedLayer]] = Field(default_factory=list)
 
 
 class RingCutsRequest(BaseModel):
@@ -330,6 +341,16 @@ class RingLayerProgress(BaseModel):
 
 class ConfirmCutsRequest(BaseModel):
     cuts: List[int]
+
+
+class MergeLayersRequest(BaseModel):
+    segment: int = Field(..., description="段序号（从 0 起）")
+    layer_ids: List[str] = Field(..., description="要合并的层编号（L1…L4、M1…），至少两个")
+
+
+class DeleteMergedRequest(BaseModel):
+    segment: int = Field(..., description="段序号（从 0 起）")
+    layer_id: str = Field(..., description="要删除的合并层编号（M1…）")
 
 
 class ApproveStepRequest(BaseModel):

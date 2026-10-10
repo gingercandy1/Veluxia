@@ -8,11 +8,13 @@ from PySide6.QtWidgets import QWidget
 
 from src.app.ui.library.library_page import LibraryPage
 from src.app.ui.library.pack_detail import PackDetail
-from src.app.ui.library.ring_cards import RingCardBar, RingItemPicker
+from src.app.ui.library.ring_cards import PICKER_THUMB, RingCardBar, RingItemPicker
 from src.app.ui.library.ring_strip import OVERLAY_MARGIN, ZOOM_MAX, ZOOM_MIN, RingStrip
+from src import resources  # noqa: F401  注册 :/svg 图标，图层行的眼睛要用
 from src.shared.schemas import (
     CollectionItem,
     Manifest,
+    MergedLayer,
     PackResponse,
     RingLayerProgress,
     RingSeamStatus,
@@ -73,6 +75,19 @@ def test_ring_strip_empty_images_loop_playback_and_timer(qapp):
     assert moved != frame(0)
 
 
+def test_ring_strip_only_scales_the_screens_that_are_painted(qapp):
+    strip = RingStrip()
+    strip.resize(300, 100)
+    # 每屏 400 宽，条带 300 宽：一次最多看到两屏，第 3~6 屏不该被缩放
+    strip.set_images([QImage(400, 200, QImage.Format.Format_RGB32) for _ in range(6)])
+    strip.grab()
+    built = [pixmap is not None for pixmap in strip._pixmaps]
+    assert built[0] and not all(built)
+    # 缩放后位图作废，重画时才按新尺寸重新生成
+    strip.set_zoom(1.5)
+    assert not any(pixmap is not None for pixmap in strip._pixmaps)
+
+
 def test_pack_detail_ring_view_visibility_signals_and_busy_state(qapp):
     detail = PackDetail()
     pack, template = _scene_pack()
@@ -84,22 +99,20 @@ def test_pack_detail_ring_view_visibility_signals_and_busy_state(qapp):
     detail.ring_view_requested.connect(lambda: requested.append("view"))
     detail.ring_plan_requested.connect(lambda _item_ids: requested.append("plan"))
     detail.ring_generate_requested.connect(lambda: requested.append("generate"))
-    detail.ring_render_requested.connect(lambda: requested.append("render"))
     detail.ring_view_btn.click()
     assert detail.center_stack.currentWidget() is detail.ring_strip.parentWidget()
     assert requested == ["view"]
     detail.ring_plan_btn.click()
     detail.ring_generate_btn.click()
-    detail.ring_render_btn.click()
-    assert requested == ["view", "plan", "generate", "render"]
+    assert requested == ["view", "plan", "generate"]
 
     detail.set_ring_running(True)
     assert all(not button.isEnabled() for button in (
-        detail.ring_plan_btn, detail.ring_generate_btn, detail.ring_render_btn))
+        detail.ring_plan_btn, detail.ring_generate_btn))
     assert detail.ring_status_label.text() == detail.tr("Generating seams…")
     detail.set_ring_running(False)
     assert all(button.isEnabled() for button in (
-        detail.ring_plan_btn, detail.ring_generate_btn, detail.ring_render_btn))
+        detail.ring_plan_btn, detail.ring_generate_btn))
     detail.resources_view_btn.click()
     assert detail.center_stack.currentWidget() is detail.scroll
 
@@ -356,7 +369,7 @@ def test_layer_panel_progress_thumbs_and_redo(qapp):
 
     # 没确认切段：不显示分层面板
     detail.set_ring(images, images, "", RingStatusResponse(order=["screen0", "screen1"]))
-    assert detail.layer_panel.isHidden()
+    assert detail.layer_view_btn.isHidden()
 
     first_layers = [f"ring/layers/504_1200/layer_{i}.png" for i in range(1, 5)]
     status = RingStatusResponse(
@@ -364,23 +377,30 @@ def test_layer_panel_progress_thumbs_and_redo(qapp):
         segments=["ring/segments/01.png", "ring/segments/02.png"],
         segment_layers=[first_layers, []])
     detail.set_ring(images, images, "", status)
-    assert not detail.layer_panel.isHidden()
-    assert detail.layer_segment_box.count() == 2
-    assert detail.layer_segment_box.itemText(0).endswith("✓")
+    # 确认切段后出现第三个页签；点它切到分层页，点回循环页分层页就让位
+    assert not detail.layer_view_btn.isHidden()
+    detail.layer_view_btn.click()
+    assert detail.center_stack.currentWidget() is detail.layer_page
+    chips = detail.layer_chips.buttons()
+    assert [chip.text() for chip in chips] == ["1 ✓", "2"]
     assert "1/2" in detail.layer_info.text()
     assert detail.layer_run_btn.isEnabled()
     # 选中第 1 段：要取段图 + 4 层
     assert requested == [0]
     thumb = QImage(40, 20, QImage.Format.Format_ARGB32)
     detail.set_segment_images({path: thumb for path in detail.segment_paths(0)})
-    assert all(not t.isHidden() and t.pixmap() is not None for t in detail.layer_thumbs)
-    QTest.mouseDClick(detail.layer_thumbs[2], Qt.MouseButton.LeftButton)
+    stack = detail.layer_stack
+    assert stack.row("L4") is not None and stack.row("L1") is not None
+    assert stack.row("ref") is not None
+    # 双击一行：放大这一层
+    QTest.mouseDClick(stack.row("L2"), Qt.MouseButton.LeftButton)
     assert opened == [first_layers[1]]
 
     # 第 2 段还没分层：只显示段图
-    detail.layer_segment_box.setCurrentIndex(1)
+    chips[1].click()
     assert requested == [0, 1]
-    assert not detail.layer_thumbs[0].isHidden() and detail.layer_thumbs[1].isHidden()
+    assert stack.row("ref") is not None and stack.row("L1") is None
+    assert detail.selected_segment() == 1
 
     detail.layer_run_btn.click()
     detail.layer_redo_btn.click()
@@ -404,17 +424,116 @@ def test_layer_panel_progress_thumbs_and_redo(qapp):
     assert detail.layer_redo_btn.isEnabled()
     assert _segment_cell_states(detail) == ["done", "pending"]
 
-
-def _segment_cell_states(detail):
-    return [cell.property("state") for cell in detail.layer_bar._cells]
-
     # 全部做完：不再能点"分层"，但可以单段重做
     done = status.model_copy(update={"segment_layers": [first_layers, first_layers]})
     detail.set_ring(images, images, "", done)
     assert not detail.layer_run_btn.isEnabled() and detail.layer_redo_btn.isEnabled()
-    # 切点失效：分层面板收起
+    # 切点失效：页签收起，正看着分层页时退回循环页
     detail.set_ring(images, images, "", done.model_copy(update={"cuts_stale": True}))
-    assert detail.layer_panel.isHidden()
+    assert detail.layer_view_btn.isHidden()
+    assert detail.center_stack.currentIndex() == 1 and detail.ring_view_btn.isChecked()
+
+
+def _segment_cell_states(detail):
+    return [cell.property("state") for cell in detail.layer_bar._cells]
+
+
+def _merge_status(first_layers, merged):
+    return RingStatusResponse(
+        order=["screen0", "screen1"], cuts=[504, 1704],
+        segments=["ring/segments/01.png", "ring/segments/02.png"],
+        segment_layers=[first_layers, []], segment_merged=[merged, []])
+
+
+def test_layer_stack_groups_eyes_and_merge_selection(qapp):
+    detail = PackDetail()
+    pack, template = _scene_pack(item_count=2)
+    detail.show_pack(pack, template, busy=False)
+    detail.ring_view_btn.click()
+    images = [QImage(1200, 180, QImage.Format.Format_RGB32) for _ in range(2)]
+    merge_requests, delete_requests = [], []
+    detail.ring_layers_merge_requested.connect(lambda *args: merge_requests.append(args))
+    detail.ring_merged_delete_requested.connect(lambda *args: delete_requests.append(args))
+
+    first_layers = [f"ring/layers/504_1200/layer_{i}.png" for i in range(1, 5)]
+    merged = [MergedLayer(id="M1", path="ring/layers/504_1200/merged_1.png",
+                          sources=["L1", "L2"], z=2)]
+    detail.set_ring(images, images, "", _merge_status(first_layers, merged))
+    stack = detail.layer_stack
+    image = QImage(40, 20, QImage.Format.Format_ARGB32)
+    detail.set_segment_images({path: image for path in detail.segment_paths(0)})
+
+    # 分层和合并分成两组，各组从顶到底；合并层的路径也要去取图
+    assert merged[0].path in detail.segment_paths(0)
+    assert stack.group_layout() == [
+        (detail.tr("Merged"), ["M1"]), (detail.tr("Layers"), ["L4", "L3", "L2", "L1"])]
+
+    # 眼睛是 SVG 图标，所有行（含段图行）的眼睛左边缘对齐，不随分组缩进
+    detail.resize(1400, 900)
+    detail.show()
+    detail.layer_view_btn.click()
+    left_edges = {
+        stack.row(layer_id).eye.mapTo(stack.row(layer_id), QPoint(0, 0)).x()
+        for layer_id in ("M1", "L4", "L1", "ref")}
+    assert len(left_edges) == 1
+    eye = stack.row("L2").eye
+    assert not eye.icon().isNull()
+    open_key = eye.icon().cacheKey()
+
+    # 预览按层序叠：段图在最底下，合并层压在位置相同的原层上面
+    assert stack.visible_ids() == ["ref", "L1", "L2", "M1", "L3", "L4"]
+    row_before = stack.row("L3")
+    QTest.mouseClick(row_before.eye, Qt.MouseButton.LeftButton)
+    assert stack.visible_ids() == ["ref", "L1", "L2", "M1", "L4"]
+    # 点眼睛只切换显示：不重建行、不改选中，图标换成闭眼
+    assert stack.row("L3") is row_before and stack.selected_ids() == []
+    assert row_before.eye.icon().cacheKey() != open_key
+    stack.toggle_visible("ref")
+    assert "ref" not in stack.visible_ids()
+
+    # 选一层不能合并；选两层才行，段图不算
+    assert not stack.merge_btn.isEnabled()
+    QTest.mouseClick(stack.row("ref"), Qt.MouseButton.LeftButton)
+    assert stack.selected_ids() == []
+    QTest.mouseClick(stack.row("L1"), Qt.MouseButton.LeftButton)
+    assert not stack.merge_btn.isEnabled()
+    QTest.mouseClick(stack.row("M1"), Qt.MouseButton.LeftButton,
+                     Qt.KeyboardModifier.ControlModifier)
+    assert stack.selected_ids() == ["M1", "L1"]
+    # 点眼睛不影响选中
+    QTest.mouseClick(stack.row("L1").eye, Qt.MouseButton.LeftButton)
+    assert stack.selected_ids() == ["M1", "L1"]
+    assert stack.merge_btn.isEnabled() and not stack.delete_btn.isEnabled()
+    stack.merge_btn.click()
+    assert merge_requests == [(0, ["M1", "L1"])]
+
+    # Shift 选一段范围（按列表从上到下）
+    QTest.mouseClick(stack.row("L4"), Qt.MouseButton.LeftButton)
+    QTest.mouseClick(stack.row("L2"), Qt.MouseButton.LeftButton, Qt.KeyboardModifier.ShiftModifier)
+    assert stack.selected_ids() == ["L4", "L3", "L2"]
+
+    # 只选一张合并层才能删
+    QTest.mouseClick(stack.row("M1"), Qt.MouseButton.LeftButton)
+    assert stack.selected_ids() == ["M1"]
+    assert stack.delete_btn.isEnabled()
+    stack.delete_btn.click()
+    assert delete_requests == [(0, "M1")]
+
+    # 刚合并出新层、眼睛状态保留；换一段则全部睁开
+    more = merged + [MergedLayer(id="M2", path="ring/layers/504_1200/merged_2.png",
+                                 sources=["L3", "L4"], z=4)]
+    detail.set_ring(images, images, "", _merge_status(first_layers, more))
+    assert "L3" not in stack.visible_ids() and "M2" in stack.visible_ids()
+    detail.layer_chips.buttons()[1].click()
+    assert stack.visible_ids() == ["ref"]
+    detail.layer_chips.buttons()[0].click()
+    assert "L3" in stack.visible_ids()
+
+    # 长任务进行中不能改图层
+    stack.select(["L1", "L2"])
+    assert stack.merge_btn.isEnabled()
+    detail.set_ring_running(True)
+    assert not stack.merge_btn.isEnabled()
 
 
 def test_non_scene_and_single_item_keep_ring_switch_hidden(qapp):
@@ -539,6 +658,43 @@ def test_redo_stops_at_the_first_failure_and_reports_it(qapp):
     result = page._redo_seam("pack", "screen0>screen1", "", threading.Event())
     assert not result.ok and result.error == "boom"
     assert page._client.calls == [("generate", ["screen0>screen1"], None)]
+
+
+def test_next_seam_progress_refreshes_the_preview_of_the_one_just_finished(qapp):
+    page = LibraryPage()
+    page.detail.set_ring_progress = lambda key, fraction: None
+    loads = []
+    page._load_ring_preview = lambda: loads.append(1)
+    page._on_ring_progress("a>b", 0.0)
+    page._on_ring_progress("a>b", 0.6)
+    assert loads == []
+    # 换到下一条接缝：上一条已经存盘并合成
+    page._on_ring_progress("b>c", 0.0)
+    assert loads == [1]
+
+
+def test_ring_preview_reuses_cached_images_until_their_version_changes(qapp):
+    page = LibraryPage()
+    downloads = []
+    image = QImage(8, 4, QImage.Format.Format_RGB32)
+    page._fetch_ring_image = lambda pack, relative: (downloads.append(relative), image)[1]
+    pack, _ = _scene_pack()
+    used = set()
+    page._fetch_cached_ring_image(pack, "a.png", "v1", used)
+    page._fetch_cached_ring_image(pack, "a.png", "v1", used)
+    assert downloads == ["a.png"]
+    # 内容版本变了（重合成）才重新下载
+    page._fetch_cached_ring_image(pack, "a.png", "v2", used)
+    assert downloads == ["a.png", "a.png"]
+
+
+def test_picker_icons_share_one_tile_size_whatever_the_screen_resolution(qapp):
+    wide, tall = QPixmap(300, 100), QPixmap(50, 200)
+    wide.fill(QColor("red"))
+    tall.fill(QColor("blue"))
+    picker = RingItemPicker([("a", "A", "", wide), ("b", "B", "", tall)])
+    sizes = [picker.list.item(row).icon().pixmap(PICKER_THUMB).size() for row in range(2)]
+    assert sizes[0] == sizes[1] == PICKER_THUMB
 
 
 def test_strip_wheel_zoom_keeps_anchor_point_still(qapp):

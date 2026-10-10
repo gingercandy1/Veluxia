@@ -21,10 +21,12 @@ from src.shared.schemas import (
     BaseResponse,
     ConfirmCutsRequest,
     CreatePackRequest,
+    DeleteMergedRequest,
     DraftItemsRequest,
     DraftItemsResponse,
     FieldOption,
     Manifest,
+    MergeLayersRequest,
     PackListResponse,
     PackResponse,
     ResetStepRequest,
@@ -153,6 +155,18 @@ class LibraryRouter(BaseRouter):
                           summary="确认切段位置并导出每段图")
         async def confirm_ring_cuts(pack_id: str, req: ConfirmCutsRequest) -> PackResponse:
             return await self._update_pack(ring.confirm_cuts, pack_id, req.cuts)
+
+        @self.router.post("/packs/{pack_id}/ring/layers/merge", response_model=PackResponse,
+                          summary="把一段里选中的几层合成一张新图层，原层保留")
+        async def merge_ring_layers(pack_id: str, req: MergeLayersRequest) -> PackResponse:
+            return await self._update_pack(
+                ring.merge_layers, pack_id, req.segment, req.layer_ids)
+
+        @self.router.post("/packs/{pack_id}/ring/layers/delete-merged",
+                          response_model=PackResponse, summary="删除一张合并层")
+        async def delete_merged_layer(pack_id: str, req: DeleteMergedRequest) -> PackResponse:
+            return await self._update_pack(
+                ring.delete_merged, pack_id, req.segment, req.layer_id)
 
         @self.router.delete("/packs/{pack_id}", response_model=BaseResponse, summary="删除资源包")
         async def delete_pack(pack_id: str) -> BaseResponse:

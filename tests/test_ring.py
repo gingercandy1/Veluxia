@@ -346,7 +346,9 @@ def test_adopt_render_and_stale_detection(tmp_path, monkeypatch):
     _mock_generator(monkeypatch, fake)
     generated = ring.generate_seams("pack", [key], cancel_event=threading.Event())
     candidate = generated.ring.seams[key].candidates[0]
-    assert ring.ring_status("pack")["rendered"] == ["", ""]
+    # 生成接缝时已经把采用的候选贴回了相邻两屏，不必另外合成
+    generated_slots = ring.ring_status("pack")["rendered"]
+    assert len(generated_slots) == 2 and all(generated_slots)
     assert ring.ring_status("pack")["seams"][key].stale is False
     adopted = ring.adopt_seam("pack", key, candidate.id)
     assert adopted.ring.seams[key].adopted == candidate.id
@@ -355,7 +357,7 @@ def test_adopt_render_and_stale_detection(tmp_path, monkeypatch):
 
     ring.render_ring("pack")
     rendered = ring.ring_status("pack")["rendered"]
-    assert len(rendered) == 2 and all(rendered)
+    assert rendered == generated_slots
     left_id, right_id = key.split(">")
     left_original = np.asarray(Image.open(directory / left_id / "generate.png"))
     left_rendered = np.asarray(Image.open(directory / rendered[0]))

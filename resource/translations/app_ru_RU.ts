@@ -40,14 +40,14 @@
 <context>
     <name>ApiClient</name>
     <message>
-        <location filename="../../src/app/client.py" line="+103"/>
-        <location line="+135"/>
-        <location line="+394"/>
+        <location filename="../../src/app/client.py" line="+104"/>
+        <location line="+136"/>
+        <location line="+412"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>Не удаётся подключиться к серверу. Проверьте, запущена ли служба.</translation>
     </message>
     <message>
-        <location line="-525"/>
+        <location line="-544"/>
         <source>Connection timed out.</source>
         <translation>Время ожидания подключения истекло.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+385"/>
+        <location line="+404"/>
         <source>Cannot connect to the backend.</source>
         <translation>Не удаётся подключиться к серверу.</translation>
     </message>
     <message>
-        <location line="-269"/>
+        <location line="-287"/>
         <source>Generation stopped.</source>
         <translation>Генерация остановлена.</translation>
     </message>
@@ -78,7 +78,7 @@
         <translation>Соединение с сервером потеряно; результат генерации неизвестен.</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+20"/>
         <source>Generation failed.</source>
         <translation>Ошибка генерации.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>Не удаётся подключиться к серверу: {0}</translation>
     </message>
     <message>
-        <location line="+290"/>
+        <location line="+306"/>
         <source>An install task is already running...</source>
         <translation>Установка уже выполняется…</translation>
     </message>
@@ -363,6 +363,14 @@
         <location line="+6"/>
         <source>Loading model list...</source>
         <translation>Загрузка списка моделей…</translation>
+    </message>
+</context>
+<context>
+    <name>Card</name>
+    <message>
+        <location filename="../../src/app/ui/library/cards.py" line="+103"/>
+        <source>Layers</source>
+        <translation>Слои</translation>
     </message>
 </context>
 <context>
@@ -1005,9 +1013,70 @@
     </message>
 </context>
 <context>
+    <name>LayerPanel</name>
+    <message>
+        <location filename="../../src/app/ui/library/layer_panel.py" line="+221"/>
+        <source>Merge</source>
+        <translation>Объединить</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Merge the selected layers into a new layer</source>
+        <translation>Объединить выбранные слои в новый слой</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete merged layer</source>
+        <translation>Удалить объединённый слой</translation>
+    </message>
+    <message>
+        <location line="+92"/>
+        <source>Merged</source>
+        <translation>Объединённые</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Layers</source>
+        <translation>Слои</translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>Merged {0}</source>
+        <translation>Объединённый слой {0}</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Layer {0}</source>
+        <translation>Слой {0}</translation>
+    </message>
+    <message>
+        <location line="-2"/>
+        <source>from {0}</source>
+        <translation>из {0}</translation>
+    </message>
+    <message>
+        <location line="-23"/>
+        <source>Segment image</source>
+        <translation>Изображение сегмента</translation>
+    </message>
+</context>
+<context>
+    <name>LayerRow</name>
+    <message>
+        <location line="-220"/>
+        <source>Show or hide this layer in the preview</source>
+        <translation>Показать или скрыть слой в предпросмотре</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Click to select · Ctrl/Shift to select several · double-click to enlarge</source>
+        <translation>Щёлкните для выбора · Ctrl/Shift — несколько · двойной щелчок — увеличить</translation>
+    </message>
+</context>
+<context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+257"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+273"/>
         <source>Failed to load packs: {0}</source>
         <translation>Не удалось загрузить пакеты: {0}</translation>
     </message>
@@ -1017,28 +1086,28 @@
         <translation>Не удалось загрузить шаблоны: {0}</translation>
     </message>
     <message>
-        <location line="+334"/>
+        <location line="+398"/>
         <source>Failed to create pack: {0}</source>
         <translation>Не удалось создать пакет: {0}</translation>
     </message>
     <message>
-        <location line="-216"/>
+        <location line="-279"/>
         <source>Run failed: {0}</source>
         <translation>Ошибка выполнения: {0}</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location line="+38"/>
+        <location line="+68"/>
         <source>Could not load ring status.</source>
         <translation>Не удалось загрузить состояние кольца.</translation>
     </message>
     <message>
-        <location line="-28"/>
+        <location line="-56"/>
         <source>Screen {0} has no finished source image.</source>
         <translation>У экрана {0} нет готового исходного изображения.</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+25"/>
         <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
         <translation>Экранов: {0} · швов с вариантами: {1} · устаревших: {2} · собрано: {3}</translation>
     </message>
@@ -1048,18 +1117,18 @@
         <translation>Ещё не собрано</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+31"/>
         <source>The seam produced no candidate.</source>
         <translation>Для этого шва не получилось вариантов.</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+62"/>
         <source>Could not decode image: {0}</source>
         <translation>Не удалось декодировать изображение: {0}</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <location line="+28"/>
+        <location line="+81"/>
+        <location line="+34"/>
         <source>Ring operation failed: {0}</source>
         <translation>Не удалось выполнить операцию с кольцом: {0}</translation>
     </message>
@@ -1324,7 +1393,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+245"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+230"/>
         <source>Library</source>
         <translation>Библиотека</translation>
     </message>
@@ -1350,13 +1419,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+347"/>
-        <location line="+446"/>
+        <location line="+369"/>
+        <location line="+566"/>
         <source>Export</source>
         <translation>Экспорт</translation>
     </message>
     <message>
-        <location line="-791"/>
+        <location line="-933"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Сохранить готовые ассеты в zip: по папке на элемент, без черновиков и промежуточных файлов.</translation>
     </message>
@@ -1376,7 +1445,7 @@
         <translation>Кольцо</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+26"/>
         <source>Use new style</source>
         <translation>Применить новый стиль</translation>
     </message>
@@ -1401,12 +1470,7 @@
         <translation>Переделать шаги, сделанные по старому портрету, и все последующие.</translation>
     </message>
     <message>
-        <location line="+36"/>
-        <source>Screens in the ring</source>
-        <translation>Экраны в кольце</translation>
-    </message>
-    <message>
-        <location line="+18"/>
+        <location line="+57"/>
         <source>Before</source>
         <translation>До</translation>
     </message>
@@ -1416,27 +1480,27 @@
         <translation>После</translation>
     </message>
     <message>
-        <location line="-10"/>
+        <location line="-19"/>
         <source>Auto arrange</source>
         <translation>Автопорядок</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-83"/>
+        <source>Layers</source>
+        <translation>Слои</translation>
+    </message>
+    <message>
+        <location line="+85"/>
         <source>Order the screens by how well their edges match. Screens added more than once are merged into one.</source>
         <translation>Расставить экраны по совпадению краёв. Экраны, добавленные несколько раз, объединяются в один.</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+37"/>
         <source>Generate seams</source>
         <translation>Создать швы</translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>Render</source>
-        <translation>Собрать</translation>
-    </message>
-    <message>
-        <location line="+11"/>
+        <location line="+4"/>
         <source>Auto cut</source>
         <translation>Авторазрез</translation>
     </message>
@@ -1446,7 +1510,7 @@
         <translation>Подтвердить разрезы</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+29"/>
         <source>Redo this segment</source>
         <translation>Переделать участок</translation>
     </message>
@@ -1456,7 +1520,7 @@
         <translation>Разбить на слои</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+49"/>
         <source>Use this one</source>
         <translation>Использовать этот</translation>
     </message>
@@ -1471,7 +1535,7 @@
         <translation>Переделать этот шов</translation>
     </message>
     <message>
-        <location line="+98"/>
+        <location line="+103"/>
         <source>{0}/{1} done</source>
         <translation>Готово {0}/{1}</translation>
     </message>
@@ -1486,12 +1550,12 @@
         <translation>Пресет стиля «{0}» изменился после создания пакета.</translation>
     </message>
     <message>
-        <location line="+126"/>
+        <location line="+169"/>
         <source>Segment {0}</source>
         <translation>Участок {0}</translation>
     </message>
     <message>
-        <location line="+70"/>
+        <location line="+102"/>
         <source>Layered {0}/{1} segments</source>
         <translation>Разбито на слои: {0}/{1} участков</translation>
     </message>
@@ -1506,7 +1570,22 @@
         <translation>разбиение… можно остановить и продолжить позже</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+2"/>
+        <source>encoding</source>
+        <translation>кодирование</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>denoising</source>
+        <translation>шумоподавление</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>segment {0}: {1}</source>
+        <translation>сегмент {0}: {1}</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
         <translation>Перед разбиением на слои разрежьте кольцо на участки: сначала соберите, затем «Авторазрез».</translation>
     </message>
@@ -1536,7 +1615,7 @@
         <translation>сохранено изображений участков: {0}</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+42"/>
         <source>Generating seams…</source>
         <translation>Создание швов…</translation>
     </message>
@@ -1557,11 +1636,6 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>Rendering ring…</source>
-        <translation>Сборка кольца…</translation>
-    </message>
-    <message>
-        <location line="+2"/>
         <source>Applying the chosen seam…</source>
         <translation>Применяется выбранный шов…</translation>
     </message>
@@ -1574,6 +1648,16 @@
         <location line="+2"/>
         <source>Saving segments…</source>
         <translation>Сохранение участков…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Merging layers…</source>
+        <translation>Объединение слоёв…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Deleting the merged layer…</source>
+        <translation>Удаление объединённого слоя…</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -1596,7 +1680,7 @@
         <translation>{0} · зерно {1}</translation>
     </message>
     <message>
-        <location line="+121"/>
+        <location line="+143"/>
         <source>Nothing to export yet</source>
         <translation>Пока нечего экспортировать</translation>
     </message>
@@ -1931,7 +2015,7 @@
 <context>
     <name>RingCardBar</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="+157"/>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+237"/>
         <source>Add a screen. The same screen can be added again.</source>
         <translation>Добавить экран. Один и тот же экран можно добавить снова.</translation>
     </message>
@@ -1939,7 +2023,7 @@
 <context>
     <name>RingItemPicker</name>
     <message>
-        <location line="+114"/>
+        <location line="+166"/>
         <source>Add screens to the ring</source>
         <translation>Добавить экраны в цикл</translation>
     </message>
@@ -1952,7 +2036,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+135"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+146"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>Подготовьте не менее двух готовых сцен, затем спланируйте кольцо.</translation>
     </message>
@@ -2056,6 +2140,42 @@
         <location line="+0"/>
         <source>Confirm and voice</source>
         <translation>Подтвердить и озвучить</translation>
+    </message>
+</context>
+<context>
+    <name>SeamLink</name>
+    <message>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="-239"/>
+        <source>Generating seam… {0}%</source>
+        <translation>Создание шва… {0}%</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Seam: not generated yet</source>
+        <translation>Шов: ещё не создан</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seam: has candidates, none adopted</source>
+        <translation>Шов: есть варианты, ни один не принят</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seam: adopted</source>
+        <translation>Шов: принят</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seam: source image changed, redo it</source>
+        <translation>Шов: исходное изображение изменилось, создайте заново</translation>
+    </message>
+</context>
+<context>
+    <name>SegmentProgressBar</name>
+    <message>
+        <location filename="../../src/app/ui/library/segment_progress.py" line="+41"/>
+        <source>Segment {0}</source>
+        <translation>Сегмент {0}</translation>
     </message>
 </context>
 <context>
