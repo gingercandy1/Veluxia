@@ -49,6 +49,21 @@ QFrame#ring_card:hover {
     border-color: #35434f;
 }
 
+QFrame#ring_card[active="true"] {
+    border: 2px solid #ffd666;
+}
+
+QProgressBar#ring_card_progress {
+    border: none;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+QProgressBar#ring_card_progress::chunk {
+    border-radius: 2px;
+    background-color: #ffd666;
+}
+
 QLabel#ring_card_thumb {
     background-color: rgba(255, 255, 255, 0.04);
     border-radius: 3px;

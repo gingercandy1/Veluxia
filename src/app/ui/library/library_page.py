@@ -7,7 +7,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QSize, QStandardPaths, Qt, QTimer, QUrl
+from PySide6.QtCore import QSize, QStandardPaths, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QImage, QPixmap
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox, QStackedWidget, QWidget
 
@@ -85,6 +85,7 @@ def export_file_name(name: str) -> str:
 class LibraryPage(BaseWidget):
     """资料库：花园（分类卡片墙）→ 打开资源包（树 + 素材卡片 + 详情），另有新建表单。
     全部请求都在 LibraryTaskWorker 里执行；执行中每两秒拉一次资源包列表，所有视图都从它刷新。"""
+    ring_progress = Signal(str, float)      # 接缝 key, 0~1：worker 线程发，主线程更新卡片进度条
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -152,6 +153,7 @@ class LibraryPage(BaseWidget):
             lambda indices: self._run_ring_action("layers", indices=indices))
         self.detail.ring_segment_requested.connect(self._load_segment_images)
         self.detail.ring_layer_opened.connect(self._open_ring_file)
+        self.ring_progress.connect(self.detail.set_ring_progress)
         self.detail.ring_adopt_requested.connect(
             lambda key, candidate_id: self._run_ring_action("adopt", key, candidate_id))
         self.detail.ring_redo_requested.connect(
@@ -399,11 +401,16 @@ class LibraryPage(BaseWidget):
             status_text += "\n" + self.tr("Not rendered yet")
         return before, after, status_text, status
 
+    def _emit_ring_progress(self, progress: dict):
+        """在 worker 线程里被调用：经信号排队回主线程再更新卡片，不直接碰控件。"""
+        self.ring_progress.emit(progress["key"], float(progress["fraction"]))
+
     def _redo_seam(self, pack_id: str, key: str, extra: str, stop_event: threading.Event):
         """重做一个接缝并立刻采用、合成：用户点"重做"就是想马上在滚动条里看到新结果，
         不满意再用候选下拉换回旧的。"""
         response = self._client.generate_ring(
-            pack_id, stop_event=stop_event, keys=[key], extra_prompt=extra or None)
+            pack_id, stop_event=stop_event, keys=[key], extra_prompt=extra or None,
+            on_progress=self._emit_ring_progress)
         if not response.ok:
             return response
         status = self._client.ring_status(pack_id)
@@ -490,7 +497,7 @@ class LibraryPage(BaseWidget):
         kwargs = {}
         if action == "generate":
             fn, args, kwargs = self._client.generate_ring, (self._ring_pack_id,), {
-                "stop_event": self._ring_stop}
+                "stop_event": self._ring_stop, "on_progress": self._emit_ring_progress}
         elif action == "redo":
             fn, args = self._redo_seam, (self._ring_pack_id, key, argument, self._ring_stop)
         elif action == "adopt":

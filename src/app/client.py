@@ -211,6 +211,7 @@ class ApiClient:
         max_total_wait_seconds: float = 2 * 3600,
         stop_event: Optional[threading.Event] = None,
         on_partial=None,
+        on_progress=None,
     ) -> BaseResponse:
         """
         图片/动画/语音生成耗时不固定（从几秒到几十分钟不等），不能再用一次性
@@ -276,6 +277,8 @@ class ApiClient:
             if on_partial is not None and len(partial) > seen_partial:
                 new_items, seen_partial = partial[seen_partial:], len(partial)
                 on_partial(new_items)
+            if on_progress is not None and status_json.get("progress"):
+                on_progress(status_json["progress"])
             if status == "done":
                 return response_cls.model_validate(status_json.get("result") or {})
             if status == "error":
@@ -437,8 +440,10 @@ class ApiClient:
 
     def generate_ring(self, pack_id: str, stop_event: Optional[threading.Event] = None,
                       keys: Optional[list[str]] = None,
-                      extra_prompt: Optional[str] = None) -> PackResponse:
-        """keys 为空时生成所有还没采用或已失效的接缝；重做单个接缝传它的 key。"""
+                      extra_prompt: Optional[str] = None,
+                      on_progress=None) -> PackResponse:
+        """keys 为空时生成所有还没采用或已失效的接缝；重做单个接缝传它的 key。
+        on_progress(dict)：轮询到的当前接缝进度 {"key", "fraction"}，在调用线程里被调用。"""
         request = RingGenerateRequest(pack_id=pack_id, keys=keys, extra_prompt=extra_prompt)
         return self._submit_and_poll(
             "/library/ring/generate",
@@ -446,6 +451,7 @@ class ApiClient:
             PackResponse,
             stop_event=stop_event,
             max_total_wait_seconds=24 * 3600,
+            on_progress=on_progress,
         )
 
     def render_ring(self, pack_id: str) -> PackResponse:

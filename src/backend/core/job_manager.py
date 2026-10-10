@@ -28,6 +28,9 @@ class Job:
         self.cancel_event = threading.Event()
         # 已经产出的中间结果（如多图批量生成时先完成的那几张），前端轮询时可提前展示。
         self.partial: list[str] = []
+        # 当前正在做的那一项的进度（如循环拼接 {"key": 接缝, "fraction": 0~1}），
+        # 由具体 handler 写、前端轮询时读；None 表示这类任务不报进度。
+        self.progress: Optional[Dict[str, Any]] = None
 
 
 class JobManager:

@@ -409,6 +409,7 @@ class PackDetail(BaseWidget):
         self.ring_cards.add_requested.connect(self._on_add_card)
         self.ring_cards.remove_requested.connect(self._on_remove_card)
         self.ring_cards.reordered.connect(self._set_ring_cards)
+        self.ring_cards.card_selected.connect(self._on_card_selected)
         ring_layout.addWidget(self.ring_cards)
 
         # 拼接前/后：浮在条带右上角，点哪个切哪张图，切换时保持画面位置不动
@@ -737,6 +738,9 @@ class PackDetail(BaseWidget):
                 if (state := item.steps.get(RING_SOURCE_STEP)) is not None
                 and state.status == "done"]
 
+    def _on_card_selected(self, index: int):
+        self.ring_strip.set_active_image(index)
+
     def _refresh_ring_cards(self):
         ready = {item.id: item for item in self._ready_items()}
         # 条目被删或重做后不再可用：从卡片里拿掉（后端那边的环由下一次状态刷新纠正）
@@ -744,6 +748,8 @@ class PackDetail(BaseWidget):
         self.ring_cards.set_cards([
             (item_id, f"{item_title(ready[item_id])}\n{ready[item_id].prompt}")
             for item_id in self._ring_cards])
+        # 卡片重建会清掉激活态，条带上的黄框跟着同步
+        self.ring_strip.set_active_image(self.ring_cards.active(), focus=False)
         self._update_ring_cards_state()
 
     def _set_ring_cards(self, order: list[str]):
@@ -905,8 +911,20 @@ class PackDetail(BaseWidget):
         if key == self._seam_key:
             self._update_seam_preview()
 
+    def set_ring_progress(self, key: str, fraction: float):
+        """生成接缝时在对应卡片上显示进度。接缝归左屏：画在 key 左边那屏的卡片上；
+        同一对相邻屏在环里出现多次时，每处都画。"""
+        left, right = key.split(">", 1)
+        count = len(self._ring_order)
+        self.ring_cards.clear_progress()
+        for index, item_id in enumerate(self._ring_order):
+            if item_id == left and self._ring_order[(index + 1) % count] == right:
+                self.ring_cards.set_progress(index, fraction)
+
     def set_ring_running(self, running: bool, layering: bool = False):
         """layering：这次长任务是分层（不是生成接缝），状态文字和进度显示不同。"""
+        if not running:
+            self.ring_cards.clear_progress()
         self._ring_running = running
         self._ring_layering = running and layering
         for button in (self.ring_plan_btn, self.ring_generate_btn, self.ring_render_btn):

@@ -140,6 +140,24 @@ def test_ring_cards_add_repeat_remove_and_send_the_order(qapp):
     assert detail.ring_card_ids() == ["screen2", "screen0", "screen1"]
 
 
+def test_seam_progress_shows_on_the_left_screen_card_and_clears_when_done(qapp):
+    detail = PackDetail()
+    pack, template = _scene_pack(item_count=3)
+    detail.show_pack(pack, template, busy=False)
+    detail.set_ring([], [], "", RingStatusResponse(order=["screen0", "screen1", "screen2"]))
+    cards = detail.ring_cards._cards
+
+    detail.set_ring_running(True)
+    detail.set_ring_progress("screen1>screen2", 0.5)
+    assert [card.progress.isHidden() for card in cards] == [True, False, True]
+    assert cards[1].progress.value() == 50
+    # 换到下一条接缝：只留当前这一条
+    detail.set_ring_progress("screen2>screen0", 0.2)
+    assert [card.progress.isHidden() for card in cards] == [True, True, False]
+    detail.set_ring_running(False)
+    assert all(card.progress.isHidden() for card in cards)
+
+
 def test_ring_cards_drag_moves_a_card_to_the_slot_under_the_drop(qapp):
     bar = RingCardBar()
     bar.set_cards([("a", ""), ("b", ""), ("c", "")])
@@ -411,7 +429,8 @@ class _FakeRingClient:
         self.calls = []
         self.fail_at = fail_at
 
-    def generate_ring(self, pack_id, stop_event=None, keys=None, extra_prompt=None):
+    def generate_ring(self, pack_id, stop_event=None, keys=None, extra_prompt=None,
+                      on_progress=None):
         self.calls.append(("generate", keys, extra_prompt))
         return PackResponse.from_error("boom") if self.fail_at == "generate" else PackResponse()
 

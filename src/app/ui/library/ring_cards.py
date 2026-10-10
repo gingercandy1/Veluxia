@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
+    QProgressBar,
     QPushButton,
     QScrollArea,
     QToolButton,
@@ -37,6 +38,7 @@ class RingCard(QFrame):
     """一张卡片 = 环上的一个位置。"""
     remove_clicked = Signal(object)
     drag_started = Signal(object)
+    clicked = Signal(object)
 
     def __init__(self, item_id: str, tooltip: str, parent=None):
         super().__init__(parent)
@@ -66,6 +68,19 @@ class RingCard(QFrame):
         self.remove_btn.clicked.connect(lambda: self.remove_clicked.emit(self))
         footer.addWidget(self.remove_btn)
         layout.addLayout(footer)
+        self.progress = QProgressBar()
+        self.progress.setObjectName("ring_card_progress")
+        self.progress.setRange(0, 100)
+        self.progress.setTextVisible(False)
+        self.progress.setFixedHeight(4)
+        self.progress.hide()
+        layout.addWidget(self.progress)
+
+    def set_progress(self, fraction: float | None):
+        """None 隐藏进度条；0~1 显示该接缝（归左屏）的生成进度。"""
+        self.progress.setVisible(fraction is not None)
+        if fraction is not None:
+            self.progress.setValue(round(fraction * 100))
 
     def set_position(self, position: int):
         # 序号 = 在环上的第几屏；同一屏出现多次时靠它区分
@@ -94,8 +109,16 @@ class RingCard(QFrame):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        # 按下后没拖起来（拖动时 _press_pos 已清空）就算点击
+        if event.button() == Qt.MouseButton.LeftButton and self._press_pos is not None:
+            self.clicked.emit(self)
         self._press_pos = None
         super().mouseReleaseEvent(event)
+
+    def set_active(self, active: bool):
+        self.setProperty("active", active)
+        self.style().unpolish(self)
+        self.style().polish(self)
 
 
 class _CardHost(QWidget):
@@ -133,6 +156,7 @@ class RingCardBar(QScrollArea):
     add_requested = Signal()
     remove_requested = Signal(int)          # 卡片序号
     reordered = Signal(list)                # 换位后从左到右的条目 id
+    card_selected = Signal(int)             # 点中的卡片序号
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -146,6 +170,7 @@ class RingCardBar(QScrollArea):
         self._key: list = []
         self._cards: list[RingCard] = []
         self._thumbs: dict[str, QPixmap] = {}
+        self._active = -1
         self._host = _CardHost(self)
         self._layout = QHBoxLayout(self._host)
         self._layout.setContentsMargins(0, 4, 0, 4)
@@ -184,9 +209,36 @@ class RingCardBar(QScrollArea):
                 card.set_thumb(thumb)
             card.remove_clicked.connect(self._on_remove)
             card.drag_started.connect(self._start_drag)
+            card.clicked.connect(self._on_card_clicked)
             self._layout.insertWidget(position, card)
             self._cards.append(card)
+        # 增删 / 换位后序号对应的卡片变了，旧的激活态不再有意义
+        self.set_active(-1)
         self._apply_state()
+
+    def set_active(self, index: int):
+        """高亮第 index 张卡片（-1 取消）。"""
+        self._active = index if 0 <= index < len(self._cards) else -1
+        for position, card in enumerate(self._cards):
+            card.set_active(position == self._active)
+
+    def set_progress(self, index: int, fraction: float | None):
+        """给第 index 张卡片设进度条（None 隐藏）；其余卡片的进度条不动。"""
+        if 0 <= index < len(self._cards):
+            self._cards[index].set_progress(fraction)
+
+    def clear_progress(self):
+        for card in self._cards:
+            card.set_progress(None)
+
+    def active(self) -> int:
+        return self._active
+
+    def _on_card_clicked(self, card: RingCard):
+        if card in self._cards:
+            index = self._cards.index(card)
+            self.set_active(index)
+            self.card_selected.emit(index)
 
     def set_thumb(self, item_id: str, pixmap: QPixmap):
         self._thumbs[item_id] = pixmap

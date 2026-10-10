@@ -288,13 +288,14 @@
         "dir": "qwen-image-edit-2509"
       },
       "offload": {
-        "type": "leaf_level",
-        "blocks_per_group": 1,
-        "use_stream": false
+        "type": "block_level",
+        "blocks_per_group": 4,
+        "use_stream": false,
+        "leaf_components": ["vae"]
       },
       "defaults": {
         "num_inference_steps": 20,
-        "true_cfg_scale": 4.0,
+        "true_cfg_scale": 1.0,
         "resolution": 640
       },
       "library_only": true,

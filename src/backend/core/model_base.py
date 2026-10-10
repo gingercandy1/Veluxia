@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from abc import ABC, abstractmethod, ABCMeta
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Callable, List, Dict, Any, Optional
 
 from src.backend.core.exceptions import GenerationCancelled, GeneratorBusyError
 from src.backend.core.model_utils import get_device
@@ -63,6 +63,9 @@ class BaseGenerator(ABC, metaclass=SingletonMeta):
         self.model_name = model_name
         # 由 Router 在拿到 Job 后注入；None 表示这次调用不支持/不需要取消。
         self.cancel_event: Optional[threading.Event] = None
+        # 单次推理的进度（0~1）回调，由调用方按需注入（如循环拼接的接缝卡片进度条）；
+        # 生成器在去噪回调里调 report_progress()，没注入时什么都不做。
+        self.progress_callback: Optional[Callable[[float], None]] = None
         # 模型就绪前的分阶段进度，前端据此显示"下载 42%"/"加载模型中"。
         # 加载跑在线程池里，路由那边靠读这个字典来推送进度。
         self.load_stage: Dict[str, Any] = {"stage": "idle", "progress": 0.0, "detail": ""}
@@ -134,6 +137,10 @@ class BaseGenerator(ABC, metaclass=SingletonMeta):
         """在生成循环的可中断点调用：用户点了停止就在这里抛出，中断当前推理。"""
         if self.cancel_event is not None and self.cancel_event.is_set():
             raise GenerationCancelled()
+
+    def report_progress(self, fraction: float):
+        if self.progress_callback is not None:
+            self.progress_callback(min(1.0, max(0.0, fraction)))
 
     def make_cancel_callback(self):
         """

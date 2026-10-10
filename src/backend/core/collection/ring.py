@@ -1,7 +1,9 @@
 """资源包级循环接缝规划、候选生成、采用和成品回贴。"""
+import functools
 import random
 import shutil
 import threading
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -121,8 +123,10 @@ def _commit_order(directory: Path, manifest: Manifest, order_ids: list[str]) -> 
 def generate_seams(pack_id: str, keys: list[str] | None = None,
                    prompt_override: str | None = None,
                    cancel_event: threading.Event | None = None,
-                   extra_prompt: str | None = None) -> Manifest:
-    """按需生成接缝候选；一次持有模型租约，逐缝保存进度以便失败后续跑。"""
+                   extra_prompt: str | None = None,
+                   on_progress: Callable[[str, float], None] | None = None) -> Manifest:
+    """按需生成接缝候选；一次持有模型租约，逐缝保存进度以便失败后续跑。
+    on_progress(接缝 key, 0~1)：当前这条接缝的推理进度，界面据此在对应卡片上画进度条。"""
     directory = library.pack_dir(pack_id)
     cancel_event = cancel_event or threading.Event()
     with library._claim(pack_id):
@@ -171,6 +175,9 @@ def generate_seams(pack_id: str, keys: list[str] | None = None,
                         if prompt_override and prompt_override.strip():
                             prompt = prompt_override.strip()
                         seed = random.randint(0, 2**31 - 1)
+                        if on_progress is not None:
+                            on_progress(key, 0.0)
+                            generator.progress_callback = functools.partial(on_progress, key)
                         with Image.open(source_paths[left_id]) as left_image, \
                                 Image.open(source_paths[right_id]) as right_image:
                             window = build_window(left_image, right_image)
@@ -203,6 +210,7 @@ def generate_seams(pack_id: str, keys: list[str] | None = None,
                         save_manifest(directory, manifest)
                 finally:
                     generator.cancel_event = None
+                    generator.progress_callback = None
         except Exception:
             # 每个成功接缝已单独落盘；此处再写一次，确保失败不会丢失已经推进的状态。
             save_manifest(directory, manifest)

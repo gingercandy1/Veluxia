@@ -296,8 +296,12 @@ class ZImageGenerator(BaseImageGenerator):
                     generator=torch.Generator(device="cpu").manual_seed(seed + 1),
                 )
 
-                def keep_known(pipeline, _step_index, _timestep, callback_kwargs):
+                # 重画和随后的协调是两遍各 9 步的推理，进度按两遍平分（没有协调时只有一遍）
+                passes = 2 if harmonize > 0 else 1
+
+                def keep_known(pipeline, step_index, _timestep, callback_kwargs):
                     self.check_cancelled()
+                    self.report_progress((step_index + 1) / 9 / passes)
                     latents = callback_kwargs["latents"]
                     sigma = float(pipeline.scheduler.sigmas[pipeline.scheduler.step_index])
                     known = ((1 - sigma) * known_latents + sigma * noise).to(
@@ -334,6 +338,12 @@ class ZImageGenerator(BaseImageGenerator):
                 if harmonize <= 0:
                     return inpainted, None
                 self.check_cancelled()
+
+                def harmonize_step(_pipeline, step_index, _timestep, callback_kwargs):
+                    self.check_cancelled()
+                    self.report_progress(0.5 + (step_index + 1) / 9 / 2)
+                    return callback_kwargs
+
                 harmonized = pipe(
                     prompt=prompt,
                     image=inpainted,
@@ -343,7 +353,7 @@ class ZImageGenerator(BaseImageGenerator):
                     num_inference_steps=9,
                     guidance_scale=0.0,
                     generator=torch.Generator(device="cpu").manual_seed(seed + 100),
-                    callback_on_step_end=self.make_cancel_callback(),
+                    callback_on_step_end=harmonize_step,
                 ).images[0]
                 return inpainted, harmonized
         finally:

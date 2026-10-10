@@ -254,6 +254,7 @@ class _FakeGenerator:
         self.counts_before_call = []
         self.fail_after = fail_after
         self.cancel_event = None
+        self.progress_callback = None
 
     def ensure_model_loaded(self):
         pass
@@ -264,6 +265,8 @@ class _FakeGenerator:
 
     def repaint_seam(self, window, prompt, seed, harmonize):
         self.calls.append((prompt, seed, harmonize))
+        if self.progress_callback is not None:
+            self.progress_callback(0.5)
         manifest = load_manifest(self.directory)
         self.counts_before_call.append(
             sum(len(state.candidates) for state in manifest.ring.seams.values()))
@@ -304,6 +307,21 @@ def test_generate_candidates_prunes_old_files_and_saves_each_seam(tmp_path, monk
     assert not (directory / "ring" / key.replace(">", "_") / "c2.png").exists()
     assert all((directory / candidate.file).is_file() for candidate in state.candidates)
     assert load_manifest(directory).ring.seams[key].adopted == "c1"
+
+
+def test_generate_reports_progress_per_seam_and_detaches_the_callback(tmp_path, monkeypatch):
+    directory, _ = _make_pack(tmp_path, monkeypatch)
+    manifest = ring.plan_ring("pack")
+    keys = [f"{manifest.ring.order[index]}>{manifest.ring.order[(index + 1) % 3]}"
+            for index in range(2)]
+    fake = _FakeGenerator(directory)
+    _mock_generator(monkeypatch, fake)
+    events = []
+    ring.generate_seams("pack", keys, cancel_event=threading.Event(),
+                        on_progress=lambda key, fraction: events.append((key, fraction)))
+    assert events == [(keys[0], 0.0), (keys[0], 0.5), (keys[1], 0.0), (keys[1], 0.5)]
+    # 单驻留的生成器会被下一个任务复用：回调不能留着指向已结束的任务
+    assert fake.progress_callback is None
 
 
 def test_failed_generation_keeps_completed_seam_progress(tmp_path, monkeypatch):

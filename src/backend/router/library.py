@@ -288,9 +288,12 @@ class LibraryRouter(BaseRouter):
         return self._pack_response(manifest)
 
     async def handle_ring_generate(self, req: RingGenerateRequest, job: Job) -> PackResponse:
+        def report(key: str, fraction: float):
+            job.progress = {"key": key, "fraction": fraction}
+
         manifest = await asyncio.to_thread(
             ring.generate_seams, req.pack_id, req.keys, req.prompt, job.cancel_event,
-            extra_prompt=req.extra_prompt)
+            extra_prompt=req.extra_prompt, on_progress=report)
         return self._pack_response(manifest)
 
     async def handle_ring_cuts(self, req: RingCutsRequest, job: Job) -> PackResponse:

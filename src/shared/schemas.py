@@ -92,6 +92,7 @@ class JobStatusResponse(BaseModel):
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     partial: List[str] = Field(default_factory=list, description="已产出的中间结果（媒体 URL）")
+    progress: Optional[Dict[str, Any]] = Field(default=None, description="当前这一项的进度")
 
 
 # 资料库 / 资源包（ADR 0004）：manifest 是资源包进度的唯一来源，前后端都按这套结构解析

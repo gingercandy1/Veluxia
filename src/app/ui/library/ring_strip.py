@@ -43,6 +43,8 @@ class RingStrip(BaseWidget):
         self._pan_y = 0.0
         self._zoom = 1.0
         self._selected = -1
+        # 卡片条上点中的那一屏：在条带里用黄框圈出来（和选中的接缝线同色）
+        self._active_image = -1
         # 中键平移：按下时的鼠标位置与视角；左键点击：按下时的 x
         self._pan_start: tuple[float, float] | None = None
         self._drag_origin = (0.0, 0.0)
@@ -73,6 +75,8 @@ class RingStrip(BaseWidget):
         self._images = [image for image in images if not image.isNull()]
         if self._selected >= len(self._images):
             self._selected = -1
+        if self._active_image >= len(self._images):
+            self._active_image = -1
         # 视角（偏移、纵向平移）保留：前后切换、轮询刷新都不该把画面拉回起点，换资源包时才 reset_view
         self._cache_key = None
         self.update()
@@ -145,6 +149,7 @@ class RingStrip(BaseWidget):
         bottom = top + self._image_height
         seam_pen = QPen(QColor(123, 157, 188, 150), 1)
         selected_pen = QPen(QColor(255, 214, 102), 2)
+        active_pen = QPen(QColor(255, 214, 102), 3)
         self._seam_hits = []
         while x < self.width():
             pixmap = self._pixmaps[index]
@@ -158,6 +163,9 @@ class RingStrip(BaseWidget):
             # 接缝线只画在两张图相接的那段高度上，不画满整个控件
             painter.setPen(selected_pen if seam == self._selected else seam_pen)
             painter.drawLine(position, top, position, bottom)
+            if index == self._active_image:
+                painter.setPen(active_pen)
+                painter.drawRect(QRectF(x + 1.5, top + 1.5, width - 3, self._image_height - 3))
             x += width
             index = (index + 1) % len(self._pixmaps)
         self._paint_cuts(painter, offset, top, bottom)
@@ -188,6 +196,20 @@ class RingStrip(BaseWidget):
 
     def selected_seam(self) -> int:
         return self._selected
+
+    def set_active_image(self, index: int, focus: bool = True):
+        """给第 index 张图加黄框（-1 取消）；focus 时把它平移到控件中央，免得它在可视区外。"""
+        self._active_image = index if 0 <= index < len(self._images) else -1
+        if focus and self._active_image >= 0:
+            self._ensure_pixmaps()
+            if self._total_width:
+                start = sum(self._widths[:self._active_image])
+                center = start + self._widths[self._active_image] / 2
+                self._offset = (center - self.width() / 2) % self._total_width
+        self.update()
+
+    def active_image(self) -> int:
+        return self._active_image
 
     def _clamp_pan_y(self):
         self._pan_y = min(self.height() - PAN_MARGIN,
