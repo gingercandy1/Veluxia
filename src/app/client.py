@@ -470,11 +470,14 @@ class ApiClient:
                                      PackResponse, stop_event=stop_event)
 
     def layer_ring(self, pack_id: str, stop_event: Optional[threading.Event] = None,
-                   indices: Optional[list[int]] = None) -> PackResponse:
-        """每段约 18 分钟，十几段要几个小时；indices 为空时只做还没分层的段。"""
+                   indices: Optional[list[int]] = None, on_progress=None) -> PackResponse:
+        """每段约 18 分钟，十几段要几个小时；indices 为空时只做还没分层的段。
+        on_progress(dict)：RingLayerProgress 的字段 {"stage", "index", "remaining"}，
+        在调用线程里被调用。"""
         request = RingLayersRequest(pack_id=pack_id, indices=indices)
         return self._submit_and_poll("/library/ring/layers", request.model_dump(), PackResponse,
-                                     stop_event=stop_event, max_total_wait_seconds=24 * 3600)
+                                     stop_event=stop_event, max_total_wait_seconds=24 * 3600,
+                                     on_progress=on_progress)
 
     def confirm_ring_cuts(self, pack_id: str, cuts: list[int]) -> PackResponse:
         return self._post(f"/library/packs/{pack_id}/ring/cuts",

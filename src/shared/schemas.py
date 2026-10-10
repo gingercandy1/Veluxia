@@ -321,6 +321,13 @@ class RingLayersRequest(BaseModel):
         None, description="要重做的段序号（从 0 起）；为空时只做还没分层或已失效的段")
 
 
+class RingLayerProgress(BaseModel):
+    """分层任务经 job.progress 轮询回传的进度；序号都是段在 ring.segments 里的位置。"""
+    stage: str = Field(description="encode 或 denoise")
+    index: int = Field(description="正在处理的段")
+    remaining: List[int] = Field(description="包含当前段在内、还没做完的段")
+
+
 class ConfirmCutsRequest(BaseModel):
     cuts: List[int]
 
@@ -370,6 +377,8 @@ class TemplateStepInfo(BaseModel):
     inputs: List[str] = Field(default_factory=list, description="上游步骤 id，界面按它算素材的执行流程")
     when: str = Field("", description="条件字段 id：该字段不满足 condition_met 时这一步跳过；"
                                         "前缀 ! 表示满足时跳过；空表示总是执行")
+    overlay_of: str = Field("", description="非空时这一步是该交付步骤的附加视图（如整图的分层）："
+                                              "界面不单独出卡片，挂在那张卡片上切换")
 
 
 class TemplatePresetInfo(BaseModel):

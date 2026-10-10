@@ -141,6 +141,13 @@ def test_scene_template_merges_layering_into_one_template(tmp_path):
     CollectionExecutor(tmp_path, template)
 
 
+def test_layers_are_an_overlay_of_the_whole_scene_card():
+    template = load_template("scene_background")
+    # 分层挂在整图卡片上切换，不单独出卡片
+    assert template.step("layers").overlay_of == "upscale"
+    assert template.step("upscale").overlay_of == ""
+
+
 def test_old_scene_templates_are_gone():
     for template_id in ("scene_ground", "scene_parallax"):
         with pytest.raises(ValueError, match="模板不存在"):

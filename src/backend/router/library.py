@@ -30,6 +30,7 @@ from src.shared.schemas import (
     ResetStepRequest,
     RingCutsRequest,
     RingGenerateRequest,
+    RingLayerProgress,
     RingLayersRequest,
     RingOrderRequest,
     RingPlanRequest,
@@ -301,9 +302,14 @@ class LibraryRouter(BaseRouter):
         return self._pack_response(manifest)
 
     async def handle_ring_layers(self, req: RingLayersRequest, job: Job) -> PackResponse:
+        def report(stage: str, index: int, remaining: list[int]):
+            job.progress = RingLayerProgress(
+                stage=stage, index=index, remaining=remaining).model_dump()
+
         # 生成器内部用 asyncio.run 驱动，必须放到没有事件循环的线程里
         manifest = await asyncio.to_thread(
-            ring.layer_segments, req.pack_id, req.indices, job.cancel_event)
+            ring.layer_segments, req.pack_id, req.indices, job.cancel_event,
+            on_progress=report)
         return self._pack_response(manifest)
 
     @staticmethod
@@ -332,7 +338,8 @@ class LibraryRouter(BaseRouter):
             step_details=[
                 TemplateStepInfo(id=step.id, type=step.type, label=step.label,
                                  deliverable=step.deliverable, review=step.review,
-                                 inputs=list(step.inputs), when=step.when)
+                                 inputs=list(step.inputs), when=step.when,
+                                 overlay_of=step.overlay_of)
                 for step in template.steps
             ],
         )

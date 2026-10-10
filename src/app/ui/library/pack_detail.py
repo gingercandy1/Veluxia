@@ -31,6 +31,8 @@ from src.app.ui.library.flow_layout import FlowLayout
 from src.app.ui.library.pack_status import (
     MEDIA_ORDER,
     asset_progress,
+    card_step_id,
+    card_steps,
     category_icon,
     category_text,
     deliverables,
@@ -38,18 +40,21 @@ from src.app.ui.library.pack_status import (
     media_kind,
     media_text,
     ordered_categories,
+    overlay_step,
     pack_progress,
     status_text,
     step_chain,
     step_fraction,
     step_skipped,
 )
-from src.app.ui.library.ring_cards import RingCardBar, RingItemPicker
+from src.app.ui.library.ring_cards import RingCardBar, RingItemPicker, SeamLinkState
 from src.app.ui.library.ring_strip import RingStrip
+from src.app.ui.library.segment_progress import SegmentProgressBar, SegmentState
 from src.app.ui.message.image_preview import ImagePreviewOverlay
 from src.shared.schemas import (
     CollectionItem,
     PackResponse,
+    RingLayerProgress,
     RingStatusResponse,
     StylePreset,
     TemplateInfo,
@@ -203,7 +208,6 @@ class PackDetail(BaseWidget):
         # 卡片条上从左到右的条目 id（同一屏可重复）。后端已有环时等于 _ring_order；
         # 还没凑够两屏时只存在这里，等第二张卡片加进来才发给后端
         self._ring_cards: list[str] = []
-        self._member_thumbs: dict[str, QPixmap] = {}
         # 后端存的切点；条带上的切点被拖过后和它不同，就是"还没确认"
         self._saved_cuts: list[int] = []
         self._cuts_stale = False
@@ -213,6 +217,9 @@ class PackDetail(BaseWidget):
         self._segment_layers: list[list[str]] = []
         self._segment_images: dict[str, QImage] = {}
         self._ring_layering = False
+        # 正在生成的接缝 (key, 0~1) 和分层任务回传的最新进度；任务结束即清空
+        self._seam_running: tuple[str, float] | None = None
+        self._layer_live: RingLayerProgress | None = None
         self._seam_key = ""
         self._candidate_images: dict[str, dict[str, QImage]] = {}
 
@@ -483,6 +490,8 @@ class PackDetail(BaseWidget):
         layer_head.addWidget(self.layer_redo_btn)
         layer_head.addWidget(self.layer_run_btn)
         layer_layout.addLayout(layer_head)
+        self.layer_bar = SegmentProgressBar()
+        layer_layout.addWidget(self.layer_bar)
         thumbs_row = QHBoxLayout()
         # 第一张是段图本身，后面是从底到顶的各层
         self.layer_thumbs = [LayerThumb() for _ in range(LAYER_COUNT + 1)]
@@ -601,6 +610,8 @@ class PackDetail(BaseWidget):
             self.center_stack.setCurrentIndex(0)
             # 接缝状态属于上一个包，换包后全部作废
             self._ring_order, self._ring_seams, self._ring_cards = [], {}, []
+            # 缩略图按条目 id 记，不同包的 id 会重名；也避免旧包的图一直占着内存
+            self.ring_cards.clear_thumbs()
             self._seam_key, self._candidate_images = "", {}
             self._saved_cuts, self._cuts_stale, self._segment_count = [], False, 0
             self._segments, self._segment_layers, self._segment_images = [], [], {}
@@ -729,9 +740,9 @@ class PackDetail(BaseWidget):
     def ring_plan_ids(self) -> list[str]:
         """自动排序用的屏：卡片条上的屏去重；条上还没有卡片时用全部可用的屏。"""
         chosen = list(dict.fromkeys(self._ring_cards))
-        return chosen or [item.id for item in self._ready_items()]
+        return chosen or [item.id for item in self.ready_items()]
 
-    def _ready_items(self) -> list[CollectionItem]:
+    def ready_items(self) -> list[CollectionItem]:
         """generate 已完成的条目：只有它们能进环。"""
         items = self.pack.manifest.items if self.pack is not None else []
         return [item for item in items
@@ -742,7 +753,7 @@ class PackDetail(BaseWidget):
         self.ring_strip.set_active_image(index)
 
     def _refresh_ring_cards(self):
-        ready = {item.id: item for item in self._ready_items()}
+        ready = {item.id: item for item in self.ready_items()}
         # 条目被删或重做后不再可用：从卡片里拿掉（后端那边的环由下一次状态刷新纠正）
         self._ring_cards = [item_id for item_id in self._ring_cards if item_id in ready]
         self.ring_cards.set_cards([
@@ -750,7 +761,29 @@ class PackDetail(BaseWidget):
             for item_id in self._ring_cards])
         # 卡片重建会清掉激活态，条带上的黄框跟着同步
         self.ring_strip.set_active_image(self.ring_cards.active(), focus=False)
+        self._refresh_seam_links()
         self._update_ring_cards_state()
+
+    def _seam_link_state(self, key: str) -> tuple[SeamLinkState, float]:
+        """key（左>右）这条接缝画成什么样：正在生成的优先，其次过期，再按候选 / 采用。"""
+        if self._seam_running is not None and self._seam_running[0] == key:
+            return SeamLinkState.RUNNING, self._seam_running[1]
+        seam = self._ring_seams.get(key)
+        if seam is None or not seam.candidates:
+            return SeamLinkState.NONE, 0.0
+        if seam.stale:
+            return SeamLinkState.STALE, 0.0
+        return (SeamLinkState.ADOPTED if seam.adopted else SeamLinkState.CANDIDATE), 0.0
+
+    def _refresh_seam_links(self):
+        """按卡片条上的相邻关系给每对相邻屏（含末尾回到开头）画接缝状态。"""
+        cards = self._ring_cards
+        if len(cards) < 2:
+            self.ring_cards.set_seam_links([])
+            return
+        self.ring_cards.set_seam_links([
+            self._seam_link_state(f"{cards[index]}>{cards[(index + 1) % len(cards)]}")
+            for index in range(len(cards))])
 
     def _set_ring_cards(self, order: list[str]):
         """卡片条上的改动（加、删、换位）：更新卡片，凑够两屏就立刻交给后端。"""
@@ -766,7 +799,7 @@ class PackDetail(BaseWidget):
 
     def _on_add_card(self):
         entries = [(item.id, item_title(item), f"{item_title(item)}\n{item.prompt}",
-                    self._member_thumbs.get(item.id)) for item in self._ready_items()]
+                    self.ring_cards.thumb(item.id)) for item in self.ready_items()]
         picker = RingItemPicker(entries, self)
         if picker.exec():
             self.add_ring_cards(picker.selected_ids())
@@ -835,21 +868,45 @@ class PackDetail(BaseWidget):
         if index >= 0:
             self.ring_layers_requested.emit([index])
 
-    def _layer_progress(self) -> tuple[int, int]:
-        """(已完成段数, 总段数)。分层要跑几个小时，进度直接从轮询刷新的 manifest 里算，
+    def _layer_done_flags(self) -> list[bool]:
+        """每段是否已分好层。分层要跑几个小时，直接从轮询刷新的 manifest 里算，
         不必每次都重取图。"""
         ring = self.pack.manifest.ring if self.pack is not None else None
         total = self.ring_strip.source_width()
         if ring is None or not ring.segments or not ring.cuts or not total:
             # manifest 还没带上切段（或条带还没有图）：用上次取到的状态
-            return sum(bool(layers) for layers in self._segment_layers), len(self._segments)
-        done = 0
+            return [bool(layers) for layers in self._segment_layers]
+        flags = []
         for start, width in zip(ring.cuts, segment_widths(ring.cuts, total)):
             state = ring.segment_layers.get(f"{start}+{width}")
-            if state is not None and state.source_sig == ring.cuts_sig \
-                    and len(state.layers) == LAYER_COUNT:
-                done += 1
-        return done, len(ring.segments)
+            flags.append(state is not None and state.source_sig == ring.cuts_sig
+                         and len(state.layers) == LAYER_COUNT)
+        return flags
+
+    def _layer_progress(self) -> tuple[int, int]:
+        """(已完成段数, 总段数)。"""
+        flags = self._layer_done_flags()
+        return sum(flags), len(flags)
+
+    def _segment_states(self) -> list[SegmentState]:
+        """分层进行中以任务回传的为准（当前段、剩余段），否则只看哪些段已经有图层。"""
+        live = self._layer_live
+        states = []
+        for index, done in enumerate(self._layer_done_flags()):
+            if live is not None and index == live.index:
+                states.append(SegmentState.RUNNING)
+            elif (live is not None and index in live.remaining) or not done:
+                states.append(SegmentState.PENDING)
+            else:
+                states.append(SegmentState.DONE)
+        return states
+
+    def _segment_bar_widths(self) -> list[int]:
+        ring = self.pack.manifest.ring if self.pack is not None else None
+        total = self.ring_strip.source_width()
+        if ring is None or not ring.cuts or not total:
+            return [1] * len(self._segments)
+        return segment_widths(ring.cuts, total)
 
     def _update_layer_controls(self):
         has_segments = bool(self._segments) and not self._cuts_stale
@@ -863,7 +920,13 @@ class PackDetail(BaseWidget):
             parts.append(self.tr("about {0} min left").format((total - done) * LAYER_MINUTES))
         if self._ring_layering:
             parts.append(self.tr("layering… you can stop and continue later"))
+            if self._layer_live is not None:
+                stage = (self.tr("encoding") if self._layer_live.stage == "encode"
+                         else self.tr("denoising"))
+                parts.append(self.tr("segment {0}: {1}").format(self._layer_live.index + 1, stage))
         self.layer_info.setText("  ·  ".join(parts))
+        self.layer_bar.set_segments(self._segment_bar_widths())
+        self.layer_bar.set_states(self._segment_states())
         self.layer_run_btn.setEnabled(idle and done < total)
         self.layer_redo_btn.setEnabled(idle and self.layer_segment_box.currentIndex() >= 0)
 
@@ -900,7 +963,7 @@ class PackDetail(BaseWidget):
 
     def _update_ring_cards_state(self):
         idle = not self._busy and not self._ring_running and self._ring_operation is None
-        ready = len(self._ready_items())
+        ready = len(self.ready_items())
         self.ring_plan_btn.setEnabled(idle and ready >= 2)
         # 环里只剩两屏时不能再删：后端要求至少两屏
         self.ring_cards.set_editable(
@@ -912,19 +975,21 @@ class PackDetail(BaseWidget):
             self._update_seam_preview()
 
     def set_ring_progress(self, key: str, fraction: float):
-        """生成接缝时在对应卡片上显示进度。接缝归左屏：画在 key 左边那屏的卡片上；
-        同一对相邻屏在环里出现多次时，每处都画。"""
-        left, right = key.split(">", 1)
-        count = len(self._ring_order)
-        self.ring_cards.clear_progress()
-        for index, item_id in enumerate(self._ring_order):
-            if item_id == left and self._ring_order[(index + 1) % count] == right:
-                self.ring_cards.set_progress(index, fraction)
+        """生成接缝时，key 这条接缝的连接器按进度填充；同一对相邻屏出现几次就都画。"""
+        self._seam_running = (key, fraction)
+        self._refresh_seam_links()
+
+    def set_layer_progress(self, progress: RingLayerProgress):
+        """分层任务回传的进度：给每段上色，并在说明里写当前段和阶段。"""
+        self._layer_live = progress
+        self._update_layer_controls()
 
     def set_ring_running(self, running: bool, layering: bool = False):
         """layering：这次长任务是分层（不是生成接缝），状态文字和进度显示不同。"""
         if not running:
-            self.ring_cards.clear_progress()
+            self._seam_running = None
+            self._layer_live = None
+            self._refresh_seam_links()
         self._ring_running = running
         self._ring_layering = running and layering
         for button in (self.ring_plan_btn, self.ring_generate_btn, self.ring_render_btn):
@@ -1044,33 +1109,40 @@ class PackDetail(BaseWidget):
         return sum(1 for card_item, _ in self._cards if card_item == item_id)
 
     def asset_card(self, item_id: str, step_id: str) -> Card | None:
-        return self._cards.get((item_id, step_id))
+        """step_id 可以是附加视图（如分层）的步骤：它和原图共用一张卡片。"""
+        return self._cards.get((item_id, card_step_id(self.template, step_id)))
 
     def set_asset_thumbnail(self, item_id: str, step_id: str, pixmap: QPixmap):
-        card = self._cards.get((item_id, step_id))
+        card = self.asset_card(item_id, step_id)
         if card is not None:
-            card.set_thumbnail(pixmap)
-        if step_id == RING_SOURCE_STEP:
-            self._member_thumbs[item_id] = pixmap
-            self.ring_cards.set_thumb(item_id, pixmap)
+            card.set_thumbnail(pixmap, layered=card_step_id(self.template, step_id) != step_id)
+
+    def set_ring_thumbnail(self, item_id: str, pixmap: QPixmap):
+        self.ring_cards.set_thumb(item_id, pixmap)
 
     def show_image(self, path: str) -> ImagePreviewOverlay:
         # 宿主是中间区域而不是整页：放大时右侧详情仍然可见
         return ImagePreviewOverlay(path, self.center)
 
     def select_asset(self, item_id: str, step_id: str):
-        previous = self._cards.get(self.selected) if self.selected else None
+        previous = self.asset_card(*self.selected) if self.selected else None
         if previous is not None:
             previous.set_selected(False)
         self.selected = (item_id, step_id)
-        card = self._cards.get(self.selected)
+        card = self.asset_card(item_id, step_id)
         if card is not None:
             card.set_selected(True)
+
+    def _shown_step(self, item_id: str, base_id: str) -> str:
+        """卡片当前展示的步骤：切到分层视图时是分层步骤，否则是原图步骤。"""
+        card = self._cards[(item_id, base_id)]
+        overlay = overlay_step(self.template, base_id)
+        return overlay.id if overlay is not None and card.is_layered() else base_id
 
     # ---- 素材卡片 ----
     def _asset_groups(self) -> list[tuple[str, list[tuple[CollectionItem, TemplateStepInfo]]]]:
         """按媒体分块的 (条目, 交付步骤)；跳过的步骤（如"不分层"条目的图层）不出卡片。"""
-        steps = deliverables(self.template)
+        steps = card_steps(self.template)
         groups = []
         for kind in MEDIA_ORDER:
             cards = [(item, step) for item in self.pack.manifest.items
@@ -1087,13 +1159,28 @@ class PackDetail(BaseWidget):
         if layout_key != self._layout_key:
             self._layout_key = layout_key
             self._rebuild_assets(groups)
-        for (item_id, step_id), card in self._cards.items():
+        for (item_id, base_id), card in self._cards.items():
+            overlay = overlay_step(self.template, base_id)
+            if overlay is not None:
+                item = next(i for i in items if i.id == item_id)
+                layers = item.steps.get(overlay.id)
+                card.set_layers_available(
+                    layers is not None and layers.status == "done" and bool(layers.outputs))
+                # 重建卡片后恢复切换：详情栏选中的是分层时，卡片也要停在分层视图
+                if self.selected == (item_id, overlay.id) and not card.layer_btn.isHidden():
+                    card.layer_btn.setChecked(True)
+        self._update_card_progress()
+        self._update_card_actions()
+
+    def _update_card_progress(self):
+        items = self.pack.manifest.items
+        for (item_id, base_id), card in self._cards.items():
             item = next(i for i in items if i.id == item_id)
-            progress = asset_progress(item, step_chain(self.template, step_id))
+            progress = asset_progress(
+                item, step_chain(self.template, self._shown_step(item_id, base_id)))
             # manifest 里残留的 running 不算：包真的在跑时才让卡片动起来
             card.set_progress(progress, f"{progress.done}/{progress.total}",
                               active=self.pack.running and progress.status == "running")
-        self._update_card_actions()
 
     def _update_card_actions(self):
         """导出要有已完成的产物；删除按钮的限制和后端一致，前端能判断的就直接置灰并说明原因。"""
@@ -1101,8 +1188,8 @@ class PackDetail(BaseWidget):
             return
         items = {item.id: item for item in self.pack.manifest.items}
         is_last = len(items) <= 1
-        for (item_id, step_id), card in self._cards.items():
-            state = items[item_id].steps.get(step_id)
+        for (item_id, base_id), card in self._cards.items():
+            state = items[item_id].steps.get(self._shown_step(item_id, base_id))
             card.export_btn.setEnabled(state is not None and state.status == "done"
                                        and bool(state.outputs))
             card.export_btn.setToolTip(
@@ -1141,8 +1228,9 @@ class PackDetail(BaseWidget):
             section_layout.addLayout(flow)
             self._sections.addWidget(section)
         self._sections.addStretch()
-        if self.selected in self._cards:
-            self._cards[self.selected].set_selected(True)
+        selected_card = self.asset_card(*self.selected) if self.selected else None
+        if selected_card is not None:
+            selected_card.set_selected(True)
 
     def _asset_card(self, kind: str, item_id: str, title: str, step: TemplateStepInfo,
                     steps_in_group: int) -> Card:
@@ -1151,17 +1239,33 @@ class PackDetail(BaseWidget):
         card = Card(ASSET_THUMB, placeholder, self.pack.manifest.type)
         # 同一块里一个条目有多个交付物时，名称带上步骤名区分
         card.set_name(f"{title} · {step.label or step.id}" if steps_in_group > 1 else title)
-        card.clicked.connect(lambda: self._on_card_clicked(item_id, step.id))
-        card.double_clicked.connect(lambda: self.asset_opened.emit(item_id, step.id))
+        card.clicked.connect(
+            lambda: self._on_card_clicked(item_id, self._shown_step(item_id, step.id)))
+        card.double_clicked.connect(
+            lambda: self.asset_opened.emit(item_id, self._shown_step(item_id, step.id)))
         card.add_actions()
-        card.export_requested.connect(lambda: self.asset_export_requested.emit(item_id, step.id))
+        card.export_requested.connect(lambda: self.asset_export_requested.emit(
+            item_id, self._shown_step(item_id, step.id)))
         card.delete_requested.connect(lambda: self.asset_delete_requested.emit(item_id))
+        if overlay_step(self.template, step.id) is not None:
+            card.add_layer_toggle()
+            card.layers_toggled.connect(lambda _on: self._on_layers_toggled(item_id, step.id))
         self._cards[(item_id, step.id)] = card
         return card
 
     def _on_card_clicked(self, item_id: str, step_id: str):
         self.select_asset(item_id, step_id)
         self.asset_selected.emit(item_id, step_id)
+
+    def _on_layers_toggled(self, item_id: str, base_id: str):
+        self._update_card_progress()
+        self._update_card_actions()
+        # 这张卡片正被选中：详情栏跟着换成当前展示的那一版
+        if self.selected is not None and self.asset_card(*self.selected) is self._cards[
+                (item_id, base_id)]:
+            shown = self._shown_step(item_id, base_id)
+            if self.selected[1] != shown:
+                self._on_card_clicked(item_id, shown)
 
     # ---- 树 ----
     def _select_tree_item(self):

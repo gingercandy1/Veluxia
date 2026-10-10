@@ -17,7 +17,7 @@ from src.app.ui.base.widget import BaseWidget
 from src.app.ui.library.cards import ASSET_THUMB, PACK_THUMB, Card
 from src.app.ui.library.detail_panel import PREVIEW_WIDTH, AssetKey
 from src.app.ui.library.garden import GardenView
-from src.app.ui.library.pack_detail import PackDetail
+from src.app.ui.library.pack_detail import RING_SOURCE_STEP, PackDetail
 from src.app.ui.library.pack_form import PAGE_BACKGROUND, PackForm
 from src.app.ui.library.pack_status import (
     AUDIO_SUFFIXES,
@@ -30,6 +30,7 @@ from src.app.ui.library.pack_status import (
     pack_cover,
     step_chain,
 )
+from src.app.ui.library.ring_cards import PICKER_THUMB
 from src.app.work import LibraryTaskWorker
 from src.shared.schemas import (
     AddItemsRequest,
@@ -41,6 +42,7 @@ from src.shared.schemas import (
     PackListResponse,
     PackResponse,
     ResetStepRequest,
+    RingLayerProgress,
     StyleListResponse,
     StylePreset,
     TemplateInfo,
@@ -85,7 +87,8 @@ def export_file_name(name: str) -> str:
 class LibraryPage(BaseWidget):
     """资料库：花园（分类卡片墙）→ 打开资源包（树 + 素材卡片 + 详情），另有新建表单。
     全部请求都在 LibraryTaskWorker 里执行；执行中每两秒拉一次资源包列表，所有视图都从它刷新。"""
-    ring_progress = Signal(str, float)      # 接缝 key, 0~1：worker 线程发，主线程更新卡片进度条
+    ring_progress = Signal(str, float)      # 接缝 key, 0~1：worker 线程发，主线程更新接缝连接器
+    layer_progress = Signal(object)         # RingLayerProgress：worker 线程发，主线程给各段上色
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -101,6 +104,9 @@ class LibraryPage(BaseWidget):
         self._run_stop = threading.Event()
         self._ring_worker: LibraryTaskWorker | None = None
         self._ring_pack_id = ""
+        # 环卡片缩略图已发起加载的 (包 id, {条目 id: token})；换包时清空，同一张图不重复加载
+        self._ring_thumb_pack = ""
+        self._ring_thumb_tokens: dict[str, str] = {}
         self._ring_action = ""
         self._ring_stop = threading.Event()
 
@@ -154,6 +160,7 @@ class LibraryPage(BaseWidget):
         self.detail.ring_segment_requested.connect(self._load_segment_images)
         self.detail.ring_layer_opened.connect(self._open_ring_file)
         self.ring_progress.connect(self.detail.set_ring_progress)
+        self.layer_progress.connect(self.detail.set_layer_progress)
         self.detail.ring_adopt_requested.connect(
             lambda key, candidate_id: self._run_ring_action("adopt", key, candidate_id))
         self.detail.ring_redo_requested.connect(
@@ -293,6 +300,7 @@ class LibraryPage(BaseWidget):
             self._load_preview()
         self._update_run_state()
         self._load_asset_thumbnails(pack, template)
+        self._load_ring_thumbnails(pack, template)
 
     # ---- 执行状态 ----
     def _running_pack_ids(self) -> set[str]:
@@ -402,8 +410,12 @@ class LibraryPage(BaseWidget):
         return before, after, status_text, status
 
     def _emit_ring_progress(self, progress: dict):
-        """在 worker 线程里被调用：经信号排队回主线程再更新卡片，不直接碰控件。"""
+        """在 worker 线程里被调用：经信号排队回主线程再更新连接器，不直接碰控件。"""
         self.ring_progress.emit(progress["key"], float(progress["fraction"]))
+
+    def _emit_layer_progress(self, progress: dict):
+        """同上，分层任务的进度。"""
+        self.layer_progress.emit(RingLayerProgress(**progress))
 
     def _redo_seam(self, pack_id: str, key: str, extra: str, stop_event: threading.Event):
         """重做一个接缝并立刻采用、合成：用户点"重做"就是想马上在滚动条里看到新结果，
@@ -512,7 +524,8 @@ class LibraryPage(BaseWidget):
             fn, args = self._client.confirm_ring_cuts, (self._ring_pack_id, cuts or [])
         elif action == "layers":
             fn, args, kwargs = self._client.layer_ring, (self._ring_pack_id,), {
-                "stop_event": self._ring_stop, "indices": indices or None}
+                "stop_event": self._ring_stop, "indices": indices or None,
+                "on_progress": self._emit_layer_progress}
         else:
             fn, args = self._client.render_ring, (self._ring_pack_id,)
         if action in RING_GENERATING:
@@ -832,6 +845,8 @@ class LibraryPage(BaseWidget):
             if media_kind(step.type) != "image":
                 continue
             chain = step_chain(template, step.id)
+            # 附加视图（分层）的缩略图存在原图卡片里，换用独立的 token 记是否已加载
+            layered = bool(step.overlay_of)
             for item in pack.manifest.items:
                 relative = latest_image(item, chain)
                 if not relative:
@@ -841,16 +856,49 @@ class LibraryPage(BaseWidget):
                     f"{pack.media_base}/{relative}",
                     state_signature(item, [s.id for s in chain]), ASSET_THUMB,
                     lambda pixmap, item_id=item.id, step_id=step.id:
-                    self.detail.set_asset_thumbnail(item_id, step_id, pixmap))
+                    self.detail.set_asset_thumbnail(item_id, step_id, pixmap),
+                    layered)
+
+    def _load_ring_thumbnails(self, pack: PackResponse, template: TemplateInfo):
+        """环的卡片和"添加"弹窗用 generate 的原图：它不是交付物，卡片墙不会替它加载。"""
+        pack_id = pack.manifest.id
+        if self._ring_thumb_pack != pack_id:
+            self._ring_thumb_pack, self._ring_thumb_tokens = pack_id, {}
+        chain = step_chain(template, RING_SOURCE_STEP)
+        for item in self.detail.ready_items():
+            relative = latest_image(item, chain)
+            if not relative:
+                continue
+            url = f"{pack.media_base}/{relative}"
+            signature = state_signature(item, [s.id for s in chain])
+            token = f"{url}#{signature}"
+            if self._ring_thumb_tokens.get(item.id) == token:
+                continue
+            # 先记下再加载：失败也不会每次轮询都重试同一张坏图
+            self._ring_thumb_tokens[item.id] = token
+            self._start(self._fetch_image, url, PICKER_THUMB, signature,
+                        on_ok=lambda image, item_id=item.id: self._apply_ring_thumbnail(
+                            pack_id, item_id, QPixmap.fromImage(image)),
+                        on_error=lambda message: print(f"⚠️ 环缩略图加载失败：{message}"))
+
+    def _apply_ring_thumbnail(self, pack_id: str, item_id: str, pixmap: QPixmap):
+        # 加载期间可能已经切到别的包：条目 id 会重名，不能把图贴到别的包上
+        if self.detail.pack is not None and self.detail.pack.manifest.id == pack_id:
+            self.detail.set_ring_thumbnail(item_id, pixmap)
 
     def _load_thumbnail(self, card: Card | None, url: str, signature: str, size: QSize,
-                        apply: Callable[[QPixmap], None]):
+                        apply: Callable[[QPixmap], None], layered: bool = False):
         token = f"{url}#{signature}"
-        if card is None or card.thumb_token == token:
+        if card is None or (card.layer_token if layered else card.thumb_token) == token:
             return
         # 先记下再加载：失败也不会每次轮询都重试同一张坏图
-        card.thumb_token = token
-        card.set_loading(True)
+        if layered:
+            card.layer_token = token
+        else:
+            card.thumb_token = token
+        # 分层缩略图在后台悄悄加载：卡片上正显示着原图，不必再扫微光
+        if not layered:
+            card.set_loading(True)
 
         def failed(message: str):
             card.set_loading(False)

@@ -1224,7 +1224,7 @@ SCENE = TemplateInfo(
         TemplateStepInfo(id="layer", type="image.layer", when="layers",
                          inputs=["generate", "layer_encode"]),
         TemplateStepInfo(id="layers", type="image.upscale", deliverable=True, when="layers",
-                         inputs=["layer"]),
+                         inputs=["layer"], overlay_of="upscale"),
     ])
 
 
@@ -1298,12 +1298,44 @@ def test_layer_thumbnail_is_the_bottom_layer():
     assert latest_image(item, step_chain(SCENE, "layers")) == "01/layers_1.png"
 
 
-def test_scene_detail_shows_layer_cards_only_when_layering(qapp):
+def test_layers_share_the_scene_card_and_toggle_from_it(qapp):
     view = PackDetail()
     view.show_pack(_scene_pack(), SCENE, busy=False)
     assert set(view._cards) == {("01", "upscale")}
+    assert view._cards[("01", "upscale")].layer_btn.isHidden()  # 没分层：没有开关
     view.show_pack(_scene_pack(layers="3", layered=True), SCENE, busy=False)
-    assert set(view._cards) == {("01", "upscale"), ("01", "layers")}
+    # 分层不再单独出卡片：误删它会连带删掉整个条目
+    assert set(view._cards) == {("01", "upscale")}
+    card = view._cards[("01", "upscale")]
+    assert not card.layer_btn.isHidden() and not card.is_layered()
+    shown = []
+    view.asset_selected.connect(lambda item_id, step_id: shown.append(step_id))
+    card.clicked.emit()
+    card.layer_btn.click()
+    assert shown == ["upscale", "layers"]  # 选中后切到分层，详情栏跟着换
+    assert view.selected == ("01", "layers")
+    exported = []
+    view.asset_export_requested.connect(lambda item_id, step_id: exported.append(step_id))
+    card.export_requested.emit()
+    assert exported == ["layers"]  # 导出的是当前展示的那一版
+    card.layer_btn.click()
+    assert view.selected == ("01", "upscale")
+    # 轮询刷新（卡片没重建）不会把切换冲掉
+    card.layer_btn.click()
+    view.show_pack(_scene_pack(layers="3", layered=True), SCENE, busy=False)
+    assert card.is_layered()
+    assert view.asset_card("01", "layers") is card
+
+
+def test_layer_toggle_hides_again_when_layers_are_being_redone(qapp):
+    view = PackDetail()
+    view.show_pack(_scene_pack(layers="3", layered=True), SCENE, busy=False)
+    card = view._cards[("01", "upscale")]
+    card.layer_btn.click()
+    redo = _scene_pack(layers="3", layered=True)
+    redo.manifest.items[0].steps["layers"] = StepState(status="pending")
+    view.show_pack(redo, SCENE, busy=False)
+    assert card.layer_btn.isHidden() and not card.is_layered()
 
 
 def test_cover_offers_layering_afterwards(qapp):

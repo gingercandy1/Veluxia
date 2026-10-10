@@ -38,6 +38,6 @@
     {"id": "upscale", "type": "image.upscale", "label": "整图", "deliverable": true, "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2, "tile_mode": "{tile}"}, "inputs": ["generate"]},
     {"id": "layer_encode", "type": "image.layer_encode", "label": "分层编码", "when": "layers", "params": {"model_name": "Qwen-Image-Layered", "prompt_suffix": "{view}, no characters, no text"}},
     {"id": "layer", "type": "image.layer", "label": "分层", "when": "layers", "params": {"model_name": "Qwen-Image-Layered", "layers": "{layers}"}, "inputs": ["generate", "layer_encode"]},
-    {"id": "layers", "type": "image.upscale", "label": "图层", "deliverable": true, "when": "layers", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2, "tile_mode": "{tile}"}, "inputs": ["layer"]}
+    {"id": "layers", "type": "image.upscale", "label": "图层", "deliverable": true, "overlay_of": "upscale","when": "layers", "params": {"model_name": "RealESRGAN-anime-6B", "outscale": 2, "tile_mode": "{tile}"}, "inputs": ["layer"]}
   ]
 }

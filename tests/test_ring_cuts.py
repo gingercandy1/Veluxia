@@ -244,6 +244,35 @@ def test_layer_segments_encodes_all_first_then_denoises_and_resumes(tmp_path, mo
         ring.layer_segments("pack", [2])
 
 
+def test_layer_segments_reports_stage_current_segment_and_remaining(tmp_path, monkeypatch):
+    work = tmp_path / "work"
+    work.mkdir()
+    fake = _FakeLayered(work, fail_on_denoise=2)
+    _layered_pack(tmp_path, monkeypatch, fake)
+    reports = []
+
+    def report(stage, index, remaining):
+        reports.append((stage, index, remaining))
+
+    # 先把所有段编码，再逐段去噪；剩余段包含当前段，做完一段就少一段
+    with pytest.raises(RuntimeError, match="fake denoise failed"):
+        ring.layer_segments("pack", on_progress=report)
+    assert reports == [
+        ("encode", 0, [0, 1]), ("encode", 1, [1]),
+        ("denoise", 0, [0, 1]), ("denoise", 1, [1])]
+
+    # 续跑只报剩下的段，而且已有编码不再重编，所以没有 encode
+    reports.clear()
+    fake.fail_on_denoise = None
+    ring.layer_segments("pack", on_progress=report)
+    assert reports == [("denoise", 1, [1])]
+
+    # 指定重做第 1 段：序号是它在全部段里的位置，不是在待做列表里的位置
+    reports.clear()
+    ring.layer_segments("pack", [1], on_progress=report)
+    assert reports == [("encode", 1, [1]), ("denoise", 1, [1])]
+
+
 def test_moving_one_cut_keeps_layers_of_untouched_segments(tmp_path, monkeypatch):
     work = tmp_path / "work"
     work.mkdir()

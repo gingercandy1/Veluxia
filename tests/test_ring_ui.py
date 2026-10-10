@@ -2,7 +2,7 @@
 import threading
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QColor, QImage
+from PySide6.QtGui import QColor, QImage, QPixmap
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QWidget
 
@@ -14,6 +14,7 @@ from src.shared.schemas import (
     CollectionItem,
     Manifest,
     PackResponse,
+    RingLayerProgress,
     RingSeamStatus,
     RingStatusResponse,
     SeamCandidate,
@@ -140,22 +141,82 @@ def test_ring_cards_add_repeat_remove_and_send_the_order(qapp):
     assert detail.ring_card_ids() == ["screen2", "screen0", "screen1"]
 
 
-def test_seam_progress_shows_on_the_left_screen_card_and_clears_when_done(qapp):
+def test_ring_thumbnails_reach_cards_and_picker_and_reset_on_pack_change(qapp):
+    detail = PackDetail()
+    pack, template = _scene_pack(item_count=2)
+    detail.show_pack(pack, template, busy=False)
+    detail.add_ring_cards(["screen0", "screen1"])
+
+    image = QImage(144, 81, QImage.Format.Format_RGB32)
+    image.fill(QColor("red"))
+    detail.set_ring_thumbnail("screen0", QPixmap.fromImage(image))
+    assert not detail.ring_cards._cards[0].thumb.pixmap().isNull()
+    assert detail.ring_cards.thumb("screen1") is None
+    # 之后再建的卡片也带着缩略图
+    detail.ring_cards.set_cards([("screen0", "")])
+    assert not detail.ring_cards._cards[0].thumb.pixmap().isNull()
+
+    # 换包后旧包的图作废：条目 id 会重名，也不该一直占着内存
+    other, other_template = _scene_pack(item_count=2)
+    other.manifest.id = "other"
+    detail.show_pack(other, other_template, busy=False)
+    assert detail.ring_cards.thumb("screen0") is None
+
+
+def _link_states(detail):
+    return [link.bar.property("state") if not link.bar.isHidden() else None
+            for link in detail.ring_cards._links]
+
+
+def test_seam_links_sit_between_cards_and_show_progress_only_for_the_running_seam(qapp):
     detail = PackDetail()
     pack, template = _scene_pack(item_count=3)
     detail.show_pack(pack, template, busy=False)
     detail.set_ring([], [], "", RingStatusResponse(order=["screen0", "screen1", "screen2"]))
-    cards = detail.ring_cards._cards
+    links = detail.ring_cards._links
+    # 三张卡片三根连接器（含末尾回到开头），都还没有候选
+    assert len(links) == 3
+    assert _link_states(detail) == ["none", "none", "none"]
 
     detail.set_ring_running(True)
     detail.set_ring_progress("screen1>screen2", 0.5)
-    assert [card.progress.isHidden() for card in cards] == [True, False, True]
-    assert cards[1].progress.value() == 50
-    # 换到下一条接缝：只留当前这一条
+    assert _link_states(detail) == ["none", "running", "none"]
+    assert links[1].bar.value() == 50
+    # 换到下一条接缝（回环那条）：只留当前这一条
     detail.set_ring_progress("screen2>screen0", 0.2)
-    assert [card.progress.isHidden() for card in cards] == [True, True, False]
+    assert _link_states(detail) == ["none", "none", "running"]
+    assert links[2].bar.value() == 20
     detail.set_ring_running(False)
-    assert all(card.progress.isHidden() for card in cards)
+    assert _link_states(detail) == ["none", "none", "none"]
+
+
+def test_seam_links_show_candidate_adopted_and_stale_states(qapp):
+    detail = PackDetail()
+    pack, template = _scene_pack(item_count=3)
+    detail.show_pack(pack, template, busy=False)
+    candidate = SeamCandidate(
+        id="c1", file="/media/c1.png", seed=1, prompt="p", left_sig="a", right_sig="b",
+        harmonize=0.3)
+    detail.set_ring([], [], "", RingStatusResponse(
+        order=["screen0", "screen1", "screen2"],
+        seams={
+            "screen0>screen1": RingSeamStatus(
+                candidates=[candidate], adopted="c1", has_candidates=True),
+            "screen1>screen2": RingSeamStatus(candidates=[candidate], has_candidates=True),
+            "screen2>screen0": RingSeamStatus(
+                candidates=[candidate], adopted="c1", stale=True, has_candidates=True),
+        }))
+    assert _link_states(detail) == ["adopted", "candidate", "stale"]
+
+
+def test_seam_links_follow_the_card_order_and_hide_below_two_cards(qapp):
+    detail = PackDetail()
+    pack, template = _scene_pack(item_count=3)
+    detail.show_pack(pack, template, busy=False)
+    detail.add_ring_cards(["screen0"])
+    assert _link_states(detail) == [None]
+    detail.add_ring_cards(["screen1"])
+    assert _link_states(detail) == ["none", "none"]
 
 
 def test_ring_cards_drag_moves_a_card_to_the_slot_under_the_drop(qapp):
@@ -325,11 +386,27 @@ def test_layer_panel_progress_thumbs_and_redo(qapp):
     detail.layer_redo_btn.click()
     assert layered == [[], [1]]
 
+    # 空闲时：已分层的段是完成，其余待做
+    assert _segment_cell_states(detail) == ["done", "pending"]
+
     detail.set_ring_running(True, layering=True)
     assert not detail.layer_run_btn.isEnabled() and not detail.layer_redo_btn.isEnabled()
     assert detail.ring_status_label.text() == detail.tr("Layering segments…")
+    # 任务回传：第 2 段正在编码，只剩它自己没做完
+    detail.set_layer_progress(RingLayerProgress(stage="encode", index=1, remaining=[1]))
+    assert _segment_cell_states(detail) == ["done", "running"]
+    assert detail.tr("encoding") in detail.layer_info.text()
+    # 强制重做第 1 段：它在剩余里，就算已有图层也不算完成
+    detail.set_layer_progress(RingLayerProgress(stage="denoise", index=0, remaining=[0]))
+    assert _segment_cell_states(detail) == ["running", "pending"]
+    assert detail.tr("denoising") in detail.layer_info.text()
     detail.set_ring_running(False)
     assert detail.layer_redo_btn.isEnabled()
+    assert _segment_cell_states(detail) == ["done", "pending"]
+
+
+def _segment_cell_states(detail):
+    return [cell.property("state") for cell in detail.layer_bar._cells]
 
     # 全部做完：不再能点"分层"，但可以单段重做
     done = status.model_copy(update={"segment_layers": [first_layers, first_layers]})

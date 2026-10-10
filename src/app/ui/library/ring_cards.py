@@ -3,6 +3,8 @@
 只负责展示和收集操作（添加 / 删除 / 拖动换位），不读取资源包、不发请求；
 改完的顺序通过信号交给页面。同一屏可以有多张卡片。
 """
+from enum import Enum
+
 from PySide6.QtCore import QMimeData, QPoint, QSize, Qt, Signal
 from PySide6.QtGui import QDrag, QIcon, QPixmap
 from PySide6.QtWidgets import (
@@ -25,6 +27,9 @@ from PySide6.QtWidgets import (
 CARD_THUMB = QSize(96, 54)
 CARD_SIZE = QSize(112, 96)
 CARD_GAP = 8
+# 相邻两张卡片之间的接缝连接器占的宽度：它取代了卡片间的空隙，所以是 CARD_GAP 的两倍
+LINK_WIDTH = CARD_GAP * 2
+LINK_BAR_WIDTH = 6
 # 条带 + 横向滚动条（滚动条出现时不能把卡片挤掉）
 BAR_HEIGHT = CARD_SIZE.height() + 24
 CARD_MIME = "application/x-veluxia-ring-card"
@@ -68,20 +73,6 @@ class RingCard(QFrame):
         self.remove_btn.clicked.connect(lambda: self.remove_clicked.emit(self))
         footer.addWidget(self.remove_btn)
         layout.addLayout(footer)
-        self.progress = QProgressBar()
-        self.progress.setObjectName("ring_card_progress")
-        self.progress.setRange(0, 100)
-        self.progress.setTextVisible(False)
-        self.progress.setFixedHeight(4)
-        self.progress.hide()
-        layout.addWidget(self.progress)
-
-    def set_progress(self, fraction: float | None):
-        """None 隐藏进度条；0~1 显示该接缝（归左屏）的生成进度。"""
-        self.progress.setVisible(fraction is not None)
-        if fraction is not None:
-            self.progress.setValue(round(fraction * 100))
-
     def set_position(self, position: int):
         # 序号 = 在环上的第几屏；同一屏出现多次时靠它区分
         metrics = self.caption.fontMetrics()
@@ -119,6 +110,67 @@ class RingCard(QFrame):
         self.setProperty("active", active)
         self.style().unpolish(self)
         self.style().polish(self)
+
+
+class SeamLinkState(Enum):
+    """一条接缝（相邻两屏之间）当前的状态。"""
+    NONE = "none"              # 还没有候选
+    CANDIDATE = "candidate"    # 有候选，但还没采用
+    ADOPTED = "adopted"
+    STALE = "stale"            # 两侧的屏变了，要重做
+    RUNNING = "running"        # 正在生成，带进度
+
+
+class SeamLink(QWidget):
+    """卡片之间的接缝连接器：一根竖条，颜色表示状态，生成中按进度填充。
+
+    接缝属于相邻两屏之间，画在两张卡片之间，同一对相邻屏在环里出现几次就有几根。"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedWidth(LINK_WIDTH)
+        layout = QVBoxLayout(self)
+        layout.setSpacing(0)
+        # 竖条与缩略图上下对齐：顶部留出卡片的内边距
+        layout.setContentsMargins(0, 6, 0, 0)
+        self.bar = QProgressBar()
+        self.bar.setObjectName("ring_seam_link")
+        self.bar.setOrientation(Qt.Orientation.Vertical)
+        self.bar.setRange(0, 100)
+        self.bar.setTextVisible(False)
+        self.bar.setFixedSize(LINK_BAR_WIDTH, CARD_THUMB.height())
+        layout.addWidget(self.bar, 0, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        layout.addStretch(1)
+        self.clear()
+
+    def clear(self):
+        """没有接缝可画（环里不足两张卡片）：只占位，不画竖条。"""
+        self.bar.hide()
+        self.setToolTip("")
+
+    def set_state(self, state: SeamLinkState, fraction: float = 0.0):
+        """fraction 只在生成中有意义（0~1）。"""
+        self.bar.show()
+        self.bar.setProperty("state", state.value)
+        # 非生成中的状态用满条表示“有内容”，NONE 只剩底槽
+        if state is SeamLinkState.RUNNING:
+            value = round(fraction * 100)
+        else:
+            value = 0 if state is SeamLinkState.NONE else 100
+        self.bar.setValue(value)
+        self.bar.style().unpolish(self.bar)
+        self.bar.style().polish(self.bar)
+        self.setToolTip(self._tooltip(state, value))
+
+    def _tooltip(self, state: SeamLinkState, percent: int) -> str:
+        if state is SeamLinkState.RUNNING:
+            return self.tr("Generating seam… {0}%").format(percent)
+        return {
+            SeamLinkState.NONE: self.tr("Seam: not generated yet"),
+            SeamLinkState.CANDIDATE: self.tr("Seam: has candidates, none adopted"),
+            SeamLinkState.ADOPTED: self.tr("Seam: adopted"),
+            SeamLinkState.STALE: self.tr("Seam: source image changed, redo it"),
+        }[state]
 
 
 class _CardHost(QWidget):
@@ -169,12 +221,15 @@ class RingCardBar(QScrollArea):
         self._removable = True
         self._key: list = []
         self._cards: list[RingCard] = []
+        # 第 i 根连接 第 i 张 → 第 i+1 张（最后一根回到第一张），只在有两张以上时存在
+        self._links: list[SeamLink] = []
         self._thumbs: dict[str, QPixmap] = {}
         self._active = -1
         self._host = _CardHost(self)
         self._layout = QHBoxLayout(self._host)
         self._layout.setContentsMargins(0, 4, 0, 4)
-        self._layout.setSpacing(CARD_GAP)
+        # 卡片间的空隙由接缝连接器占掉，布局本身不留缝
+        self._layout.setSpacing(0)
         self.add_btn = QPushButton("+")
         self.add_btn.setObjectName("ring_card_add")
         self.add_btn.setFixedSize(CARD_SIZE)
@@ -198,10 +253,10 @@ class RingCardBar(QScrollArea):
         if entries == self._key:
             return
         self._key = list(entries)
-        for card in self._cards:
-            self._layout.removeWidget(card)
-            card.deleteLater()
-        self._cards = []
+        for widget in (*self._cards, *self._links):
+            self._layout.removeWidget(widget)
+            widget.deleteLater()
+        self._cards, self._links = [], []
         for position, (item_id, tooltip) in enumerate(entries):
             card = RingCard(item_id, tooltip)
             card.set_position(position + 1)
@@ -210,8 +265,12 @@ class RingCardBar(QScrollArea):
             card.remove_clicked.connect(self._on_remove)
             card.drag_started.connect(self._start_drag)
             card.clicked.connect(self._on_card_clicked)
-            self._layout.insertWidget(position, card)
+            link = SeamLink()
+            # 每张卡片后面跟着它右侧的接缝连接器，所以卡片在布局里的下标是 2 * 序号
+            self._layout.insertWidget(2 * position, card)
+            self._layout.insertWidget(2 * position + 1, link)
             self._cards.append(card)
+            self._links.append(link)
         # 增删 / 换位后序号对应的卡片变了，旧的激活态不再有意义
         self.set_active(-1)
         self._apply_state()
@@ -222,14 +281,14 @@ class RingCardBar(QScrollArea):
         for position, card in enumerate(self._cards):
             card.set_active(position == self._active)
 
-    def set_progress(self, index: int, fraction: float | None):
-        """给第 index 张卡片设进度条（None 隐藏）；其余卡片的进度条不动。"""
-        if 0 <= index < len(self._cards):
-            self._cards[index].set_progress(fraction)
-
-    def clear_progress(self):
-        for card in self._cards:
-            card.set_progress(None)
+    def set_seam_links(self, states: list[tuple[SeamLinkState, float]]):
+        """states[i] = (状态, 生成进度 0~1) 对应 第 i 张 → 第 i+1 张之间的接缝；
+        比卡片少的部分（环里不足两张时为空）不画。"""
+        for index, link in enumerate(self._links):
+            if index < len(states):
+                link.set_state(*states[index])
+            else:
+                link.clear()
 
     def active(self) -> int:
         return self._active
@@ -239,6 +298,14 @@ class RingCardBar(QScrollArea):
             index = self._cards.index(card)
             self.set_active(index)
             self.card_selected.emit(index)
+
+    def thumb(self, item_id: str) -> QPixmap | None:
+        return self._thumbs.get(item_id)
+
+    def clear_thumbs(self):
+        self._thumbs.clear()
+        for card in self._cards:
+            card.thumb.clear()
 
     def set_thumb(self, item_id: str, pixmap: QPixmap):
         self._thumbs[item_id] = pixmap
@@ -280,9 +347,9 @@ class RingCardBar(QScrollArea):
         if not self._cards:
             return
         if slot < len(self._cards):
-            marker_x = self._cards[slot].x() - CARD_GAP // 2
+            marker_x = self._cards[slot].x() - LINK_WIDTH // 2
         else:
-            marker_x = self._cards[-1].geometry().right() + CARD_GAP // 2
+            marker_x = self._cards[-1].geometry().right() + LINK_WIDTH // 2
         self._marker.setGeometry(marker_x - 1, 0, 3, self._host.height())
         self._marker.raise_()
         self._marker.show()

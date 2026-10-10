@@ -106,6 +106,22 @@ def deliverables(template: TemplateInfo) -> list[TemplateStepInfo]:
     return marked or template.step_details[-1:]
 
 
+def card_steps(template: TemplateInfo) -> list[TemplateStepInfo]:
+    """各自出卡片的交付步骤：附加视图（如整图的分层）挂在别的卡片上，不单独出卡。"""
+    return [step for step in deliverables(template) if not step.overlay_of]
+
+
+def overlay_step(template: TemplateInfo, step_id: str) -> TemplateStepInfo | None:
+    """挂在 step_id 这张卡片上的附加视图步骤，没有则 None。"""
+    return next((step for step in deliverables(template) if step.overlay_of == step_id), None)
+
+
+def card_step_id(template: TemplateInfo, step_id: str) -> str:
+    """一个步骤属于哪张卡片：附加视图归到它所依附的那张。"""
+    step = next((s for s in template.step_details if s.id == step_id), None)
+    return step.overlay_of if step is not None and step.overlay_of else step_id
+
+
 def step_chain(template: TemplateInfo, step_id: str) -> list[TemplateStepInfo]:
     """step_id 和它的全部上游，按模板顺序排列：这就是详情栏里的"执行流程"。"""
     by_id = {step.id: step for step in template.step_details}

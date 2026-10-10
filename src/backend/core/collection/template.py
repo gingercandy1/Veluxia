@@ -56,6 +56,9 @@ class StepSpec:
     # 条件字段 id：该字段不满足 condition_met 时这一步（连同依赖它的下游）跳过；
     # 写成 "!字段" 则反过来，满足时跳过
     when: str = ""
+    # 这一步的产物是另一个交付步骤的"附加视图"（如整图的分层）：界面不单独出卡片，
+    # 而是挂在那张卡片上切换，避免同一个条目出现两张卡片、误删其中一张连带删掉整个条目
+    overlay_of: str = ""
 
 
 @dataclass(frozen=True)
@@ -245,10 +248,14 @@ def parse_template(data: dict) -> Template:
         if when and when_field(when) not in known_fields - {PROMPT_FIELD}:
             raise ValueError(
                 f"模板 {template_id} 的步骤 {step_id} 的条件引用了未声明的字段：{when}")
+        overlay_of = raw.get("overlay_of", "")
+        if overlay_of and overlay_of not in seen:
+            raise ValueError(
+                f"模板 {template_id} 的步骤 {step_id} 的 overlay_of 不是它之前定义的步骤：{overlay_of}")
         seen.add(step_id)
         steps.append(StepSpec(step_id, step_type, params, inputs,
                               raw.get("label", ""), bool(raw.get("deliverable", False)),
-                              bool(raw.get("review", False)), when))
+                              bool(raw.get("review", False)), when, overlay_of))
 
     cover = data.get("cover", "")
     if cover and cover not in seen:

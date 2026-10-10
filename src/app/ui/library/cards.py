@@ -29,6 +29,7 @@ class Card(BaseWidget):
     double_clicked = Signal()
     export_requested = Signal()
     delete_requested = Signal()
+    layers_toggled = Signal(bool)
 
     def __init__(self, thumb_size: QSize, placeholder: str, category: str = "", parent=None):
         super().__init__(parent)
@@ -37,6 +38,11 @@ class Card(BaseWidget):
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self._thumb_size = thumb_size
         self.thumb_token = ""
+        # 带分层视图的卡片：原图和分层各一张缩略图，按钮切换显示哪张
+        self.layer_token = ""
+        self._pixmaps: dict[bool, QPixmap] = {}
+        self._layered = False
+        self.layer_btn: QPushButton | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -91,6 +97,35 @@ class Card(BaseWidget):
         self._actions.move(self._thumb_size.width() - self._actions.width() - 6, 6)
         self._actions.hide()
 
+    def add_layer_toggle(self):
+        """缩略图左上角的"分层"开关：常驻显示（有分层的标记），点一下在原图和分层之间切换。
+        同样是缩略图的子控件，点它不会冒泡成卡片的选中。"""
+        self.layer_btn = QPushButton(self.tr("Layers"), self.thumb)
+        self.layer_btn.setObjectName("card_layer_btn")
+        self.layer_btn.setCheckable(True)
+        self.layer_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.layer_btn.setFixedHeight(22)
+        self.layer_btn.move(6, 6)
+        self.layer_btn.adjustSize()
+        self.layer_btn.toggled.connect(self._on_layer_toggled)
+        self.layer_btn.hide()
+
+    def set_layers_available(self, available: bool):
+        """分层还没做完（或这条没分层）时按钮不出现，也退回显示原图。"""
+        if self.layer_btn is None:
+            return
+        self.layer_btn.setVisible(available)
+        if not available and self.layer_btn.isChecked():
+            self.layer_btn.setChecked(False)
+
+    def is_layered(self) -> bool:
+        return self._layered
+
+    def _on_layer_toggled(self, checked: bool):
+        self._layered = checked
+        self._show_pixmap()
+        self.layers_toggled.emit(checked)
+
     def _action_button(self, icon: str, name: str, signal) -> QPushButton:
         button = QPushButton(QIcon(icon), "")
         button.setObjectName(name)
@@ -131,11 +166,18 @@ class Card(BaseWidget):
         self.badge.setProperty("status", progress.status)
         repolish(self.badge)
 
-    def set_thumbnail(self, pixmap: QPixmap):
+    def set_thumbnail(self, pixmap: QPixmap, layered: bool = False):
         self.set_loading(False)
-        self.thumb.setPixmap(pixmap.scaled(
+        self._pixmaps[layered] = pixmap.scaled(
             self._thumb_size, Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation))
+            Qt.TransformationMode.SmoothTransformation)
+        self._show_pixmap()
+
+    def _show_pixmap(self):
+        # 分层缩略图还没到时先留着原图，不闪成空白占位
+        pixmap = self._pixmaps.get(self._layered, self._pixmaps.get(False))
+        if pixmap is not None:
+            self.thumb.setPixmap(pixmap)
 
     def set_loading(self, loading: bool):
         """缩略图在路上：占位上扫一道微光。"""

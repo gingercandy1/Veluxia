@@ -306,8 +306,11 @@ def confirm_cuts(pack_id: str, cuts: list[int]) -> Manifest:
 
 
 def layer_segments(pack_id: str, indices: list[int] | None = None,
-                   cancel_event: threading.Event | None = None) -> Manifest:
+                   cancel_event: threading.Event | None = None,
+                     on_progress: Callable[[str, int, list[int]], None] | None = None) -> Manifest:
     """每段交给 Qwen-Layered 分成 LAYER_COUNT 层。
+    on_progress(阶段, 当前段序号, 还没做完的段序号)：阶段是 encode / denoise，序号是在
+    ring.segments 里的位置；界面据此给每段上色，不必自己推断哪些段已经做完。
 
     一次持有模型租约：先把要做的段集中编码，再集中去噪，编码器和 transformer 各只加载一次。
     每做完一段就存盘，中途停止或失败后再点，只做剩下的段。
@@ -332,18 +335,26 @@ def layer_segments(pack_id: str, indices: list[int] | None = None,
         if not todo:
             return manifest
 
+        position = {key: index for index, (key, *_) in enumerate(segments)}
+
+        def report(stage: str, current: int):
+            if on_progress is not None:
+                on_progress(stage, position[todo[current][0]],
+                            [position[key] for key, *_ in todo[current:]])
+
         model_name = _layer_model(manifest)
         try:
             with GeneratorFactory.acquire(FactoryType.Image, model_name) as generator:
                 generator.cancel_event = cancel_event
                 try:
                     generator.ensure_model_loaded()
-                    for key, path, prompt in todo:
+                    for current, (key, path, prompt) in enumerate(todo):
                         state = ring.segment_layers.get(key)
                         # 只重做去噪时（上次停在去噪阶段）编码可以复用：描述没变就不用再加载编码器
                         if state is not None and state.prompt == prompt and state.embeds and \
                                 _safe_pack_path(directory, state.embeds).is_file():
                             continue
+                        report("encode", current)
                         generator.parse_params({"content": prompt})
                         embeds = generator.save_prompt_embeds()
                         relative = _layer_dir(key) / "encode.pt"
@@ -352,8 +363,9 @@ def layer_segments(pack_id: str, indices: list[int] | None = None,
                             source_sig=ring.cuts_sig, prompt=prompt,
                             embeds=relative.as_posix())
                         save_manifest(directory, manifest)
-                    for key, path, prompt in todo:
+                    for current, (key, path, prompt) in enumerate(todo):
                         state = ring.segment_layers[key]
+                        report("denoise", current)
                         generator.parse_params({
                             "content": prompt, "layers": LAYER_COUNT,
                             "reference_image": str(path),

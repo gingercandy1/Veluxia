@@ -53,15 +53,41 @@ QFrame#ring_card[active="true"] {
     border: 2px solid #ffd666;
 }
 
-QProgressBar#ring_card_progress {
+QProgressBar#ring_seam_link {
+    border: none;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+QProgressBar#ring_seam_link::chunk {
+    border-radius: 3px;
+    background-color: #7B9DBC;
+}
+
+QProgressBar#ring_seam_link[state="adopted"]::chunk {
+    background-color: #6fcf97;
+}
+
+QProgressBar#ring_seam_link[state="stale"]::chunk {
+    background-color: #ff9f43;
+}
+
+QProgressBar#ring_seam_link[state="running"]::chunk {
+    background-color: #ffd666;
+}
+
+QFrame#ring_segment_cell {
     border: none;
     border-radius: 2px;
     background-color: rgba(255, 255, 255, 0.10);
 }
 
-QProgressBar#ring_card_progress::chunk {
-    border-radius: 2px;
+QFrame#ring_segment_cell[state="running"] {
     background-color: #ffd666;
+}
+
+QFrame#ring_segment_cell[state="done"] {
+    background-color: #6fcf97;
 }
 
 QLabel#ring_card_thumb {
@@ -269,6 +295,23 @@ QPushButton#card_delete_btn {
     border: 0.5px solid rgba(255, 255, 255, 0.12);
     border-radius: 13px;
     padding: 0;
+}
+
+/* 左上角的分层开关：常驻显示，选中（正在看分层）时换成强调色 */
+QPushButton#card_layer_btn {
+    background-color: rgba(20, 22, 26, 0.72);
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 11px;
+    padding: 0 9px;
+    font-size: 11px;
+}
+
+QPushButton#card_layer_btn:hover {
+    background-color: rgba(123, 157, 188, 0.55);
+}
+
+QPushButton#card_layer_btn:checked {
+    background-color: rgba(123, 157, 188, 0.85);
 }
 
 QPushButton#card_export_btn:hover {
