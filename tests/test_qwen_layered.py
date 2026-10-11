@@ -127,6 +127,21 @@ def test_dequantize_gguf_embeddings_restores_only_quantized_embeddings():
     assert model.plain.weight is plain_weight
 
 
+def test_dequantize_gguf_restores_quantized_norm_but_not_linear():
+    # BF16 存的小张量（如 RMSNorm 权重）被当成 uint8 字节，长度翻倍；Linear 自己会解压
+    model = torch.nn.Module()
+    model.norm = torch.nn.RMSNorm(4)
+    model.norm.weight = _QuantizedWeight(torch.zeros(8, dtype=torch.uint8), "BF16")
+    model.linear = torch.nn.Linear(4, 4)
+    model.linear.weight = _QuantizedWeight(torch.zeros(4, 8, dtype=torch.uint8), "BF16")
+
+    fixed = diffusers_utils.dequantize_gguf_embeddings(
+        model, dequantize=lambda weight: torch.ones(4))
+    assert fixed == ["norm"]
+    assert model.norm.weight.shape == (4,)
+    assert model.linear.weight.shape == (4, 8)
+
+
 def test_group_offload_options_are_passed_through():
     calls = []
 

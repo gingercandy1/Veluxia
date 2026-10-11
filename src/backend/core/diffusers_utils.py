@@ -41,12 +41,15 @@ def load_gguf_transformer(model_cls, gguf_path: Path, base_dir: Path):
 
 
 def dequantize_gguf_embeddings(module, dequantize=None) -> list[str]:
-    """把仍是 GGUF 量化字节的 nn.Embedding 权重就地解压成 bf16，返回处理过的模块名。
+    """把仍是 GGUF 量化字节的非 Linear 模块权重（Embedding、各种 Norm）就地解压成 bf16，
+    返回处理过的模块名。
 
-    diffusers 的 GGUF 只在 Linear 前向时即时解压；Embedding 直接按行取权重，
+    diffusers 的 GGUF 只在 Linear 前向时即时解压；Embedding / Norm 直接用权重，
     拿到的是压缩字节，形状也不对。Qwen-Image-Layered 独有的
     time_text_embed.addition_t_embedding 就是这样，第一步就报 3072 对不上 6144。
-    Embedding 通常很小，解压成 bf16 常驻也不占多少内存。
+    Qwen-Image-2.1 的 GGUF 里 BF16 存的小张量（txt_in.text_norm、attn.norm_q/k）同理，
+    被当成 uint8 字节后长度翻倍，报 4096 对不上 8192。
+    这些张量都很小，解压成 bf16 常驻也不占多少内存。
     dequantize 只在单测里替换，正常使用 diffusers 自带的解压函数。
     """
     import torch
@@ -58,7 +61,8 @@ def dequantize_gguf_embeddings(module, dequantize=None) -> list[str]:
     for name, child in module.named_modules():
         weight = getattr(child, "weight", None)
         quantized = getattr(weight, "quant_type", None) is not None
-        if isinstance(child, torch.nn.Embedding) and quantized:
+        # Linear 自己会在前向里解压，不能动
+        if quantized and not isinstance(child, torch.nn.Linear):
             child.weight = torch.nn.Parameter(dequantize(weight).to(torch.bfloat16),
                                               requires_grad=False)
             fixed.append(name)

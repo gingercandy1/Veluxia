@@ -258,6 +258,32 @@
       ],
       "tag": "fast"
     },
+    "Qwen-Image-2.1-Turbo": {
+      "generator": "image.qwen_image_21:QwenImage21Generator",
+      "repo_id": "Qwen/Qwen-Image-2.1-Turbo",
+      "offload": {
+        "type": "block_level",
+        "blocks_per_group": 8,
+        "use_stream": false,
+        "leaf_components": ["vae"]
+      },
+      "tag": "fast",
+      "note": "8 步、CFG 1，原生支持透明背景（RGBA）；需 diffusers>=0.41.0。许可证是 Qwen Research License（仅限研究 / 评测，商用需另行授权）。bf16 全量约 30GB（编码器 + transformer），8GB 显存靠分组卸载、两段加载，内存峰值约 16GB；未在 8GB 机器上实测，offload.blocks_per_group 越大越快、显存越多"
+    },
+    "Qwen-Image-2.1-Turbo-Q4": {
+      "generator": "image.qwen_image_21:QwenImage21Generator",
+      "repo_id": "Qwen/Qwen-Image-2.1-Turbo",
+      "filename": "Qwen-Image-2.1-Turbo-AD-Q4_K.gguf",
+      "gguf_repo_id": "AtomicChat/Qwen-Image-2.1-Turbo-GGUF",
+      "offload": {
+        "type": "block_level",
+        "blocks_per_group": 8,
+        "use_stream": false,
+        "leaf_components": ["vae"]
+      },
+      "tag": "fast",
+      "note": "Qwen-Image-2.1-Turbo 的 GGUF Q4_K 量化（社区发布，不是官方）：transformer 约 4.2GB，对比全量约 14GB；文本编码器和 VAE 仍取官方仓库。已验证：diffusers 能在 CPU 上加载（约 23 秒、内存 5GB），抽查的权重与官方 bf16 相对误差约 4%～8%（Q4 的正常水平）。还没验证：端到端出图、8GB 显存下的速度、与全量版的画质差异"
+    },
     "Qwen-Image-Edit-2509": {
       "generator": "image.qwen_edit:QwenImageEditPlusGenerator",
       "repo_id": "Qwen/Qwen-Image-Edit-2509",

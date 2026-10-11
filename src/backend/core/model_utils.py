@@ -144,10 +144,14 @@ def hf_download_progress(callback):
         file_download._get_progress_bar_context = original
 
 
-def ensure_snapshot(repo_id: str, local_dir: Path, ignore_patterns: list[str] | None = None):
-    """整仓下载到 local_dir；目录已存在就视为下载过，不再联网校验（离线也能启动）。"""
+def ensure_snapshot(repo_id: str, local_dir: Path, ignore_patterns: list[str] | None = None,
+                    marker: str | None = None):
+    """整仓下载到 local_dir；目录已存在就视为下载过，不再联网校验（离线也能启动）。
+
+    marker：给了就改为"该文件存在才算下载过"。目录可能被单文件下载（ensure_file 补的
+    config / GGUF）或手动试验先建出来，只看目录会把缺骨架的半成品当成完整模型。"""
     local_dir = Path(local_dir)
-    if local_dir.exists():
+    if (local_dir / marker).exists() if marker else local_dir.exists():
         return
     print(f"⏬ 正在下载 {repo_id}...")
     from huggingface_hub import snapshot_download
