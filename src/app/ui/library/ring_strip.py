@@ -19,6 +19,8 @@ ZOOM_MAX = 8.0
 ZOOM_STEP = 1.15
 # 切线比接缝线更优先被抓住：两条线挨得近时，按下去拖的是切线
 CUT_HIT_RADIUS = 8
+# 删除时点得松一点：细虚线不好瞄准，误删的代价又比误拖大
+CUT_REMOVE_RADIUS = 16
 # 纵向平移时图至少留这么多像素在控件内，免得拖丢
 PAN_MARGIN = 40
 
@@ -259,6 +261,13 @@ class RingStrip(BaseWidget):
             self._drag_origin = (self._offset, self._pan_y)
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
             return
+        shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+        if shift and event.button() == Qt.MouseButton.LeftButton:
+            self._add_cut(x)
+            return
+        if shift and event.button() == Qt.MouseButton.RightButton:
+            self._remove_cut(x)
+            return
         if event.button() != Qt.MouseButton.LeftButton:
             return super().mousePressEvent(event)
         nearest = min(self._cut_hits, key=lambda hit: abs(hit[0] - x), default=None)
@@ -281,6 +290,41 @@ class RingStrip(BaseWidget):
         self._pan_y = self._drag_origin[1] + dy
         self._clamp_pan_y()
         self.update()
+
+    def _add_cut(self, screen_x: float):
+        """Shift+左键：在点击处加一条切线；已经有切线的地方不重复加。"""
+        if not self._total_width:
+            return
+        nearest = self._nearest_cut(screen_x)
+        if nearest is not None and nearest[1] <= CUT_HIT_RADIUS:
+            return
+        world = (screen_x + self._offset) % self._total_width
+        cut = min(self.source_width() - 1, max(0, round(world / self._source_scale())))
+        self._cuts = sorted({*self._cuts, cut})
+        self.update()
+        self.cuts_edited.emit(list(self._cuts))
+
+    def _remove_cut(self, screen_x: float):
+        """Shift+右键：删掉离点击处最近的切线。至少留一条，后端不接受没有切点。"""
+        nearest = self._nearest_cut(screen_x)
+        if nearest is None or nearest[1] > CUT_REMOVE_RADIUS or len(self._cuts) <= 1:
+            return
+        del self._cuts[nearest[0]]
+        self.update()
+        self.cuts_edited.emit(list(self._cuts))
+
+    def _nearest_cut(self, screen_x: float) -> tuple[int, float] | None:
+        """离屏幕 x 最近的切线：(序号, 屏幕上的距离)。直接按切点坐标算，不用上次绘制记下的
+        命中表（增删之后、重绘之前它的序号已经对不上）；条带是环，取两侧里近的那个。"""
+        if not self._cuts or not self._total_width:
+            return None
+        scale = self._source_scale()
+        world = (screen_x + self._offset) % self._total_width
+        distances = []
+        for index, cut in enumerate(self._cuts):
+            gap = abs(cut * scale - world)
+            distances.append((index, min(gap, self._total_width - gap)))
+        return min(distances, key=lambda item: item[1])
 
     def _move_cut(self, screen_x: float):
         if not self._total_width:

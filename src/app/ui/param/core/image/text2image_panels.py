@@ -68,3 +68,30 @@ class QwenImageLightningPanel(_TextToImagePanel):
     # Lightning LoRA 是少步蒸馏，后端把 guidance_scale 当作 true_cfg_scale 使用
     _STEPS = (1, 20, 8)
     _GUIDANCE = (1.0, 10.0, 1.0)
+
+
+class QwenImage21TurboPanel(_TextToImagePanel):
+    names = ["Qwen-Image-2.1-Turbo", "Qwen-Image-2.1-Turbo-Q4"]
+    _TITLE = "Qwen-Image-2.1-Turbo 参数"
+
+    def _build_widgets(self):
+        # Turbo 的 8 步采样日程和 CFG=1 存在检查点里，改步数 / CFG 不会生效，所以不放这两项
+        self._number = self._labeled_slider(1, 10, 1)
+        self._add_row(self.tr("number"), self._number)
+
+        self._width = self._labeled_slider(256, 2048, 1024, step=64)
+        self._add_row(self.tr("width"), self._width)
+
+        self._height = self._labeled_slider(256, 2048, 1024, step=64)
+        self._add_row(self.tr("height"), self._height)
+
+        self._seed = self._labeled_slider(0, 2147483647, 0)
+        self._add_row(self.tr("seed"), self._seed)
+
+    def get_params(self) -> dict:
+        return {
+            "number": self._number.value(),
+            "width":  self._width.value(),
+            "height": self._height.value(),
+            "seed":   self._seed.value(),
+        }

@@ -315,12 +315,12 @@
       },
       "offload": {
         "type": "block_level",
-        "blocks_per_group": 4,
+        "blocks_per_group": 25,
         "use_stream": false,
         "leaf_components": ["vae"]
       },
       "defaults": {
-        "num_inference_steps": 20,
+        "num_inference_steps": 10,
         "true_cfg_scale": 1.0,
         "resolution": 640
       },

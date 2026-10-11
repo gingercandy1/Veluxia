@@ -70,7 +70,7 @@ SEAM_PREVIEW_SIZE = QSize(80, 200)
 RING_SOURCE_STEP = "generate"
 # 手动调整后每段的宽度范围，与后端 ring_cuts.MIN_MANUAL_SEGMENT / MAX_SEGMENT 一致
 MIN_SEGMENT_WIDTH = 256
-MAX_SEGMENT_WIDTH = 1536
+MAX_SEGMENT_WIDTH = 2536
 
 
 def segment_widths(cuts: list[int], total: int) -> list[int]:
@@ -157,6 +157,7 @@ class PackDetail(BaseWidget):
     ring_cuts_confirm_requested = Signal(list)     # 切点（长图原图像素）
     ring_layers_requested = Signal(list)           # 要重做的段序号；空列表 = 做所有没分层的段
     ring_segment_requested = Signal(int)           # 要看这一段的段图和图层
+    ring_layers_progressed = Signal()              # 分层中已完成的段数变了：该刷新图层了
     ring_layers_merge_requested = Signal(int, list)    # 段序号, 要合并的层编号
     ring_merged_delete_requested = Signal(int, str)    # 段序号, 要删除的合并层编号
     ring_layer_opened = Signal(str)                # 双击放大：段图或图层的相对路径
@@ -194,6 +195,7 @@ class PackDetail(BaseWidget):
         self._segment_merged: list[list[MergedLayer]] = []
         self._segment_images: dict[str, QImage] = {}
         self._current_segment = -1
+        self._layers_done_seen = 0
         self._ring_layering = False
         # 正在生成的接缝 (key, 0~1) 和分层任务回传的最新进度；任务结束即清空
         self._seam_running: tuple[str, float] | None = None
@@ -447,6 +449,7 @@ class PackDetail(BaseWidget):
         cut_row.addWidget(self.ring_cut_info, 1)
         ring_layout.addLayout(cut_row)
         self.ring_strip.cuts_edited.connect(self._on_ring_cuts_edited)
+        self.ring_strip.setToolTip(self._cut_hint())
 
         # 分层：确认切段后每段交给 Qwen-Layered 分 4 层；这里逐段看结果、不满意单段重做
         self.layer_panel = QWidget()
@@ -606,6 +609,7 @@ class PackDetail(BaseWidget):
             self._saved_cuts, self._cuts_stale, self._segment_count = [], False, 0
             self._segments, self._segment_layers, self._segment_images = [], [], {}
             self._segment_merged, self._current_segment = [], -1
+            self._layers_done_seen = 0
             self.ring_strip.set_cuts([])
             self.ring_strip.reset_view()
             self.seam_panel.hide()
@@ -805,12 +809,12 @@ class PackDetail(BaseWidget):
         self._update_cut_controls()
 
     def _set_segments(self, segments: list[str], layers: list[list[str]],
-                      merged: list[list[MergedLayer]]):
+                      merged: list[list[MergedLayer]], force: bool = False):
         # 后端的三个列表本应一一对应；少了的按"没分层"补齐，不让下标越界
         layers = layers + [[] for _ in range(len(segments) - len(layers))]
         merged = merged + [[] for _ in range(len(segments) - len(merged))]
-        changed = (segments != self._segments or layers != self._segment_layers
-                   or merged != self._segment_merged)
+        changed = force or (segments != self._segments or layers != self._segment_layers
+                            or merged != self._segment_merged)
         self._segments, self._segment_layers, self._segment_merged = segments, layers, merged
         if not changed:
             return
@@ -833,10 +837,19 @@ class PackDetail(BaseWidget):
             self.layer_chips.addButton(chip, index)
             self.layer_chip_layout.addWidget(chip)
 
-    def clear_segment_images(self):
+    def apply_layer_status(self, status: RingStatusResponse):
+        """分层进行中取回的最新状态：只更新选段按钮和图层列表，不动接缝和条带。
+        重做的段沿用原文件名，缓存的图要作废，当前段的图随后重新取。"""
         self._segment_images = {}
-        # 让下一次 set_ring 一定重建选段按钮并重新取当前段的图
-        self._segments, self._segment_layers, self._segment_merged = [], [], []
+        self._set_segments(list(status.segments), [list(x) for x in status.segment_layers],
+                           [list(x) for x in status.segment_merged], force=True)
+
+    def clear_segment_images(self):
+        """作废缓存的图并重新取当前段的。不能清空段列表：那会让"分层"页签闪退，
+        正看着的页被切走（合并 / 删除合并层完成后就是这样跳走的）。"""
+        self._segment_images = {}
+        if self._segments:
+            self._show_segment()
 
     def set_segment_images(self, images: dict[str, QImage]):
         """页面取回的段图 / 图层，键是相对路径；只更新当前选中那段用得上的。"""
@@ -930,6 +943,11 @@ class PackDetail(BaseWidget):
                 self.center_stack.setCurrentIndex(1)
             return
         done, total = self._layer_progress()
+        if done != self._layers_done_seen:
+            self._layers_done_seen = done
+            if self._ring_layering:
+                # 分层要跑几个小时：每做完一段就去取新的图层，不必等整个任务结束
+                self.ring_layers_progressed.emit()
         idle = not self._busy and not self._ring_running and self._ring_operation is None
         parts = [self.tr("Layered {0}/{1} segments").format(done, total)]
         if done < total:
@@ -946,6 +964,10 @@ class PackDetail(BaseWidget):
         self.layer_run_btn.setEnabled(idle and done < total)
         self.layer_redo_btn.setEnabled(idle and self._current_segment >= 0)
         self.layer_stack.set_idle(idle)
+
+    def _cut_hint(self) -> str:
+        return self.tr("drag the red lines to adjust · Shift+click adds one · "
+                       "Shift+right-click removes one · then confirm")
 
     def _update_cut_controls(self):
         cuts = self.ring_strip.cuts()
@@ -969,7 +991,7 @@ class PackDetail(BaseWidget):
         elif self._cuts_stale and not edited:
             parts.append(self.tr("screens changed since cutting, auto cut again"))
         elif edited or not self._segment_count:
-            parts.append(self.tr("drag the red lines to adjust, then confirm"))
+            parts.append(self._cut_hint())
         else:
             parts.append(self.tr("{0} segment images saved").format(self._segment_count))
         self.ring_cut_info.setText("  ·  ".join(parts))

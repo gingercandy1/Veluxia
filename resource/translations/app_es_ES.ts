@@ -1074,7 +1074,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+273"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+274"/>
         <source>Failed to load packs: {0}</source>
         <translation>No se pudieron cargar los paquetes: {0}</translation>
     </message>
@@ -1084,12 +1084,12 @@
         <translation>No se pudieron cargar las plantillas: {0}</translation>
     </message>
     <message>
-        <location line="+398"/>
+        <location line="+414"/>
         <source>Failed to create pack: {0}</source>
         <translation>No se pudo crear el paquete: {0}</translation>
     </message>
     <message>
-        <location line="-279"/>
+        <location line="-295"/>
         <source>Run failed: {0}</source>
         <translation>Error de ejecución: {0}</translation>
     </message>
@@ -1120,12 +1120,13 @@
         <translation>La unión no produjo ningún candidato.</translation>
     </message>
     <message>
-        <location line="+62"/>
+        <location line="+78"/>
         <source>Could not decode image: {0}</source>
         <translation>No se pudo decodificar la imagen: {0}</translation>
     </message>
     <message>
-        <location line="+81"/>
+        <location line="-45"/>
+        <location line="+126"/>
         <location line="+34"/>
         <source>Ring operation failed: {0}</source>
         <translation>Falló la operación del bucle: {0}</translation>
@@ -1391,7 +1392,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+230"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+232"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
@@ -1417,13 +1418,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+369"/>
-        <location line="+566"/>
+        <location line="+371"/>
+        <location line="+584"/>
         <source>Export</source>
         <translation>Exportar</translation>
     </message>
     <message>
-        <location line="-933"/>
+        <location line="-953"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Guarda los recursos terminados en un zip, una carpeta por elemento, sin borradores ni archivos intermedios.</translation>
     </message>
@@ -1508,7 +1509,7 @@
         <translation>Confirmar cortes</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+30"/>
         <source>Redo this segment</source>
         <translation>Rehacer este tramo</translation>
     </message>
@@ -1533,7 +1534,7 @@
         <translation>Rehacer esta unión</translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+104"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} listos</translation>
     </message>
@@ -1553,7 +1554,7 @@
         <translation>Tramo {0}</translation>
     </message>
     <message>
-        <location line="+102"/>
+        <location line="+116"/>
         <source>Layered {0}/{1} segments</source>
         <translation>{0}/{1} tramos separados en capas</translation>
     </message>
@@ -1583,7 +1584,12 @@
         <translation>segmento {0}: {1}</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+9"/>
+        <source>drag the red lines to adjust · Shift+click adds one · Shift+right-click removes one · then confirm</source>
+        <translation>arrastre las líneas rojas · Mayús+clic añade una · Mayús+clic derecho quita una · luego confirme</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
         <translation>Antes de separar capas, corta el bucle en tramos: compón primero y luego pulsa «Corte automático».</translation>
     </message>
@@ -1603,12 +1609,7 @@
         <translation>las pantallas cambiaron tras cortar; vuelve a cortar automáticamente</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>drag the red lines to adjust, then confirm</source>
-        <translation>arrastra las líneas rojas para ajustar y luego confirma</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="+4"/>
         <source>{0} segment images saved</source>
         <translation>{0} imágenes de tramo guardadas</translation>
     </message>
@@ -2034,7 +2035,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+146"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+148"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>Prepara al menos dos pantallas de escena terminadas y luego planifica el bucle.</translation>
     </message>

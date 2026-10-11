@@ -160,6 +160,7 @@ class LibraryPage(BaseWidget):
         self.detail.ring_layers_requested.connect(
             lambda indices: self._run_ring_action("layers", indices=indices))
         self.detail.ring_segment_requested.connect(self._load_segment_images)
+        self.detail.ring_layers_progressed.connect(self._refresh_layer_status)
         self.detail.ring_layers_merge_requested.connect(
             lambda segment, ids: self._run_ring_action("merge", segment=segment, layer_ids=ids))
         self.detail.ring_merged_delete_requested.connect(
@@ -480,6 +481,22 @@ class LibraryPage(BaseWidget):
             return
         self._start(self._fetch_candidate_images, list(seam.candidates),
                     on_ok=lambda images: self.detail.set_ring_candidate_images(key, images),
+                    on_error=self._on_worker_error)
+
+    def _refresh_layer_status(self):
+        """分层做完一段就取最新状态，让这一段的图层马上出现在分层页。"""
+        pack = self.detail.pack
+        if pack is None:
+            return
+        pack_id = pack.manifest.id
+
+        def apply(status):
+            if not status.ok:
+                self.detail.set_error(self.tr("Ring operation failed: {0}").format(status.error))
+            elif self.detail.pack is not None and self.detail.pack.manifest.id == pack_id:
+                self.detail.apply_layer_status(status)
+
+        self._start(self._client.ring_status, pack_id, on_ok=apply,
                     on_error=self._on_worker_error)
 
     def _load_segment_images(self, index: int):

@@ -1072,7 +1072,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+273"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+274"/>
         <source>Failed to load packs: {0}</source>
         <translation>加载资源包列表失败：{0}</translation>
     </message>
@@ -1082,12 +1082,12 @@
         <translation>加载模板失败：{0}</translation>
     </message>
     <message>
-        <location line="+398"/>
+        <location line="+414"/>
         <source>Failed to create pack: {0}</source>
         <translation>创建资源包失败：{0}</translation>
     </message>
     <message>
-        <location line="-279"/>
+        <location line="-295"/>
         <source>Run failed: {0}</source>
         <translation>执行失败：{0}</translation>
     </message>
@@ -1097,7 +1097,7 @@
         <translation>该接缝没有产生候选。</translation>
     </message>
     <message>
-        <location line="+209"/>
+        <location line="+225"/>
         <source>Failed to add items: {0}</source>
         <translation>添加条目失败：{0}</translation>
     </message>
@@ -1179,7 +1179,7 @@
         <translation>风格预设：{0}</translation>
     </message>
     <message>
-        <location line="-434"/>
+        <location line="-450"/>
         <location line="+68"/>
         <source>Could not load ring status.</source>
         <translation>无法读取循环状态。</translation>
@@ -1200,12 +1200,13 @@
         <translation>尚未合成</translation>
     </message>
     <message>
-        <location line="+93"/>
+        <location line="+109"/>
         <source>Could not decode image: {0}</source>
         <translation>无法解码图片：{0}</translation>
     </message>
     <message>
-        <location line="+81"/>
+        <location line="-45"/>
+        <location line="+126"/>
         <location line="+34"/>
         <source>Ring operation failed: {0}</source>
         <translation>循环操作失败：{0}</translation>
@@ -1389,7 +1390,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+230"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+232"/>
         <source>Library</source>
         <translation>资料库</translation>
     </message>
@@ -1415,13 +1416,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+369"/>
-        <location line="+566"/>
+        <location line="+371"/>
+        <location line="+584"/>
         <source>Export</source>
         <translation>导出</translation>
     </message>
     <message>
-        <location line="-933"/>
+        <location line="-953"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>将成品保存为 zip，每个条目对应一个文件夹，不含草稿和中间文件。</translation>
     </message>
@@ -1471,7 +1472,7 @@
         <translation>确认切段</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+30"/>
         <source>Redo this segment</source>
         <translation>重做此段</translation>
     </message>
@@ -1496,7 +1497,7 @@
         <translation>重做接缝</translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+104"/>
         <source>{0}/{1} done</source>
         <translation>已完成 {0}/{1}</translation>
     </message>
@@ -1516,7 +1517,7 @@
         <translation>第 {0} 段</translation>
     </message>
     <message>
-        <location line="+102"/>
+        <location line="+116"/>
         <source>Layered {0}/{1} segments</source>
         <translation>已分层 {0}/{1} 段</translation>
     </message>
@@ -1546,7 +1547,12 @@
         <translation>第 {0} 段：{1}</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+9"/>
+        <source>drag the red lines to adjust · Shift+click adds one · Shift+right-click removes one · then confirm</source>
+        <translation>拖动红线调整 · Shift+左键添加 · Shift+右键删除 · 然后确认</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
         <translation>分层前需将循环切分为若干段：请先合成，再点击“自动切段”。</translation>
     </message>
@@ -1566,12 +1572,7 @@
         <translation>切段后屏的画面已变化，请重新自动切段</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>drag the red lines to adjust, then confirm</source>
-        <translation>拖动红线进行调整，然后确认</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="+4"/>
         <source>{0} segment images saved</source>
         <translation>已保存 {0} 段图</translation>
     </message>
@@ -1651,7 +1652,7 @@
         <translation>删除此条目及其全部素材</translation>
     </message>
     <message>
-        <location line="-922"/>
+        <location line="-942"/>
         <source>Resources</source>
         <translation>资源</translation>
     </message>
@@ -1686,7 +1687,7 @@
         <translation>生成接缝</translation>
     </message>
     <message>
-        <location line="+590"/>
+        <location line="+610"/>
         <source>Generating seams…</source>
         <translation>正在生成接缝…</translation>
     </message>
@@ -2032,7 +2033,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+146"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+148"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>请先准备至少两张已完成的场景图，再规划循环。</translation>
     </message>

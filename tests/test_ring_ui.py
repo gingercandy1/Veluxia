@@ -318,6 +318,54 @@ def test_strip_cut_lines_drag_and_emit_sorted_cuts(qapp):
     assert seams == [] and strip._offset == 0
 
 
+def test_strip_shift_click_adds_and_shift_right_click_removes_cuts(qapp):
+    strip = RingStrip()
+    strip.resize(400, 180)
+    strip.set_images([QImage(300, 180, QImage.Format.Format_RGB32) for _ in range(2)])
+    strip.set_cuts([100, 350])
+    strip.set_offset(0)
+    strip.grab()
+    edited, seams = [], []
+    strip.cuts_edited.connect(edited.append)
+    strip.seam_selected.connect(seams.append)
+    shift = Qt.KeyboardModifier.ShiftModifier
+
+    # Shift+左键：在点击处加一条，切点保持升序；不算点接缝，也不拖动
+    QTest.mouseClick(strip, Qt.MouseButton.LeftButton, shift, QPoint(200, 90))
+    assert strip.cuts() == [100, 200, 350] and edited == [[100, 200, 350]]
+    assert seams == []
+
+    # 点在已有切线上不重复加
+    QTest.mouseClick(strip, Qt.MouseButton.LeftButton, shift, QPoint(103, 90))
+    assert strip.cuts() == [100, 200, 350]
+
+    # 条带视角偏移后，点击位置按世界坐标换算
+    strip.set_offset(50)
+    strip.grab()
+    QTest.mouseClick(strip, Qt.MouseButton.LeftButton, shift, QPoint(260, 90))
+    assert strip.cuts() == [100, 200, 310, 350]
+    strip.set_offset(0)
+    strip.grab()
+
+    # Shift+右键：删掉最近的一条；离得太远不删；不按 Shift 的右键不删
+    QTest.mouseClick(strip, Qt.MouseButton.RightButton, shift, QPoint(203, 90))
+    assert strip.cuts() == [100, 310, 350]
+    QTest.mouseClick(strip, Qt.MouseButton.RightButton, shift, QPoint(250, 90))
+    QTest.mouseClick(strip, Qt.MouseButton.RightButton, Qt.KeyboardModifier.NoModifier,
+                     QPoint(100, 90))
+    assert strip.cuts() == [100, 310, 350]
+    assert edited[-1] == [100, 310, 350]
+
+    # 至少留一条：后端不接受没有切点
+    QTest.mouseClick(strip, Qt.MouseButton.RightButton, shift, QPoint(100, 90))
+    # 连续删（中间不重绘）也要对：不能拿重绘前的旧序号越界或删错
+    QTest.mouseClick(strip, Qt.MouseButton.RightButton, shift, QPoint(310, 90))
+    assert strip.cuts() == [350]
+    # 最后一条删不掉
+    QTest.mouseClick(strip, Qt.MouseButton.RightButton, shift, QPoint(350, 90))
+    assert strip.cuts() == [350]
+
+
 def test_pack_detail_cut_controls_follow_status_and_edits(qapp):
     detail = PackDetail()
     pack, template = _scene_pack(item_count=2)
@@ -432,6 +480,64 @@ def test_layer_panel_progress_thumbs_and_redo(qapp):
     detail.set_ring(images, images, "", done.model_copy(update={"cuts_stale": True}))
     assert detail.layer_view_btn.isHidden()
     assert detail.center_stack.currentIndex() == 1 and detail.ring_view_btn.isChecked()
+
+
+def test_merge_refresh_keeps_the_layer_page(qapp):
+    detail = PackDetail()
+    pack, template = _scene_pack(item_count=2)
+    detail.show_pack(pack, template, busy=False)
+    detail.ring_view_btn.click()
+    images = [QImage(1200, 180, QImage.Format.Format_RGB32) for _ in range(2)]
+    first_layers = [f"ring/layers/504_1200/layer_{i}.png" for i in range(1, 5)]
+    detail.set_ring(images, images, "", _merge_status(first_layers, []))
+    detail.layer_view_btn.click()
+    requested = []
+    detail.ring_segment_requested.connect(requested.append)
+
+    # 合并完成后页面的刷新顺序：作废缓存图 -> 轮询刷新 manifest -> 重新取状态
+    detail.clear_segment_images()
+    detail.show_pack(pack, template, busy=False)
+    assert detail.center_stack.currentWidget() is detail.layer_page
+    assert detail.layer_view_btn.isChecked() and not detail.layer_view_btn.isHidden()
+    # 缓存作废后当前段的图要重新取
+    assert requested == [0]
+
+    merged = [MergedLayer(id="M1", path="ring/layers/504_1200/merged_1.png",
+                          sources=["L1", "L2"], z=2)]
+    detail.set_ring(images, images, "", _merge_status(first_layers, merged))
+    assert detail.center_stack.currentWidget() is detail.layer_page
+    assert detail.layer_stack.row("M1") is not None
+
+
+def test_layers_appear_as_each_segment_finishes(qapp):
+    detail = PackDetail()
+    pack, template = _scene_pack(item_count=2)
+    detail.show_pack(pack, template, busy=False)
+    detail.ring_view_btn.click()
+    images = [QImage(1200, 180, QImage.Format.Format_RGB32) for _ in range(2)]
+    first_layers = [f"ring/layers/504_1200/layer_{i}.png" for i in range(1, 5)]
+    status = _merge_status([], [])
+    detail.set_ring(images, images, "", status)
+    refreshed = []
+    detail.ring_layers_progressed.connect(lambda: refreshed.append(1))
+
+    # 不在分层时，完成段数变化不触发刷新（轮询别的东西时不重复取）
+    detail._layers_done_seen = 1
+    detail._update_layer_controls()
+    assert refreshed == []
+
+    # 分层中完成段数变了：通知页面去取最新状态；没变就不重复取
+    detail.set_ring_running(True, layering=True)
+    detail._layers_done_seen = 1
+    detail._update_layer_controls()
+    assert refreshed == [1]
+    detail._update_layer_controls()
+    assert refreshed == [1]
+
+    # 取回的新状态里第 1 段已有图层：选段按钮带 ✓，图层列表出现这一段的层
+    detail.apply_layer_status(_merge_status(first_layers, []))
+    assert detail.layer_chips.buttons()[0].text() == "1 ✓"
+    assert detail.layer_stack.row("L1") is not None
 
 
 def _segment_cell_states(detail):

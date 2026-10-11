@@ -1072,7 +1072,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+273"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+274"/>
         <source>Failed to load packs: {0}</source>
         <translation>팩 목록을 불러오지 못했습니다: {0}</translation>
     </message>
@@ -1082,12 +1082,12 @@
         <translation>템플릿을 불러오지 못했습니다: {0}</translation>
     </message>
     <message>
-        <location line="+398"/>
+        <location line="+414"/>
         <source>Failed to create pack: {0}</source>
         <translation>팩을 만들지 못했습니다: {0}</translation>
     </message>
     <message>
-        <location line="-279"/>
+        <location line="-295"/>
         <source>Run failed: {0}</source>
         <translation>실행 실패: {0}</translation>
     </message>
@@ -1097,7 +1097,7 @@
         <translation>이 이음새에서 후보가 만들어지지 않았습니다.</translation>
     </message>
     <message>
-        <location line="+209"/>
+        <location line="+225"/>
         <source>Failed to add items: {0}</source>
         <translation>항목 추가 실패: {0}</translation>
     </message>
@@ -1179,7 +1179,7 @@
         <translation>스타일 프리셋: {0}</translation>
     </message>
     <message>
-        <location line="-434"/>
+        <location line="-450"/>
         <location line="+68"/>
         <source>Could not load ring status.</source>
         <translation>링 상태를 불러올 수 없습니다.</translation>
@@ -1200,12 +1200,13 @@
         <translation>아직 합성되지 않음</translation>
     </message>
     <message>
-        <location line="+93"/>
+        <location line="+109"/>
         <source>Could not decode image: {0}</source>
         <translation>이미지를 디코딩할 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location line="+81"/>
+        <location line="-45"/>
+        <location line="+126"/>
         <location line="+34"/>
         <source>Ring operation failed: {0}</source>
         <translation>링 작업 실패: {0}</translation>
@@ -1389,7 +1390,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+230"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+232"/>
         <source>Library</source>
         <translation>라이브러리</translation>
     </message>
@@ -1415,13 +1416,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+369"/>
-        <location line="+566"/>
+        <location line="+371"/>
+        <location line="+584"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-933"/>
+        <location line="-953"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>완성된 에셋을 zip으로 저장합니다. 항목마다 폴더 하나이며 초안과 중간 파일은 포함하지 않습니다.</translation>
     </message>
@@ -1471,7 +1472,7 @@
         <translation>분할 확정</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+30"/>
         <source>Redo this segment</source>
         <translation>이 구간 다시 하기</translation>
     </message>
@@ -1496,7 +1497,7 @@
         <translation>이 이음새 다시 만들기</translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+104"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 완료</translation>
     </message>
@@ -1516,7 +1517,7 @@
         <translation>{0}번 구간</translation>
     </message>
     <message>
-        <location line="+102"/>
+        <location line="+116"/>
         <source>Layered {0}/{1} segments</source>
         <translation>{0}/{1}개 구간 레이어 분리 완료</translation>
     </message>
@@ -1546,7 +1547,12 @@
         <translation>구간 {0}: {1}</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+9"/>
+        <source>drag the red lines to adjust · Shift+click adds one · Shift+right-click removes one · then confirm</source>
+        <translation>빨간 선을 드래그해 조정 · Shift+클릭으로 추가 · Shift+오른쪽 클릭으로 삭제 · 그다음 확정</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
         <translation>레이어 분리 전에 루프를 구간으로 나눕니다. 먼저 합성한 뒤 &apos;자동 분할&apos;을 누르세요.</translation>
     </message>
@@ -1566,12 +1572,7 @@
         <translation>분할 후 화면이 바뀌었습니다. 다시 자동 분할하세요</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>drag the red lines to adjust, then confirm</source>
-        <translation>빨간 선을 드래그해 조정한 뒤 확정하세요</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="+4"/>
         <source>{0} segment images saved</source>
         <translation>구간 이미지 {0}개를 저장했습니다</translation>
     </message>
@@ -1651,7 +1652,7 @@
         <translation>이 항목과 모든 에셋 삭제</translation>
     </message>
     <message>
-        <location line="-922"/>
+        <location line="-942"/>
         <source>Resources</source>
         <translation>리소스</translation>
     </message>
@@ -1686,7 +1687,7 @@
         <translation>이음새 생성</translation>
     </message>
     <message>
-        <location line="+590"/>
+        <location line="+610"/>
         <source>Generating seams…</source>
         <translation>이음새 생성 중…</translation>
     </message>
@@ -2032,7 +2033,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+146"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+148"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>완료된 장면 화면을 두 개 이상 준비한 다음 링을 계획하세요.</translation>
     </message>

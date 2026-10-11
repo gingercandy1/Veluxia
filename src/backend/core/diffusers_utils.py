@@ -154,8 +154,6 @@ def apply_offload(pipe, mode: str = "model", device: str = "cuda", group: dict |
         }
         leaf_components = set(options.get("leaf_components", []))
         if leaf_components:
-            # pipe.enable_group_offload 的 exclude_modules 会把被排除的组件直接搬上显存，
-            # 所以这里照它的逻辑自己逐个组件处理
             from diffusers.hooks import apply_group_offloading
             for name, component in pipe.components.items():
                 if not isinstance(component, torch.nn.Module):

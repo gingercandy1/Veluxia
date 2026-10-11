@@ -1074,7 +1074,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+273"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+274"/>
         <source>Failed to load packs: {0}</source>
         <translation>Failed to load packs: {0}</translation>
     </message>
@@ -1084,12 +1084,12 @@
         <translation>Failed to load templates: {0}</translation>
     </message>
     <message>
-        <location line="+398"/>
+        <location line="+414"/>
         <source>Failed to create pack: {0}</source>
         <translation>Failed to create pack: {0}</translation>
     </message>
     <message>
-        <location line="-279"/>
+        <location line="-295"/>
         <source>Run failed: {0}</source>
         <translation>Run failed: {0}</translation>
     </message>
@@ -1099,7 +1099,7 @@
         <translation>The seam produced no candidate.</translation>
     </message>
     <message>
-        <location line="+209"/>
+        <location line="+225"/>
         <source>Failed to add items: {0}</source>
         <translation>Failed to add items: {0}</translation>
     </message>
@@ -1181,7 +1181,7 @@
         <translation>Style presets: {0}</translation>
     </message>
     <message>
-        <location line="-434"/>
+        <location line="-450"/>
         <location line="+68"/>
         <source>Could not load ring status.</source>
         <translation>Could not load ring status.</translation>
@@ -1202,12 +1202,13 @@
         <translation>Not rendered yet</translation>
     </message>
     <message>
-        <location line="+93"/>
+        <location line="+109"/>
         <source>Could not decode image: {0}</source>
         <translation>Could not decode image: {0}</translation>
     </message>
     <message>
-        <location line="+81"/>
+        <location line="-45"/>
+        <location line="+126"/>
         <location line="+34"/>
         <source>Ring operation failed: {0}</source>
         <translation>Ring operation failed: {0}</translation>
@@ -1391,7 +1392,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+230"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+232"/>
         <source>Library</source>
         <translation>Library</translation>
     </message>
@@ -1417,13 +1418,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+369"/>
-        <location line="+566"/>
+        <location line="+371"/>
+        <location line="+584"/>
         <source>Export</source>
         <translation>Export</translation>
     </message>
     <message>
-        <location line="-933"/>
+        <location line="-953"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</translation>
     </message>
@@ -1473,7 +1474,7 @@
         <translation>Confirm cuts</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+30"/>
         <source>Redo this segment</source>
         <translation>Redo this segment</translation>
     </message>
@@ -1498,7 +1499,7 @@
         <translation>Redo this seam</translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+104"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} done</translation>
     </message>
@@ -1518,7 +1519,7 @@
         <translation>Segment {0}</translation>
     </message>
     <message>
-        <location line="+102"/>
+        <location line="+116"/>
         <source>Layered {0}/{1} segments</source>
         <translation>Layered {0}/{1} segments</translation>
     </message>
@@ -1548,7 +1549,12 @@
         <translation>segment {0}: {1}</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+9"/>
+        <source>drag the red lines to adjust · Shift+click adds one · Shift+right-click removes one · then confirm</source>
+        <translation>drag the red lines to adjust · Shift+click adds one · Shift+right-click removes one · then confirm</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
         <translation>Before layering, cut the ring into segments: render first, then Auto cut.</translation>
     </message>
@@ -1568,12 +1574,7 @@
         <translation>screens changed since cutting, auto cut again</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>drag the red lines to adjust, then confirm</source>
-        <translation>drag the red lines to adjust, then confirm</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="+4"/>
         <source>{0} segment images saved</source>
         <translation>{0} segment images saved</translation>
     </message>
@@ -1653,7 +1654,7 @@
         <translation>Delete this item and all its assets</translation>
     </message>
     <message>
-        <location line="-922"/>
+        <location line="-942"/>
         <source>Resources</source>
         <translation>Resources</translation>
     </message>
@@ -1688,7 +1689,7 @@
         <translation>Generate seams</translation>
     </message>
     <message>
-        <location line="+590"/>
+        <location line="+610"/>
         <source>Generating seams…</source>
         <translation>Generating seams…</translation>
     </message>
@@ -2034,7 +2035,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+146"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+148"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>Add at least two finished scene screens, then plan the ring.</translation>
     </message>

@@ -1072,7 +1072,7 @@
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+273"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+274"/>
         <source>Failed to load packs: {0}</source>
         <translation>パック一覧の読み込みに失敗しました：{0}</translation>
     </message>
@@ -1082,12 +1082,12 @@
         <translation>テンプレートの読み込みに失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+398"/>
+        <location line="+414"/>
         <source>Failed to create pack: {0}</source>
         <translation>パックの作成に失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="-279"/>
+        <location line="-295"/>
         <source>Run failed: {0}</source>
         <translation>実行に失敗しました：{0}</translation>
     </message>
@@ -1097,7 +1097,7 @@
         <translation>このつなぎ目では候補が生成されませんでした。</translation>
     </message>
     <message>
-        <location line="+209"/>
+        <location line="+225"/>
         <source>Failed to add items: {0}</source>
         <translation>アイテムの追加に失敗しました：{0}</translation>
     </message>
@@ -1179,7 +1179,7 @@
         <translation>スタイルプリセット：{0}</translation>
     </message>
     <message>
-        <location line="-434"/>
+        <location line="-450"/>
         <location line="+68"/>
         <source>Could not load ring status.</source>
         <translation>循環状態を読み込めません。</translation>
@@ -1200,12 +1200,13 @@
         <translation>まだ合成されていません</translation>
     </message>
     <message>
-        <location line="+93"/>
+        <location line="+109"/>
         <source>Could not decode image: {0}</source>
         <translation>画像をデコードできません：{0}</translation>
     </message>
     <message>
-        <location line="+81"/>
+        <location line="-45"/>
+        <location line="+126"/>
         <location line="+34"/>
         <source>Ring operation failed: {0}</source>
         <translation>循環処理に失敗しました：{0}</translation>
@@ -1389,7 +1390,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+230"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+232"/>
         <source>Library</source>
         <translation>ライブラリ</translation>
     </message>
@@ -1415,13 +1416,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+369"/>
-        <location line="+566"/>
+        <location line="+371"/>
+        <location line="+584"/>
         <source>Export</source>
         <translation>書き出し</translation>
     </message>
     <message>
-        <location line="-933"/>
+        <location line="-953"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>完成したアセットを zip で保存します。アイテムごとに 1 フォルダーで、下書きや中間ファイルは含みません。</translation>
     </message>
@@ -1471,7 +1472,7 @@
         <translation>分割を確定</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+30"/>
         <source>Redo this segment</source>
         <translation>この区間をやり直す</translation>
     </message>
@@ -1496,7 +1497,7 @@
         <translation>このつなぎ目をやり直す</translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+104"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 完了</translation>
     </message>
@@ -1516,7 +1517,7 @@
         <translation>区間 {0}</translation>
     </message>
     <message>
-        <location line="+102"/>
+        <location line="+116"/>
         <source>Layered {0}/{1} segments</source>
         <translation>{0}/{1} 区間をレイヤー分け済み</translation>
     </message>
@@ -1546,7 +1547,12 @@
         <translation>セグメント {0}：{1}</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+9"/>
+        <source>drag the red lines to adjust · Shift+click adds one · Shift+right-click removes one · then confirm</source>
+        <translation>赤い線をドラッグして調整 · Shift+クリックで追加 · Shift+右クリックで削除 · その後確定</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
         <translation>レイヤー分けの前にループを区間に分割します。先に合成してから「自動分割」を押してください。</translation>
     </message>
@@ -1566,12 +1572,7 @@
         <translation>分割後に画面が変わりました。もう一度自動分割してください</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <source>drag the red lines to adjust, then confirm</source>
-        <translation>赤い線をドラッグして調整し、確定してください</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="+4"/>
         <source>{0} segment images saved</source>
         <translation>{0} 区間の画像を保存しました</translation>
     </message>
@@ -1651,7 +1652,7 @@
         <translation>このアイテムとすべてのアセットを削除</translation>
     </message>
     <message>
-        <location line="-922"/>
+        <location line="-942"/>
         <source>Resources</source>
         <translation>素材</translation>
     </message>
@@ -1686,7 +1687,7 @@
         <translation>継ぎ目を生成</translation>
     </message>
     <message>
-        <location line="+590"/>
+        <location line="+610"/>
         <source>Generating seams…</source>
         <translation>継ぎ目を生成中…</translation>
     </message>
@@ -2032,7 +2033,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+146"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+148"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>完成したシーン画像を2枚以上用意して、ループを計画してください。</translation>
     </message>

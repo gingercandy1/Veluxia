@@ -50,7 +50,7 @@ def test_image_models_registered():
     register_all()
     names = GeneratorFactory.get_generator_names(FactoryType.Image)
     for expected in ("Flux.1-schnell", "SDXL", "SD3.5-Medium", "Z-Image-Turbo",
-                     "Qwen-Image-Lightning", "rembg-u2net"):
+                     "Qwen-Image-Lightning", "Qwen-Image-2.1-Turbo", "rembg-u2net"):
         assert expected in names, f"{expected} 未注册到 Factory"
 
 

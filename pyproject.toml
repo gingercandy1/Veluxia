@@ -14,9 +14,9 @@ dependencies = [
 
     # HuggingFace
     "huggingface-hub>=0.23.0",
-    "transformers>=4.40.0",
+    "transformers>=5.17.0",
     "accelerate>=0.30.0",
-    "diffusers>=0.27.0",
+    "diffusers>=0.41.0",
 
     # Image
     "Pillow>=10.0.0",
@@ -98,7 +98,12 @@ members = ["app", "backend"]
 environments = ["sys_platform == 'win32'"]
 # qwen-tts 依赖 CPU 版 onnxruntime，它和 onnxruntime-gpu 装的是同一个 onnxruntime 目录，
 # 同时装会互相覆盖文件；用永不成立的标记把 CPU 版去掉，由 onnxruntime-gpu 提供（它也带 CPU 后端）
-override-dependencies = ["onnxruntime; sys_platform == 'never'"]
+override-dependencies = [
+    "onnxruntime; sys_platform == 'never'",
+    # qwen-tts 把 transformers 钉死在 ==4.57.3，和 Qwen-Image-2.1 的 >=5.17.0 冲突；
+    # 强制覆盖后 Qwen3-TTS 能否在 transformers 5 下运行需要实机验证
+    "transformers>=5.17.0",
+]
 
 [build-system]
 requires = ["hatchling"]
