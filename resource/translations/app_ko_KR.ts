@@ -1090,7 +1090,7 @@
 <context>
     <name>LayerWindow</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="+169"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="+243"/>
         <source>Extend</source>
         <translation>확장</translation>
     </message>
@@ -1150,7 +1150,27 @@
         <translation>병합 레이어 삭제</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+3"/>
+        <source>Add screens</source>
+        <translation>화면 추가</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Append screens to the end of the ring; a screen can be used more than once</source>
+        <translation>화면을 링의 끝에 추가합니다. 같은 화면을 여러 번 쓸 수 있습니다</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Remove</source>
+        <translation>제거</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove the selected screens from the ring (Delete)</source>
+        <translation>선택한 화면을 링에서 제거 (Delete)</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Describe the change for the selected layer, e.g. make the ground steeper</source>
         <translation>선택한 레이어에 적용할 변경을 입력하세요. 예: 지면을 더 가파르게</translation>
     </message>
@@ -1496,7 +1516,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+258"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+281"/>
         <source>Library</source>
         <translation>라이브러리</translation>
     </message>
@@ -1522,13 +1542,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+331"/>
-        <location line="+773"/>
+        <location line="+336"/>
+        <location line="+774"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-1102"/>
+        <location line="-1108"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>완성된 에셋을 zip으로 저장합니다. 항목마다 폴더 하나이며 초안과 중간 파일은 포함하지 않습니다.</translation>
     </message>
@@ -1563,7 +1583,7 @@
         <translation>이전 일러스트로 만든 단계와 그 이후 단계를 모두 다시 합니다.</translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+103"/>
         <source>Use this one</source>
         <translation>이것 사용</translation>
     </message>
@@ -1578,7 +1598,7 @@
         <translation>이 이음새 다시 만들기</translation>
     </message>
     <message>
-        <location line="+122"/>
+        <location line="+134"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 완료</translation>
     </message>
@@ -1593,12 +1613,12 @@
         <translation>스타일 프리셋 &quot;{0}&quot;이(가) 이 팩을 만든 뒤 변경되었습니다.</translation>
     </message>
     <message>
-        <location line="+224"/>
+        <location line="+211"/>
         <source>Segment {0}</source>
         <translation>{0}번 구간</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-38"/>
         <source>encoding</source>
         <translation>인코딩 중</translation>
     </message>
@@ -1608,12 +1628,12 @@
         <translation>노이즈 제거 중</translation>
     </message>
     <message>
-        <location line="-375"/>
+        <location line="-372"/>
         <source>Click a seam to select it · Ctrl+click selects several</source>
         <translation>이음새를 클릭해 선택 · Ctrl+클릭으로 여러 개 선택</translation>
     </message>
     <message>
-        <location line="+652"/>
+        <location line="+664"/>
         <source>Extending is only possible before segmenting</source>
         <translation>확장은 구간을 나누기 전에만 할 수 있습니다</translation>
     </message>
@@ -1648,7 +1668,7 @@
         <translation>선택한 구간을 레이어로 분리</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+32"/>
         <source>Extend screens</source>
         <translation>화면 확장</translation>
     </message>
@@ -1658,7 +1678,12 @@
         <translation>확장하면 화면이 바뀌어 기존 이음새와 레이어가 무효가 됩니다. 계속할까요?</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+15"/>
+        <source>Generating seam {0} → {1}… {2}%</source>
+        <translation>이음새 생성 중 {0} → {1}… {2}%</translation>
+    </message>
+    <message>
+        <location line="+28"/>
         <source>Layering segments…</source>
         <translation>레이어 분리 중…</translation>
     </message>
@@ -1673,7 +1698,7 @@
         <translation>편집 중…</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+14"/>
         <source>Updating the ring order…</source>
         <translation>루프 순서를 업데이트하는 중…</translation>
     </message>
@@ -1708,7 +1733,7 @@
         <translation>버전 전환 중…</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+21"/>
         <source>Seam {0} → {1}</source>
         <translation>이음새 {0} → {1}</translation>
     </message>
@@ -1728,7 +1753,7 @@
         <translation>{0} · 시드 {1}</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+146"/>
         <source>Nothing to export yet</source>
         <translation>아직 내보낼 항목이 없습니다</translation>
     </message>
@@ -1748,7 +1773,7 @@
         <translation>이 항목과 모든 에셋 삭제</translation>
     </message>
     <message>
-        <location line="-1091"/>
+        <location line="-1097"/>
         <source>Resources</source>
         <translation>리소스</translation>
     </message>
@@ -1778,7 +1803,7 @@
         <translation>가장자리가 잘 맞는 순서로 화면을 정렬합니다. 여러 번 추가한 화면은 하나로 합쳐집니다.</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+10"/>
         <source>Before</source>
         <translation>합성 전</translation>
     </message>
@@ -1788,12 +1813,12 @@
         <translation>합성 후</translation>
     </message>
     <message>
-        <location line="+767"/>
+        <location line="+779"/>
         <source>Generating seams…</source>
         <translation>이음새 생성 중…</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+10"/>
         <source>Planning order…</source>
         <translation>순서 계획 중…</translation>
     </message>
@@ -2134,17 +2159,9 @@
     </message>
 </context>
 <context>
-    <name>RingCardBar</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="+237"/>
-        <source>Add a screen. The same screen can be added again.</source>
-        <translation>화면을 추가합니다. 같은 화면을 여러 번 추가할 수 있습니다.</translation>
-    </message>
-</context>
-<context>
     <name>RingItemPicker</name>
     <message>
-        <location line="+166"/>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+39"/>
         <source>Add screens to the ring</source>
         <translation>루프에 화면 추가</translation>
     </message>
@@ -2261,34 +2278,6 @@
         <location line="+0"/>
         <source>Confirm and voice</source>
         <translation>대본 확정 후 더빙</translation>
-    </message>
-</context>
-<context>
-    <name>SeamLink</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="-239"/>
-        <source>Generating seam… {0}%</source>
-        <translation>이음매 생성 중… {0}%</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Seam: not generated yet</source>
-        <translation>이음매: 아직 생성되지 않음</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: has candidates, none adopted</source>
-        <translation>이음매: 후보 있음, 미채택</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: adopted</source>
-        <translation>이음매: 채택됨</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: source image changed, redo it</source>
-        <translation>이음매: 원본 이미지가 변경됨, 다시 만드세요</translation>
     </message>
 </context>
 <context>
@@ -2814,7 +2803,7 @@
 <context>
     <name>VersionControl</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="-141"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-221"/>
         <source>Switch between the original and edited versions</source>
         <translation>원본과 편집된 버전 사이 전환</translation>
     </message>

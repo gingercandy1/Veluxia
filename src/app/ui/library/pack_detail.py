@@ -49,7 +49,7 @@ from src.app.ui.library.pack_status import (
     step_fraction,
     step_skipped,
 )
-from src.app.ui.library.ring_cards import RingCardBar, RingItemPicker, SeamLinkState
+from src.app.ui.library.ring_cards import RingItemPicker
 from src.app.ui.library.ring_math import segment_widths
 from src.app.ui.library.ring_strip import RingStrip
 from src.app.ui.library.segment_canvas import SegmentCanvas
@@ -78,6 +78,7 @@ RING_SOURCE_STEP = "generate"
 LAYER_COUNT = 4
 # 节点键的前缀，格式见 docs/tasks/ring-canvas/plan.md 的"目标键"
 SCREEN_PREFIX = "screen:"
+SLOT_SEPARATOR = "@"
 SEGMENT_PREFIX = "segment:"
 LAYER_PREFIX = "layer:"
 # 工具按钮 -> 它的运行状态；"edit" 不对应任何工具，只让四个工具都禁用
@@ -86,7 +87,27 @@ TOOL_OF_ACTION = {"generate": "seams", "redo": "seams", "extend": "extend",
 
 
 def screen_key(item_id: str) -> str:
+    """屏的目标键：外扩、改图、版本都按屏记（同一屏在环上出现几次都共用）。"""
     return f"{SCREEN_PREFIX}{item_id}"
+
+
+def slot_node_key(item_id: str, index: int) -> str:
+    """环上第 index 个位置的树节点键。同一屏可以出现多次，节点键要带上位置才唯一。"""
+    return f"{SCREEN_PREFIX}{item_id}{SLOT_SEPARATOR}{index}"
+
+
+def slot_of(key: str) -> tuple[str, int] | None:
+    """位置节点键 -> (条目 id, 位置)；不是位置节点时为 None。按最后一个分隔符拆，id 里有 @ 也不怕。"""
+    if not key.startswith(SCREEN_PREFIX) or SLOT_SEPARATOR not in key:
+        return None
+    item_id, index = key.removeprefix(SCREEN_PREFIX).rsplit(SLOT_SEPARATOR, 1)
+    return (item_id, int(index)) if index.isdigit() else None
+
+
+def node_target(key: str) -> str:
+    """树节点键 -> 后端的目标键：位置节点换成它的屏，段 / 层节点原样。"""
+    slot = slot_of(key)
+    return screen_key(slot[0]) if slot is not None else key
 
 
 def segment_node_key(start: int, width: int) -> str:
@@ -201,9 +222,11 @@ class PackDetail(BaseWidget):
         self._ring_operation: str | None = None
         self._ring_order: list[str] = []
         self._ring_seams: dict = {}
-        # 卡片条上从左到右的条目 id（同一屏可重复）。后端已有环时等于 _ring_order；
-        # 还没凑够两屏时只存在这里，等第二张卡片加进来才发给后端
-        self._ring_cards: list[str] = []
+        # 图层窗口里从上到下的屏（同一屏可重复），也就是条带上从左到右的拼接顺序。
+        # 后端已有环时等于 _ring_order；还没凑够两屏时只存在这里，凑够了才发给后端
+        self._ring_slots: list[str] = []
+        # 各屏的缩略图：环还没建起来（条带没有图）时树节点和添加对话框用它
+        self._ring_thumbs: dict[str, QPixmap] = {}
         self._cuts: list[int] = []
         self._cuts_stale = False
         # 段图和每段已完成的图层（相对路径），来自 ring_status；分层进行中进度另从 manifest 算
@@ -219,10 +242,10 @@ class PackDetail(BaseWidget):
         self._layers_done_seen = 0
         # 正在跑的是哪个长任务（None = 没有）；"edit" 不对应工具按钮但同样占着模型
         self._ring_action: str | None = None
-        # 正在生成的接缝 (key, 0~1) 和分层任务回传的最新进度；任务结束即清空
-        self._seam_running: tuple[str, float] | None = None
+        # 分层任务回传的最新进度；任务结束即清空
         self._layer_live: RingLayerProgress | None = None
-        # 外扩 / 改图正在做的节点 -> 0~1，显示在树节点的 badge 上
+        # 外扩 / 改图正在做的目标（屏按 screen:<id>，同一屏的几个位置一起显示）-> 0~1，
+        # 显示在树节点的 badge 上
         self._node_progress: dict[str, float] = {}
         self._syncing_selection = False
         self._canvas_anchor = -1
@@ -413,8 +436,8 @@ class PackDetail(BaseWidget):
         self.canvas_stack.addWidget(self.ring_strip)
         self.canvas_stack.addWidget(self.segment_canvas)
         ring_layout.addWidget(self.canvas_stack, 1)
-        # 环里的屏：卡片从左到右就是条带上的拼接顺序，可拖动换位；同一屏能加多次。
-        # 每次改动立刻交给后端（纯 CPU），条带随之更新
+        # 环里的屏在右侧图层窗口里管理：从上到下就是条带上的拼接顺序，可拖动换位、
+        # 同一屏能加多次。每次改动立刻交给后端（纯 CPU），条带随之更新
 
         # 自动排序留作一键起步：按边缘相似度重排，重复的屏会合并成一张
         cards_row = QHBoxLayout()
@@ -433,13 +456,6 @@ class PackDetail(BaseWidget):
         cards_row.addStretch()
         cards_row.addWidget(self.ring_plan_btn, 0, Qt.AlignmentFlag.AlignTop)
         ring_layout.addLayout(cards_row)
-
-        self.ring_cards = RingCardBar()
-        self.ring_cards.add_requested.connect(self._on_add_card)
-        self.ring_cards.remove_requested.connect(self._on_remove_card)
-        self.ring_cards.reordered.connect(self._set_ring_cards)
-        self.ring_cards.card_selected.connect(self._on_card_selected)
-        ring_layout.addWidget(self.ring_cards)
 
         # 拼接前/后：浮在条带右上角，点哪个切哪张图，切换时保持画面位置不动
         self.ring_before_btn = QPushButton(self.tr("Before"))
@@ -516,11 +532,17 @@ class PackDetail(BaseWidget):
         self.layer_window.selection_changed.connect(self._on_nodes_selected)
         self.layer_window.visibility_changed.connect(
             lambda _keys: self._refresh_canvas_segments())
-        self.layer_window.version_requested.connect(self.ring_version_requested)
+        # 位置节点的版本和改图都作用在它的屏上：节点键换成后端的目标键再发
+        self.layer_window.version_requested.connect(
+            lambda key, index: self.ring_version_requested.emit(node_target(key), index))
         self.layer_window.node_opened.connect(self._on_node_opened)
         self.layer_window.merge_requested.connect(self._on_merge_requested)
         self.layer_window.delete_requested.connect(self._on_delete_requested)
-        self.layer_window.edit_requested.connect(self.ring_edit_requested)
+        self.layer_window.edit_requested.connect(
+            lambda key, prompt: self.ring_edit_requested.emit(node_target(key), prompt))
+        self.layer_window.add_requested.connect(self._on_add_slots)
+        self.layer_window.remove_requested.connect(self._on_remove_slots)
+        self.layer_window.reorder_requested.connect(self._on_reorder_slots)
         page_layout.addWidget(canvas_side, 1)
         page_layout.addWidget(self.layer_window)
         self.center_stack.addWidget(ring_page)
@@ -583,9 +605,9 @@ class PackDetail(BaseWidget):
             self.resources_view_btn.setChecked(True)
             self.center_stack.setCurrentIndex(0)
             # 接缝状态属于上一个包，换包后全部作废
-            self._ring_order, self._ring_seams, self._ring_cards = [], {}, []
+            self._ring_order, self._ring_seams, self._ring_slots = [], {}, []
             # 缩略图按条目 id 记，不同包的 id 会重名；也避免旧包的图一直占着内存
-            self.ring_cards.clear_thumbs()
+            self._ring_thumbs = {}
             self._seam_key, self._candidate_images = "", {}
             self._cuts, self._cuts_stale = [], False
             self._segments, self._segment_layers, self._segment_images = [], [], {}
@@ -601,7 +623,13 @@ class PackDetail(BaseWidget):
             self.seam_panel.hide()
         self.pack, self.template, self._busy = pack, template, busy
         manifest = pack.manifest
-        self._refresh_ring_cards()
+        # 条目被删或重做后不再可用：从环里拿掉（后端那边的环由下一次状态刷新纠正）。
+        # 轮询会频繁走到这里，没变化就不重建树
+        ready = {item.id for item in self.ready_items()}
+        slots = [item_id for item_id in self._ring_slots if item_id in ready]
+        if slots != self._ring_slots:
+            self._ring_slots = slots
+            self._refresh_nodes()
         # 分层要跑几个小时：轮询刷新 manifest 时顺带检查"已分层几段"有没有变
         self._update_layer_controls()
         self._update_tools()
@@ -682,7 +710,6 @@ class PackDetail(BaseWidget):
         # 确认剧本、重做只改本包的 manifest，别的包在跑也能改，改完等那边结束再执行
         self.detail.set_busy(running)
         self._busy = running
-        self._update_ring_cards_state()
         self._update_tools()
         self._update_seam_buttons()
         self._update_card_actions()
@@ -696,9 +723,8 @@ class PackDetail(BaseWidget):
             self._ring_order = list(status.order)
             self._ring_seams = dict(status.seams)
             if status.order:
-                # 后端的环是准的；还没有环时保留卡片条上用户已经加的那一张
-                self._ring_cards = list(status.order)
-            self._refresh_ring_cards()
+                # 后端的环是准的；还没有环时保留用户已经加的那一屏
+                self._ring_slots = list(status.order)
             self._cuts = list(status.cuts)
             self._cuts_stale = status.cuts_stale
             self._screen_files = list(status.screen_files)
@@ -717,12 +743,12 @@ class PackDetail(BaseWidget):
     def ring_seam(self, key: str):
         return self._ring_seams.get(key)
 
-    def ring_card_ids(self) -> list[str]:
-        return list(self._ring_cards)
+    def ring_slot_ids(self) -> list[str]:
+        return list(self._ring_slots)
 
     def ring_plan_ids(self) -> list[str]:
-        """自动排序用的屏：卡片条上的屏去重；条上还没有卡片时用全部可用的屏。"""
-        chosen = list(dict.fromkeys(self._ring_cards))
+        """自动排序用的屏：环里的屏去重；环里还没有屏时用全部可用的屏。"""
+        chosen = list(dict.fromkeys(self._ring_slots))
         return chosen or [item.id for item in self.ready_items()]
 
     def ready_items(self) -> list[CollectionItem]:
@@ -732,67 +758,54 @@ class PackDetail(BaseWidget):
                 if (state := item.steps.get(RING_SOURCE_STEP)) is not None
                 and state.status == "done"]
 
-    def _on_card_selected(self, index: int):
-        # 卡片对应的屏节点一起选中（重复出现的屏只有一个节点），条带上黄框框住点的这一张
-        if not self._segmented() and 0 <= index < len(self._ring_cards):
-            self.layer_window.select([screen_key(self._ring_cards[index])])
-        self.ring_strip.set_active_image(index)
+    def _set_ring_slots(self, order: list[str], selected: list[int] | None = None):
+        """环里的屏改了（加、删、换位）：重建树，凑够两屏就立刻交给后端。
+        selected：改完后要选中的位置（换位后选中跟着被拖的那一屏走）。"""
+        ready = {item.id for item in self.ready_items()}
+        self._ring_slots = [item_id for item_id in order if item_id in ready]
+        self._refresh_nodes()
+        if selected is not None:
+            self.layer_window.select([slot_node_key(self._ring_slots[index], index)
+                                      for index in selected if index < len(self._ring_slots)])
+        if len(self._ring_slots) >= 2 and self._ring_slots != self._ring_order:
+            self.ring_order_requested.emit(list(self._ring_slots))
 
-    def _refresh_ring_cards(self):
-        ready = {item.id: item for item in self.ready_items()}
-        # 条目被删或重做后不再可用：从卡片里拿掉（后端那边的环由下一次状态刷新纠正）
-        self._ring_cards = [item_id for item_id in self._ring_cards if item_id in ready]
-        self.ring_cards.set_cards([
-            (item_id, f"{item_title(ready[item_id])}\n{ready[item_id].prompt}")
-            for item_id in self._ring_cards])
-        # 卡片重建会清掉激活态，条带上的黄框跟着同步
-        self.ring_strip.set_active_image(self.ring_cards.active(), focus=False)
-        self._refresh_seam_links()
-        self._update_ring_cards_state()
-
-    def _seam_link_state(self, key: str) -> tuple[SeamLinkState, float]:
-        """key（左>右）这条接缝画成什么样：正在生成的优先，其次过期，再按候选 / 采用。"""
-        if self._seam_running is not None and self._seam_running[0] == key:
-            return SeamLinkState.RUNNING, self._seam_running[1]
-        seam = self._ring_seams.get(key)
-        if seam is None or not seam.candidates:
-            return SeamLinkState.NONE, 0.0
-        if seam.stale:
-            return SeamLinkState.STALE, 0.0
-        return (SeamLinkState.ADOPTED if seam.adopted else SeamLinkState.CANDIDATE), 0.0
-
-    def _refresh_seam_links(self):
-        """按卡片条上的相邻关系给每对相邻屏（含末尾回到开头）画接缝状态。"""
-        cards = self._ring_cards
-        if len(cards) < 2:
-            self.ring_cards.set_seam_links([])
-            return
-        self.ring_cards.set_seam_links([
-            self._seam_link_state(f"{cards[index]}>{cards[(index + 1) % len(cards)]}")
-            for index in range(len(cards))])
-
-    def _set_ring_cards(self, order: list[str]):
-        """卡片条上的改动（加、删、换位）：更新卡片，凑够两屏就立刻交给后端。"""
-        self._ring_cards = list(order)
-        self._refresh_ring_cards()
-        if len(order) >= 2 and order != self._ring_order:
-            self.ring_order_requested.emit(list(order))
-
-    def add_ring_cards(self, item_ids: list[str]):
+    def add_ring_slots(self, item_ids: list[str]):
         """追加到环的末尾；已经在环里的屏也可以再加。"""
         if item_ids:
-            self._set_ring_cards([*self._ring_cards, *item_ids])
+            self._set_ring_slots([*self._ring_slots, *item_ids])
 
-    def _on_add_card(self):
+    def _on_add_slots(self):
         entries = [(item.id, item_title(item), f"{item_title(item)}\n{item.prompt}",
-                    self.ring_cards.thumb(item.id)) for item in self.ready_items()]
+                    self._ring_thumbs.get(item.id)) for item in self.ready_items()]
         picker = RingItemPicker(entries, self)
         if picker.exec():
-            self.add_ring_cards(picker.selected_ids())
+            self.add_ring_slots(picker.selected_ids())
 
-    def _on_remove_card(self, index: int):
-        if 0 <= index < len(self._ring_cards):
-            self._set_ring_cards(self._ring_cards[:index] + self._ring_cards[index + 1:])
+    def _selected_slots(self, keys: list[str] | None = None) -> list[int]:
+        keys = self.layer_window.selected_keys() if keys is None else keys
+        return sorted({slot[1] for key in keys if (slot := slot_of(key)) is not None})
+
+    def _can_remove_slots(self, count: int) -> bool:
+        """后端的环至少两屏：删完少于两屏就不让删；本来就不到两屏（还没成环）时随便删。"""
+        return count > 0 and (len(self._ring_slots) - count >= 2 or len(self._ring_slots) < 2)
+
+    def _on_remove_slots(self, keys: list[str]):
+        removed = set(self._selected_slots(keys))
+        if not self._can_remove_slots(len(removed)):
+            return
+        self._set_ring_slots(
+            [item_id for index, item_id in enumerate(self._ring_slots) if index not in removed],
+            selected=[])
+
+    def _on_reorder_slots(self, keys: list[str]):
+        """keys：拖动后顶层节点的新顺序（节点键里带着原来的位置）。"""
+        old_positions = [slot[1] for key in keys if (slot := slot_of(key)) is not None]
+        if sorted(old_positions) != list(range(len(self._ring_slots))):
+            return
+        new_index = {old: new for new, old in enumerate(old_positions)}
+        selected = [new_index[index] for index in self._selected_slots()]
+        self._set_ring_slots([self._ring_slots[old] for old in old_positions], selected=selected)
 
     # ---- 画布与图层树 ----
     def _store_segments(self, segments: list[str], layers: list[list[str]],
@@ -831,7 +844,7 @@ class PackDetail(BaseWidget):
         return (len(history.versions), history.current) if history is not None else (0, -1)
 
     def _node_badge(self, key: str, segment_index: int = -1) -> str:
-        fraction = self._node_progress.get(key)
+        fraction = self._node_progress.get(node_target(key))
         if fraction is not None:
             return f"{int(fraction * 100)}%"
         if segment_index < 0:
@@ -849,15 +862,17 @@ class PackDetail(BaseWidget):
         return self._screen_nodes()
 
     def _screen_nodes(self) -> list[LayerNode]:
-        """未分段：一屏一个节点，同一屏在环上出现多次也只建一个。"""
+        """未分段：环上一个位置一个节点，从上到下就是拼接顺序；同一屏出现几次就有几个。
+        版本按屏记，同一屏的几个节点显示同一份。"""
         items = {item.id: item for item in (self.pack.manifest.items if self.pack else [])}
         nodes = []
-        for item_id in dict.fromkeys(self._ring_order):
-            key = screen_key(item_id)
-            count, current = self._version_info(key)
+        for index, item_id in enumerate(self._ring_slots):
+            key = slot_node_key(item_id, index)
+            count, current = self._version_info(screen_key(item_id))
             item = items.get(item_id)
+            title = item_title(item) if item is not None else item_id
             nodes.append(LayerNode(
-                key, item_title(item) if item is not None else item_id,
+                key, f"{index + 1} · {title}",
                 badge=self._node_badge(key), version_count=count, current_version=current))
         return nodes
 
@@ -882,9 +897,13 @@ class PackDetail(BaseWidget):
     def _node_paths(self) -> dict[str, str]:
         """节点键 -> 它当前显示的图（相对路径）。"""
         paths: dict[str, str] = {}
+        screen_files: dict[str, str] = {}
         for index, item_id in enumerate(self._ring_order):
             if index < len(self._screen_files) and self._screen_files[index]:
-                paths.setdefault(screen_key(item_id), self._screen_files[index])
+                screen_files.setdefault(item_id, self._screen_files[index])
+        for index, item_id in enumerate(self._ring_slots):
+            if item_id in screen_files:
+                paths[slot_node_key(item_id, index)] = screen_files[item_id]
         for index, segment in enumerate(self._segment_keys()):
             paths[segment] = self._segments[index]
             for layer_id, path, _z in self._layer_stack(index):
@@ -893,11 +912,17 @@ class PackDetail(BaseWidget):
 
     def _node_images(self) -> dict[str, QImage]:
         images: dict[str, QImage] = {}
-        seen: set[str] = set()
+        # 屏的图优先用条带上的（外扩、改图后的当前版本）；环还没建起来时用缩略图
+        screens: dict[str, QImage] = {}
         for index, item_id in enumerate(self._ring_order):
-            if item_id not in seen and index < len(self._ring_images_before):
-                seen.add(item_id)
-                images[screen_key(item_id)] = self._ring_images_before[index]
+            if index < len(self._ring_images_before):
+                screens.setdefault(item_id, self._ring_images_before[index])
+        for index, item_id in enumerate(self._ring_slots):
+            image = screens.get(item_id)
+            if image is None and item_id in self._ring_thumbs:
+                image = self._ring_thumbs[item_id].toImage()
+            if image is not None:
+                images[slot_node_key(item_id, index)] = image
         for key, path in self._node_paths().items():
             if not key.startswith(SCREEN_PREFIX) and path in self._segment_images:
                 images[key] = self._segment_images[path]
@@ -985,8 +1010,10 @@ class PackDetail(BaseWidget):
         return sorted(result)
 
     def _selected_screen_ids(self) -> list[str]:
-        return [key.removeprefix(SCREEN_PREFIX) for key in self.layer_window.selected_keys()
-                if key.startswith(SCREEN_PREFIX)]
+        """选中位置所在的屏，去重（同一屏选了两个位置也只外扩一次）。"""
+        return list(dict.fromkeys(
+            slot[0] for key in self.layer_window.selected_keys()
+            if (slot := slot_of(key)) is not None))
 
     def _selected_seam_keys(self) -> list[str]:
         """条带上选中的接缝：第 i 个接缝是 order[i] 与 order[i + 1]（环）。
@@ -1002,10 +1029,11 @@ class PackDetail(BaseWidget):
         if self._segmented():
             self.segment_canvas.set_selected(self._selected_segments(keys))
         else:
-            ids = [key.removeprefix(SCREEN_PREFIX) for key in keys
-                   if key.startswith(SCREEN_PREFIX)]
-            if ids and ids[-1] in self._ring_order:
-                self.ring_strip.set_active_image(self._ring_order.index(ids[-1]))
+            # 条带上黄框框住最后选中的那个位置；环还没按新顺序刷新回来时不框，免得框错屏
+            slots = [slot for key in keys if (slot := slot_of(key)) is not None]
+            item_id, index = slots[-1] if slots else ("", -1)
+            if 0 <= index < len(self._ring_order) and self._ring_order[index] == item_id:
+                self.ring_strip.set_active_image(index)
             else:
                 self.ring_strip.set_active_image(-1, focus=False)
         self._update_tools()
@@ -1133,6 +1161,12 @@ class PackDetail(BaseWidget):
                     tip = self.tr("Split the selected segments into layers")
             self.layer_window.set_tool_state(tool, False, enabled, tip)
         self.layer_window.set_idle(idle)
+        ready = len(self.ready_items())
+        self.ring_plan_btn.setEnabled(idle and ready >= 2)
+        # 分段后树里是段和层，屏的增删换位只在分段前做
+        self.layer_window.set_list_mode(
+            not self._segmented(), editable=idle, can_add=ready > 0,
+            can_remove=self._can_remove_slots(len(self._selected_slots())))
 
     def _on_tool_clicked(self, tool: str):
         if self._running_tool() == tool:
@@ -1163,23 +1197,16 @@ class PackDetail(BaseWidget):
                 return
         self.ring_extend_requested.emit(self._selected_screen_ids())
 
-    def _update_ring_cards_state(self):
-        idle = not self._busy and not self._ring_running and self._ring_operation is None
-        ready = len(self.ready_items())
-        self.ring_plan_btn.setEnabled(idle and ready >= 2)
-        # 环里只剩两屏时不能再删：后端要求至少两屏
-        self.ring_cards.set_editable(
-            idle, can_add=ready > 0, removable=len(self._ring_cards) != 2)
-
     def set_ring_candidate_images(self, key: str, images: dict[str, QImage]):
         self._candidate_images[key] = images
         if key == self._seam_key:
             self._update_seam_preview()
 
     def set_ring_progress(self, key: str, fraction: float):
-        """生成接缝时，key 这条接缝的连接器按进度填充；同一对相邻屏出现几次就都画。"""
-        self._seam_running = (key, fraction)
-        self._refresh_seam_links()
+        """生成接缝的进度。接缝进度条以后再放，先在状态栏写百分比。"""
+        left, right = key.split(">", 1) if ">" in key else (key, "")
+        self.ring_status_label.setText(
+            self.tr("Generating seam {0} → {1}… {2}%").format(left, right, int(fraction * 100)))
 
     def set_layer_progress(self, progress: RingLayerProgress):
         """分层任务回传的进度：给每段打上状态，并在说明里写当前段和阶段。"""
@@ -1188,21 +1215,22 @@ class PackDetail(BaseWidget):
         self._refresh_nodes()
 
     def set_node_progress(self, key: str, fraction: float):
-        """外扩 / 文字改图：节点 badge 显示百分比。直接改那一行，不重建整棵树。"""
+        """外扩 / 文字改图：节点 badge 显示百分比。直接改那几行，不重建整棵树。
+        key 是目标键：屏在环上出现几次，几个位置节点都显示。"""
         self._node_progress[key] = fraction
-        row = self.layer_window.row(key)
-        if row is not None:
-            row.badge.setText(f"{int(fraction * 100)}%")
-            row.badge.setVisible(True)
+        for node_key in self.layer_window.node_keys():
+            row = self.layer_window.row(node_key)
+            if row is not None and node_target(node_key) == key:
+                row.badge.setText(f"{int(fraction * 100)}%")
+                row.badge.setToolTip("")
+                row.badge.setVisible(True)
 
     def set_ring_running(self, running: bool, action: str = ""):
         """action：这次长任务是什么（generate / redo / extend / layers / edit），
         决定哪个工具按钮变成"停止"、状态栏写什么。"""
         if not running:
-            self._seam_running = None
             self._layer_live = None
             self._node_progress = {}
-            self._refresh_seam_links()
         self._ring_running = running
         self._ring_action = action if running else None
         if running:
@@ -1213,7 +1241,6 @@ class PackDetail(BaseWidget):
                 texts.get(action, self.tr("Generating seams…")))
         self.stop_btn.setVisible(self._busy or running)
         self.stop_btn.setEnabled(self._busy or running)
-        self._update_ring_cards_state()
         self._update_tools()
         self._update_seam_buttons()
         self._refresh_nodes()
@@ -1237,7 +1264,6 @@ class PackDetail(BaseWidget):
             self.ring_status_label.setText(self.tr("Deleting the merged layer…"))
         elif operation == "version":
             self.ring_status_label.setText(self.tr("Switching version…"))
-        self._update_ring_cards_state()
         self._update_tools()
         self._update_seam_buttons()
 
@@ -1334,7 +1360,10 @@ class PackDetail(BaseWidget):
             card.set_thumbnail(pixmap, layered=card_step_id(self.template, step_id) != step_id)
 
     def set_ring_thumbnail(self, item_id: str, pixmap: QPixmap):
-        self.ring_cards.set_thumb(item_id, pixmap)
+        self._ring_thumbs[item_id] = pixmap
+        # 环还没建起来时树节点靠缩略图显示；建起来后用条带的图，不用重设
+        if item_id in self._ring_slots and not self._segmented():
+            self.layer_window.set_images(self._node_images())
 
     def show_image(self, path: str) -> ImagePreviewOverlay:
         # 宿主是中间区域而不是整页：放大时右侧详情仍然可见

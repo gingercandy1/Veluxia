@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QMessageBox
 
 from src.app.ui.library.library_page import LibraryPage
 from src.app.ui.library.pack_detail import PackDetail
-from src.app.ui.library.ring_cards import PICKER_THUMB, RingCardBar, RingItemPicker
+from src.app.ui.library.ring_cards import PICKER_THUMB, RingItemPicker
 from src.app.ui.library.ring_strip import OVERLAY_MARGIN, ZOOM_MAX, ZOOM_MIN, RingStrip
 from src import resources  # noqa: F401  注册 :/svg 图标，图层行的眼睛要用
 from src.shared.schemas import (
@@ -120,158 +120,144 @@ def test_pack_detail_ring_view_visibility_signals_and_busy_state(qapp):
     assert detail.center_stack.currentWidget() is detail.scroll
 
 
-def test_ring_cards_add_repeat_remove_and_send_the_order(qapp):
+def test_ring_slots_add_repeat_remove_and_send_the_order(qapp):
     detail = PackDetail()
     pack, template = _scene_pack(item_count=4)
     # 没完成 generate 的屏不能进环
     pack.manifest.items[3].steps["generate"].status = "pending"
     detail.show_pack(pack, template, busy=False)
-    assert detail.ring_card_ids() == []
+    window = detail.layer_window
+    assert detail.ring_slot_ids() == [] and window.node_keys() == []
 
     orders = []
     detail.ring_order_requested.connect(orders.append)
-    # 一屏时还不是环：只留在卡片条上，不发给后端
-    detail.add_ring_cards(["screen0"])
-    assert detail.ring_card_ids() == ["screen0"] and orders == []
-    # 同一屏可以再加；凑够两屏就发
-    detail.add_ring_cards(["screen0", "screen2"])
-    assert detail.ring_card_ids() == ["screen0", "screen0", "screen2"]
+    # 一屏时还不是环：只在图层窗口里，不发给后端
+    detail.add_ring_slots(["screen0"])
+    assert detail.ring_slot_ids() == ["screen0"] and orders == []
+    assert window.node_keys() == [_slot("screen0", 0)]
+    # 同一屏可以再加，每个位置一个节点；凑够两屏就发
+    detail.add_ring_slots(["screen0", "screen2"])
+    assert detail.ring_slot_ids() == ["screen0", "screen0", "screen2"]
+    assert window.node_keys() == [_slot("screen0", 0), _slot("screen0", 1), _slot("screen2", 2)]
     assert orders == [["screen0", "screen0", "screen2"]]
     # 没完成的屏加不进去
-    detail.add_ring_cards(["screen3"])
-    assert detail.ring_card_ids() == ["screen0", "screen0", "screen2"]
+    detail.add_ring_slots(["screen3"])
+    assert detail.ring_slot_ids() == ["screen0", "screen0", "screen2"]
 
-    # 删第二张；删到只剩两张后不能再删
-    detail.ring_cards._cards[1].remove_btn.click()
-    assert detail.ring_card_ids() == ["screen0", "screen2"]
+    # 删第二个位置；删到只剩两屏后不能再删
+    window.select([_slot("screen0", 1)])
+    assert window.remove_btn.isEnabled()
+    window.remove_btn.click()
+    assert detail.ring_slot_ids() == ["screen0", "screen2"]
     assert orders[-1] == ["screen0", "screen2"]
-    assert not detail.ring_cards._cards[0].remove_btn.isEnabled()
+    window.select([_slot("screen0", 0)])
+    assert not window.remove_btn.isEnabled()
 
-    # 卡片条上的屏顺序对应后端的环；后端状态回来后以它为准
-    status = RingStatusResponse(order=["screen2", "screen0", "screen1"], seams={})
-    detail.set_ring([], [], "", status)
-    assert detail.ring_card_ids() == ["screen2", "screen0", "screen1"]
-    assert detail.ring_cards.ids() == ["screen2", "screen0", "screen1"]
-    # 轮询刷新同一个包不改卡片
+    # 树里的顺序对应后端的环；后端状态回来后以它为准
+    detail.set_ring([], [], "", RingStatusResponse(order=["screen2", "screen0", "screen1"]))
+    assert detail.ring_slot_ids() == ["screen2", "screen0", "screen1"]
+    assert window.node_keys() == [_slot("screen2", 0), _slot("screen0", 1), _slot("screen1", 2)]
+    # 轮询刷新同一个包不改顺序
     detail.show_pack(pack, template, busy=False)
-    assert detail.ring_card_ids() == ["screen2", "screen0", "screen1"]
+    assert detail.ring_slot_ids() == ["screen2", "screen0", "screen1"]
 
 
-def test_ring_thumbnails_reach_cards_and_picker_and_reset_on_pack_change(qapp):
+def test_ring_slots_remove_with_the_delete_key_and_several_at_once(qapp):
+    detail = _ring_detail(RingStatusResponse(order=["screen0", "screen1", "screen0", "screen1"]))
+    window = detail.layer_window
+    orders = []
+    detail.ring_order_requested.connect(orders.append)
+    # 一次删两个，剩两屏：可以
+    window.select([_slot("screen0", 0), _slot("screen1", 3)])
+    QTest.keyClick(window, Qt.Key.Key_Delete)
+    assert orders == [["screen1", "screen0"]]
+    assert window.selected_keys() == []
+    # 删完会不够两屏：不删
+    window.select([_slot("screen1", 0)])
+    QTest.keyClick(window, Qt.Key.Key_Delete)
+    assert detail.ring_slot_ids() == ["screen1", "screen0"]
+
+
+def test_ring_slots_reorder_by_dropping_a_node_keeps_it_selected(qapp):
+    detail = _ring_detail(RingStatusResponse(order=["screen0", "screen1", "screen2"]))
+    window = detail.layer_window
+    orders = []
+    detail.ring_order_requested.connect(orders.append)
+    window.select([_slot("screen0", 0)])
+    # 第一个拖到最后（插入位置 3 = 末尾）
+    window.move_node(_slot("screen0", 0), 3)
+    assert orders == [["screen1", "screen2", "screen0"]]
+    assert window.selected_keys() == [_slot("screen0", 2)]
+    # 放回原位（自己前后两个插入位置）不算换位
+    window.move_node(_slot("screen1", 0), 0)
+    window.move_node(_slot("screen1", 0), 1)
+    assert len(orders) == 1
+
+
+def test_ring_slot_drop_position_follows_the_rows(qapp):
+    detail = _ring_detail(RingStatusResponse(order=["screen0", "screen1", "screen2"]))
+    window = detail.layer_window
+    window.resize(400, 600)
+    window.show()
+    qapp.processEvents()
+    rows = [window.row(key) for key in window.node_keys()]
+    # 落在第 k 行中线以上 = 插到第 k 个之前
+    assert window.slot_at(rows[0].geometry().top() + 1) == 0
+    assert window.slot_at(rows[1].geometry().center().y() + 1) == 2
+    assert window.slot_at(rows[2].geometry().bottom() + 50) == 3
+
+
+def test_ring_slot_editing_is_locked_while_busy_and_after_segmenting(qapp):
+    detail = _ring_detail(RingStatusResponse(order=["screen0", "screen1", "screen2"]))
+    window = detail.layer_window
+    window.select([_slot("screen1", 1)])
+    assert window.add_btn.isEnabled() and window.remove_btn.isEnabled()
+    assert window.reorderable()
+    assert window.merge_btn.isHidden() and not window.add_btn.isHidden()
+
+    detail.set_ring_running(True, action="generate")
+    assert not window.add_btn.isEnabled() and not window.remove_btn.isEnabled()
+    assert not window.reorderable()
+    orders = []
+    detail.ring_order_requested.connect(orders.append)
+    window.move_node(_slot("screen1", 1), 0)
+    assert orders == []
+    detail.set_ring_running(False)
+    assert window.add_btn.isEnabled()
+
+    # 分段后树里是段和层：换成合并 / 删除合并层，不能拖动
+    segmented = _ring_detail(_segmented_status(LAYER_FILES))
+    assert segmented.layer_window.add_btn.isHidden()
+    assert not segmented.layer_window.merge_btn.isHidden()
+    assert not segmented.layer_window.reorderable()
+
+
+def test_ring_thumbnails_reach_nodes_and_picker_and_reset_on_pack_change(qapp):
     detail = PackDetail()
     pack, template = _scene_pack(item_count=2)
     detail.show_pack(pack, template, busy=False)
-    detail.add_ring_cards(["screen0", "screen1"])
+    detail.add_ring_slots(["screen0"])
 
     image = QImage(144, 81, QImage.Format.Format_RGB32)
     image.fill(QColor("red"))
     detail.set_ring_thumbnail("screen0", QPixmap.fromImage(image))
-    assert not detail.ring_cards._cards[0].thumb.pixmap().isNull()
-    assert detail.ring_cards.thumb("screen1") is None
-    # 之后再建的卡片也带着缩略图
-    detail.ring_cards.set_cards([("screen0", "")])
-    assert not detail.ring_cards._cards[0].thumb.pixmap().isNull()
+    # 环还没建起来：节点用缩略图
+    assert not detail.layer_window.row(_slot("screen0", 0)).thumb.pixmap().isNull()
+    assert detail._ring_thumbs.get("screen1") is None
 
     # 换包后旧包的图作废：条目 id 会重名，也不该一直占着内存
     other, other_template = _scene_pack(item_count=2)
     other.manifest.id = "other"
     detail.show_pack(other, other_template, busy=False)
-    assert detail.ring_cards.thumb("screen0") is None
+    assert detail._ring_thumbs == {}
 
 
-def _link_states(detail):
-    return [link.bar.property("state") if not link.bar.isHidden() else None
-            for link in detail.ring_cards._links]
-
-
-def test_seam_links_sit_between_cards_and_show_progress_only_for_the_running_seam(qapp):
-    detail = PackDetail()
-    pack, template = _scene_pack(item_count=3)
-    detail.show_pack(pack, template, busy=False)
-    detail.set_ring([], [], "", RingStatusResponse(order=["screen0", "screen1", "screen2"]))
-    links = detail.ring_cards._links
-    # 三张卡片三根连接器（含末尾回到开头），都还没有候选
-    assert len(links) == 3
-    assert _link_states(detail) == ["none", "none", "none"]
-
-    detail.set_ring_running(True)
-    detail.set_ring_progress("screen1>screen2", 0.5)
-    assert _link_states(detail) == ["none", "running", "none"]
-    assert links[1].bar.value() == 50
-    # 换到下一条接缝（回环那条）：只留当前这一条
-    detail.set_ring_progress("screen2>screen0", 0.2)
-    assert _link_states(detail) == ["none", "none", "running"]
-    assert links[2].bar.value() == 20
-    detail.set_ring_running(False)
-    assert _link_states(detail) == ["none", "none", "none"]
-
-
-def test_seam_links_show_candidate_adopted_and_stale_states(qapp):
-    detail = PackDetail()
-    pack, template = _scene_pack(item_count=3)
-    detail.show_pack(pack, template, busy=False)
-    candidate = SeamCandidate(
-        id="c1", file="/media/c1.png", seed=1, prompt="p", left_sig="a", right_sig="b",
-        harmonize=0.3)
-    detail.set_ring([], [], "", RingStatusResponse(
-        order=["screen0", "screen1", "screen2"],
-        seams={
-            "screen0>screen1": RingSeamStatus(
-                candidates=[candidate], adopted="c1", has_candidates=True),
-            "screen1>screen2": RingSeamStatus(candidates=[candidate], has_candidates=True),
-            "screen2>screen0": RingSeamStatus(
-                candidates=[candidate], adopted="c1", stale=True, has_candidates=True),
-        }))
-    assert _link_states(detail) == ["adopted", "candidate", "stale"]
-
-
-def test_seam_links_follow_the_card_order_and_hide_below_two_cards(qapp):
-    detail = PackDetail()
-    pack, template = _scene_pack(item_count=3)
-    detail.show_pack(pack, template, busy=False)
-    detail.add_ring_cards(["screen0"])
-    assert _link_states(detail) == [None]
-    detail.add_ring_cards(["screen1"])
-    assert _link_states(detail) == ["none", "none"]
-
-
-def test_ring_cards_drag_moves_a_card_to_the_slot_under_the_drop(qapp):
-    bar = RingCardBar()
-    bar.set_cards([("a", ""), ("b", ""), ("c", "")])
-    bar.resize(600, 130)
-    bar.show()
-    qapp.processEvents()
-    moved = []
-    bar.reordered.connect(moved.append)
-
-    def x_between(left: int, right: int) -> int:
-        # 两张卡片之间的缝；-1 / len 表示最左 / 最右
-        edges = bar._cards
-        lo = edges[left].geometry().right() if left >= 0 else -10
-        hi = edges[right].x() if right < len(edges) else lo + 20
-        return (lo + hi) // 2
-
-    bar.move_card(0, bar.slot_at(x_between(2, 3)))      # a 拖到最后
-    assert moved[-1] == ["b", "c", "a"]
-    bar.move_card(2, bar.slot_at(x_between(-1, 0)))     # c 拖到最前
-    assert moved[-1] == ["c", "a", "b"]
-    n = len(moved)
-    bar.move_card(1, bar.slot_at(x_between(1, 2)))      # 放回原位：不算换位
-    bar.move_card(1, bar.slot_at(x_between(0, 1)))      # 放在自己前面一格：也是原位
-    assert len(moved) == n
-
-
-def test_ring_cards_are_locked_while_busy(qapp):
-    bar = RingCardBar()
-    bar.set_cards([("a", ""), ("b", ""), ("c", "")])
-    removed = []
-    bar.remove_requested.connect(removed.append)
-    bar.set_editable(False)
-    assert not bar.add_btn.isEnabled()
-    assert not bar._cards[0].remove_btn.isEnabled()
-    bar.set_editable(True)
-    bar._cards[2].remove_btn.click()
-    assert removed == [2]
+def test_seam_progress_is_shown_in_the_status_line(qapp):
+    detail = _ring_detail(RingStatusResponse(order=["screen0", "screen1"]))
+    detail.set_ring_running(True, action="generate")
+    detail.set_ring_progress("screen1>screen0", 0.5)
+    assert detail.ring_status_label.text() == detail.tr(
+        "Generating seam {0} → {1}… {2}%").format("screen1", "screen0", 50)
 
 
 def test_ring_item_picker_returns_the_ticked_screens_in_pack_order(qapp):
@@ -291,7 +277,7 @@ def test_auto_arrange_sends_each_screen_once_or_all_when_empty(qapp):
     detail.ring_plan_requested.connect(planned.append)
     detail.ring_plan_btn.click()
     assert planned == [["screen0", "screen1", "screen2"]]
-    detail.add_ring_cards(["screen1", "screen1", "screen0"])
+    detail.add_ring_slots(["screen1", "screen1", "screen0"])
     detail.ring_plan_btn.click()
     assert planned[-1] == ["screen1", "screen0"]
 
@@ -391,14 +377,20 @@ def _segmented_status(layers=None, merged=None, **extra):
         **extra)
 
 
+def _slot(item_id, index):
+    """未分段时树里环上第 index 个位置的节点键。"""
+    return f"screen:{item_id}@{index}"
+
+
 def _ring_detail(status=None):
     detail = PackDetail()
-    pack, template = _scene_pack(item_count=2)
+    pack, template = _scene_pack(item_count=3)
     detail.show_pack(pack, template, busy=False)
     detail.ring_view_btn.click()
-    images = _wide_images()
-    detail.set_ring(images, images, "", status or RingStatusResponse(
-        order=["screen0", "screen1"]))
+    status = status or RingStatusResponse(order=["screen0", "screen1"])
+    # 条带上一个位置一张图；两屏时正好是切点测试用的 2400 宽
+    images = [QImage(1200, 180, QImage.Format.Format_RGB32) for _ in status.order]
+    detail.set_ring(images, images, "", status)
     return detail
 
 
@@ -414,7 +406,7 @@ def _collect(detail, *names):
     return events
 
 
-def test_unsegmented_canvas_has_one_node_per_screen_with_version_info(qapp):
+def test_unsegmented_canvas_has_one_node_per_ring_position_with_version_info(qapp):
     history = VersionHistory(
         base_sig="x", current=1,
         versions=[ImageVersion(file="a.png", kind="extend"),
@@ -422,10 +414,11 @@ def test_unsegmented_canvas_has_one_node_per_screen_with_version_info(qapp):
     detail = _ring_detail(RingStatusResponse(
         order=["screen0", "screen1", "screen0"], versions={"screen:screen0": history}))
     window = detail.layer_window
-    # 同一屏在环上出现两次也只建一个节点
-    assert window.visible_keys() == ["screen:screen0", "screen:screen1"]
-    assert window.row("screen:screen0").version.label.text() == "2/2"
-    assert window.row("screen:screen1").version is None
+    # 按环的顺序一个位置一个节点：同一屏出现两次就有两个节点，版本按屏共用
+    assert window.visible_keys() == [_slot("screen0", 0), _slot("screen1", 1), _slot("screen0", 2)]
+    assert window.row(_slot("screen0", 0)).version.label.text() == "2/2"
+    assert window.row(_slot("screen0", 2)).version.label.text() == "2/2"
+    assert window.row(_slot("screen1", 1)).version is None
     assert detail.canvas_stack.currentWidget() is detail.ring_strip
     assert detail.ring_whole_btn.isHidden()
 
@@ -449,7 +442,7 @@ def test_segmented_canvas_has_segment_nodes_with_layer_children(qapp):
     # 切点失效（屏变了）：退回整条环和屏节点
     detail.set_ring(_wide_images(), _wide_images(), "",
                     _segmented_status(LAYER_FILES, cuts_stale=True))
-    assert window.visible_keys() == ["screen:screen0", "screen:screen1"]
+    assert window.visible_keys() == [_slot("screen0", 0), _slot("screen1", 1)]
     assert detail.canvas_stack.currentWidget() is detail.ring_strip
 
 
@@ -536,7 +529,7 @@ def test_extend_tool_targets_selected_screens_and_asks_before_invalidating(qapp,
     # 没选 = 全部；没有接缝候选和分层时不需要确认
     _tool(detail, "extend").click()
     assert events == [("ring_extend_requested", [])] and asked == []
-    detail.layer_window.select(["screen:screen1"])
+    detail.layer_window.select([_slot("screen1", 1)])
     _tool(detail, "extend").click()
     assert events[-1] == ("ring_extend_requested", ["screen1"])
 
@@ -619,15 +612,19 @@ def test_running_tool_shows_stop_and_the_others_are_disabled(qapp):
 
 
 def test_node_progress_shows_a_percentage_badge_and_clears_after_the_task(qapp):
-    detail = _ring_detail()
+    detail = _ring_detail(RingStatusResponse(order=["screen0", "screen1", "screen1"]))
     detail.set_ring_running(True, action="extend")
+    # 进度按屏报：这一屏的几个位置都显示
     detail.set_node_progress("screen:screen1", 0.5)
-    assert detail.layer_window.row("screen:screen1").badge.text() == "50%"
+    window = detail.layer_window
+    assert window.row(_slot("screen1", 1)).badge.text() == "50%"
+    assert window.row(_slot("screen1", 2)).badge.text() == "50%"
+    assert window.row(_slot("screen0", 0)).badge.isHidden()
     # 重建树（例如状态刷新）后百分比还在
-    detail.set_ring([], [], "", RingStatusResponse(order=["screen0", "screen1"]))
-    assert detail.layer_window.row("screen:screen1").badge.text() == "50%"
+    detail.set_ring([], [], "", RingStatusResponse(order=["screen0", "screen1", "screen1"]))
+    assert window.row(_slot("screen1", 1)).badge.text() == "50%"
     detail.set_ring_running(False)
-    assert detail.layer_window.row("screen:screen1").badge.isHidden()
+    assert window.row(_slot("screen1", 1)).badge.isHidden()
 
 
 def test_layering_progress_marks_the_running_and_waiting_segments(qapp):
@@ -685,11 +682,26 @@ def test_canvas_clicks_and_tree_selection_stay_in_sync(qapp):
 
 
 def test_screen_node_selection_highlights_the_screen_on_the_strip(qapp):
-    detail = _ring_detail()
-    detail.layer_window.select(["screen:screen1"])
+    detail = _ring_detail(RingStatusResponse(order=["screen0", "screen1", "screen0"]))
+    # 同一屏出现两次时框住选中的那个位置
+    detail.layer_window.select([_slot("screen0", 2)])
+    assert detail.ring_strip.active_image() == 2
+    detail.layer_window.select([_slot("screen1", 1)])
     assert detail.ring_strip.active_image() == 1
     detail.layer_window.select([])
     assert detail.ring_strip.active_image() == -1
+
+
+def test_screen_edit_and_version_target_the_screen_not_the_position(qapp):
+    detail = _ring_detail(RingStatusResponse(order=["screen0", "screen1", "screen0"]))
+    events = _collect(detail, "ring_edit_requested", "ring_version_requested")
+    window = detail.layer_window
+    window.select([_slot("screen0", 2)])
+    window.prompt_edit.setPlainText("more grass")
+    window.send_btn.click()
+    assert events[-1] == ("ring_edit_requested", "screen:screen0", "more grass")
+    window.version_requested.emit(_slot("screen0", 2), -1)
+    assert events[-1] == ("ring_version_requested", "screen:screen0", -1)
 
 
 def test_edit_version_merge_and_delete_are_forwarded(qapp):
@@ -748,13 +760,6 @@ def test_eyes_decide_which_layers_the_canvas_composites(qapp):
     # 段节点的眼睛关掉：整段不画
     detail.layer_window.toggle_visible(SEG1)
     assert canvas._images[1].pixelColor(1, 1).alpha() == 0
-
-
-def test_card_selection_selects_its_screen_node(qapp):
-    detail = _ring_detail()
-    detail.ring_cards.card_selected.emit(1)
-    assert detail.layer_window.selected_keys() == ["screen:screen1"]
-    assert detail.ring_strip.active_image() == 1
 
 
 def test_non_scene_and_single_item_keep_ring_switch_hidden(qapp):
@@ -1000,8 +1005,8 @@ def test_strip_lines_only_span_the_image_height(qapp):
     assert target.pixelColor(0, 100) != target.pixelColor(5, 100)
 
 
-def test_compare_toggle_floats_top_right_and_plan_sits_with_the_members(qapp):
-    """前/后开关浮在条带右上角，规划顺序和屏幕选择同一行。"""
+def test_compare_toggle_floats_top_right_and_the_layer_window_sits_right(qapp):
+    """前/后开关浮在条带右上角；画布在左、图层窗口在右。"""
     detail = PackDetail()
     pack, template = _scene_pack(item_count=2)
     detail.show_pack(pack, template, busy=False)
@@ -1016,11 +1021,6 @@ def test_compare_toggle_floats_top_right_and_plan_sits_with_the_members(qapp):
     assert bar.parent() is detail.ring_strip
     assert bar.x() + bar.width() == detail.ring_strip.width() - OVERLAY_MARGIN
     assert bar.y() == OVERLAY_MARGIN
-    # 规划顺序和屏幕选择在同一行（纵向中心对齐到屏幕选择区），不在按钮行里
-    members = detail.ring_cards
-    plan_top = detail.ring_plan_btn.mapTo(detail, detail.ring_plan_btn.rect().topLeft()).y()
-    members_top = members.mapTo(detail, members.rect().topLeft()).y()
-    assert abs(plan_top - members_top) < members.height()
     # 画布在左、图层窗口在右，工具按钮都在图层窗口里
     canvas_right = detail.ring_strip.mapTo(detail, detail.ring_strip.rect().topRight()).x()
     window_left = detail.layer_window.mapTo(detail, detail.layer_window.rect().topLeft()).x()

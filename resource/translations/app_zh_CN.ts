@@ -1090,7 +1090,7 @@
 <context>
     <name>LayerWindow</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="+169"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="+243"/>
         <source>Extend</source>
         <translation>外扩</translation>
     </message>
@@ -1150,7 +1150,27 @@
         <translation>删除合并层</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+3"/>
+        <source>Add screens</source>
+        <translation>添加屏</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Append screens to the end of the ring; a screen can be used more than once</source>
+        <translation>把屏添加到循环末尾；同一屏可以使用多次</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Remove</source>
+        <translation>移除</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove the selected screens from the ring (Delete)</source>
+        <translation>从循环中移除选中的屏（Delete）</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Describe the change for the selected layer, e.g. make the ground steeper</source>
         <translation>描述要对选中图层做的修改，例如：让地面更陡</translation>
     </message>
@@ -1496,7 +1516,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+258"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+281"/>
         <source>Library</source>
         <translation>资料库</translation>
     </message>
@@ -1522,13 +1542,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+331"/>
-        <location line="+773"/>
+        <location line="+336"/>
+        <location line="+774"/>
         <source>Export</source>
         <translation>导出</translation>
     </message>
     <message>
-        <location line="-1102"/>
+        <location line="-1108"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>将成品保存为 zip，每个条目对应一个文件夹，不含草稿和中间文件。</translation>
     </message>
@@ -1563,7 +1583,7 @@
         <translation>重做用旧立绘生成的步骤及其后续步骤。</translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+103"/>
         <source>Use this one</source>
         <translation>采用此项</translation>
     </message>
@@ -1578,7 +1598,7 @@
         <translation>重做接缝</translation>
     </message>
     <message>
-        <location line="+122"/>
+        <location line="+134"/>
         <source>{0}/{1} done</source>
         <translation>已完成 {0}/{1}</translation>
     </message>
@@ -1593,12 +1613,12 @@
         <translation>风格预设“{0}”在创建资源包之后已被修改。</translation>
     </message>
     <message>
-        <location line="+224"/>
+        <location line="+211"/>
         <source>Segment {0}</source>
         <translation>第 {0} 段</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-38"/>
         <source>encoding</source>
         <translation>编码中</translation>
     </message>
@@ -1608,12 +1628,12 @@
         <translation>去噪中</translation>
     </message>
     <message>
-        <location line="-375"/>
+        <location line="-372"/>
         <source>Click a seam to select it · Ctrl+click selects several</source>
         <translation>单击接缝选中 · Ctrl+单击可多选</translation>
     </message>
     <message>
-        <location line="+652"/>
+        <location line="+664"/>
         <source>Extending is only possible before segmenting</source>
         <translation>只能在分段之前外扩</translation>
     </message>
@@ -1648,7 +1668,7 @@
         <translation>把选中的段分解成图层</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+32"/>
         <source>Extend screens</source>
         <translation>外扩屏幕</translation>
     </message>
@@ -1658,7 +1678,12 @@
         <translation>外扩会改变屏幕图，已有的接缝和分层都会失效。继续吗？</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+15"/>
+        <source>Generating seam {0} → {1}… {2}%</source>
+        <translation>正在生成接缝 {0} → {1}… {2}%</translation>
+    </message>
+    <message>
+        <location line="+28"/>
         <source>Layering segments…</source>
         <translation>正在分层…</translation>
     </message>
@@ -1673,7 +1698,7 @@
         <translation>正在改图…</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+14"/>
         <source>Updating the ring order…</source>
         <translation>正在更新循环顺序…</translation>
     </message>
@@ -1708,7 +1733,7 @@
         <translation>正在切换版本…</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+21"/>
         <source>Seam {0} → {1}</source>
         <translation>接缝 {0} → {1}</translation>
     </message>
@@ -1728,7 +1753,7 @@
         <translation>{0} · 种子 {1}</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+146"/>
         <source>Nothing to export yet</source>
         <translation>暂无可导出的内容</translation>
     </message>
@@ -1748,7 +1773,7 @@
         <translation>删除此条目及其全部素材</translation>
     </message>
     <message>
-        <location line="-1091"/>
+        <location line="-1097"/>
         <source>Resources</source>
         <translation>资源</translation>
     </message>
@@ -1778,7 +1803,7 @@
         <translation>按边缘的匹配程度对各屏排序。重复添加的屏将合并为一张。</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+10"/>
         <source>Before</source>
         <translation>拼接前</translation>
     </message>
@@ -1788,12 +1813,12 @@
         <translation>拼接后</translation>
     </message>
     <message>
-        <location line="+767"/>
+        <location line="+779"/>
         <source>Generating seams…</source>
         <translation>正在生成接缝…</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+10"/>
         <source>Planning order…</source>
         <translation>正在规划顺序…</translation>
     </message>
@@ -2134,17 +2159,9 @@
     </message>
 </context>
 <context>
-    <name>RingCardBar</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="+237"/>
-        <source>Add a screen. The same screen can be added again.</source>
-        <translation>添加一屏。同一屏可以重复添加。</translation>
-    </message>
-</context>
-<context>
     <name>RingItemPicker</name>
     <message>
-        <location line="+166"/>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+39"/>
         <source>Add screens to the ring</source>
         <translation>向循环添加屏</translation>
     </message>
@@ -2261,34 +2278,6 @@
         <location line="+0"/>
         <source>Confirm and voice</source>
         <translation>确认剧本并配音</translation>
-    </message>
-</context>
-<context>
-    <name>SeamLink</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="-239"/>
-        <source>Generating seam… {0}%</source>
-        <translation>正在生成接缝… {0}%</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Seam: not generated yet</source>
-        <translation>接缝：还没生成</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: has candidates, none adopted</source>
-        <translation>接缝：有候选，尚未采用</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: adopted</source>
-        <translation>接缝：已采用</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: source image changed, redo it</source>
-        <translation>接缝：源图已变化，请重做</translation>
     </message>
 </context>
 <context>
@@ -2814,7 +2803,7 @@
 <context>
     <name>VersionControl</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="-141"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-221"/>
         <source>Switch between the original and edited versions</source>
         <translation>在原图和修改后的版本之间切换</translation>
     </message>

@@ -1094,7 +1094,7 @@
 <context>
     <name>LayerWindow</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="+169"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="+243"/>
         <source>Extend</source>
         <translation>Расширить</translation>
     </message>
@@ -1154,7 +1154,27 @@
         <translation>Удалить объединённый слой</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+3"/>
+        <source>Add screens</source>
+        <translation>Добавить экраны</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Append screens to the end of the ring; a screen can be used more than once</source>
+        <translation>Добавить экраны в конец кольца; один экран можно использовать несколько раз</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Remove</source>
+        <translation>Убрать</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove the selected screens from the ring (Delete)</source>
+        <translation>Убрать выбранные экраны из кольца (Delete)</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Describe the change for the selected layer, e.g. make the ground steeper</source>
         <translation>Опишите изменение для выбранного слоя, например: сделать землю круче</translation>
     </message>
@@ -1500,7 +1520,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+258"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+281"/>
         <source>Library</source>
         <translation>Библиотека</translation>
     </message>
@@ -1526,13 +1546,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+331"/>
-        <location line="+773"/>
+        <location line="+336"/>
+        <location line="+774"/>
         <source>Export</source>
         <translation>Экспорт</translation>
     </message>
     <message>
-        <location line="-1102"/>
+        <location line="-1108"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Сохранить готовые ассеты в zip: по папке на элемент, без черновиков и промежуточных файлов.</translation>
     </message>
@@ -1587,7 +1607,7 @@
         <translation>Переключение между сегментами и всем кольцом</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+15"/>
         <source>Before</source>
         <translation>До</translation>
     </message>
@@ -1597,7 +1617,7 @@
         <translation>После</translation>
     </message>
     <message>
-        <location line="-20"/>
+        <location line="-13"/>
         <source>Auto arrange</source>
         <translation>Автопорядок</translation>
     </message>
@@ -1607,7 +1627,7 @@
         <translation>Расставить экраны по совпадению краёв. Экраны, добавленные несколько раз, объединяются в один.</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+47"/>
         <source>Use this one</source>
         <translation>Использовать этот</translation>
     </message>
@@ -1622,7 +1642,7 @@
         <translation>Переделать этот шов</translation>
     </message>
     <message>
-        <location line="+122"/>
+        <location line="+134"/>
         <source>{0}/{1} done</source>
         <translation>Готово {0}/{1}</translation>
     </message>
@@ -1637,12 +1657,12 @@
         <translation>Пресет стиля «{0}» изменился после создания пакета.</translation>
     </message>
     <message>
-        <location line="+224"/>
+        <location line="+211"/>
         <source>Segment {0}</source>
         <translation>Участок {0}</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-38"/>
         <source>encoding</source>
         <translation>кодирование</translation>
     </message>
@@ -1652,7 +1672,7 @@
         <translation>шумоподавление</translation>
     </message>
     <message>
-        <location line="+372"/>
+        <location line="+387"/>
         <source>Generating seams…</source>
         <translation>Создание швов…</translation>
     </message>
@@ -1662,12 +1682,12 @@
         <translation>Разбиение на слои…</translation>
     </message>
     <message>
-        <location line="-743"/>
+        <location line="-755"/>
         <source>Click a seam to select it · Ctrl+click selects several</source>
         <translation>Щёлкните шов, чтобы выбрать его · Ctrl+щелчок выбирает несколько</translation>
     </message>
     <message>
-        <location line="+652"/>
+        <location line="+664"/>
         <source>Extending is only possible before segmenting</source>
         <translation>Расширять можно только до разделения</translation>
     </message>
@@ -1702,7 +1722,7 @@
         <translation>Разложить выбранные сегменты на слои</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+32"/>
         <source>Extend screens</source>
         <translation>Расширение экранов</translation>
     </message>
@@ -1712,7 +1732,12 @@
         <translation>Расширение изменит экраны, поэтому существующие швы и слои станут недействительными. Продолжить?</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+15"/>
+        <source>Generating seam {0} → {1}… {2}%</source>
+        <translation>Создание шва {0} → {1}… {2}%</translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>Extending screens…</source>
         <translation>Расширение экранов…</translation>
     </message>
@@ -1722,7 +1747,7 @@
         <translation>Редактирование…</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+12"/>
         <source>Planning order…</source>
         <translation>Планирование порядка…</translation>
     </message>
@@ -1762,7 +1787,7 @@
         <translation>Переключение версии…</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+21"/>
         <source>Seam {0} → {1}</source>
         <translation>Шов {0} → {1}</translation>
     </message>
@@ -1782,7 +1807,7 @@
         <translation>{0} · зерно {1}</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+146"/>
         <source>Nothing to export yet</source>
         <translation>Пока нечего экспортировать</translation>
     </message>
@@ -2138,17 +2163,9 @@
     </message>
 </context>
 <context>
-    <name>RingCardBar</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="+237"/>
-        <source>Add a screen. The same screen can be added again.</source>
-        <translation>Добавить экран. Один и тот же экран можно добавить снова.</translation>
-    </message>
-</context>
-<context>
     <name>RingItemPicker</name>
     <message>
-        <location line="+166"/>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+39"/>
         <source>Add screens to the ring</source>
         <translation>Добавить экраны в цикл</translation>
     </message>
@@ -2265,34 +2282,6 @@
         <location line="+0"/>
         <source>Confirm and voice</source>
         <translation>Подтвердить и озвучить</translation>
-    </message>
-</context>
-<context>
-    <name>SeamLink</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="-239"/>
-        <source>Generating seam… {0}%</source>
-        <translation>Создание шва… {0}%</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Seam: not generated yet</source>
-        <translation>Шов: ещё не создан</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: has candidates, none adopted</source>
-        <translation>Шов: есть варианты, ни один не принят</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: adopted</source>
-        <translation>Шов: принят</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: source image changed, redo it</source>
-        <translation>Шов: исходное изображение изменилось, создайте заново</translation>
     </message>
 </context>
 <context>
@@ -2818,7 +2807,7 @@
 <context>
     <name>VersionControl</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="-141"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-221"/>
         <source>Switch between the original and edited versions</source>
         <translation>Переключение между оригиналом и изменёнными версиями</translation>
     </message>

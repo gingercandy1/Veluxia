@@ -7,9 +7,10 @@
 重建时可以原样保留选中、折叠和滚动位置。"""
 from dataclasses import dataclass, field
 
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QImage
+from PySide6.QtCore import QMimeData, QSize, Qt, Signal
+from PySide6.QtGui import QDrag, QImage
 from PySide6.QtWidgets import (
+    QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -34,6 +35,8 @@ WINDOW_MIN_WIDTH = 360
 BADGE_MAX_WIDTH = 110
 VERSION_BUTTON = 20
 LAYER_PREFIX = "layer:"
+NODE_MIME = "application/x-veluxia-layer-node"
+DROP_MARKER_HEIGHT = 3
 
 
 @dataclass
@@ -86,10 +89,12 @@ class NodeRow(LayerRow):
     """树里的一行：在图层行的基础上加折叠箭头、badge 和版本控件。"""
     fold_toggled = Signal(str)
     version_requested = Signal(str, int)
+    drag_started = Signal(str)
 
     def __init__(self, node: LayerNode, depth: int, folded: bool, parent=None):
         super().__init__(node.key, node.title, selectable=True, parent=parent)
         self.node = node
+        self._press_pos = None
         layout = self.layout()
         layout.setContentsMargins(6 + depth * INDENT, 3, 8, 3)
         self.fold_btn = QToolButton()
@@ -128,6 +133,64 @@ class NodeRow(LayerRow):
     def set_folded(self, folded: bool):
         self.fold_btn.setText("▸" if folded else "▾")
 
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._press_pos = event.position().toPoint()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        # 按住左键移动超过系统拖动距离才算拖动；单击仍然只是选中
+        if (self._press_pos is not None and event.buttons() & Qt.MouseButton.LeftButton
+                and (event.position().toPoint() - self._press_pos).manhattanLength()
+                >= QApplication.startDragDistance()):
+            self._press_pos = None
+            self.drag_started.emit(self.layer_id)
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self._press_pos = None
+        super().mouseReleaseEvent(event)
+
+
+class _TreeBody(QWidget):
+    """树的内容区：接收顶层节点的拖放，落点之间画一条插入线。"""
+
+    def __init__(self, window: "LayerWindow"):
+        super().__init__()
+        self._window = window
+        self.setAcceptDrops(True)
+        self.marker = QFrame(self)
+        self.marker.setObjectName("layer_drop_marker")
+        self.marker.hide()
+
+    def _accepts(self, event) -> bool:
+        return self._window.reorderable() and event.mimeData().hasFormat(NODE_MIME)
+
+    def dragEnterEvent(self, event):
+        if self._accepts(event):
+            event.acceptProposedAction()
+
+    def dragMoveEvent(self, event):
+        if not self._accepts(event):
+            return
+        event.acceptProposedAction()
+        y = self._window.drop_line_y(self._window.slot_at(event.position().toPoint().y()))
+        self.marker.setGeometry(0, y - DROP_MARKER_HEIGHT // 2, self.width(), DROP_MARKER_HEIGHT)
+        self.marker.raise_()
+        self.marker.show()
+
+    def dragLeaveEvent(self, event):
+        self.marker.hide()
+        super().dragLeaveEvent(event)
+
+    def dropEvent(self, event):
+        self.marker.hide()
+        if not self._accepts(event):
+            return
+        event.acceptProposedAction()
+        key = bytes(event.mimeData().data(NODE_MIME)).decode()
+        self._window.move_node(key, self._window.slot_at(event.position().toPoint().y()))
+
 
 class _PromptEdit(QTextEdit):
     """Ctrl+Enter 发送；普通 Enter 仍是换行。"""
@@ -150,6 +213,9 @@ class LayerWindow(BaseWidget):
     merge_requested = Signal(list)         # 层 key 列表
     delete_requested = Signal(str)         # 合并层 key
     edit_requested = Signal(str, str)      # key, 文字指令
+    add_requested = Signal()               # 往列表末尾添加（由页面弹选择框）
+    remove_requested = Signal(list)        # 要移除的顶层节点 key
+    reorder_requested = Signal(list)       # 拖动换位后，顶层节点 key 的新顺序
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -165,6 +231,11 @@ class LayerWindow(BaseWidget):
         self._anchor = ""
         self._collapsed: set[str] = set()
         self._idle = True
+        # 列表模式（未分段时的屏列表）：可以添加、移除、拖动换位；分段后换成合并 / 删除合并层
+        self._list_mode = False
+        self._list_editable = False
+        self._can_remove = False
+        self._body: _TreeBody | None = None
         self._rows: dict[str, NodeRow] = {}
         self._bodies: dict[str, QWidget] = {}   # 有子节点的行 -> 装子行的容器
         self._order: list[str] = []            # 当前可见（未被折叠藏起）的行，从上到下
@@ -201,7 +272,16 @@ class LayerWindow(BaseWidget):
         self.delete_btn = QPushButton(self.tr("Delete merged layer"))
         self.merge_btn.clicked.connect(self._emit_merge)
         self.delete_btn.clicked.connect(self._emit_delete)
+        self.add_btn = QPushButton(self.tr("Add screens"))
+        self.add_btn.setToolTip(self.tr("Append screens to the end of the ring; "
+                                        "a screen can be used more than once"))
+        self.remove_btn = QPushButton(self.tr("Remove"))
+        self.remove_btn.setToolTip(self.tr("Remove the selected screens from the ring (Delete)"))
+        self.add_btn.clicked.connect(self._emit_add)
+        self.remove_btn.clicked.connect(self._emit_remove)
         merge_row = QHBoxLayout()
+        merge_row.addWidget(self.add_btn)
+        merge_row.addWidget(self.remove_btn)
         merge_row.addWidget(self.merge_btn)
         merge_row.addWidget(self.delete_btn)
         merge_row.addStretch(1)
@@ -243,7 +323,7 @@ class LayerWindow(BaseWidget):
 
         for tool in TOOLS:
             self.set_tool_state(tool, running=False, enabled=True)
-        self._update_buttons()
+        self.set_list_mode(False)
 
     # ---- 对外 ----
     def set_tool_state(self, tool: str, running: bool, enabled: bool, tooltip: str = ""):
@@ -256,6 +336,28 @@ class LayerWindow(BaseWidget):
             button.setProperty("running", running)
             button.style().unpolish(button)
             button.style().polish(button)
+
+    def set_list_mode(self, enabled: bool, editable: bool = False, can_add: bool = False,
+                      can_remove: bool = False):
+        """enabled：节点是可增删、可拖动换位的列表（未分段的屏）。
+        editable：此刻允许改（后端空闲）；can_add / can_remove 由页面按规则算好
+        （没有可加的屏、删了会不够两屏时为 False）。"""
+        self._list_mode = enabled
+        self._list_editable = enabled and editable
+        self._can_remove = can_remove
+        for button in (self.add_btn, self.remove_btn):
+            button.setVisible(enabled)
+        for button in (self.merge_btn, self.delete_btn):
+            button.setVisible(not enabled)
+        self.add_btn.setEnabled(self._list_editable and can_add)
+        self._update_buttons()
+
+    def reorderable(self) -> bool:
+        return self._list_editable
+
+    def node_keys(self) -> list[str]:
+        """所有节点的 key（含被折叠藏起的），从上到下。"""
+        return [key for key, _depth, _node in self._walk(self._nodes)]
 
     def set_idle(self, idle: bool):
         """后端在跑长任务时不能发改图、合并、删除，也不能切版本。"""
@@ -339,7 +441,7 @@ class LayerWindow(BaseWidget):
 
     def _rebuild(self):
         scroll_value = self.scroll.verticalScrollBar().value()
-        body = QWidget()
+        body = self._body = _TreeBody(self)
         column = QVBoxLayout(body)
         # 内边距放在这里而不是 QSS 的 padding：后者不计入内容宽度，行尾会被裁掉
         column.setContentsMargins(4, 4, 4, 4)
@@ -365,6 +467,8 @@ class LayerWindow(BaseWidget):
             row.opened.connect(self.node_opened)
             row.fold_toggled.connect(self.toggle_fold)
             row.version_requested.connect(self.version_requested)
+            if depth == 0:
+                row.drag_started.connect(self._start_drag)
             self._rows[node.key] = row
             column.addWidget(row)
             if node.children:
@@ -400,7 +504,64 @@ class LayerWindow(BaseWidget):
             self._anchor = self._selected[-1] if self._selected else ""
             self._apply_selection(emit=self._selected != before)
             return
+        if event.key() == Qt.Key.Key_Delete and self._list_mode:
+            self._emit_remove()
+            return
         super().keyPressEvent(event)
+
+    # ---- 列表模式：添加 / 移除 / 拖动换位 ----
+    def _top_rows(self) -> list[NodeRow]:
+        return [self._rows[node.key] for node in self._nodes if node.key in self._rows]
+
+    def slot_at(self, y: int) -> int:
+        """树内容区纵坐标 y 对应的插入位置：落在第 k 个顶层节点之前（k == 个数表示末尾）。"""
+        return sum(1 for row in self._top_rows() if row.geometry().center().y() < y)
+
+    def drop_line_y(self, slot: int) -> int:
+        rows = self._top_rows()
+        if not rows:
+            return 0
+        if slot < len(rows):
+            return rows[slot].y() - 1
+        return rows[-1].geometry().bottom() + 1
+
+    def move_node(self, key: str, slot: int):
+        """把顶层节点 key 挪到 slot（插入位置）；放回原位不发信号。"""
+        keys = [node.key for node in self._nodes]
+        if not self._list_editable or key not in keys:
+            return
+        source = keys.index(key)
+        target = slot - 1 if slot > source else slot
+        if target == source:
+            return
+        keys.insert(target, keys.pop(source))
+        self.reorder_requested.emit(keys)
+
+    def _start_drag(self, key: str):
+        row = self._rows.get(key)
+        if not self._list_editable or row is None:
+            return
+        mime = QMimeData()
+        mime.setData(NODE_MIME, key.encode())
+        drag = QDrag(row)
+        drag.setMimeData(mime)
+        drag.setPixmap(row.grab())
+        drag.exec(Qt.DropAction.MoveAction)
+        if self._body is not None:
+            self._body.marker.hide()
+
+    def _selected_top(self) -> list[str]:
+        top = {node.key for node in self._nodes}
+        return [key for key in self.selected_keys() if key in top]
+
+    def _emit_add(self):
+        if self._list_editable:
+            self.add_requested.emit()
+
+    def _emit_remove(self):
+        keys = self._selected_top()
+        if self._list_editable and self._can_remove and keys:
+            self.remove_requested.emit(keys)
 
     def _apply_selection(self, emit: bool = True):
         for key, row in self._rows.items():
@@ -450,6 +611,8 @@ class LayerWindow(BaseWidget):
         self.merge_btn.setEnabled(self._idle and self._can_merge())
         self.delete_btn.setEnabled(self._idle and self._can_delete())
         self.send_btn.setEnabled(self._idle and len(self._selected) == 1)
+        self.remove_btn.setEnabled(
+            self._list_editable and self._can_remove and bool(self._selected_top()))
 
     def sizeHint(self):
         return QSize(WINDOW_MIN_WIDTH + 40, 520)

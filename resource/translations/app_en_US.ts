@@ -1092,7 +1092,7 @@
 <context>
     <name>LayerWindow</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="+169"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="+243"/>
         <source>Extend</source>
         <translation>Extend</translation>
     </message>
@@ -1152,7 +1152,27 @@
         <translation>Delete merged layer</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+3"/>
+        <source>Add screens</source>
+        <translation>Add screens</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Append screens to the end of the ring; a screen can be used more than once</source>
+        <translation>Append screens to the end of the ring; a screen can be used more than once</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Remove</source>
+        <translation>Remove</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove the selected screens from the ring (Delete)</source>
+        <translation>Remove the selected screens from the ring (Delete)</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Describe the change for the selected layer, e.g. make the ground steeper</source>
         <translation>Describe the change for the selected layer, e.g. make the ground steeper</translation>
     </message>
@@ -1498,7 +1518,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+258"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+281"/>
         <source>Library</source>
         <translation>Library</translation>
     </message>
@@ -1524,13 +1544,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+331"/>
-        <location line="+773"/>
+        <location line="+336"/>
+        <location line="+774"/>
         <source>Export</source>
         <translation>Export</translation>
     </message>
     <message>
-        <location line="-1102"/>
+        <location line="-1108"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</translation>
     </message>
@@ -1565,7 +1585,7 @@
         <translation>Redo the steps made from the old portrait, and everything after them.</translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+103"/>
         <source>Use this one</source>
         <translation>Use this one</translation>
     </message>
@@ -1580,7 +1600,7 @@
         <translation>Redo this seam</translation>
     </message>
     <message>
-        <location line="+122"/>
+        <location line="+134"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} done</translation>
     </message>
@@ -1595,12 +1615,12 @@
         <translation>Style preset &quot;{0}&quot; has changed since this pack was created.</translation>
     </message>
     <message>
-        <location line="+224"/>
+        <location line="+211"/>
         <source>Segment {0}</source>
         <translation>Segment {0}</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-38"/>
         <source>encoding</source>
         <translation>encoding</translation>
     </message>
@@ -1610,12 +1630,12 @@
         <translation>denoising</translation>
     </message>
     <message>
-        <location line="-375"/>
+        <location line="-372"/>
         <source>Click a seam to select it · Ctrl+click selects several</source>
         <translation>Click a seam to select it · Ctrl+click selects several</translation>
     </message>
     <message>
-        <location line="+652"/>
+        <location line="+664"/>
         <source>Extending is only possible before segmenting</source>
         <translation>Extending is only possible before segmenting</translation>
     </message>
@@ -1650,7 +1670,7 @@
         <translation>Split the selected segments into layers</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+32"/>
         <source>Extend screens</source>
         <translation>Extend screens</translation>
     </message>
@@ -1660,7 +1680,12 @@
         <translation>Extending changes the screens, so the existing seams and layers will become invalid. Continue?</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+15"/>
+        <source>Generating seam {0} → {1}… {2}%</source>
+        <translation>Generating seam {0} → {1}… {2}%</translation>
+    </message>
+    <message>
+        <location line="+28"/>
         <source>Layering segments…</source>
         <translation>Layering segments…</translation>
     </message>
@@ -1675,7 +1700,7 @@
         <translation>Editing…</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+14"/>
         <source>Updating the ring order…</source>
         <translation>Updating the ring order…</translation>
     </message>
@@ -1710,7 +1735,7 @@
         <translation>Switching version…</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+21"/>
         <source>Seam {0} → {1}</source>
         <translation>Seam {0} → {1}</translation>
     </message>
@@ -1730,7 +1755,7 @@
         <translation>{0} · seed {1}</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+146"/>
         <source>Nothing to export yet</source>
         <translation>Nothing to export yet</translation>
     </message>
@@ -1750,7 +1775,7 @@
         <translation>Delete this item and all its assets</translation>
     </message>
     <message>
-        <location line="-1091"/>
+        <location line="-1097"/>
         <source>Resources</source>
         <translation>Resources</translation>
     </message>
@@ -1780,7 +1805,7 @@
         <translation>Order the screens by how well their edges match. Screens added more than once are merged into one.</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+10"/>
         <source>Before</source>
         <translation>Before</translation>
     </message>
@@ -1790,12 +1815,12 @@
         <translation>After</translation>
     </message>
     <message>
-        <location line="+767"/>
+        <location line="+779"/>
         <source>Generating seams…</source>
         <translation>Generating seams…</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+10"/>
         <source>Planning order…</source>
         <translation>Planning order…</translation>
     </message>
@@ -2136,17 +2161,9 @@
     </message>
 </context>
 <context>
-    <name>RingCardBar</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="+237"/>
-        <source>Add a screen. The same screen can be added again.</source>
-        <translation>Add a screen. The same screen can be added again.</translation>
-    </message>
-</context>
-<context>
     <name>RingItemPicker</name>
     <message>
-        <location line="+166"/>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+39"/>
         <source>Add screens to the ring</source>
         <translation>Add screens to the ring</translation>
     </message>
@@ -2263,34 +2280,6 @@
         <location line="+0"/>
         <source>Confirm and voice</source>
         <translation>Confirm and voice</translation>
-    </message>
-</context>
-<context>
-    <name>SeamLink</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="-239"/>
-        <source>Generating seam… {0}%</source>
-        <translation>Generating seam… {0}%</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Seam: not generated yet</source>
-        <translation>Seam: not generated yet</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: has candidates, none adopted</source>
-        <translation>Seam: has candidates, none adopted</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: adopted</source>
-        <translation>Seam: adopted</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: source image changed, redo it</source>
-        <translation>Seam: source image changed, redo it</translation>
     </message>
 </context>
 <context>
@@ -2816,7 +2805,7 @@
 <context>
     <name>VersionControl</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="-141"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-221"/>
         <source>Switch between the original and edited versions</source>
         <translation>Switch between the original and edited versions</translation>
     </message>

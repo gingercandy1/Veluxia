@@ -1092,7 +1092,7 @@
 <context>
     <name>LayerWindow</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="+169"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="+243"/>
         <source>Extend</source>
         <translation>Extender</translation>
     </message>
@@ -1152,7 +1152,27 @@
         <translation>Eliminar capa combinada</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+3"/>
+        <source>Add screens</source>
+        <translation>Añadir pantallas</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Append screens to the end of the ring; a screen can be used more than once</source>
+        <translation>Añadir pantallas al final del bucle; una pantalla puede usarse más de una vez</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Remove</source>
+        <translation>Quitar</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove the selected screens from the ring (Delete)</source>
+        <translation>Quitar del bucle las pantallas seleccionadas (Supr)</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Describe the change for the selected layer, e.g. make the ground steeper</source>
         <translation>Describe el cambio para la capa seleccionada, p. ej., haz el suelo más empinado</translation>
     </message>
@@ -1498,7 +1518,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+258"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+281"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
@@ -1524,13 +1544,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+331"/>
-        <location line="+773"/>
+        <location line="+336"/>
+        <location line="+774"/>
         <source>Export</source>
         <translation>Exportar</translation>
     </message>
     <message>
-        <location line="-1102"/>
+        <location line="-1108"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Guarda los recursos terminados en un zip, una carpeta por elemento, sin borradores ni archivos intermedios.</translation>
     </message>
@@ -1585,7 +1605,7 @@
         <translation>Cambiar entre los segmentos y el bucle completo</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+15"/>
         <source>Before</source>
         <translation>Antes</translation>
     </message>
@@ -1595,7 +1615,7 @@
         <translation>Después</translation>
     </message>
     <message>
-        <location line="-20"/>
+        <location line="-13"/>
         <source>Auto arrange</source>
         <translation>Ordenar automáticamente</translation>
     </message>
@@ -1605,7 +1625,7 @@
         <translation>Ordena las pantallas según lo bien que encajan sus bordes. Las pantallas añadidas más de una vez se fusionan en una.</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+47"/>
         <source>Use this one</source>
         <translation>Usar este</translation>
     </message>
@@ -1620,7 +1640,7 @@
         <translation>Rehacer esta unión</translation>
     </message>
     <message>
-        <location line="+122"/>
+        <location line="+134"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} listos</translation>
     </message>
@@ -1635,12 +1655,12 @@
         <translation>El ajuste de estilo «{0}» ha cambiado desde que se creó este paquete.</translation>
     </message>
     <message>
-        <location line="+224"/>
+        <location line="+211"/>
         <source>Segment {0}</source>
         <translation>Tramo {0}</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-38"/>
         <source>encoding</source>
         <translation>codificando</translation>
     </message>
@@ -1650,7 +1670,7 @@
         <translation>eliminando ruido</translation>
     </message>
     <message>
-        <location line="+372"/>
+        <location line="+387"/>
         <source>Generating seams…</source>
         <translation>Generando uniones…</translation>
     </message>
@@ -1660,12 +1680,12 @@
         <translation>Separando tramos en capas…</translation>
     </message>
     <message>
-        <location line="-743"/>
+        <location line="-755"/>
         <source>Click a seam to select it · Ctrl+click selects several</source>
         <translation>Haz clic en una unión para seleccionarla · Ctrl+clic selecciona varias</translation>
     </message>
     <message>
-        <location line="+652"/>
+        <location line="+664"/>
         <source>Extending is only possible before segmenting</source>
         <translation>Solo se puede extender antes de segmentar</translation>
     </message>
@@ -1700,7 +1720,7 @@
         <translation>Separar en capas los segmentos seleccionados</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+32"/>
         <source>Extend screens</source>
         <translation>Extender pantallas</translation>
     </message>
@@ -1710,7 +1730,12 @@
         <translation>Extender cambia las pantallas, así que las uniones y capas existentes dejarán de ser válidas. ¿Continuar?</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+15"/>
+        <source>Generating seam {0} → {1}… {2}%</source>
+        <translation>Generando unión {0} → {1}… {2}%</translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>Extending screens…</source>
         <translation>Extendiendo pantallas…</translation>
     </message>
@@ -1720,7 +1745,7 @@
         <translation>Editando…</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+12"/>
         <source>Planning order…</source>
         <translation>Planificando orden…</translation>
     </message>
@@ -1760,7 +1785,7 @@
         <translation>Cambiando de versión…</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+21"/>
         <source>Seam {0} → {1}</source>
         <translation>Unión {0} → {1}</translation>
     </message>
@@ -1780,7 +1805,7 @@
         <translation>{0} · semilla {1}</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+146"/>
         <source>Nothing to export yet</source>
         <translation>Aún no hay nada que exportar</translation>
     </message>
@@ -2136,17 +2161,9 @@
     </message>
 </context>
 <context>
-    <name>RingCardBar</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="+237"/>
-        <source>Add a screen. The same screen can be added again.</source>
-        <translation>Añadir una pantalla. La misma pantalla se puede añadir de nuevo.</translation>
-    </message>
-</context>
-<context>
     <name>RingItemPicker</name>
     <message>
-        <location line="+166"/>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+39"/>
         <source>Add screens to the ring</source>
         <translation>Añadir pantallas al bucle</translation>
     </message>
@@ -2263,34 +2280,6 @@
         <location line="+0"/>
         <source>Confirm and voice</source>
         <translation>Confirmar y doblar</translation>
-    </message>
-</context>
-<context>
-    <name>SeamLink</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="-239"/>
-        <source>Generating seam… {0}%</source>
-        <translation>Generando costura… {0}%</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Seam: not generated yet</source>
-        <translation>Costura: aún no generada</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: has candidates, none adopted</source>
-        <translation>Costura: hay candidatas, ninguna adoptada</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: adopted</source>
-        <translation>Costura: adoptada</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: source image changed, redo it</source>
-        <translation>Costura: la imagen de origen cambió, rehágala</translation>
     </message>
 </context>
 <context>
@@ -2816,7 +2805,7 @@
 <context>
     <name>VersionControl</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="-141"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-221"/>
         <source>Switch between the original and edited versions</source>
         <translation>Cambiar entre el original y las versiones editadas</translation>
     </message>

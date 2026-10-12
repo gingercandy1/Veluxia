@@ -1090,7 +1090,7 @@
 <context>
     <name>LayerWindow</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="+169"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="+243"/>
         <source>Extend</source>
         <translation>拡張</translation>
     </message>
@@ -1150,7 +1150,27 @@
         <translation>結合レイヤーを削除</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+3"/>
+        <source>Add screens</source>
+        <translation>画面を追加</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Append screens to the end of the ring; a screen can be used more than once</source>
+        <translation>画面をループの末尾に追加します。同じ画面を複数回使えます</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Remove</source>
+        <translation>削除</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove the selected screens from the ring (Delete)</source>
+        <translation>選択した画面をループから削除（Delete）</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>Describe the change for the selected layer, e.g. make the ground steeper</source>
         <translation>選択したレイヤーへの変更を入力。例：地面をもっと急にする</translation>
     </message>
@@ -1496,7 +1516,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+258"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+281"/>
         <source>Library</source>
         <translation>ライブラリ</translation>
     </message>
@@ -1522,13 +1542,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+331"/>
-        <location line="+773"/>
+        <location line="+336"/>
+        <location line="+774"/>
         <source>Export</source>
         <translation>書き出し</translation>
     </message>
     <message>
-        <location line="-1102"/>
+        <location line="-1108"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>完成したアセットを zip で保存します。アイテムごとに 1 フォルダーで、下書きや中間ファイルは含みません。</translation>
     </message>
@@ -1563,7 +1583,7 @@
         <translation>古い立ち絵から作ったステップと、それ以降のすべてをやり直します。</translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+103"/>
         <source>Use this one</source>
         <translation>これを使う</translation>
     </message>
@@ -1578,7 +1598,7 @@
         <translation>このつなぎ目をやり直す</translation>
     </message>
     <message>
-        <location line="+122"/>
+        <location line="+134"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 完了</translation>
     </message>
@@ -1593,12 +1613,12 @@
         <translation>スタイルプリセット「{0}」はこのパックの作成後に変更されました。</translation>
     </message>
     <message>
-        <location line="+224"/>
+        <location line="+211"/>
         <source>Segment {0}</source>
         <translation>区間 {0}</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-38"/>
         <source>encoding</source>
         <translation>エンコード中</translation>
     </message>
@@ -1608,12 +1628,12 @@
         <translation>ノイズ除去中</translation>
     </message>
     <message>
-        <location line="-375"/>
+        <location line="-372"/>
         <source>Click a seam to select it · Ctrl+click selects several</source>
         <translation>つなぎ目をクリックで選択 · Ctrl+クリックで複数選択</translation>
     </message>
     <message>
-        <location line="+652"/>
+        <location line="+664"/>
         <source>Extending is only possible before segmenting</source>
         <translation>拡張は区間分割の前にのみできます</translation>
     </message>
@@ -1648,7 +1668,7 @@
         <translation>選択した区間をレイヤーに分解</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+32"/>
         <source>Extend screens</source>
         <translation>画面を拡張</translation>
     </message>
@@ -1658,7 +1678,12 @@
         <translation>拡張すると画面が変わるため、既存のつなぎ目とレイヤーは無効になります。続けますか？</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+15"/>
+        <source>Generating seam {0} → {1}… {2}%</source>
+        <translation>つなぎ目を生成中 {0} → {1}… {2}%</translation>
+    </message>
+    <message>
+        <location line="+28"/>
         <source>Layering segments…</source>
         <translation>レイヤー分け中…</translation>
     </message>
@@ -1673,7 +1698,7 @@
         <translation>編集中…</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+14"/>
         <source>Updating the ring order…</source>
         <translation>ループの順序を更新しています…</translation>
     </message>
@@ -1708,7 +1733,7 @@
         <translation>バージョンを切り替え中…</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+21"/>
         <source>Seam {0} → {1}</source>
         <translation>つなぎ目 {0} → {1}</translation>
     </message>
@@ -1728,7 +1753,7 @@
         <translation>{0} · シード {1}</translation>
     </message>
     <message>
-        <location line="+143"/>
+        <location line="+146"/>
         <source>Nothing to export yet</source>
         <translation>書き出せるものがまだありません</translation>
     </message>
@@ -1748,7 +1773,7 @@
         <translation>このアイテムとすべてのアセットを削除</translation>
     </message>
     <message>
-        <location line="-1091"/>
+        <location line="-1097"/>
         <source>Resources</source>
         <translation>素材</translation>
     </message>
@@ -1778,7 +1803,7 @@
         <translation>端の一致度で画面を並べ替えます。複数回追加した画面は 1 つにまとめられます。</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+10"/>
         <source>Before</source>
         <translation>合成前</translation>
     </message>
@@ -1788,12 +1813,12 @@
         <translation>合成後</translation>
     </message>
     <message>
-        <location line="+767"/>
+        <location line="+779"/>
         <source>Generating seams…</source>
         <translation>継ぎ目を生成中…</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+10"/>
         <source>Planning order…</source>
         <translation>順序を計画中…</translation>
     </message>
@@ -2134,17 +2159,9 @@
     </message>
 </context>
 <context>
-    <name>RingCardBar</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="+237"/>
-        <source>Add a screen. The same screen can be added again.</source>
-        <translation>画面を追加します。同じ画面を何度でも追加できます。</translation>
-    </message>
-</context>
-<context>
     <name>RingItemPicker</name>
     <message>
-        <location line="+166"/>
+        <location filename="../../src/app/ui/library/ring_cards.py" line="+39"/>
         <source>Add screens to the ring</source>
         <translation>ループに画面を追加</translation>
     </message>
@@ -2261,34 +2278,6 @@
         <location line="+0"/>
         <source>Confirm and voice</source>
         <translation>台本を確定して音声化</translation>
-    </message>
-</context>
-<context>
-    <name>SeamLink</name>
-    <message>
-        <location filename="../../src/app/ui/library/ring_cards.py" line="-239"/>
-        <source>Generating seam… {0}%</source>
-        <translation>継ぎ目を生成中… {0}%</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Seam: not generated yet</source>
-        <translation>継ぎ目：未生成</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: has candidates, none adopted</source>
-        <translation>継ぎ目：候補あり、未採用</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: adopted</source>
-        <translation>継ぎ目：採用済み</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Seam: source image changed, redo it</source>
-        <translation>継ぎ目：元画像が変更されました。やり直してください</translation>
     </message>
 </context>
 <context>
@@ -2814,7 +2803,7 @@
 <context>
     <name>VersionControl</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="-141"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-221"/>
         <source>Switch between the original and edited versions</source>
         <translation>元画像と編集後のバージョンを切り替え</translation>
     </message>
