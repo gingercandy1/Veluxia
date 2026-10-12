@@ -51,10 +51,11 @@ def test_plan_cuts_short_ring_is_one_segment_and_impossible_width_errors():
         plan_cuts(np.ones(1600))
 
 
-def test_validate_cuts_sorts_and_checks_each_segment():
+def test_validate_cuts_sorts_and_accepts_any_segment_width():
     assert validate_cuts([1800, 200, 1000, 200], 2400) == [200, 1000, 1800]
-    with pytest.raises(ValueError, match="第 1 段宽 100"):
-        validate_cuts([200, 300, 1300], 2400)
+    # 段宽不限制：窄到 100 像素、宽到整条环，只要切点在范围内就接受
+    assert validate_cuts([200, 300, 1300], 2400) == [200, 300, 1300]
+    assert validate_cuts([0], 2400) == [0]
     with pytest.raises(ValueError, match="超出长图范围"):
         validate_cuts([200, 2400], 2400)
     with pytest.raises(ValueError, match="至少需要一个切点"):
@@ -126,13 +127,16 @@ def test_auto_cut_confirm_export_and_stale(tmp_path, monkeypatch):
 
     manifest = ring.auto_cuts("pack")
     assert calls == [(2400, 64)]
-    assert manifest.ring.cuts == [504, 1704]
+    # 自动切割只给建议，确认之前不碰已确认的切点
+    assert manifest.ring.suggested_cuts == [504, 1704]
+    assert manifest.ring.cuts == [] and manifest.ring.segments == []
     status = ring.ring_status("pack")
-    assert status["cuts"] == manifest.ring.cuts
+    assert status["suggested_cuts"] == [504, 1704] and status["cuts"] == []
     assert status["cuts_stale"] is False and status["segments"] == []
 
     confirmed = ring.confirm_cuts("pack", [1700, 500])
     assert confirmed.ring.cuts == [500, 1700]
+    assert confirmed.ring.suggested_cuts == []
     assert confirmed.ring.segments == ["ring/segments/01.png", "ring/segments/02.png"]
     assert [Image.open(directory / p).width for p in confirmed.ring.segments] == [1200, 1200]
     assert ring.ring_status("pack")["segments"] == confirmed.ring.segments
@@ -144,8 +148,9 @@ def test_auto_cut_confirm_export_and_stale(tmp_path, monkeypatch):
     Image.new("RGB", (1200, 64), "yellow").save(directory / ring.ring_status("pack")["rendered"][0])
     assert ring.ring_status("pack")["cuts_stale"] is True
 
-    with pytest.raises(ValueError, match="每段要在"):
-        ring.confirm_cuts("pack", [500, 600])
+    # 段宽不再限制：窄段也能确认，由用户自己判断是否合适
+    confirmed = ring.confirm_cuts("pack", [500, 600])
+    assert confirmed.ring.cuts == [500, 600]
 
 
 class _FakeLayered:
@@ -273,7 +278,7 @@ def test_layer_segments_reports_stage_current_segment_and_remaining(tmp_path, mo
     assert reports == [("encode", 1, [1]), ("denoise", 1, [1])]
 
 
-def test_moving_one_cut_keeps_layers_of_untouched_segments(tmp_path, monkeypatch):
+def test_confirming_cuts_clears_all_layers_even_for_untouched_segments(tmp_path, monkeypatch):
     work = tmp_path / "work"
     work.mkdir()
     directory = _rendered_pack(tmp_path, monkeypatch, widths=(1200, 1200, 1200))
@@ -287,15 +292,17 @@ def test_moving_one_cut_keeps_layers_of_untouched_segments(tmp_path, monkeypatch
                         classmethod(lambda cls, factory_type, model_name: _lease(fake)))
     ring.layer_segments("pack")
 
-    # 只挪第三个切点：第一段 0+1200 不受影响，其余两段失效并删掉目录
-    ring.confirm_cuts("pack", [0, 1200, 2300])
+    # 只挪第三个切点：新规则下第一段 0+1200 的分层也一并清空，目录全部删除
+    manifest = ring.confirm_cuts("pack", [0, 1200, 2300])
+    assert manifest.ring.segment_layers == {}
     layers = ring.ring_status("pack")["segment_layers"]
-    assert len(layers[0]) == ring.LAYER_COUNT and layers[1] == [] and layers[2] == []
+    assert layers == [[], [], []]
+    assert not (directory / "ring" / "layers" / "0_1200").exists()
     assert not (directory / "ring" / "layers" / "1200_1200").exists()
 
     fake.events.clear()
     ring.layer_segments("pack")
-    assert [e[0] for e in fake.events] == ["encode", "encode", "denoise", "denoise"]
+    assert [e[0] for e in fake.events] == ["encode"] * 3 + ["denoise"] * 3
 
 
 def test_layer_segments_needs_confirmed_fresh_cuts(tmp_path, monkeypatch):

@@ -163,3 +163,29 @@ def test_router_rejects_new_job_while_another_is_generating():
     for name in ("slow-a", "slow-b"):
         GeneratorFactory._generators[FactoryType.Image].pop(name, None)
     SingletonMeta._instances.pop(_SlowImage, None)
+
+
+def test_release_keeps_the_model_resident_until_idle_timeout(monkeypatch):
+    monkeypatch.setattr(GeneratorFactory, "_idle_unload_seconds", 0.2)
+    with GeneratorFactory.acquire(FactoryType.Image, "img-a") as image:
+        image.ensure_model_loaded()
+    # 刚释放不卸载：连续生成时下一张图直接复用已加载的权重
+    assert _loaded(image)
+    time.sleep(0.05)
+    with GeneratorFactory.acquire(FactoryType.Image, "img-a") as again:
+        assert again is image and _loaded(again)
+    time.sleep(0.1)
+    assert _loaded(image)  # 上一次释放重新计时，还没超时就仍在驻留
+    time.sleep(0.4)
+    assert not _loaded(image)  # 空闲够久，自动卸载
+
+
+def test_idle_unload_waits_while_a_lease_is_held(monkeypatch):
+    monkeypatch.setattr(GeneratorFactory, "_idle_unload_seconds", 0.05)
+    with GeneratorFactory.acquire(FactoryType.Image, "img-a") as image:
+        image.ensure_model_loaded()
+        time.sleep(0.2)
+        # 计时器到点时还有人持有租约，不能卸载正在用的权重
+        assert _loaded(image)
+    time.sleep(0.3)
+    assert not _loaded(image)

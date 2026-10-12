@@ -15,7 +15,7 @@ from src.shared.schemas import BaseResponse, ImageResponse, TextResponse, Animat
     StyleListResponse, StylePreset, ModelStorageResponse, UpdateItemFieldsRequest, \
     AdoptSeamRequest, RingGenerateRequest, RingOrderRequest, RingPlanRequest, RingStatusResponse, \
     RingCutsRequest, ConfirmCutsRequest, RingLayersRequest, MergeLayersRequest, \
-    DeleteMergedRequest
+    DeleteMergedRequest, RingExtendRequest, RingEditRequest, RingVersionRequest
 
 _DEFAULT_LIMITS = httpx.Limits(
     max_connections=10,
@@ -479,6 +479,31 @@ class ApiClient:
         return self._submit_and_poll("/library/ring/layers", request.model_dump(), PackResponse,
                                      stop_event=stop_event, max_total_wait_seconds=24 * 3600,
                                      on_progress=on_progress)
+
+    def extend_ring(self, pack_id: str, item_ids: Optional[list[str]] = None, pad: int = 128,
+                    stop_event: Optional[threading.Event] = None,
+                    on_progress=None) -> PackResponse:
+        """用 Qwen-Image 图生图给屏上下各补 pad 像素；item_ids 为空 = 环上全部屏。
+        on_progress(dict)：{"key": 条目 id, "fraction"}，在调用线程里被调用。"""
+        request = RingExtendRequest(pack_id=pack_id, item_ids=item_ids, pad=pad)
+        return self._submit_and_poll("/library/ring/extend", request.model_dump(), PackResponse,
+                                     stop_event=stop_event, max_total_wait_seconds=24 * 3600,
+                                     on_progress=on_progress)
+
+    def edit_ring_target(self, pack_id: str, target: str, prompt: str,
+                         stop_event: Optional[threading.Event] = None,
+                         on_progress=None) -> PackResponse:
+        """按文字改一个屏 / 段 / 层，结果作为新版本；target 是目标键。"""
+        request = RingEditRequest(pack_id=pack_id, target=target, prompt=prompt)
+        return self._submit_and_poll("/library/ring/edit", request.model_dump(), PackResponse,
+                                     stop_event=stop_event, max_total_wait_seconds=24 * 3600,
+                                     on_progress=on_progress)
+
+    def select_ring_version(self, pack_id: str, target: str, index: int) -> PackResponse:
+        """index = -1 切回原图。"""
+        request = RingVersionRequest(target=target, index=index)
+        return self._post(f"/library/packs/{pack_id}/ring/version", request.model_dump(),
+                          PackResponse)
 
     def confirm_ring_cuts(self, pack_id: str, cuts: list[int]) -> PackResponse:
         return self._post(f"/library/packs/{pack_id}/ring/cuts",

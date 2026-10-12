@@ -34,9 +34,9 @@ class _FakeEncoder:
     def __init__(self):
         self.calls = []
 
-    def encode_prompt(self, prompt, device):
+    def encode_prompt(self, prompt, device, image=None):
         import torch
-        self.calls.append(prompt)
+        self.calls.append((prompt, image))
         return torch.ones(1, 3, 4), torch.ones(1, 3, dtype=torch.bool), None
 
 
@@ -207,7 +207,7 @@ def test_same_prompt_skips_the_encoder_and_unload_clears_the_cache(generator, mo
         generator.parse_params({"content": prompt})
         asyncio.run(generator.generate())
     # 连续同一句提示词只编码一次；换了提示词才重新编码
-    assert generator.encoder_pipe.calls == ["a", "b"]
+    assert [prompt for prompt, _ in generator.encoder_pipe.calls] == ["a", "b"]
 
     generator.unload()
     assert generator._embeds_cache is None and generator.pipe is None
@@ -238,3 +238,64 @@ def test_two_stages_are_mutually_exclusive_and_load_only_their_half(generator, m
     assert loads[1]["text_encoder"] is None and "transformer" not in loads[1]
     # 去噪阶段用 models.json 里配的卸载方式；编码阶段用默认的按层卸载
     assert offloads == [("group", None), ("group", generator.offload)]
+
+
+def test_reference_image_conditions_both_encoder_and_denoiser(generator, monkeypatch, tmp_path):
+    _use_fakes(generator, monkeypatch)
+    # 透明底的参考图要先铺白底，不能直接转 RGB（会变黑底）
+    ref = tmp_path / "ref.png"
+    Image.new("RGBA", (512, 256), (255, 0, 0, 0)).save(ref)
+    generator.parse_params({"content": "steeper ground", "reference_image": str(ref),
+                            "width": 512, "height": 256})
+    asyncio.run(generator.generate())
+
+    encoded_prompt, encoded_image = generator.encoder_pipe.calls[0]
+    assert encoded_prompt == "steeper ground"
+    assert encoded_image[0].mode == "RGB" and encoded_image[0].getpixel((0, 0)) == (255, 255, 255)
+    assert generator.pipe.kwargs["image"][0] is encoded_image[0]
+    assert generator.pipe.kwargs["width"] == 512 and generator.pipe.kwargs["height"] == 256
+
+
+def test_text_only_call_does_not_pass_image(generator, monkeypatch):
+    _use_fakes(generator, monkeypatch)
+    generator.parse_params({"content": "a"})
+    asyncio.run(generator.generate())
+    assert generator.encoder_pipe.calls == [("a", None)]  # 文生图：编码器不带参考图
+    assert "image" not in generator.pipe.kwargs
+
+
+def test_edit_defaults_output_resolution_to_768_but_text_to_image_passes_none(
+        generator, monkeypatch, tmp_path):
+    _use_fakes(generator, monkeypatch)
+    ref = tmp_path / "ref.png"
+    Image.new("RGB", (64, 32)).save(ref)
+    # 有参考图且没指定：默认 768（1024 下编辑会忽略指令，diffusers #14824）
+    generator.parse_params({"content": "edit", "reference_image": str(ref)})
+    asyncio.run(generator.generate())
+    assert generator.pipe.kwargs["output_resolution"] == 768
+    # 调用方指定的值原样传下去
+    generator.parse_params({"content": "edit", "reference_image": str(ref),
+                            "output_resolution": 512})
+    asyncio.run(generator.generate())
+    assert generator.pipe.kwargs["output_resolution"] == 512
+    # 文生图保持原样：不传 output_resolution，管线用自己的默认
+    generator.parse_params({"content": "plain"})
+    asyncio.run(generator.generate())
+    assert "output_resolution" not in generator.pipe.kwargs
+
+
+def test_output_resolution_must_be_in_range(generator):
+    with pytest.raises(ValueError, match="output_resolution"):
+        generator.parse_params({"content": "a", "output_resolution": 100})
+
+
+def test_cache_is_keyed_by_reference_content(generator, monkeypatch, tmp_path):
+    _use_fakes(generator, monkeypatch)
+    red, blue = tmp_path / "red.png", tmp_path / "blue.png"
+    Image.new("RGB", (8, 8), (255, 0, 0)).save(red)
+    Image.new("RGB", (8, 8), (0, 0, 255)).save(blue)
+    for ref in (red, red, blue):
+        generator.parse_params({"content": "same prompt", "reference_image": str(ref)})
+        asyncio.run(generator.generate())
+    # 同一句提示词，但参考图换了，编码结果不能复用
+    assert len(generator.encoder_pipe.calls) == 2

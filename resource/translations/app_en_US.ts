@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+104"/>
         <location line="+136"/>
-        <location line="+412"/>
+        <location line="+437"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>Cannot connect to the backend. Please check that the service is running.</translation>
     </message>
     <message>
-        <location line="-544"/>
+        <location line="-569"/>
         <source>Connection timed out.</source>
         <translation>Connection timed out.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+404"/>
+        <location line="+429"/>
         <source>Cannot connect to the backend.</source>
         <translation>Cannot connect to the backend.</translation>
     </message>
     <message>
-        <location line="-287"/>
+        <location line="-312"/>
         <source>Generation stopped.</source>
         <translation>Generation stopped.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>Cannot connect to the backend: {0}</translation>
     </message>
     <message>
-        <location line="+306"/>
+        <location line="+331"/>
         <source>An install task is already running...</source>
         <translation>An install task is already running...</translation>
     </message>
@@ -410,6 +410,24 @@
         <location filename="../../src/app/ui/message/text/code_block_widget.py" line="+43"/>
         <source>Copy code</source>
         <translation>Copy code</translation>
+    </message>
+</context>
+<context>
+    <name>CutDialog</name>
+    <message>
+        <location filename="../../src/app/ui/library/cut_dialog.py" line="+17"/>
+        <source>Confirm segment cuts</source>
+        <translation>Confirm segment cuts</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Drag a red line to move it · Shift+left click adds a cut · Shift+right click removes the nearest cut</source>
+        <translation>Drag a red line to move it · Shift+left click adds a cut · Shift+right click removes the nearest cut</translation>
+    </message>
+    <message>
+        <location line="+39"/>
+        <source>{0} segments: {1} px</source>
+        <translation>{0} segments: {1} px</translation>
     </message>
 </context>
 <context>
@@ -1072,9 +1090,92 @@
     </message>
 </context>
 <context>
+    <name>LayerWindow</name>
+    <message>
+        <location filename="../../src/app/ui/library/layer_window.py" line="+169"/>
+        <source>Extend</source>
+        <translation>Extend</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop extend</source>
+        <translation>Stop extend</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seams</source>
+        <translation>Seams</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop seams</source>
+        <translation>Stop seams</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Segment</source>
+        <translation>Segment</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop segment</source>
+        <translation>Stop segment</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Layer</source>
+        <translation>Layer</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop layer</source>
+        <translation>Stop layer</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Layers</source>
+        <translation>Layers</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Merge</source>
+        <translation>Merge</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Merge the selected layers into a new layer</source>
+        <translation>Merge the selected layers into a new layer</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete merged layer</source>
+        <translation>Delete merged layer</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Describe the change for the selected layer, e.g. make the ground steeper</source>
+        <translation>Describe the change for the selected layer, e.g. make the ground steeper</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Send</source>
+        <translation>Send</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Edit the selected item with this instruction (Ctrl+Enter)</source>
+        <translation>Edit the selected item with this instruction (Ctrl+Enter)</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Edit with Qwen-Image-2.1</source>
+        <translation>Edit with Qwen-Image-2.1</translation>
+    </message>
+</context>
+<context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+274"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+282"/>
         <source>Failed to load packs: {0}</source>
         <translation>Failed to load packs: {0}</translation>
     </message>
@@ -1084,22 +1185,27 @@
         <translation>Failed to load templates: {0}</translation>
     </message>
     <message>
-        <location line="+414"/>
+        <location line="+487"/>
         <source>Failed to create pack: {0}</source>
         <translation>Failed to create pack: {0}</translation>
     </message>
     <message>
-        <location line="-295"/>
+        <location line="-368"/>
         <source>Run failed: {0}</source>
         <translation>Run failed: {0}</translation>
     </message>
     <message>
-        <location line="+88"/>
+        <location line="+99"/>
         <source>The seam produced no candidate.</source>
         <translation>The seam produced no candidate.</translation>
     </message>
     <message>
-        <location line="+225"/>
+        <location line="+141"/>
+        <source>{0} seams are not ready; the cuts may be affected.</source>
+        <translation>{0} seams are not ready; the cuts may be affected.</translation>
+    </message>
+    <message>
+        <location line="+146"/>
         <source>Failed to add items: {0}</source>
         <translation>Failed to add items: {0}</translation>
     </message>
@@ -1181,18 +1287,18 @@
         <translation>Style presets: {0}</translation>
     </message>
     <message>
-        <location line="-450"/>
-        <location line="+68"/>
+        <location line="-523"/>
+        <location line="+79"/>
         <source>Could not load ring status.</source>
         <translation>Could not load ring status.</translation>
     </message>
     <message>
-        <location line="-56"/>
+        <location line="-67"/>
         <source>Screen {0} has no finished source image.</source>
         <translation>Screen {0} has no finished source image.</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+31"/>
         <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
         <translation>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</translation>
     </message>
@@ -1202,14 +1308,14 @@
         <translation>Not rendered yet</translation>
     </message>
     <message>
-        <location line="+109"/>
+        <location line="+125"/>
         <source>Could not decode image: {0}</source>
         <translation>Could not decode image: {0}</translation>
     </message>
     <message>
-        <location line="-45"/>
-        <location line="+126"/>
-        <location line="+34"/>
+        <location line="-56"/>
+        <location line="+189"/>
+        <location line="+33"/>
         <source>Ring operation failed: {0}</source>
         <translation>Ring operation failed: {0}</translation>
     </message>
@@ -1392,7 +1498,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+232"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+258"/>
         <source>Library</source>
         <translation>Library</translation>
     </message>
@@ -1418,13 +1524,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+371"/>
-        <location line="+584"/>
+        <location line="+331"/>
+        <location line="+773"/>
         <source>Export</source>
         <translation>Export</translation>
     </message>
     <message>
-        <location line="-953"/>
+        <location line="-1102"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</translation>
     </message>
@@ -1434,12 +1540,7 @@
         <translation>Delete</translation>
     </message>
     <message>
-        <location line="+20"/>
-        <source>Layers</source>
-        <translation>Layers</translation>
-    </message>
-    <message>
-        <location line="+24"/>
+        <location line="+40"/>
         <source>Use new style</source>
         <translation>Use new style</translation>
     </message>
@@ -1464,27 +1565,7 @@
         <translation>Redo the steps made from the old portrait, and everything after them.</translation>
     </message>
     <message>
-        <location line="+82"/>
-        <source>Auto cut</source>
-        <translation>Auto cut</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Confirm cuts</source>
-        <translation>Confirm cuts</translation>
-    </message>
-    <message>
-        <location line="+30"/>
-        <source>Redo this segment</source>
-        <translation>Redo this segment</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Layer segments</source>
-        <translation>Layer segments</translation>
-    </message>
-    <message>
-        <location line="+49"/>
+        <location line="+110"/>
         <source>Use this one</source>
         <translation>Use this one</translation>
     </message>
@@ -1499,7 +1580,7 @@
         <translation>Redo this seam</translation>
     </message>
     <message>
-        <location line="+104"/>
+        <location line="+122"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} done</translation>
     </message>
@@ -1514,74 +1595,84 @@
         <translation>Style preset &quot;{0}&quot; has changed since this pack was created.</translation>
     </message>
     <message>
-        <location line="+169"/>
+        <location line="+224"/>
         <source>Segment {0}</source>
         <translation>Segment {0}</translation>
     </message>
     <message>
-        <location line="+116"/>
-        <source>Layered {0}/{1} segments</source>
-        <translation>Layered {0}/{1} segments</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>about {0} min left</source>
-        <translation>about {0} min left</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>layering… you can stop and continue later</source>
-        <translation>layering… you can stop and continue later</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="-36"/>
         <source>encoding</source>
         <translation>encoding</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+0"/>
         <source>denoising</source>
         <translation>denoising</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>segment {0}: {1}</source>
-        <translation>segment {0}: {1}</translation>
+        <location line="-375"/>
+        <source>Click a seam to select it · Ctrl+click selects several</source>
+        <translation>Click a seam to select it · Ctrl+click selects several</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <source>drag the red lines to adjust · Shift+click adds one · Shift+right-click removes one · then confirm</source>
-        <translation>drag the red lines to adjust · Shift+click adds one · Shift+right-click removes one · then confirm</translation>
+        <location line="+652"/>
+        <source>Extending is only possible before segmenting</source>
+        <translation>Extending is only possible before segmenting</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
-        <translation>Before layering, cut the ring into segments: render first, then Auto cut.</translation>
+        <location line="+2"/>
+        <source>Add 128 px above and below the selected screens (all if none)</source>
+        <translation>Add 128 px above and below the selected screens (all if none)</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>{0} segments · {1}–{2} px wide</source>
-        <translation>{0} segments · {1}–{2} px wide</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>segment {0} is {1} px, keep each within {2}–{3} px</source>
-        <translation>segment {0} is {1} px, keep each within {2}–{3} px</translation>
+        <location line="+2"/>
+        <source>Add candidates for the selected seams; with none selected, fill in the missing and stale ones</source>
+        <translation>Add candidates for the selected seams; with none selected, fill in the missing and stale ones</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>screens changed since cutting, auto cut again</source>
-        <translation>screens changed since cutting, auto cut again</translation>
+        <source>Find cut points automatically, then confirm them</source>
+        <translation>Find cut points automatically, then confirm them</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>{0} segment images saved</source>
-        <translation>{0} segment images saved</translation>
+        <location line="+3"/>
+        <source>Segment the ring first</source>
+        <translation>Segment the ring first</translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+3"/>
+        <source>Select segments first (Ctrl+A selects all)</source>
+        <translation>Select segments first (Ctrl+A selects all)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Split the selected segments into layers</source>
+        <translation>Split the selected segments into layers</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>Extend screens</source>
+        <translation>Extend screens</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Extending changes the screens, so the existing seams and layers will become invalid. Continue?</source>
+        <translation>Extending changes the screens, so the existing seams and layers will become invalid. Continue?</translation>
+    </message>
+    <message>
+        <location line="+49"/>
         <source>Layering segments…</source>
         <translation>Layering segments…</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Extending screens…</source>
+        <translation>Extending screens…</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Editing…</source>
+        <translation>Editing…</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -1612,6 +1703,11 @@
         <location line="+2"/>
         <source>Deleting the merged layer…</source>
         <translation>Deleting the merged layer…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Switching version…</source>
+        <translation>Switching version…</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -1654,7 +1750,7 @@
         <translation>Delete this item and all its assets</translation>
     </message>
     <message>
-        <location line="-942"/>
+        <location line="-1091"/>
         <source>Resources</source>
         <translation>Resources</translation>
     </message>
@@ -1664,7 +1760,17 @@
         <translation>Ring</translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+91"/>
+        <source>View whole ring</source>
+        <translation>View whole ring</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Switch between the segments and the whole ring</source>
+        <translation>Switch between the segments and the whole ring</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>Auto arrange</source>
         <translation>Auto arrange</translation>
     </message>
@@ -1674,7 +1780,7 @@
         <translation>Order the screens by how well their edges match. Screens added more than once are merged into one.</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+17"/>
         <source>Before</source>
         <translation>Before</translation>
     </message>
@@ -1684,17 +1790,12 @@
         <translation>After</translation>
     </message>
     <message>
-        <location line="+20"/>
-        <source>Generate seams</source>
-        <translation>Generate seams</translation>
-    </message>
-    <message>
-        <location line="+610"/>
+        <location line="+767"/>
         <source>Generating seams…</source>
         <translation>Generating seams…</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+11"/>
         <source>Planning order…</source>
         <translation>Planning order…</translation>
     </message>
@@ -1994,6 +2095,29 @@
     </message>
 </context>
 <context>
+    <name>QwenImage21TurboPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="+80"/>
+        <source>number</source>
+        <translation>Count</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>width</source>
+        <translation>Width</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>height</source>
+        <translation>Height</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>seed</source>
+        <translation>Seed</translation>
+    </message>
+</context>
+<context>
     <name>QwenImageEditPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="+46"/>
@@ -2035,7 +2159,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+148"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+158"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>Add at least two finished scene screens, then plan the ring.</translation>
     </message>
@@ -2690,6 +2814,14 @@
     </message>
 </context>
 <context>
+    <name>VersionControl</name>
+    <message>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-141"/>
+        <source>Switch between the original and edited versions</source>
+        <translation>Switch between the original and edited versions</translation>
+    </message>
+</context>
+<context>
     <name>VideoWidget</name>
     <message>
         <location filename="../../src/app/ui/message/message_widgets.py" line="+128"/>
@@ -2874,7 +3006,7 @@
 <context>
     <name>_TextToImagePanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="+22"/>
+        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="-67"/>
         <source>number</source>
         <translation>Count</translation>
     </message>

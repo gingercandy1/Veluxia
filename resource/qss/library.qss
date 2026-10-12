@@ -19,10 +19,82 @@ QWidget#library_scroll_content {
     border: none;
 }
 
-QWidget#ring_strip {
+QWidget#ring_strip,
+QWidget#segment_canvas {
     background-color: #0d1117;
     border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 6px;
+}
+
+QStackedWidget#ring_canvas_stack {
+    background-color: transparent;
+    border: none;
+}
+
+/* 图层窗口：和画布同样的深底 + 细边框，右侧整块面板一眼能和画布区分开 */
+QWidget#layer_window {
+    background-color: #15181d;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+}
+
+QLabel#layer_window_title {
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+QLabel#layer_window_caption {
+    background: transparent;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+QFrame#layer_window_separator {
+    background-color: rgba(255, 255, 255, 0.08);
+    border: none;
+}
+
+/* 树区域单独一圈边框，和工具栏、改图区分开 */
+QWidget#layer_window QScrollArea#ring_layer_scroll {
+    background-color: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+}
+
+QTextEdit#layer_prompt {
+    background-color: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 6px;
+    padding: 4px;
+}
+
+QTextEdit#layer_prompt:focus {
+    border-color: rgba(123, 157, 188, 0.75);
+}
+
+/* 图层窗口顶部的四个工具按钮；运行中的那个高亮，提示"再点一次停止" */
+QPushButton#layer_tool_btn {
+    padding: 4px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+QPushButton#layer_tool_btn:hover:enabled {
+    background-color: rgba(123, 157, 188, 0.30);
+}
+
+QPushButton#layer_tool_btn:disabled {
+    color: rgba(255, 255, 255, 0.30);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+QPushButton#layer_tool_btn[running="true"] {
+    color: #ffd666;
+    border-color: #ffd666;
+    background-color: rgba(255, 214, 102, 0.14);
 }
 
 /* 条带右上角的前/后开关：半透明底色，压在画面上也看得清 */
@@ -425,19 +497,6 @@ QLabel#detail_text {
     color: rgba(255, 255, 255, 0.80);
 }
 
-QPushButton#ring_segment_chip {
-    min-width: 34px;
-    padding: 3px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 4px;
-    background-color: rgba(255, 255, 255, 0.04);
-}
-
-QPushButton#ring_segment_chip:checked {
-    border-color: #ffd666;
-    background-color: rgba(255, 214, 102, 0.16);
-}
-
 QScrollArea#ring_layer_scroll,
 QScrollArea#ring_layer_scroll > QWidget > QWidget {
     background: transparent;
@@ -490,6 +549,46 @@ QToolButton#ring_layer_eye {
 
 QToolButton#ring_layer_eye:hover {
     background-color: rgba(255, 255, 255, 0.10);
+}
+
+QToolButton#layer_fold {
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+QLabel#layer_row_badge {
+    background-color: rgba(255, 214, 102, 0.16);
+    color: #ffd666;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 11px;
+}
+
+QFrame#layer_version {
+    background: transparent;
+}
+
+QToolButton#layer_version_btn {
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.75);
+    padding: 2px 3px;
+}
+
+QToolButton#layer_version_btn:hover:enabled {
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+QToolButton#layer_version_btn:disabled {
+    color: rgba(255, 255, 255, 0.22);
+}
+
+QLabel#layer_version_label {
+    background: transparent;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.75);
 }
 
 QLabel#detail_muted {

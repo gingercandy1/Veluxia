@@ -17,7 +17,8 @@ from src.app.ui.base.widget import BaseWidget
 from src.app.ui.library.cards import ASSET_THUMB, PACK_THUMB, Card
 from src.app.ui.library.detail_panel import PREVIEW_WIDTH, AssetKey
 from src.app.ui.library.garden import GardenView
-from src.app.ui.library.pack_detail import RING_SOURCE_STEP, PackDetail
+from src.app.ui.library.cut_dialog import CutDialog
+from src.app.ui.library.pack_detail import RING_SOURCE_STEP, PackDetail, screen_key, seam_key
 from src.app.ui.library.pack_form import PAGE_BACKGROUND, PackForm
 from src.app.ui.library.pack_status import (
     AUDIO_SUFFIXES,
@@ -62,7 +63,9 @@ THUMB_CACHE_DIR = LIBRARY_CACHE_DIR / "thumbs"
 # 全部同时解码会占满 CPU，把界面线程的绘制挤得卡顿
 _DECODE_SLOTS = threading.Semaphore(2)
 # 会占用显存、要能中途停止的循环操作；其余（规划、采用、合成）是秒级的纯 CPU 操作
-RING_GENERATING = ("generate", "redo", "layers")
+RING_GENERATING = ("generate", "redo", "layers", "extend", "edit")
+# 自动切割是单次操作，但可以中途停止（按钮显示"停止分段"）
+RING_STOPPABLE = (*RING_GENERATING, "cuts")
 CHARACTER_TYPE = "character"
 # 切页时新页面滑入的距离：只是一点方向感，滑太远会显得拖沓
 PAGE_SLIDE = 12
@@ -152,14 +155,19 @@ class LibraryPage(BaseWidget):
             lambda item_ids: self._run_ring_action("plan", item_ids=item_ids))
         self.detail.ring_order_requested.connect(
             lambda order: self._run_ring_action("order", order=order))
-        self.detail.ring_generate_requested.connect(lambda: self._run_ring_action("generate"))
+        self.detail.ring_extend_requested.connect(
+            lambda item_ids: self._run_ring_action("extend", item_ids=item_ids))
+        self.detail.ring_generate_requested.connect(
+            lambda keys: self._run_ring_action("generate", keys=keys))
         self.detail.ring_candidates_requested.connect(self._load_ring_candidates)
         self.detail.ring_cuts_auto_requested.connect(lambda: self._run_ring_action("cuts"))
-        self.detail.ring_cuts_confirm_requested.connect(
-            lambda cuts: self._run_ring_action("confirm", cuts=cuts))
         self.detail.ring_layers_requested.connect(
             lambda indices: self._run_ring_action("layers", indices=indices))
-        self.detail.ring_segment_requested.connect(self._load_segment_images)
+        self.detail.ring_edit_requested.connect(
+            lambda target, prompt: self._run_ring_action("edit", target, prompt))
+        self.detail.ring_version_requested.connect(
+            lambda target, index: self._run_ring_action("version", target, index=index))
+        self.detail.ring_images_requested.connect(self._load_ring_images)
         self.detail.ring_layers_progressed.connect(self._refresh_layer_status)
         self.detail.ring_layers_merge_requested.connect(
             lambda segment, ids: self._run_ring_action("merge", segment=segment, layer_ids=ids))
@@ -360,7 +368,7 @@ class LibraryPage(BaseWidget):
         self._refresh_packs()
 
     def _stop_run(self):
-        if self._ring_worker is not None and self._ring_action in RING_GENERATING:
+        if self._ring_worker is not None and self._ring_action in RING_STOPPABLE:
             self._ring_stop.set()
             self.detail.stop_btn.setEnabled(False)
             return
@@ -402,17 +410,23 @@ class LibraryPage(BaseWidget):
             if state is None or state.status != "done" or not state.outputs:
                 raise ValueError(self.tr("Screen {0} has no finished source image.").format(item_id))
             source_sig = state_signature(item, [RING_SOURCE_STEP])
+            # 屏当前用的图可能是外扩 / 改过的版本；旧后端没给 screen_files 时用 generate 的产物
+            screen_file = (status.screen_files[index] if index < len(status.screen_files)
+                           and status.screen_files[index] else state.outputs[0])
             if item_id not in originals:
                 originals[item_id] = self._fetch_cached_ring_image(
-                    pack, state.outputs[0], source_sig, used)
+                    pack, screen_file, f"{source_sig}|{screen_file}", used)
             before.append(originals[item_id])
             rendered_path = status.rendered[index] if index < len(status.rendered) else ""
             if rendered_path:
-                # 合成图由原图和左右两条接缝采用的候选决定：这三样没变就是同一张图
+                # 合成图由这一屏和左右两屏的当前图、两条接缝采用的候选决定：这些没变就是同一张图
                 left_key = f"{status.order[index - 1]}>{item_id}"
                 right_key = f"{item_id}>{status.order[(index + 1) % count]}"
                 signature = "|".join((
-                    source_sig, status.order[index - 1], status.order[(index + 1) % count],
+                    source_sig, screen_file, status.order[index - 1],
+                    self._neighbour_file(status, index - 1),
+                    status.order[(index + 1) % count],
+                    self._neighbour_file(status, (index + 1) % count),
                     self._adopted_id(status, left_key), self._adopted_id(status, right_key)))
                 after.append(
                     self._fetch_cached_ring_image(pack, rendered_path, signature, used))
@@ -436,8 +450,13 @@ class LibraryPage(BaseWidget):
         self.ring_progress.emit(progress["key"], float(progress["fraction"]))
 
     def _on_ring_progress(self, key: str, fraction: float):
-        self.detail.set_ring_progress(key, fraction)
-        # 换到下一条接缝说明上一条已经存盘并合成：刷新预览，不必等全部做完
+        if self._ring_action == "extend":
+            self.detail.set_node_progress(screen_key(key), fraction)
+        elif self._ring_action == "edit":
+            self.detail.set_node_progress(key, fraction)
+        else:
+            self.detail.set_ring_progress(key, fraction)
+        # 换到下一条接缝（外扩时是下一屏）说明上一条已经存盘并合成：刷新预览，不必等全部做完
         if self._seam_in_progress and key != self._seam_in_progress:
             self._load_ring_preview()
         self._seam_in_progress = key
@@ -499,13 +518,20 @@ class LibraryPage(BaseWidget):
         self._start(self._client.ring_status, pack_id, on_ok=apply,
                     on_error=self._on_worker_error)
 
-    def _load_segment_images(self, index: int):
+    def _load_ring_images(self, paths: list[str]):
+        """画布和树要的段图 / 图层（相对路径）。"""
         pack = self.detail.pack
-        paths = self.detail.segment_paths(index)
         if pack is None or not paths:
             return
+        pack_id = pack.manifest.id
+
+        def apply(images: dict[str, QImage]):
+            # 取图期间用户可能已经换了包：别把别的包的图塞进当前画布
+            if self.detail.pack is not None and self.detail.pack.manifest.id == pack_id:
+                self.detail.set_segment_images(images)
+
         self._start(self._fetch_segment_images, pack, paths,
-                    on_ok=self.detail.set_segment_images, on_error=self._on_worker_error)
+                    on_ok=apply, on_error=self._on_worker_error)
 
     def _fetch_segment_images(self, pack: PackResponse, paths: list[str]) -> dict[str, QImage]:
         return {relative: self._fetch_ring_image(pack, relative) for relative in paths}
@@ -526,6 +552,10 @@ class LibraryPage(BaseWidget):
             with _DECODE_SLOTS:
                 images[candidate.id] = QImage.fromData(self._client.fetch_media(candidate.file))
         return images
+
+    @staticmethod
+    def _neighbour_file(status, index: int) -> str:
+        return status.screen_files[index] if index < len(status.screen_files) else ""
 
     @staticmethod
     def _adopted_id(status, key: str) -> str:
@@ -554,13 +584,54 @@ class LibraryPage(BaseWidget):
     def _on_ring_preview_loaded(self, result):
         self.detail.set_ring(*result)
 
+    def _review_suggested_cuts(self):
+        """自动切割做完：取最新状态，弹对话框让用户看过、调整后再确认。"""
+        pack = self.detail.pack
+        if pack is None:
+            return
+        pack_id = pack.manifest.id
+        self._start(self._fetch_ring_preview, pack,
+                    on_ok=lambda result: self._on_cuts_preview_loaded(pack_id, result),
+                    on_error=self._on_worker_error)
+
+    def _on_cuts_preview_loaded(self, pack_id: str, result):
+        if self.detail.pack is None or self.detail.pack.manifest.id != pack_id:
+            return
+        self.detail.set_ring(*result)
+        status = result[3]
+        if not status.suggested_cuts:
+            return
+        dialog = CutDialog(self.detail.ring_images(), list(status.suggested_cuts),
+                           self._cuts_warning(status), self.detail)
+        # 确定才提交（并清空所有分层）；取消什么都不变
+        if dialog.exec():
+            self._run_ring_action("confirm", cuts=dialog.cuts())
+
+    def _cuts_warning(self, status) -> str:
+        """接缝缺失或过期时，合成图会在那里变化，切点可能要跟着挪。"""
+        order = status.order
+        keys = dict.fromkeys(seam_key(order[index], order[(index + 1) % len(order)])
+                             for index in range(len(order)))
+        not_ready = 0
+        for key in keys:
+            seam = status.seams.get(key)
+            if seam is None or not (seam.candidates or seam.has_candidates) or seam.stale:
+                not_ready += 1
+        if not not_ready:
+            return ""
+        return self.tr("{0} seams are not ready; the cuts may be affected.").format(not_ready)
+
     def _run_ring_action(self, action: str, key: str = "", argument: str = "",
                          item_ids: list[str] | None = None, cuts: list[int] | None = None,
                          indices: list[int] | None = None, order: list[str] | None = None,
-                         segment: int = 0, layer_ids: list[str] | None = None):
-        """argument：redo 时是追加的提示词，adopt 时是候选 id；item_ids：plan 时参与循环的条目；
-        order：order 时手动排的顺序（可重复同一屏）；
-        cuts：confirm 时用户确认的切点；indices：layers 时要重做的段，空则做所有没分层的段；
+                         segment: int = 0, layer_ids: list[str] | None = None,
+                         keys: list[str] | None = None, index: int = 0):
+        """argument：redo 时是追加的提示词，adopt 时是候选 id，edit 时是改图指令；
+        key：redo / adopt 的接缝，edit / version 的目标键；
+        keys：generate 时要追加候选的接缝，空则只补缺失和过期的；
+        item_ids：plan 时参与循环的条目，extend 时要外扩的屏（空 = 全部）；
+        order：order 时手动排的顺序（可重复同一屏）；index：version 时的版本序号（-1 = 原图）；
+        cuts：confirm 时用户确认的切点；indices：layers 时要分层的段；
         segment / layer_ids：merge 时的段和要合并的层，delete_merged 时的段和要删的合并层。"""
         pack = self.detail.pack
         if pack is None or self._ring_worker is not None:
@@ -573,7 +644,18 @@ class LibraryPage(BaseWidget):
         kwargs = {}
         if action == "generate":
             fn, args, kwargs = self._client.generate_ring, (self._ring_pack_id,), {
+                "stop_event": self._ring_stop, "keys": keys or None,
+                "on_progress": self._emit_ring_progress}
+        elif action == "extend":
+            fn, args, kwargs = self._client.extend_ring, (self._ring_pack_id,), {
+                "item_ids": item_ids or None, "stop_event": self._ring_stop,
+                "on_progress": self._emit_ring_progress}
+        elif action == "edit":
+            fn, args, kwargs = self._client.edit_ring_target, (
+                self._ring_pack_id, key, argument), {
                 "stop_event": self._ring_stop, "on_progress": self._emit_ring_progress}
+        elif action == "version":
+            fn, args = self._client.select_ring_version, (self._ring_pack_id, key, index)
         elif action == "redo":
             fn, args = self._redo_seam, (self._ring_pack_id, key, argument, self._ring_stop)
         elif action == "adopt":
@@ -599,7 +681,7 @@ class LibraryPage(BaseWidget):
         else:
             raise ValueError(f"未知的环操作：{action}")
         if action in RING_GENERATING:
-            self.detail.set_ring_running(True, layering=action == "layers")
+            self.detail.set_ring_running(True, action=action)
         else:
             self.detail.set_ring_operation(action)
         self._ring_worker = self._start(
@@ -612,16 +694,16 @@ class LibraryPage(BaseWidget):
 
     def _on_ring_action_finished(self, response: PackResponse):
         pack_id = self._ring_pack_id
-        start_layers = False
+        action = self._ring_action
         self._ring_worker = None
         self.detail.set_ring_running(False)
         self.detail.set_ring_operation(None)
         if not response.ok:
             if not self._ring_stop.is_set():
                 self.detail.set_error(self.tr("Ring operation failed: {0}").format(response.error))
-            if self._ring_action in ("generate", "layers", "order") and self.detail.pack \
+            if action in ("generate", "layers", "order", "extend", "edit") and self.detail.pack \
                     and self.detail.pack.manifest.id == pack_id:
-                # 接缝 / 分层每做完一个就存盘：停止或中途失败后，已完成的也要显示出来；
+                # 接缝 / 外扩 / 分层每做完一个就存盘：停止或中途失败后，已完成的也要显示出来；
                 # 改顺序失败时卡片条要回到后端实际的环
                 self.detail.clear_segment_images()
                 self._load_ring_preview()
@@ -631,22 +713,21 @@ class LibraryPage(BaseWidget):
             ]
             if self.detail.pack and self.detail.pack.manifest.id == pack_id:
                 self._show_detail(response)
-                if self._ring_action in ("layers", "confirm", "merge", "delete_merged"):
-                    # 重做的段和重新导出的段图沿用原文件名，删掉的合并层编号还会被下一次合并
-                    # 重新用上：缓存的缩略图要作废
+                if action in ("layers", "confirm", "merge", "delete_merged", "extend", "edit",
+                              "version"):
+                    # 重做的段、重新导出的段图和改过的层沿用原文件名，删掉的合并层编号还会被
+                    # 下一次合并重新用上：缓存的缩略图要作废
                     self.detail.clear_segment_images()
-                if self._ring_action in ("generate", "redo", "adopt", "cuts", "confirm", "order"):
+                if action in ("generate", "redo", "adopt", "cuts", "confirm", "order", "extend"):
                     # 刚改过接缝或切段：直接看拼接后的效果（切点就是在合成图上算的）
                     self.detail.ring_after_btn.setChecked(True)
-                self._load_ring_preview()
-                # 用户点了"确认切段"就是要分层：不必再点一次。已分好的段后端会跳过，
-                # 所以只有拖动过切线的相邻段会重做；停止 / 失败后不自动续，由用户手动继续
-                start_layers = self._ring_action == "confirm" and self.detail.layers_pending()
+                if action == "cuts":
+                    self._review_suggested_cuts()
+                else:
+                    self._load_ring_preview()
         self._ring_action = ""
         self._update_run_state()
         self._update_polling()
-        if start_layers:
-            self._run_ring_action("layers")
 
     def _on_ring_action_error(self, message: str):
         self._ring_worker = None

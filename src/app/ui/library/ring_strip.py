@@ -28,6 +28,7 @@ PAN_MARGIN = 40
 class RingStrip(BaseWidget):
     seam_selected = Signal(int)
     cuts_edited = Signal(list)       # 拖完切线后的全部切点（原图像素坐标，升序）
+    seams_selected = Signal(list)    # 选中接缝集合变化后的全部序号（单击重置为一条，Ctrl+单击加减）
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -45,6 +46,10 @@ class RingStrip(BaseWidget):
         self._pan_y = 0.0
         self._zoom = 1.0
         self._selected = -1
+        # 多选的接缝；_selected 仍是"最近一次选中的那条"，保持旧接口语义
+        self._selected_seams: list[int] = []
+        # 与 images 一一对应：该屏上下共补齐的原图像素，用半透明遮罩标出"不是真画面"
+        self._padding: list[int] = []
         # 卡片条上点中的那一屏：在条带里用黄框圈出来（和选中的接缝线同色）
         self._active_image = -1
         # 中键平移：按下时的鼠标位置与视角；左键点击：按下时的 x
@@ -77,10 +82,15 @@ class RingStrip(BaseWidget):
         self._images = [image for image in images if not image.isNull()]
         if self._selected >= len(self._images):
             self._selected = -1
+        self._selected_seams = [s for s in self._selected_seams if s < len(self._images)]
         if self._active_image >= len(self._images):
             self._active_image = -1
         # 视角（偏移、纵向平移）保留：前后切换、轮询刷新都不该把画面拉回起点，换资源包时才 reset_view
         self._cache_key = None
+        self.update()
+
+    def set_padding(self, padding: list[int]):
+        self._padding = [max(0, int(value)) for value in padding]
         self.update()
 
     def reset_view(self):
@@ -166,11 +176,12 @@ class RingStrip(BaseWidget):
             position = round(x)
             painter.drawPixmap(QRectF(x, top, width, self._image_height), pixmap,
                                QRectF(pixmap.rect()))
+            self._paint_padding(painter, index, x, top, width)
             # 当前图左边的交界属于上一张图的接缝（接缝归左屏）
             seam = (index - 1) % len(self._images)
             self._seam_hits.append((position, seam))
             # 接缝线只画在两张图相接的那段高度上，不画满整个控件
-            painter.setPen(selected_pen if seam == self._selected else seam_pen)
+            painter.setPen(selected_pen if seam in self._selected_seams else seam_pen)
             painter.drawLine(position, top, position, bottom)
             if index == self._active_image:
                 painter.setPen(active_pen)
@@ -178,6 +189,16 @@ class RingStrip(BaseWidget):
             x += width
             index = (index + 1) % len(self._images)
         self._paint_cuts(painter, offset, top, bottom)
+
+    def _paint_padding(self, painter: QPainter, index: int, x: float, top: int, width: float):
+        """较矮的屏是用边缘行拉伸补齐到统一高度的：上下各一半，盖一层深色标出来。"""
+        padding = self._padding[index] if index < len(self._padding) else 0
+        if not padding:
+            return
+        band = padding / 2 * self._image_height / self._images[index].height()
+        shade = QColor(0, 0, 0, 120)
+        painter.fillRect(QRectF(x, top, width, band), shade)
+        painter.fillRect(QRectF(x, top + self._image_height - band, width, band), shade)
 
     def _paint_cuts(self, painter: QPainter, offset: float, top: int, bottom: int):
         self._cut_hits = []
@@ -201,10 +222,31 @@ class RingStrip(BaseWidget):
     def set_selected(self, seam: int):
         """选中的接缝序号：第 i 个接缝是第 i 张图和下一张图（环，最后一张接回第一张）的交界。"""
         self._selected = seam if 0 <= seam < len(self._images) else -1
+        self._selected_seams = [self._selected] if self._selected >= 0 else []
         self.update()
 
     def selected_seam(self) -> int:
         return self._selected
+
+    def selected_seams(self) -> list[int]:
+        return list(self._selected_seams)
+
+    def set_selected_seams(self, seams: list[int]):
+        """按集合选中接缝（越界的忽略）；不发信号，由调用方负责同步。"""
+        valid = sorted({s for s in seams if 0 <= s < len(self._images)})
+        self._selected_seams = valid
+        self._selected = valid[-1] if valid else -1
+        self.update()
+
+    def _toggle_seam(self, seam: int):
+        if seam in self._selected_seams:
+            self._selected_seams.remove(seam)
+            self._selected = self._selected_seams[-1] if self._selected_seams else -1
+        else:
+            self._selected_seams = sorted([*self._selected_seams, seam])
+            self._selected = seam
+        self.update()
+        self.seams_selected.emit(self.selected_seams())
 
     def set_active_image(self, index: int, focus: bool = True):
         """给第 index 张图加黄框（-1 取消）；focus 时把它平移到控件中央，免得它在可视区外。"""
@@ -355,8 +397,12 @@ class RingStrip(BaseWidget):
         # 点中接缝线附近的一小段就算选中
         nearest = min(self._seam_hits, key=lambda hit: abs(hit[0] - x), default=None)
         if nearest is not None and abs(nearest[0] - x) <= SEAM_HIT_RADIUS:
+            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                self._toggle_seam(nearest[1])
+                return
             self.set_selected(nearest[1])
             self.seam_selected.emit(nearest[1])
+            self.seams_selected.emit(self.selected_seams())
 
     def mouseDoubleClickEvent(self, event):
         # 双击回到默认视角，便于重新对齐

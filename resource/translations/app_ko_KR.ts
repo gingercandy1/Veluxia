@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+104"/>
         <location line="+136"/>
-        <location line="+412"/>
+        <location line="+437"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>백엔드에 연결할 수 없습니다. 서비스가 실행 중인지 확인하세요.</translation>
     </message>
     <message>
-        <location line="-544"/>
+        <location line="-569"/>
         <source>Connection timed out.</source>
         <translation>연결 시간이 초과되었습니다.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+404"/>
+        <location line="+429"/>
         <source>Cannot connect to the backend.</source>
         <translation>백엔드에 연결할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="-287"/>
+        <location line="-312"/>
         <source>Generation stopped.</source>
         <translation>생성을 중지했습니다.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>백엔드에 연결할 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location line="+306"/>
+        <location line="+331"/>
         <source>An install task is already running...</source>
         <translation>설치 작업이 이미 실행 중입니다…</translation>
     </message>
@@ -410,6 +410,24 @@
         <location filename="../../src/app/ui/message/text/code_block_widget.py" line="+43"/>
         <source>Copy code</source>
         <translation>코드 복사</translation>
+    </message>
+</context>
+<context>
+    <name>CutDialog</name>
+    <message>
+        <location filename="../../src/app/ui/library/cut_dialog.py" line="+17"/>
+        <source>Confirm segment cuts</source>
+        <translation>구간 분할 지점 확인</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Drag a red line to move it · Shift+left click adds a cut · Shift+right click removes the nearest cut</source>
+        <translation>빨간 선을 드래그해 이동 · Shift+왼쪽 클릭으로 분할 지점 추가 · Shift+오른쪽 클릭으로 가장 가까운 분할 지점 삭제</translation>
+    </message>
+    <message>
+        <location line="+39"/>
+        <source>{0} segments: {1} px</source>
+        <translation>{0}개 구간: {1} px</translation>
     </message>
 </context>
 <context>
@@ -1070,9 +1088,92 @@
     </message>
 </context>
 <context>
+    <name>LayerWindow</name>
+    <message>
+        <location filename="../../src/app/ui/library/layer_window.py" line="+169"/>
+        <source>Extend</source>
+        <translation>확장</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop extend</source>
+        <translation>확장 중지</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seams</source>
+        <translation>이음새</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop seams</source>
+        <translation>이음새 중지</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Segment</source>
+        <translation>구간 나누기</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop segment</source>
+        <translation>구간 나누기 중지</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Layer</source>
+        <translation>레이어 분리</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop layer</source>
+        <translation>레이어 분리 중지</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Layers</source>
+        <translation>레이어</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Merge</source>
+        <translation>병합</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Merge the selected layers into a new layer</source>
+        <translation>선택한 레이어를 새 레이어로 병합</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete merged layer</source>
+        <translation>병합 레이어 삭제</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Describe the change for the selected layer, e.g. make the ground steeper</source>
+        <translation>선택한 레이어에 적용할 변경을 입력하세요. 예: 지면을 더 가파르게</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Send</source>
+        <translation>보내기</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Edit the selected item with this instruction (Ctrl+Enter)</source>
+        <translation>이 지시로 선택한 항목 편집 (Ctrl+Enter)</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Edit with Qwen-Image-2.1</source>
+        <translation>Qwen-Image-2.1로 편집</translation>
+    </message>
+</context>
+<context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+274"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+282"/>
         <source>Failed to load packs: {0}</source>
         <translation>팩 목록을 불러오지 못했습니다: {0}</translation>
     </message>
@@ -1082,22 +1183,27 @@
         <translation>템플릿을 불러오지 못했습니다: {0}</translation>
     </message>
     <message>
-        <location line="+414"/>
+        <location line="+487"/>
         <source>Failed to create pack: {0}</source>
         <translation>팩을 만들지 못했습니다: {0}</translation>
     </message>
     <message>
-        <location line="-295"/>
+        <location line="-368"/>
         <source>Run failed: {0}</source>
         <translation>실행 실패: {0}</translation>
     </message>
     <message>
-        <location line="+88"/>
+        <location line="+99"/>
         <source>The seam produced no candidate.</source>
         <translation>이 이음새에서 후보가 만들어지지 않았습니다.</translation>
     </message>
     <message>
-        <location line="+225"/>
+        <location line="+141"/>
+        <source>{0} seams are not ready; the cuts may be affected.</source>
+        <translation>이음새 {0}개가 준비되지 않아 분할 지점에 영향이 있을 수 있습니다.</translation>
+    </message>
+    <message>
+        <location line="+146"/>
         <source>Failed to add items: {0}</source>
         <translation>항목 추가 실패: {0}</translation>
     </message>
@@ -1179,18 +1285,18 @@
         <translation>스타일 프리셋: {0}</translation>
     </message>
     <message>
-        <location line="-450"/>
-        <location line="+68"/>
+        <location line="-523"/>
+        <location line="+79"/>
         <source>Could not load ring status.</source>
         <translation>링 상태를 불러올 수 없습니다.</translation>
     </message>
     <message>
-        <location line="-56"/>
+        <location line="-67"/>
         <source>Screen {0} has no finished source image.</source>
         <translation>화면 {0}의 원본 이미지가 아직 완료되지 않았습니다.</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+31"/>
         <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
         <translation>화면 {0}개 · 후보가 있는 이음새 {1}개 · 오래된 후보 {2}개 · 합성 완료 {3}개</translation>
     </message>
@@ -1200,14 +1306,14 @@
         <translation>아직 합성되지 않음</translation>
     </message>
     <message>
-        <location line="+109"/>
+        <location line="+125"/>
         <source>Could not decode image: {0}</source>
         <translation>이미지를 디코딩할 수 없습니다: {0}</translation>
     </message>
     <message>
-        <location line="-45"/>
-        <location line="+126"/>
-        <location line="+34"/>
+        <location line="-56"/>
+        <location line="+189"/>
+        <location line="+33"/>
         <source>Ring operation failed: {0}</source>
         <translation>링 작업 실패: {0}</translation>
     </message>
@@ -1390,7 +1496,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+232"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+258"/>
         <source>Library</source>
         <translation>라이브러리</translation>
     </message>
@@ -1416,13 +1522,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+371"/>
-        <location line="+584"/>
+        <location line="+331"/>
+        <location line="+773"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-953"/>
+        <location line="-1102"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>완성된 에셋을 zip으로 저장합니다. 항목마다 폴더 하나이며 초안과 중간 파일은 포함하지 않습니다.</translation>
     </message>
@@ -1432,12 +1538,7 @@
         <translation>삭제</translation>
     </message>
     <message>
-        <location line="+20"/>
-        <source>Layers</source>
-        <translation>레이어</translation>
-    </message>
-    <message>
-        <location line="+24"/>
+        <location line="+40"/>
         <source>Use new style</source>
         <translation>새 스타일 사용</translation>
     </message>
@@ -1462,27 +1563,7 @@
         <translation>이전 일러스트로 만든 단계와 그 이후 단계를 모두 다시 합니다.</translation>
     </message>
     <message>
-        <location line="+82"/>
-        <source>Auto cut</source>
-        <translation>자동 분할</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Confirm cuts</source>
-        <translation>분할 확정</translation>
-    </message>
-    <message>
-        <location line="+30"/>
-        <source>Redo this segment</source>
-        <translation>이 구간 다시 하기</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Layer segments</source>
-        <translation>레이어 분리</translation>
-    </message>
-    <message>
-        <location line="+49"/>
+        <location line="+110"/>
         <source>Use this one</source>
         <translation>이것 사용</translation>
     </message>
@@ -1497,7 +1578,7 @@
         <translation>이 이음새 다시 만들기</translation>
     </message>
     <message>
-        <location line="+104"/>
+        <location line="+122"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 완료</translation>
     </message>
@@ -1512,74 +1593,84 @@
         <translation>스타일 프리셋 &quot;{0}&quot;이(가) 이 팩을 만든 뒤 변경되었습니다.</translation>
     </message>
     <message>
-        <location line="+169"/>
+        <location line="+224"/>
         <source>Segment {0}</source>
         <translation>{0}번 구간</translation>
     </message>
     <message>
-        <location line="+116"/>
-        <source>Layered {0}/{1} segments</source>
-        <translation>{0}/{1}개 구간 레이어 분리 완료</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>about {0} min left</source>
-        <translation>약 {0}분 남음</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>layering… you can stop and continue later</source>
-        <translation>레이어 분리 중… 언제든 중지하고 나중에 이어서 할 수 있습니다</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="-36"/>
         <source>encoding</source>
         <translation>인코딩 중</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+0"/>
         <source>denoising</source>
         <translation>노이즈 제거 중</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>segment {0}: {1}</source>
-        <translation>구간 {0}: {1}</translation>
+        <location line="-375"/>
+        <source>Click a seam to select it · Ctrl+click selects several</source>
+        <translation>이음새를 클릭해 선택 · Ctrl+클릭으로 여러 개 선택</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <source>drag the red lines to adjust · Shift+click adds one · Shift+right-click removes one · then confirm</source>
-        <translation>빨간 선을 드래그해 조정 · Shift+클릭으로 추가 · Shift+오른쪽 클릭으로 삭제 · 그다음 확정</translation>
+        <location line="+652"/>
+        <source>Extending is only possible before segmenting</source>
+        <translation>확장은 구간을 나누기 전에만 할 수 있습니다</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
-        <translation>레이어 분리 전에 루프를 구간으로 나눕니다. 먼저 합성한 뒤 &apos;자동 분할&apos;을 누르세요.</translation>
+        <location line="+2"/>
+        <source>Add 128 px above and below the selected screens (all if none)</source>
+        <translation>선택한 화면의 위아래에 128 px 추가 (선택이 없으면 전체)</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>{0} segments · {1}–{2} px wide</source>
-        <translation>{0}개 구간 · 너비 {1}–{2} px</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>segment {0} is {1} px, keep each within {2}–{3} px</source>
-        <translation>{0}번 구간이 {1} px입니다. 각 구간은 {2}–{3} px 사이여야 합니다</translation>
+        <location line="+2"/>
+        <source>Add candidates for the selected seams; with none selected, fill in the missing and stale ones</source>
+        <translation>선택한 이음새에 후보를 추가합니다. 선택이 없으면 없거나 오래된 이음새를 채웁니다</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>screens changed since cutting, auto cut again</source>
-        <translation>분할 후 화면이 바뀌었습니다. 다시 자동 분할하세요</translation>
+        <source>Find cut points automatically, then confirm them</source>
+        <translation>분할 지점을 자동으로 찾은 뒤 확인합니다</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>{0} segment images saved</source>
-        <translation>구간 이미지 {0}개를 저장했습니다</translation>
+        <location line="+3"/>
+        <source>Segment the ring first</source>
+        <translation>먼저 링을 구간으로 나누세요</translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+3"/>
+        <source>Select segments first (Ctrl+A selects all)</source>
+        <translation>먼저 구간을 선택하세요 (Ctrl+A로 전체 선택)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Split the selected segments into layers</source>
+        <translation>선택한 구간을 레이어로 분리</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>Extend screens</source>
+        <translation>화면 확장</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Extending changes the screens, so the existing seams and layers will become invalid. Continue?</source>
+        <translation>확장하면 화면이 바뀌어 기존 이음새와 레이어가 무효가 됩니다. 계속할까요?</translation>
+    </message>
+    <message>
+        <location line="+49"/>
         <source>Layering segments…</source>
         <translation>레이어 분리 중…</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Extending screens…</source>
+        <translation>화면 확장 중…</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Editing…</source>
+        <translation>편집 중…</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -1610,6 +1701,11 @@
         <location line="+2"/>
         <source>Deleting the merged layer…</source>
         <translation>병합 레이어 삭제 중…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Switching version…</source>
+        <translation>버전 전환 중…</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -1652,7 +1748,7 @@
         <translation>이 항목과 모든 에셋 삭제</translation>
     </message>
     <message>
-        <location line="-942"/>
+        <location line="-1091"/>
         <source>Resources</source>
         <translation>리소스</translation>
     </message>
@@ -1662,7 +1758,17 @@
         <translation>링</translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+91"/>
+        <source>View whole ring</source>
+        <translation>전체 링 보기</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Switch between the segments and the whole ring</source>
+        <translation>구간과 전체 링 사이 전환</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>Auto arrange</source>
         <translation>자동 정렬</translation>
     </message>
@@ -1672,7 +1778,7 @@
         <translation>가장자리가 잘 맞는 순서로 화면을 정렬합니다. 여러 번 추가한 화면은 하나로 합쳐집니다.</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+17"/>
         <source>Before</source>
         <translation>합성 전</translation>
     </message>
@@ -1682,17 +1788,12 @@
         <translation>합성 후</translation>
     </message>
     <message>
-        <location line="+20"/>
-        <source>Generate seams</source>
-        <translation>이음새 생성</translation>
-    </message>
-    <message>
-        <location line="+610"/>
+        <location line="+767"/>
         <source>Generating seams…</source>
         <translation>이음새 생성 중…</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+11"/>
         <source>Planning order…</source>
         <translation>순서 계획 중…</translation>
     </message>
@@ -1992,6 +2093,29 @@
     </message>
 </context>
 <context>
+    <name>QwenImage21TurboPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="+80"/>
+        <source>number</source>
+        <translation>개수</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>width</source>
+        <translation>너비</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>height</source>
+        <translation>높이</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>seed</source>
+        <translation>시드</translation>
+    </message>
+</context>
+<context>
     <name>QwenImageEditPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="+46"/>
@@ -2033,7 +2157,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+148"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+158"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>완료된 장면 화면을 두 개 이상 준비한 다음 링을 계획하세요.</translation>
     </message>
@@ -2688,6 +2812,14 @@
     </message>
 </context>
 <context>
+    <name>VersionControl</name>
+    <message>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-141"/>
+        <source>Switch between the original and edited versions</source>
+        <translation>원본과 편집된 버전 사이 전환</translation>
+    </message>
+</context>
+<context>
     <name>VideoWidget</name>
     <message>
         <location filename="../../src/app/ui/message/message_widgets.py" line="+128"/>
@@ -2872,7 +3004,7 @@
 <context>
     <name>_TextToImagePanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="+22"/>
+        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="-67"/>
         <source>number</source>
         <translation>개수</translation>
     </message>

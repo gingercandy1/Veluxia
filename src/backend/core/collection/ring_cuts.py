@@ -11,8 +11,6 @@ from PIL import Image
 # 段宽：Qwen-Layered 按面积缩放输入，宽高比超过约 2:1 就会被压扁；太窄则段数和耗时都翻倍
 MIN_SEGMENT = 896
 MAX_SEGMENT = 1536
-# 手动拖切线时允许更窄的段（比如一小块只有前景的区域），但不能窄到没法分层
-MIN_MANUAL_SEGMENT = 256
 # 自动切点的候选间隔：8 像素足够精细，DP 的规模也小
 CUT_STEP = 8
 _COST_SMOOTH = 15
@@ -89,16 +87,12 @@ def segment_widths(cuts: list[int], width: int) -> list[int]:
 
 
 def validate_cuts(cuts: list[int], width: int) -> list[int]:
-    """手动调整后的切点：排序去重、检查范围和段宽，返回规范化后的切点。"""
+    """手动调整后的切点：排序去重、检查范围，返回规范化后的切点。段宽不限制，由用户确认。"""
     if not cuts:
         raise ValueError("至少需要一个切点")
     normalized = sorted({int(cut) for cut in cuts})
     if normalized[0] < 0 or normalized[-1] >= width:
         raise ValueError(f"切点超出长图范围 0～{width - 1}")
-    for index, segment in enumerate(segment_widths(normalized, width), start=1):
-        if segment < MIN_MANUAL_SEGMENT or segment > MAX_SEGMENT:
-            raise ValueError(f"第 {index} 段宽 {segment} 像素，每段要在 "
-                             f"{MIN_MANUAL_SEGMENT}～{MAX_SEGMENT} 像素之间")
     return normalized
 
 

@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+104"/>
         <location line="+136"/>
-        <location line="+412"/>
+        <location line="+437"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>バックエンドに接続できません。サービスが起動しているか確認してください。</translation>
     </message>
     <message>
-        <location line="-544"/>
+        <location line="-569"/>
         <source>Connection timed out.</source>
         <translation>接続がタイムアウトしました。</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+404"/>
+        <location line="+429"/>
         <source>Cannot connect to the backend.</source>
         <translation>バックエンドに接続できません。</translation>
     </message>
     <message>
-        <location line="-287"/>
+        <location line="-312"/>
         <source>Generation stopped.</source>
         <translation>生成を停止しました。</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>バックエンドに接続できません：{0}</translation>
     </message>
     <message>
-        <location line="+306"/>
+        <location line="+331"/>
         <source>An install task is already running...</source>
         <translation>インストールタスクはすでに実行中です…</translation>
     </message>
@@ -410,6 +410,24 @@
         <location filename="../../src/app/ui/message/text/code_block_widget.py" line="+43"/>
         <source>Copy code</source>
         <translation>コードをコピー</translation>
+    </message>
+</context>
+<context>
+    <name>CutDialog</name>
+    <message>
+        <location filename="../../src/app/ui/library/cut_dialog.py" line="+17"/>
+        <source>Confirm segment cuts</source>
+        <translation>区間の切れ目を確認</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Drag a red line to move it · Shift+left click adds a cut · Shift+right click removes the nearest cut</source>
+        <translation>赤い線をドラッグで移動 · Shift+左クリックで切れ目を追加 · Shift+右クリックで最寄りの切れ目を削除</translation>
+    </message>
+    <message>
+        <location line="+39"/>
+        <source>{0} segments: {1} px</source>
+        <translation>{0} 区間：{1} px</translation>
     </message>
 </context>
 <context>
@@ -1070,9 +1088,92 @@
     </message>
 </context>
 <context>
+    <name>LayerWindow</name>
+    <message>
+        <location filename="../../src/app/ui/library/layer_window.py" line="+169"/>
+        <source>Extend</source>
+        <translation>拡張</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop extend</source>
+        <translation>拡張を停止</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seams</source>
+        <translation>つなぎ目</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop seams</source>
+        <translation>つなぎ目を停止</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Segment</source>
+        <translation>区間分割</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop segment</source>
+        <translation>区間分割を停止</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Layer</source>
+        <translation>レイヤー分解</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop layer</source>
+        <translation>レイヤー分解を停止</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Layers</source>
+        <translation>レイヤー</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Merge</source>
+        <translation>結合</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Merge the selected layers into a new layer</source>
+        <translation>選択したレイヤーを新しいレイヤーに結合</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete merged layer</source>
+        <translation>結合レイヤーを削除</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Describe the change for the selected layer, e.g. make the ground steeper</source>
+        <translation>選択したレイヤーへの変更を入力。例：地面をもっと急にする</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Send</source>
+        <translation>送信</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Edit the selected item with this instruction (Ctrl+Enter)</source>
+        <translation>この指示で選択した項目を編集（Ctrl+Enter）</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Edit with Qwen-Image-2.1</source>
+        <translation>Qwen-Image-2.1 で編集</translation>
+    </message>
+</context>
+<context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+274"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+282"/>
         <source>Failed to load packs: {0}</source>
         <translation>パック一覧の読み込みに失敗しました：{0}</translation>
     </message>
@@ -1082,22 +1183,27 @@
         <translation>テンプレートの読み込みに失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+414"/>
+        <location line="+487"/>
         <source>Failed to create pack: {0}</source>
         <translation>パックの作成に失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="-295"/>
+        <location line="-368"/>
         <source>Run failed: {0}</source>
         <translation>実行に失敗しました：{0}</translation>
     </message>
     <message>
-        <location line="+88"/>
+        <location line="+99"/>
         <source>The seam produced no candidate.</source>
         <translation>このつなぎ目では候補が生成されませんでした。</translation>
     </message>
     <message>
-        <location line="+225"/>
+        <location line="+141"/>
+        <source>{0} seams are not ready; the cuts may be affected.</source>
+        <translation>{0} 本のつなぎ目が未完成のため、切れ目に影響する可能性があります。</translation>
+    </message>
+    <message>
+        <location line="+146"/>
         <source>Failed to add items: {0}</source>
         <translation>アイテムの追加に失敗しました：{0}</translation>
     </message>
@@ -1179,18 +1285,18 @@
         <translation>スタイルプリセット：{0}</translation>
     </message>
     <message>
-        <location line="-450"/>
-        <location line="+68"/>
+        <location line="-523"/>
+        <location line="+79"/>
         <source>Could not load ring status.</source>
         <translation>循環状態を読み込めません。</translation>
     </message>
     <message>
-        <location line="-56"/>
+        <location line="-67"/>
         <source>Screen {0} has no finished source image.</source>
         <translation>画面 {0} の元画像はまだ完成していません。</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+31"/>
         <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
         <translation>{0} 画面 · 候補のある継ぎ目 {1} · 古い候補 {2} · 合成済み {3}</translation>
     </message>
@@ -1200,14 +1306,14 @@
         <translation>まだ合成されていません</translation>
     </message>
     <message>
-        <location line="+109"/>
+        <location line="+125"/>
         <source>Could not decode image: {0}</source>
         <translation>画像をデコードできません：{0}</translation>
     </message>
     <message>
-        <location line="-45"/>
-        <location line="+126"/>
-        <location line="+34"/>
+        <location line="-56"/>
+        <location line="+189"/>
+        <location line="+33"/>
         <source>Ring operation failed: {0}</source>
         <translation>循環処理に失敗しました：{0}</translation>
     </message>
@@ -1390,7 +1496,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+232"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+258"/>
         <source>Library</source>
         <translation>ライブラリ</translation>
     </message>
@@ -1416,13 +1522,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+371"/>
-        <location line="+584"/>
+        <location line="+331"/>
+        <location line="+773"/>
         <source>Export</source>
         <translation>書き出し</translation>
     </message>
     <message>
-        <location line="-953"/>
+        <location line="-1102"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>完成したアセットを zip で保存します。アイテムごとに 1 フォルダーで、下書きや中間ファイルは含みません。</translation>
     </message>
@@ -1432,12 +1538,7 @@
         <translation>削除</translation>
     </message>
     <message>
-        <location line="+20"/>
-        <source>Layers</source>
-        <translation>レイヤー</translation>
-    </message>
-    <message>
-        <location line="+24"/>
+        <location line="+40"/>
         <source>Use new style</source>
         <translation>新しいスタイルを使う</translation>
     </message>
@@ -1462,27 +1563,7 @@
         <translation>古い立ち絵から作ったステップと、それ以降のすべてをやり直します。</translation>
     </message>
     <message>
-        <location line="+82"/>
-        <source>Auto cut</source>
-        <translation>自動分割</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Confirm cuts</source>
-        <translation>分割を確定</translation>
-    </message>
-    <message>
-        <location line="+30"/>
-        <source>Redo this segment</source>
-        <translation>この区間をやり直す</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Layer segments</source>
-        <translation>レイヤー分け</translation>
-    </message>
-    <message>
-        <location line="+49"/>
+        <location line="+110"/>
         <source>Use this one</source>
         <translation>これを使う</translation>
     </message>
@@ -1497,7 +1578,7 @@
         <translation>このつなぎ目をやり直す</translation>
     </message>
     <message>
-        <location line="+104"/>
+        <location line="+122"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 完了</translation>
     </message>
@@ -1512,74 +1593,84 @@
         <translation>スタイルプリセット「{0}」はこのパックの作成後に変更されました。</translation>
     </message>
     <message>
-        <location line="+169"/>
+        <location line="+224"/>
         <source>Segment {0}</source>
         <translation>区間 {0}</translation>
     </message>
     <message>
-        <location line="+116"/>
-        <source>Layered {0}/{1} segments</source>
-        <translation>{0}/{1} 区間をレイヤー分け済み</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>about {0} min left</source>
-        <translation>残り約 {0} 分</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>layering… you can stop and continue later</source>
-        <translation>レイヤー分け中…途中で停止して後で続けられます</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="-36"/>
         <source>encoding</source>
         <translation>エンコード中</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+0"/>
         <source>denoising</source>
         <translation>ノイズ除去中</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>segment {0}: {1}</source>
-        <translation>セグメント {0}：{1}</translation>
+        <location line="-375"/>
+        <source>Click a seam to select it · Ctrl+click selects several</source>
+        <translation>つなぎ目をクリックで選択 · Ctrl+クリックで複数選択</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <source>drag the red lines to adjust · Shift+click adds one · Shift+right-click removes one · then confirm</source>
-        <translation>赤い線をドラッグして調整 · Shift+クリックで追加 · Shift+右クリックで削除 · その後確定</translation>
+        <location line="+652"/>
+        <source>Extending is only possible before segmenting</source>
+        <translation>拡張は区間分割の前にのみできます</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
-        <translation>レイヤー分けの前にループを区間に分割します。先に合成してから「自動分割」を押してください。</translation>
+        <location line="+2"/>
+        <source>Add 128 px above and below the selected screens (all if none)</source>
+        <translation>選択した画面の上下に 128 px 追加（未選択ならすべて）</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>{0} segments · {1}–{2} px wide</source>
-        <translation>{0} 区間 · 幅 {1}–{2} px</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>segment {0} is {1} px, keep each within {2}–{3} px</source>
-        <translation>区間 {0} は {1} px です。各区間は {2}–{3} px にしてください</translation>
+        <location line="+2"/>
+        <source>Add candidates for the selected seams; with none selected, fill in the missing and stale ones</source>
+        <translation>選択したつなぎ目に候補を追加。未選択なら、未作成や古いつなぎ目を補完</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>screens changed since cutting, auto cut again</source>
-        <translation>分割後に画面が変わりました。もう一度自動分割してください</translation>
+        <source>Find cut points automatically, then confirm them</source>
+        <translation>切れ目を自動で探してから確認します</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>{0} segment images saved</source>
-        <translation>{0} 区間の画像を保存しました</translation>
+        <location line="+3"/>
+        <source>Segment the ring first</source>
+        <translation>先にループを区間に分割してください</translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+3"/>
+        <source>Select segments first (Ctrl+A selects all)</source>
+        <translation>先に区間を選択してください（Ctrl+A ですべて選択）</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Split the selected segments into layers</source>
+        <translation>選択した区間をレイヤーに分解</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>Extend screens</source>
+        <translation>画面を拡張</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Extending changes the screens, so the existing seams and layers will become invalid. Continue?</source>
+        <translation>拡張すると画面が変わるため、既存のつなぎ目とレイヤーは無効になります。続けますか？</translation>
+    </message>
+    <message>
+        <location line="+49"/>
         <source>Layering segments…</source>
         <translation>レイヤー分け中…</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Extending screens…</source>
+        <translation>画面を拡張中…</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Editing…</source>
+        <translation>編集中…</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -1610,6 +1701,11 @@
         <location line="+2"/>
         <source>Deleting the merged layer…</source>
         <translation>結合レイヤーを削除中…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Switching version…</source>
+        <translation>バージョンを切り替え中…</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -1652,7 +1748,7 @@
         <translation>このアイテムとすべてのアセットを削除</translation>
     </message>
     <message>
-        <location line="-942"/>
+        <location line="-1091"/>
         <source>Resources</source>
         <translation>素材</translation>
     </message>
@@ -1662,7 +1758,17 @@
         <translation>ループ</translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+91"/>
+        <source>View whole ring</source>
+        <translation>ループ全体を表示</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Switch between the segments and the whole ring</source>
+        <translation>区間とループ全体を切り替え</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>Auto arrange</source>
         <translation>自動並べ替え</translation>
     </message>
@@ -1672,7 +1778,7 @@
         <translation>端の一致度で画面を並べ替えます。複数回追加した画面は 1 つにまとめられます。</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+17"/>
         <source>Before</source>
         <translation>合成前</translation>
     </message>
@@ -1682,17 +1788,12 @@
         <translation>合成後</translation>
     </message>
     <message>
-        <location line="+20"/>
-        <source>Generate seams</source>
-        <translation>継ぎ目を生成</translation>
-    </message>
-    <message>
-        <location line="+610"/>
+        <location line="+767"/>
         <source>Generating seams…</source>
         <translation>継ぎ目を生成中…</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+11"/>
         <source>Planning order…</source>
         <translation>順序を計画中…</translation>
     </message>
@@ -1992,6 +2093,29 @@
     </message>
 </context>
 <context>
+    <name>QwenImage21TurboPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="+80"/>
+        <source>number</source>
+        <translation>枚数</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>width</source>
+        <translation>幅</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>height</source>
+        <translation>高さ</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>seed</source>
+        <translation>シード</translation>
+    </message>
+</context>
+<context>
     <name>QwenImageEditPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="+46"/>
@@ -2033,7 +2157,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+148"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+158"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>完成したシーン画像を2枚以上用意して、ループを計画してください。</translation>
     </message>
@@ -2688,6 +2812,14 @@
     </message>
 </context>
 <context>
+    <name>VersionControl</name>
+    <message>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-141"/>
+        <source>Switch between the original and edited versions</source>
+        <translation>元画像と編集後のバージョンを切り替え</translation>
+    </message>
+</context>
+<context>
     <name>VideoWidget</name>
     <message>
         <location filename="../../src/app/ui/message/message_widgets.py" line="+128"/>
@@ -2872,7 +3004,7 @@
 <context>
     <name>_TextToImagePanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="+22"/>
+        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="-67"/>
         <source>number</source>
         <translation>枚数</translation>
     </message>

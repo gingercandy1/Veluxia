@@ -1,4 +1,6 @@
-"""Qwen-Image-2.1 文生图（官方 diffusers 管线 QwenImage21Pipeline，需 diffusers>=0.41.0）。
+"""Qwen-Image-2.1 文生图 / 图生图（官方 diffusers 管线 QwenImage21Pipeline）。
+
+同一个管线：不给参考图就是文生图，给了 reference_image 就以它为条件改图（图层文字修改用这个）。
 
 模型：约 7B 的单流 DiT + Qwen3-VL 文本编码器，原生支持 RGBA 透明输出。许可证是
 Qwen Research License（仅限研究 / 评测，商用要另行授权），与本项目其他 Apache-2.0 的模型不同。
@@ -10,9 +12,12 @@ Turbo 版本 8 步、CFG 为 1，采样日程存在检查点里，所以不传 n
 - 两段都按层分组卸载，卸载方式放在 models.json 的 offload 里，方便在实机上调速度。
 """
 import gc
+import hashlib
 import random
 import uuid
 from pathlib import Path
+
+from PIL import Image
 
 from src.backend.core.diffusers_utils import (
     apply_offload,
@@ -27,6 +32,8 @@ from src.backend.core.model_utils import ensure_file, ensure_snapshot, get_temp_
 MIN_SIDE = 256
 MAX_SIDE = 2048
 SIDE_STEP = 32
+# 编辑（有参考图）的默认 output_resolution：1024 会让指令被忽略（diffusers #14824），512/768 正常
+EDIT_OUTPUT_RESOLUTION = 768
 # 去噪阶段的卸载方式：transformer 按块分组，VAE 没有顶层块列表，单独按叶子层。
 # 组越大越快、显存越多；这是起点，没在实机上测过，按需在 models.json 的 offload 里改
 _DEFAULT_OFFLOAD = {
@@ -35,6 +42,11 @@ _DEFAULT_OFFLOAD = {
     "use_stream": False,
     "leaf_components": ["vae"],
 }
+
+
+def _image_key(image: Image.Image | None) -> str:
+    """参考图的内容摘要，用来判断编码缓存能不能复用；没有参考图时为空串。"""
+    return hashlib.sha1(image.tobytes()).hexdigest() if image is not None else ""
 
 
 class QwenImage21Generator(BaseImageGenerator):
@@ -46,7 +58,8 @@ class QwenImage21Generator(BaseImageGenerator):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.encoder_pipe = None
-        # (提示词, embeds, mask)：同一句提示词连续出几张图时跳过编码器，省掉一次 16GB 的加载
+        # (提示词 + 参考图摘要, embeds, mask)：同一句提示词、同一张图连续出图时跳过编码器，
+        # 省掉一次 16GB 的加载；参考图变了编码结果也要变，所以参考图要进缓存键
         self._embeds_cache = None
         extra = getattr(self, "model_extra", None) or {}
         self.offload = {**_DEFAULT_OFFLOAD, **(extra.get("offload") or {})}
@@ -136,31 +149,59 @@ class QwenImage21Generator(BaseImageGenerator):
         self.pipe = pipe
         self.report_load_stage("ready", 1.0)
 
-    def _encode_prompt(self):
-        """返回 (embeds, mask)，都在 CPU 上；同一句提示词直接用上次的。"""
+    def _encode_prompt(self, reference: Image.Image | None):
+        """返回 (embeds, mask)，都在 CPU 上；同一句提示词、同一张参考图直接用上次的。"""
+        key = (self.prompt, _image_key(reference))
         cached = self._embeds_cache
-        if cached is not None and cached[0] == self.prompt:
+        if cached is not None and cached[0] == key:
             return cached[1], cached[2]
         self.check_cancelled()
         self._use_encoder()
+        # 文本编码器也要看到参考图：编辑指令是"以这张图为基础"的描述，不带图编出来的嵌入不对
+        # 没有参考图时不传 image，文生图的调用保持原样
+        condition = {"image": [reference]} if reference is not None else {}
         with self.torch.inference_mode():
             embeds, mask, _ = self.encoder_pipe.encode_prompt(
-                prompt=self.prompt, device=self.torch.device(self.device))
+                prompt=self.prompt, device=self.torch.device(self.device), **condition)
         embeds = embeds.cpu()
         mask = mask.cpu() if mask is not None else None
-        self._embeds_cache = (self.prompt, embeds, mask)
+        self._embeds_cache = (key, embeds, mask)
         return embeds, mask
+
+    def _reference(self) -> Image.Image | None:
+        """参考图统一转成 RGB：透明底直接转会变黑底，先铺到白底上（同 qwen_edit 的做法）。"""
+        if not self.ref_image_path:
+            return None
+        with Image.open(self.ref_image_path) as image:
+            rgba = image.convert("RGBA")
+        canvas = Image.new("RGBA", rgba.size, "white")
+        canvas.alpha_composite(rgba)
+        return canvas.convert("RGB")
+
+    def _resolution_kwargs(self, reference: Image.Image | None) -> dict:
+        """编辑模式才传 output_resolution。
+
+        管线里它决定参考图被缩到多大（面积 = output_resolution²）；显式给了 width/height 时
+        输出尺寸以后者为准，但参考图仍按它缩放。diffusers issue #14824：1024 下编辑会忽略指令、
+        输出近似原图，所以编辑默认 768。文生图没有参考图，保持管线默认。"""
+        if reference is None:
+            return {}
+        return {"output_resolution": self.output_resolution}
 
     async def generate(self) -> Path | None:
         self.ensure_model_loaded()
-        embeds, mask = self._encode_prompt()
+        reference = self._reference()
+        embeds, mask = self._encode_prompt(reference)
         self.check_cancelled()
         self._use_denoiser()
 
         device = self.torch.device(self.device)
+        condition = {"image": [reference]} if reference is not None else {}
         with self.torch.inference_mode():
             try:
                 image = self.pipe(
+                    **condition,
+                    **self._resolution_kwargs(reference),
                     prompt_embeds=embeds.to(device),
                     prompt_embeds_mask=mask.to(device) if mask is not None else None,
                     width=self.width,
@@ -181,6 +222,13 @@ class QwenImage21Generator(BaseImageGenerator):
         self.prompt = (raw.get("content") or "").strip()
         if not self.prompt:
             raise ValueError(f"{self.model_name} 需要提示词")
+        # 给了参考图就是图生图，没给就是文生图
+        self.ref_image_path = raw.get("reference_image", "") or ""
+        # 有参考图且调用方没给时用 EDIT_OUTPUT_RESOLUTION；文生图不用这个值
+        self.output_resolution = int(raw.get("output_resolution") or EDIT_OUTPUT_RESOLUTION)
+        if not MIN_SIDE <= self.output_resolution <= MAX_SIDE:
+            raise ValueError(
+                f"output_resolution 必须在 {MIN_SIDE}～{MAX_SIDE} 之间：{self.output_resolution}")
         self.width = int(raw.get("width", 1024))
         self.height = int(raw.get("height", 1024))
         for name, side in (("宽", self.width), ("高", self.height)):

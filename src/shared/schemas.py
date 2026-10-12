@@ -192,8 +192,25 @@ class SegmentLayers(BaseModel):
     merged: List[MergedLayer] = Field(default_factory=list, description="用户合并出来的层")
 
 
+class ImageVersion(BaseModel):
+    """某个目标（屏 / 段 / 层）的一个历史版本，由外扩或文字改图产生。"""
+    file: str = Field(..., description="相对资源包目录")
+    kind: str = Field(..., description="extend 或 edit")
+    prompt: str = ""
+
+
+class VersionHistory(BaseModel):
+    base_sig: str = Field("", description="建立历史时“原图”的签名；对不上整条历史作废（原图被重新生成了）")
+    versions: List[ImageVersion] = Field(default_factory=list)
+    current: int = Field(-1, description="-1 表示用原图")
+
+
 class RingState(BaseModel):
     order: List[str] = Field(default_factory=list)
+    # 目标键 -> 版本历史；键格式见 docs/tasks/ring-canvas/plan.md（screen:<id> / segment:<k> / layer:<k>:<Lx>）
+    versions: Dict[str, VersionHistory] = Field(default_factory=dict)
+    # 自动切割的建议，确认前不影响 cuts
+    suggested_cuts: List[int] = Field(default_factory=list)
     seams: Dict[str, SeamState] = Field(default_factory=dict)
     # 切段：长图（按 order 拼起来的各屏 ring.png）上的 x 坐标，升序；每段交给 Qwen-Layered 分层
     cuts: List[int] = Field(default_factory=list)
@@ -320,10 +337,36 @@ class RingStatusResponse(BaseResponse):
     segment_layers: List[List[str]] = Field(default_factory=list)
     # 与 segments 一一对应：该段的合并层；没分层或已失效为空列表
     segment_merged: List[List[MergedLayer]] = Field(default_factory=list)
+    # 与 order 一一对应：每屏当前用的图（原图 / 外扩 / 改过的版本），相对资源包目录
+    screen_files: List[str] = Field(default_factory=list)
+    # 与 order 一一对应：补齐到 ring_height 时上下共补了多少像素（0 = 不需要）
+    screen_padding: List[int] = Field(default_factory=list)
+    ring_height: int = 0
+    suggested_cuts: List[int] = Field(default_factory=list)
+    # 只含有效的历史（base_sig 对得上）
+    versions: Dict[str, VersionHistory] = Field(default_factory=dict)
 
 
 class RingCutsRequest(BaseModel):
     pack_id: str
+
+
+class RingExtendRequest(BaseModel):
+    pack_id: str
+    item_ids: Optional[List[str]] = Field(None, description="要外扩的屏；为空表示环上全部屏")
+    # 范围在 schema 里卡住：越界直接 422，不会等到加载模型之后才发现
+    pad: int = Field(128, ge=16, le=256, description="上下各补的像素")
+
+
+class RingEditRequest(BaseModel):
+    pack_id: str
+    target: str = Field(..., description="目标键：screen:<id> / segment:<k> / layer:<k>:<Lx>")
+    prompt: str
+
+
+class RingVersionRequest(BaseModel):
+    target: str
+    index: int = Field(..., description="-1 切回原图，否则是 versions 的下标")
 
 
 class RingLayersRequest(BaseModel):

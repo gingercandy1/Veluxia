@@ -31,12 +31,15 @@ from src.shared.schemas import (
     PackResponse,
     ResetStepRequest,
     RingCutsRequest,
+    RingEditRequest,
+    RingExtendRequest,
     RingGenerateRequest,
     RingLayerProgress,
     RingLayersRequest,
     RingOrderRequest,
     RingPlanRequest,
     RingStatusResponse,
+    RingVersionRequest,
     RunPackRequest,
     StyleListResponse,
     StylePreset,
@@ -65,6 +68,11 @@ class LibraryRouter(BaseRouter):
         # 每段约 18 分钟，十几段要跑几个小时
         self._register_async_generate_routes(
             self.handle_ring_layers, RingLayersRequest, path="/ring/layers")
+        # 外扩和文字改图都是图生图，要加载 Qwen-Image-2.1，走任务提交 + 轮询；pad 范围由请求模型校验
+        self._register_async_generate_routes(
+            self.handle_ring_extend, RingExtendRequest, path="/ring/extend")
+        self._register_async_generate_routes(
+            self.handle_ring_edit, RingEditRequest, path="/ring/edit")
 
         @self.router.get("/templates", response_model=TemplateListResponse, summary="可用模板")
         async def templates() -> TemplateListResponse:
@@ -155,6 +163,12 @@ class LibraryRouter(BaseRouter):
                           summary="确认切段位置并导出每段图")
         async def confirm_ring_cuts(pack_id: str, req: ConfirmCutsRequest) -> PackResponse:
             return await self._update_pack(ring.confirm_cuts, pack_id, req.cuts)
+
+        @self.router.post("/packs/{pack_id}/ring/version", response_model=PackResponse,
+                          summary="切换屏 / 段 / 层当前使用的版本（-1 为原图）")
+        async def select_ring_version(pack_id: str, req: RingVersionRequest) -> PackResponse:
+            return await self._update_pack(
+                ring.select_version, pack_id, req.target, req.index)
 
         @self.router.post("/packs/{pack_id}/ring/layers/merge", response_model=PackResponse,
                           summary="把一段里选中的几层合成一张新图层，原层保留")
@@ -309,6 +323,24 @@ class LibraryRouter(BaseRouter):
         manifest = await asyncio.to_thread(
             ring.generate_seams, req.pack_id, req.keys, req.prompt, job.cancel_event,
             extra_prompt=req.extra_prompt, on_progress=report)
+        return self._pack_response(manifest)
+
+    async def handle_ring_extend(self, req: RingExtendRequest, job: Job) -> PackResponse:
+        def report(key: str, fraction: float):
+            job.progress = {"key": key, "fraction": fraction}
+
+        manifest = await asyncio.to_thread(
+            ring.extend_screens, req.pack_id, req.item_ids, req.pad, job.cancel_event,
+            on_progress=report)
+        return self._pack_response(manifest)
+
+    async def handle_ring_edit(self, req: RingEditRequest, job: Job) -> PackResponse:
+        def report(key: str, fraction: float):
+            job.progress = {"key": key, "fraction": fraction}
+
+        manifest = await asyncio.to_thread(
+            ring.edit_target, req.pack_id, req.target, req.prompt, job.cancel_event,
+            on_progress=report)
         return self._pack_response(manifest)
 
     async def handle_ring_cuts(self, req: RingCutsRequest, job: Job) -> PackResponse:

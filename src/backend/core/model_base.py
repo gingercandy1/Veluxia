@@ -16,6 +16,10 @@ from src.backend.core.model_utils import get_device
 from src.shared.enum_type import FactoryType
 from src.shared.settings import PROJECT_ROOT
 
+# 驻留模型空闲多久后自动卸载（秒）。取一个较长的值：连续几张图不用每次重新加载，
+# 但隔一阵子不用就释放显存，免得占着 8GB 挡住别的模型
+IDLE_UNLOAD_SECONDS = 300
+
 
 @functools.lru_cache(maxsize=1)
 def load_models_config() -> dict:
@@ -233,6 +237,11 @@ class GeneratorFactory:
     _holder: Optional[str] = None
     # 不占显存的生成器按类各一把锁（ADR 0003）
     _cpu_locks: Dict[type, threading.Lock] = {}
+    # 空闲卸载：租约释放后等这么久，期间没有新的取用才卸载驻留模型。
+    # 这样连续生成时不用每张都重新加载，过一阵子不用了又能把显存还回去。
+    _idle_unload_seconds: float = IDLE_UNLOAD_SECONDS
+    # 当前有效的计时令牌；每次重新计时都换新令牌，旧计时器触发时发现令牌不对就直接返回
+    _idle_token: Optional[object] = None
 
     @classmethod
     def mark_ready(cls):
@@ -317,11 +326,13 @@ class GeneratorFactory:
             generator = cls.build_generator(ty, name)
             cls._unload_residents(keep=generator)
             cls._holder = name
+            cls._idle_token = None
         try:
             yield generator
         finally:
             with SingletonMeta._lock:
                 cls._holder = None
+                cls._arm_idle_unload()
 
     @classmethod
     @contextmanager
@@ -331,11 +342,34 @@ class GeneratorFactory:
             cls._require_idle()
             cls._unload_residents()
             cls._holder = holder
+            cls._idle_token = None
         try:
             yield
         finally:
             with SingletonMeta._lock:
                 cls._holder = None
+                cls._arm_idle_unload()
+
+    @classmethod
+    def _arm_idle_unload(cls):
+        """租约释放后开始计时（调用方需持有 SingletonMeta._lock）。"""
+        if not SingletonMeta._instances:
+            return
+        token = object()
+        cls._idle_token = token
+        timer = threading.Timer(cls._idle_unload_seconds, cls._unload_if_idle, args=(token,))
+        timer.daemon = True
+        timer.start()
+
+    @classmethod
+    def _unload_if_idle(cls, token: object):
+        with SingletonMeta._lock:
+            # 计时期间有人重新取用或又释放过，这个计时器已经过期
+            if token is not cls._idle_token or cls._holder is not None:
+                return
+            cls._idle_token = None
+            print(f"💤 驻留模型空闲 {cls._idle_unload_seconds:g} 秒，自动卸载")
+            cls._unload_residents()
 
     @classmethod
     def get_generator_names(cls, ty) -> list:

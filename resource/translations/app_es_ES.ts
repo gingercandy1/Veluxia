@@ -42,12 +42,12 @@
     <message>
         <location filename="../../src/app/client.py" line="+104"/>
         <location line="+136"/>
-        <location line="+412"/>
+        <location line="+437"/>
         <source>Cannot connect to the backend. Please check that the service is running.</source>
         <translation>No se puede conectar con el backend. Comprueba que el servicio esté en ejecución.</translation>
     </message>
     <message>
-        <location line="-544"/>
+        <location line="-569"/>
         <source>Connection timed out.</source>
         <translation>Se agotó el tiempo de conexión.</translation>
     </message>
@@ -58,12 +58,12 @@
     </message>
     <message>
         <location line="+26"/>
-        <location line="+404"/>
+        <location line="+429"/>
         <source>Cannot connect to the backend.</source>
         <translation>No se puede conectar con el backend.</translation>
     </message>
     <message>
-        <location line="-287"/>
+        <location line="-312"/>
         <source>Generation stopped.</source>
         <translation>Generación detenida.</translation>
     </message>
@@ -98,7 +98,7 @@
         <translation>No se puede conectar con el backend: {0}</translation>
     </message>
     <message>
-        <location line="+306"/>
+        <location line="+331"/>
         <source>An install task is already running...</source>
         <translation>Ya hay una instalación en curso…</translation>
     </message>
@@ -410,6 +410,24 @@
         <location filename="../../src/app/ui/message/text/code_block_widget.py" line="+43"/>
         <source>Copy code</source>
         <translation>Copiar código</translation>
+    </message>
+</context>
+<context>
+    <name>CutDialog</name>
+    <message>
+        <location filename="../../src/app/ui/library/cut_dialog.py" line="+17"/>
+        <source>Confirm segment cuts</source>
+        <translation>Confirmar los cortes de los segmentos</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Drag a red line to move it · Shift+left click adds a cut · Shift+right click removes the nearest cut</source>
+        <translation>Arrastra una línea roja para moverla · Mayús+clic izquierdo añade un corte · Mayús+clic derecho quita el más cercano</translation>
+    </message>
+    <message>
+        <location line="+39"/>
+        <source>{0} segments: {1} px</source>
+        <translation>{0} segmentos: {1} px</translation>
     </message>
 </context>
 <context>
@@ -1072,9 +1090,92 @@
     </message>
 </context>
 <context>
+    <name>LayerWindow</name>
+    <message>
+        <location filename="../../src/app/ui/library/layer_window.py" line="+169"/>
+        <source>Extend</source>
+        <translation>Extender</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop extend</source>
+        <translation>Detener extensión</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Seams</source>
+        <translation>Uniones</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop seams</source>
+        <translation>Detener uniones</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Segment</source>
+        <translation>Segmentar</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop segment</source>
+        <translation>Detener segmentación</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Layer</source>
+        <translation>Separar capas</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stop layer</source>
+        <translation>Detener separación</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Layers</source>
+        <translation>Capas</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Merge</source>
+        <translation>Combinar</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Merge the selected layers into a new layer</source>
+        <translation>Combinar las capas seleccionadas en una capa nueva</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete merged layer</source>
+        <translation>Eliminar capa combinada</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Describe the change for the selected layer, e.g. make the ground steeper</source>
+        <translation>Describe el cambio para la capa seleccionada, p. ej., haz el suelo más empinado</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Send</source>
+        <translation>Enviar</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Edit the selected item with this instruction (Ctrl+Enter)</source>
+        <translation>Editar el elemento seleccionado con esta instrucción (Ctrl+Enter)</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Edit with Qwen-Image-2.1</source>
+        <translation>Editar con Qwen-Image-2.1</translation>
+    </message>
+</context>
+<context>
     <name>LibraryPage</name>
     <message>
-        <location filename="../../src/app/ui/library/library_page.py" line="+274"/>
+        <location filename="../../src/app/ui/library/library_page.py" line="+282"/>
         <source>Failed to load packs: {0}</source>
         <translation>No se pudieron cargar los paquetes: {0}</translation>
     </message>
@@ -1084,28 +1185,28 @@
         <translation>No se pudieron cargar las plantillas: {0}</translation>
     </message>
     <message>
-        <location line="+414"/>
+        <location line="+487"/>
         <source>Failed to create pack: {0}</source>
         <translation>No se pudo crear el paquete: {0}</translation>
     </message>
     <message>
-        <location line="-295"/>
+        <location line="-368"/>
         <source>Run failed: {0}</source>
         <translation>Error de ejecución: {0}</translation>
     </message>
     <message>
         <location line="+17"/>
-        <location line="+68"/>
+        <location line="+79"/>
         <source>Could not load ring status.</source>
         <translation>No se pudo cargar el estado del bucle.</translation>
     </message>
     <message>
-        <location line="-56"/>
+        <location line="-67"/>
         <source>Screen {0} has no finished source image.</source>
         <translation>La pantalla {0} no tiene imagen de origen terminada.</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+31"/>
         <source>{0} screens · {1} seams with candidates · {2} stale · {3} rendered</source>
         <translation>{0} pantallas · {1} uniones con candidatos · {2} obsoletas · {3} compuestas</translation>
     </message>
@@ -1115,24 +1216,29 @@
         <translation>Aún sin componer</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+36"/>
         <source>The seam produced no candidate.</source>
         <translation>La unión no produjo ningún candidato.</translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+89"/>
         <source>Could not decode image: {0}</source>
         <translation>No se pudo decodificar la imagen: {0}</translation>
     </message>
     <message>
-        <location line="-45"/>
-        <location line="+126"/>
-        <location line="+34"/>
+        <location line="-56"/>
+        <location line="+189"/>
+        <location line="+33"/>
         <source>Ring operation failed: {0}</source>
         <translation>Falló la operación del bucle: {0}</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="-114"/>
+        <source>{0} seams are not ready; the cuts may be affected.</source>
+        <translation>Hay {0} uniones sin preparar; los cortes pueden verse afectados.</translation>
+    </message>
+    <message>
+        <location line="+146"/>
         <source>Failed to add items: {0}</source>
         <translation>No se pudieron añadir los elementos: {0}</translation>
     </message>
@@ -1392,7 +1498,7 @@
 <context>
     <name>PackDetail</name>
     <message>
-        <location filename="../../src/app/ui/library/pack_detail.py" line="+232"/>
+        <location filename="../../src/app/ui/library/pack_detail.py" line="+258"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
@@ -1418,13 +1524,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+371"/>
-        <location line="+584"/>
+        <location line="+331"/>
+        <location line="+773"/>
         <source>Export</source>
         <translation>Exportar</translation>
     </message>
     <message>
-        <location line="-953"/>
+        <location line="-1102"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Guarda los recursos terminados en un zip, una carpeta por elemento, sin borradores ni archivos intermedios.</translation>
     </message>
@@ -1444,7 +1550,7 @@
         <translation>Bucle</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+22"/>
         <source>Use new style</source>
         <translation>Usar el nuevo estilo</translation>
     </message>
@@ -1469,7 +1575,17 @@
         <translation>Rehace los pasos creados con el retrato anterior y todo lo que viene después.</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+49"/>
+        <source>View whole ring</source>
+        <translation>Ver el bucle completo</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Switch between the segments and the whole ring</source>
+        <translation>Cambiar entre los segmentos y el bucle completo</translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <source>Before</source>
         <translation>Antes</translation>
     </message>
@@ -1479,47 +1595,17 @@
         <translation>Después</translation>
     </message>
     <message>
-        <location line="-19"/>
+        <location line="-20"/>
         <source>Auto arrange</source>
         <translation>Ordenar automáticamente</translation>
     </message>
     <message>
-        <location line="-83"/>
-        <source>Layers</source>
-        <translation>Capas</translation>
-    </message>
-    <message>
-        <location line="+85"/>
+        <location line="+2"/>
         <source>Order the screens by how well their edges match. Screens added more than once are merged into one.</source>
         <translation>Ordena las pantallas según lo bien que encajan sus bordes. Las pantallas añadidas más de una vez se fusionan en una.</translation>
     </message>
     <message>
-        <location line="+37"/>
-        <source>Generate seams</source>
-        <translation>Generar uniones</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Auto cut</source>
-        <translation>Corte automático</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Confirm cuts</source>
-        <translation>Confirmar cortes</translation>
-    </message>
-    <message>
-        <location line="+30"/>
-        <source>Redo this segment</source>
-        <translation>Rehacer este tramo</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Layer segments</source>
-        <translation>Separar en capas</translation>
-    </message>
-    <message>
-        <location line="+49"/>
+        <location line="+54"/>
         <source>Use this one</source>
         <translation>Usar este</translation>
     </message>
@@ -1534,7 +1620,7 @@
         <translation>Rehacer esta unión</translation>
     </message>
     <message>
-        <location line="+104"/>
+        <location line="+122"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} listos</translation>
     </message>
@@ -1549,79 +1635,89 @@
         <translation>El ajuste de estilo «{0}» ha cambiado desde que se creó este paquete.</translation>
     </message>
     <message>
-        <location line="+169"/>
+        <location line="+224"/>
         <source>Segment {0}</source>
         <translation>Tramo {0}</translation>
     </message>
     <message>
-        <location line="+116"/>
-        <source>Layered {0}/{1} segments</source>
-        <translation>{0}/{1} tramos separados en capas</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>about {0} min left</source>
-        <translation>quedan unos {0} min</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>layering… you can stop and continue later</source>
-        <translation>separando… puedes detenerlo y continuar más tarde</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="-36"/>
         <source>encoding</source>
         <translation>codificando</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+0"/>
         <source>denoising</source>
         <translation>eliminando ruido</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>segment {0}: {1}</source>
-        <translation>segmento {0}: {1}</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>drag the red lines to adjust · Shift+click adds one · Shift+right-click removes one · then confirm</source>
-        <translation>arrastre las líneas rojas · Mayús+clic añade una · Mayús+clic derecho quita una · luego confirme</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Before layering, cut the ring into segments: render first, then Auto cut.</source>
-        <translation>Antes de separar capas, corta el bucle en tramos: compón primero y luego pulsa «Corte automático».</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>{0} segments · {1}–{2} px wide</source>
-        <translation>{0} tramos · {1}–{2} px de ancho</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>segment {0} is {1} px, keep each within {2}–{3} px</source>
-        <translation>el tramo {0} mide {1} px; cada uno debe medir entre {2} y {3} px</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>screens changed since cutting, auto cut again</source>
-        <translation>las pantallas cambiaron tras cortar; vuelve a cortar automáticamente</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>{0} segment images saved</source>
-        <translation>{0} imágenes de tramo guardadas</translation>
-    </message>
-    <message>
-        <location line="+42"/>
+        <location line="+372"/>
         <source>Generating seams…</source>
         <translation>Generando uniones…</translation>
     </message>
     <message>
-        <location line="+0"/>
+        <location line="-4"/>
         <source>Layering segments…</source>
         <translation>Separando tramos en capas…</translation>
+    </message>
+    <message>
+        <location line="-743"/>
+        <source>Click a seam to select it · Ctrl+click selects several</source>
+        <translation>Haz clic en una unión para seleccionarla · Ctrl+clic selecciona varias</translation>
+    </message>
+    <message>
+        <location line="+652"/>
+        <source>Extending is only possible before segmenting</source>
+        <translation>Solo se puede extender antes de segmentar</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Add 128 px above and below the selected screens (all if none)</source>
+        <translation>Añadir 128 px arriba y abajo de las pantallas seleccionadas (todas si no hay ninguna)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Add candidates for the selected seams; with none selected, fill in the missing and stale ones</source>
+        <translation>Añadir candidatos a las uniones seleccionadas; si no hay ninguna, completar las que faltan o están obsoletas</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Find cut points automatically, then confirm them</source>
+        <translation>Buscar los puntos de corte automáticamente y luego confirmarlos</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Segment the ring first</source>
+        <translation>Primero divide el bucle en segmentos</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Select segments first (Ctrl+A selects all)</source>
+        <translation>Selecciona primero los segmentos (Ctrl+A selecciona todos)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Split the selected segments into layers</source>
+        <translation>Separar en capas los segmentos seleccionados</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>Extend screens</source>
+        <translation>Extender pantallas</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Extending changes the screens, so the existing seams and layers will become invalid. Continue?</source>
+        <translation>Extender cambia las pantallas, así que las uniones y capas existentes dejarán de ser válidas. ¿Continuar?</translation>
+    </message>
+    <message>
+        <location line="+50"/>
+        <source>Extending screens…</source>
+        <translation>Extendiendo pantallas…</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Editing…</source>
+        <translation>Editando…</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -1657,6 +1753,11 @@
         <location line="+2"/>
         <source>Deleting the merged layer…</source>
         <translation>Eliminando la capa combinada…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Switching version…</source>
+        <translation>Cambiando de versión…</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -1994,6 +2095,29 @@
     </message>
 </context>
 <context>
+    <name>QwenImage21TurboPanel</name>
+    <message>
+        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="+80"/>
+        <source>number</source>
+        <translation>Cantidad</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>width</source>
+        <translation>Ancho</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>height</source>
+        <translation>Alto</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>seed</source>
+        <translation>Semilla</translation>
+    </message>
+</context>
+<context>
     <name>QwenImageEditPanel</name>
     <message>
         <location filename="../../src/app/ui/param/core/image/image_edit_panel.py" line="+46"/>
@@ -2035,7 +2159,7 @@
 <context>
     <name>RingStrip</name>
     <message>
-        <location filename="../../src/app/ui/library/ring_strip.py" line="+148"/>
+        <location filename="../../src/app/ui/library/ring_strip.py" line="+158"/>
         <source>Add at least two finished scene screens, then plan the ring.</source>
         <translation>Prepara al menos dos pantallas de escena terminadas y luego planifica el bucle.</translation>
     </message>
@@ -2690,6 +2814,14 @@
     </message>
 </context>
 <context>
+    <name>VersionControl</name>
+    <message>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-141"/>
+        <source>Switch between the original and edited versions</source>
+        <translation>Cambiar entre el original y las versiones editadas</translation>
+    </message>
+</context>
+<context>
     <name>VideoWidget</name>
     <message>
         <location filename="../../src/app/ui/message/message_widgets.py" line="+128"/>
@@ -2874,7 +3006,7 @@
 <context>
     <name>_TextToImagePanel</name>
     <message>
-        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="+22"/>
+        <location filename="../../src/app/ui/param/core/image/text2image_panels.py" line="-67"/>
         <source>number</source>
         <translation>Cantidad</translation>
     </message>

@@ -142,7 +142,7 @@ def test_redoing_a_segment_discards_its_merged_layers(tmp_path, monkeypatch):
     assert not path.exists()
 
 
-def test_moving_a_cut_discards_merged_layers_of_changed_segments(tmp_path, monkeypatch):
+def test_confirming_cuts_discards_all_layers_and_merged_layers(tmp_path, monkeypatch):
     directory = _layered_pack(tmp_path, monkeypatch)
     ring.merge_layers("pack", 0, ["L1", "L2"])
 
