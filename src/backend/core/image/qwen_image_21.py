@@ -11,10 +11,12 @@ Turbo 版本 8 步、CFG 为 1，采样日程存在检查点里，所以不传 n
   先用编码器把提示词编码好，释放后再加载 transformer + VAE 去噪；
 - 两段都按层分组卸载，卸载方式放在 models.json 的 offload 里，方便在实机上调速度。
 """
+import functools
 import gc
 import hashlib
 import random
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 from PIL import Image
@@ -150,23 +152,44 @@ class QwenImage21Generator(BaseImageGenerator):
         self.report_load_stage("ready", 1.0)
 
     def _encode_prompt(self, reference: Image.Image | None):
-        """返回 (embeds, mask)，都在 CPU 上；同一句提示词、同一张参考图直接用上次的。"""
+        """返回 (embeds, mask, image_pad_mask)，都在 CPU 上；同一句提示词、同一张参考图直接用上次的。
+
+        image_pad_mask 标出嵌入里哪些位置是参考图的 token：带参考图去噪时管线要用它。"""
         key = (self.prompt, _image_key(reference))
         cached = self._embeds_cache
         if cached is not None and cached[0] == key:
-            return cached[1], cached[2]
+            return cached[1], cached[2], cached[3]
         self.check_cancelled()
         self._use_encoder()
         # 文本编码器也要看到参考图：编辑指令是"以这张图为基础"的描述，不带图编出来的嵌入不对
         # 没有参考图时不传 image，文生图的调用保持原样
         condition = {"image": [reference]} if reference is not None else {}
         with self.torch.inference_mode():
-            embeds, mask, _ = self.encoder_pipe.encode_prompt(
+            embeds, mask, pad_mask = self.encoder_pipe.encode_prompt(
                 prompt=self.prompt, device=self.torch.device(self.device), **condition)
         embeds = embeds.cpu()
         mask = mask.cpu() if mask is not None else None
-        self._embeds_cache = (key, embeds, mask)
-        return embeds, mask
+        pad_mask = pad_mask.cpu() if pad_mask is not None else None
+        self._embeds_cache = (key, embeds, mask, pad_mask)
+        return embeds, mask, pad_mask
+
+    @contextmanager
+    def _with_image_pad_mask(self, pad_mask, device):
+        """带参考图时把 image_pad_mask 递给去噪管线。
+
+        管线 __call__ 拿到 prompt_embeds 后还会再走一遍 encode_prompt：给了参考图却没有
+        image_pad_mask 就报错，而 __call__ 本身没有这个参数（diffusers 0.41.0）。两段加载时
+        编码器已经释放，不能让管线自己重编，所以在这次调用期间给它的 encode_prompt 绑上这个参数。"""
+        if pad_mask is None:
+            yield
+            return
+        self.pipe.encode_prompt = functools.partial(
+            self.pipe.encode_prompt, image_pad_mask=pad_mask.to(device))
+        try:
+            yield
+        finally:
+            # 删掉实例上的覆盖，恢复类方法，下一次调用不会带着旧参考图的掩码
+            del self.pipe.encode_prompt
 
     def _reference(self) -> Image.Image | None:
         """参考图统一转成 RGB：透明底直接转会变黑底，先铺到白底上（同 qwen_edit 的做法）。"""
@@ -191,13 +214,15 @@ class QwenImage21Generator(BaseImageGenerator):
     async def generate(self) -> Path | None:
         self.ensure_model_loaded()
         reference = self._reference()
-        embeds, mask = self._encode_prompt(reference)
+        embeds, mask, pad_mask = self._encode_prompt(reference)
         self.check_cancelled()
         self._use_denoiser()
 
         device = self.torch.device(self.device)
         condition = {"image": [reference]} if reference is not None else {}
-        with self.torch.inference_mode():
+        # 文生图不碰 image_pad_mask：管线对纯文字嵌入会自己补全零掩码
+        pad_mask = pad_mask if reference is not None else None
+        with self.torch.inference_mode(), self._with_image_pad_mask(pad_mask, device):
             try:
                 image = self.pipe(
                     **condition,

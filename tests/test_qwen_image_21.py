@@ -37,15 +37,34 @@ class _FakeEncoder:
     def encode_prompt(self, prompt, device, image=None):
         import torch
         self.calls.append((prompt, image))
-        return torch.ones(1, 3, 4), torch.ones(1, 3, dtype=torch.bool), None
+        # 和真管线一样：第三项标出参考图 token 的位置，纯文字时全为 False
+        pad_mask = torch.zeros(1, 3, dtype=torch.bool)
+        if image is not None:
+            pad_mask[0, 1] = True
+        return torch.ones(1, 3, 4), torch.ones(1, 3, dtype=torch.bool), pad_mask
 
 
 class _FakePipe:
+    """照 diffusers 0.41.0 的 QwenImage21Pipeline：__call__ 会拿着 prompt_embeds 再走一遍
+    encode_prompt，给了参考图却没有 image_pad_mask 时报同样的错。"""
+
     def __init__(self, mode="RGBA"):
-        self.mode, self.kwargs = mode, None
+        self.mode, self.kwargs, self.pad_mask = mode, None, None
+
+    def encode_prompt(self, prompt=None, image=None, device=None, num_images_per_prompt=1,
+                      prompt_embeds=None, prompt_embeds_mask=None, image_pad_mask=None):
+        if image_pad_mask is None:
+            if image is not None:
+                raise ValueError("Pass `image_pad_mask` alongside `prompt_embeds` when the "
+                                 "embeddings cover condition images")
+            image_pad_mask = prompt_embeds.new_zeros(prompt_embeds.shape[:2], dtype=bool)
+        return prompt_embeds, prompt_embeds_mask, image_pad_mask
 
     def __call__(self, **kwargs):
         self.kwargs = kwargs
+        _, _, self.pad_mask = self.encode_prompt(
+            image=kwargs.get("image"), prompt_embeds=kwargs["prompt_embeds"],
+            prompt_embeds_mask=kwargs.get("prompt_embeds_mask"))
         return SimpleNamespace(images=[Image.new(self.mode, (64, 32), (10, 20, 30, 0))])
 
 
@@ -254,6 +273,36 @@ def test_reference_image_conditions_both_encoder_and_denoiser(generator, monkeyp
     assert encoded_image[0].mode == "RGB" and encoded_image[0].getpixel((0, 0)) == (255, 255, 255)
     assert generator.pipe.kwargs["image"][0] is encoded_image[0]
     assert generator.pipe.kwargs["width"] == 512 and generator.pipe.kwargs["height"] == 256
+    # 编码时得到的参考图 token 位置原样交给去噪管线；用完就撤掉，不留给下一次调用
+    assert generator.pipe.pad_mask.tolist() == [[False, True, False]]
+    assert "encode_prompt" not in vars(generator.pipe)
+
+
+def test_cached_embeddings_keep_the_image_pad_mask(generator, monkeypatch, tmp_path):
+    _use_fakes(generator, monkeypatch)
+    ref = tmp_path / "ref.png"
+    Image.new("RGB", (512, 256)).save(ref)
+    for _ in range(2):
+        generator.parse_params({"content": "edit", "reference_image": str(ref)})
+        asyncio.run(generator.generate())
+    # 第二次走缓存，不再编码，但掩码仍要带上，否则管线报错
+    assert len(generator.encoder_pipe.calls) == 1
+    assert generator.pipe.pad_mask.tolist() == [[False, True, False]]
+
+
+def test_pad_mask_override_is_removed_even_when_denoising_fails(generator, monkeypatch, tmp_path):
+    _use_fakes(generator, monkeypatch)
+
+    def boom(**kwargs):
+        raise RuntimeError("oom")
+
+    generator.pipe.__class__ = type("_Failing", (_FakePipe,), {"__call__": lambda self, **k: boom()})
+    ref = tmp_path / "ref.png"
+    Image.new("RGB", (512, 256)).save(ref)
+    generator.parse_params({"content": "edit", "reference_image": str(ref)})
+    with pytest.raises(RuntimeError, match="oom"):
+        asyncio.run(generator.generate())
+    assert "encode_prompt" not in vars(generator.pipe)
 
 
 def test_text_only_call_does_not_pass_image(generator, monkeypatch):

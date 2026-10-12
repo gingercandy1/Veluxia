@@ -139,12 +139,14 @@ QPushButton#library_view_toggle:checked {
 }
 
 /* QSS 画不出"窄线 + 宽热区"，手柄取 3px 兼顾分隔线观感和好抓取 */
-QSplitter#library_splitter::handle:horizontal {
+QSplitter#library_splitter::handle:horizontal,
+QSplitter#library_ring_splitter::handle:horizontal {
     width: 3px;
     background-color: rgba(100, 100, 100, 0.25);
 }
 
-QSplitter#library_splitter::handle:horizontal:hover {
+QSplitter#library_splitter::handle:horizontal:hover,
+QSplitter#library_ring_splitter::handle:horizontal:hover {
     background-color: rgba(120, 160, 255, 0.5);
 }
 

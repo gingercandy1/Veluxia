@@ -1027,6 +1027,29 @@ def test_compare_toggle_floats_top_right_and_the_layer_window_sits_right(qapp):
     assert canvas_right <= window_left
 
 
+def test_ring_canvas_and_layer_window_share_a_splitter(qapp):
+    """画布和图层窗口之间是分隔条：用户可拖，两边都不能被完全折叠。"""
+    detail = PackDetail()
+    pack, template = _scene_pack(item_count=2)
+    detail.show_pack(pack, template, busy=False)
+    detail.resize(1200, 600)
+    detail.ring_view_btn.click()
+    detail.show()
+    qapp.processEvents()
+    splitter = detail.ring_splitter
+    assert splitter.count() == 2
+    assert splitter.widget(1) is detail.layer_window
+    assert not splitter.childrenCollapsible()
+    # 分隔条能调宽图层窗口：调完两边宽度跟着变，且画布仍在左
+    before = detail.layer_window.width()
+    splitter.setSizes([500, 500])
+    qapp.processEvents()
+    assert detail.layer_window.width() != before
+    canvas_right = detail.ring_strip.mapTo(detail, detail.ring_strip.rect().topRight()).x()
+    window_left = detail.layer_window.mapTo(detail, detail.layer_window.rect().topLeft()).x()
+    assert canvas_right <= window_left
+
+
 def test_switching_before_after_keeps_the_view_position(qapp):
     strip = RingStrip()
     strip.resize(300, 180)

@@ -29,7 +29,7 @@ from src.app.ui.library.activity import ACCENT, FrameTicker, ProgressStrip
 from src.app.ui.library.cards import ASSET_THUMB, Card
 from src.app.ui.library.detail_panel import PANEL_WIDTH, DetailPanel
 from src.app.ui.library.flow_layout import FlowLayout
-from src.app.ui.library.layer_window import TOOLS, LayerNode, LayerWindow
+from src.app.ui.library.layer_window import TOOLS, WINDOW_MIN_WIDTH, LayerNode, LayerWindow
 from src.app.ui.library.pack_status import (
     MEDIA_ORDER,
     asset_progress,
@@ -543,8 +543,17 @@ class PackDetail(BaseWidget):
         self.layer_window.add_requested.connect(self._on_add_slots)
         self.layer_window.remove_requested.connect(self._on_remove_slots)
         self.layer_window.reorder_requested.connect(self._on_reorder_slots)
-        page_layout.addWidget(canvas_side, 1)
-        page_layout.addWidget(self.layer_window)
+        # 画布和图层窗口的宽度不固定（节点标题长短、画布大小都不一样），交给用户拖分隔条调
+        ring_splitter = self.ring_splitter = QSplitter(Qt.Orientation.Horizontal)
+        ring_splitter.setObjectName("library_ring_splitter")
+        ring_splitter.setChildrenCollapsible(False)
+        ring_splitter.setHandleWidth(3)
+        ring_splitter.addWidget(canvas_side)
+        ring_splitter.addWidget(self.layer_window)
+        ring_splitter.setStretchFactor(0, 1)
+        ring_splitter.setStretchFactor(1, 0)
+        ring_splitter.setSizes([700, WINDOW_MIN_WIDTH + 40])
+        page_layout.addWidget(ring_splitter)
         self.center_stack.addWidget(ring_page)
         layout.addWidget(self.center_stack, 1)
         self.resources_view_btn.clicked.connect(lambda: self._set_center_view(0))
