@@ -26,8 +26,9 @@ from PySide6.QtWidgets import (
 from src.app.ui.base.widget import BaseWidget
 from src.app.ui.library.layer_panel import ROW_HEIGHT, LayerRow
 
-# 工具按钮从左到右的顺序，也是 plan.md 里"外扩 → 接缝 → 分段 → 分层"的流程顺序
-TOOLS = ("extend", "seams", "segment", "layer")
+# 工具按钮从左到右的顺序；前四个是 plan.md 里"外扩 → 接缝 → 分段 → 分层"的流程，
+# region 是框选局部改图（只动框内），不占模型，是画布上的选择模式而不是长任务
+TOOLS = ("extend", "seams", "segment", "layer", "region")
 INDENT = 18
 FOLD_BUTTON = 16
 PROMPT_LINES = 3
@@ -213,6 +214,7 @@ class LayerWindow(BaseWidget):
     merge_requested = Signal(list)         # 层 key 列表
     delete_requested = Signal(str)         # 合并层 key
     edit_requested = Signal(str, str)      # key, 文字指令
+    region_edit_requested = Signal(str, str, list)  # key, 文字指令, 归一化框选 [x,y,w,h]
     add_requested = Signal()               # 往列表末尾添加（由页面弹选择框）
     remove_requested = Signal(list)        # 要移除的顶层节点 key
     reorder_requested = Signal(list)       # 拖动换位后，顶层节点 key 的新顺序
@@ -244,7 +246,10 @@ class LayerWindow(BaseWidget):
             "seams": (self.tr("Seams"), self.tr("Stop seams")),
             "segment": (self.tr("Segment"), self.tr("Stop segment")),
             "layer": (self.tr("Layer"), self.tr("Stop layer")),
+            "region": (self.tr("Region"), self.tr("Stop region")),
         }
+        # 画布上的框选（归一化 [x,y,w,h]，相对当前选中目标的图）：有它时发送走框选改图
+        self._region_bbox: list | None = None
 
         title = QLabel(self.tr("Layers"))
         title.setObjectName("layer_window_title")
@@ -299,10 +304,15 @@ class LayerWindow(BaseWidget):
         self.send_btn = QPushButton(self.tr("Send"))
         self.send_btn.setToolTip(self.tr("Edit the selected item with this instruction (Ctrl+Enter)"))
         self.send_btn.clicked.connect(self._send)
+        self.undo_btn = QPushButton(self.tr("Undo"))
+        self.undo_btn.setToolTip(self.tr(
+            "Undo the last change and go back to the previous version"))
+        self.undo_btn.clicked.connect(self._undo)
         edit_row = QHBoxLayout()
         edit_row.setSpacing(6)
-        edit_row.addWidget(self.prompt_edit, 1)
-        edit_row.addWidget(self.send_btn, 0, Qt.AlignmentFlag.AlignBottom)
+        edit_row.addStretch(1)
+        edit_row.addWidget(self.undo_btn)
+        edit_row.addWidget(self.send_btn)
         edit_title = QLabel(self.tr("Edit with Qwen-Image-2.1"))
         edit_title.setObjectName("layer_window_caption")
         separator = QFrame()
@@ -319,6 +329,7 @@ class LayerWindow(BaseWidget):
         layout.addLayout(merge_row)
         layout.addWidget(separator)
         layout.addWidget(edit_title)
+        layout.addWidget(self.prompt_edit)
         layout.addLayout(edit_row)
 
         for tool in TOOLS:
@@ -599,18 +610,51 @@ class LayerWindow(BaseWidget):
         if self._idle and self._can_delete():
             self.delete_requested.emit(self._selected_layers()[0])
 
+    def set_region_bbox(self, bbox: list | None):
+        """画布框选变化时由外面传入；合法才留，没有（None）就退回整图改。"""
+        from src.app.ui.library.region_select import valid
+        self._region_bbox = list(bbox) if valid(bbox) else None
+        if self._region_bbox is not None:
+            self.send_btn.setToolTip(self.tr(
+                "Edit only the selected region with this instruction (Ctrl+Enter)"))
+        else:
+            self.send_btn.setToolTip(self.tr(
+                "Edit the selected item with this instruction (Ctrl+Enter)"))
+
+    def region_bbox(self) -> list | None:
+        return list(self._region_bbox) if self._region_bbox is not None else None
+
     def _send(self):
         prompt = self.prompt_edit.toPlainText().strip()
         keys = self.selected_keys()
         if not (self._idle and len(keys) == 1 and prompt):
             return
-        self.edit_requested.emit(keys[0], prompt)
+        if self._region_bbox is not None:
+            self.region_edit_requested.emit(keys[0], prompt, list(self._region_bbox))
+        else:
+            self.edit_requested.emit(keys[0], prompt)
         self.prompt_edit.clear()
+
+    def _undoable(self) -> str:
+        """可撤销的选中节点 key：只选中一个、且它不在原图上；否则为空串。
+        和行内的版本控件一样，后端跑长任务时不能切版本。"""
+        if not self._idle or len(self._selected) != 1:
+            return ""
+        row = self._rows.get(self._selected[0])
+        if row is None or row.node.current_version < 0:
+            return ""
+        return self._selected[0]
+
+    def _undo(self):
+        key = self._undoable()
+        if key:
+            self.version_requested.emit(key, self._rows[key].node.current_version - 1)
 
     def _update_buttons(self):
         self.merge_btn.setEnabled(self._idle and self._can_merge())
         self.delete_btn.setEnabled(self._idle and self._can_delete())
         self.send_btn.setEnabled(self._idle and len(self._selected) == 1)
+        self.undo_btn.setEnabled(bool(self._undoable()))
         self.remove_btn.setEnabled(
             self._list_editable and self._can_remove and bool(self._selected_top()))
 

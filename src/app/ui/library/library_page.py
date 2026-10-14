@@ -165,6 +165,9 @@ class LibraryPage(BaseWidget):
             lambda indices: self._run_ring_action("layers", indices=indices))
         self.detail.ring_edit_requested.connect(
             lambda target, prompt: self._run_ring_action("edit", target, prompt))
+        self.detail.ring_region_edit_requested.connect(
+            lambda target, prompt, bbox: self._run_ring_action(
+                "edit", target, prompt, bbox=bbox))
         self.detail.ring_version_requested.connect(
             lambda target, index: self._run_ring_action("version", target, index=index))
         self.detail.ring_images_requested.connect(self._load_ring_images)
@@ -625,9 +628,11 @@ class LibraryPage(BaseWidget):
                          item_ids: list[str] | None = None, cuts: list[int] | None = None,
                          indices: list[int] | None = None, order: list[str] | None = None,
                          segment: int = 0, layer_ids: list[str] | None = None,
-                         keys: list[str] | None = None, index: int = 0):
+                         keys: list[str] | None = None, index: int = 0,
+                         bbox: list[float] | None = None):
         """argument：redo 时是追加的提示词，adopt 时是候选 id，edit 时是改图指令；
         key：redo / adopt 的接缝，edit / version 的目标键；
+        bbox：框选改图时的归一化框 [x, y, w, h]，没有就是整图改；
         keys：generate 时要追加候选的接缝，空则只补缺失和过期的；
         item_ids：plan 时参与循环的条目，extend 时要外扩的屏（空 = 全部）；
         order：order 时手动排的顺序（可重复同一屏）；index：version 时的版本序号（-1 = 原图）；
@@ -651,9 +656,13 @@ class LibraryPage(BaseWidget):
                 "item_ids": item_ids or None, "stop_event": self._ring_stop,
                 "on_progress": self._emit_ring_progress}
         elif action == "edit":
+            client_kwargs: dict = {"stop_event": self._ring_stop,
+                                   "on_progress": self._emit_ring_progress}
+            # 没框时不传 bbox：老测试断言无框调用是空 kwargs，老后端也不认这个参数
+            if bbox is not None:
+                client_kwargs["bbox"] = bbox
             fn, args, kwargs = self._client.edit_ring_target, (
-                self._ring_pack_id, key, argument), {
-                "stop_event": self._ring_stop, "on_progress": self._emit_ring_progress}
+                self._ring_pack_id, key, argument), client_kwargs
         elif action == "version":
             fn, args = self._client.select_ring_version, (self._ring_pack_id, key, index)
         elif action == "redo":

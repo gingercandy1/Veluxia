@@ -199,6 +199,7 @@ class PackDetail(BaseWidget):
     ring_layers_merge_requested = Signal(int, list)    # 段序号, 要合并的层编号
     ring_merged_delete_requested = Signal(int, str)    # 段序号, 要删除的合并层编号
     ring_edit_requested = Signal(str, str)         # 目标键, 文字指令
+    ring_region_edit_requested = Signal(str, str, list)  # 目标键, 文字指令, 归一化框选
     ring_version_requested = Signal(str, int)      # 目标键, 版本序号（-1 = 原图）
     ring_layer_opened = Signal(str)                # 双击放大：屏、段图或图层的相对路径
 
@@ -249,6 +250,9 @@ class PackDetail(BaseWidget):
         self._node_progress: dict[str, float] = {}
         self._syncing_selection = False
         self._canvas_anchor = -1
+        # 框选模式（右侧 Region 工具）：画布上拖矩形，只改框里的画面；不是长任务，随时可进出
+        self._region_tool = False
+        self._region_bbox: list | None = None
         self._seam_key = ""
         self._candidate_images: dict[str, dict[str, QImage]] = {}
 
@@ -445,6 +449,8 @@ class PackDetail(BaseWidget):
         self.ring_whole_btn.setCheckable(True)
         self.ring_whole_btn.setToolTip(self.tr("Switch between the segments and the whole ring"))
         self.ring_whole_btn.toggled.connect(lambda _checked: self._update_canvas_view())
+        # 切整环 / 段视图时框选的目标变了：先退模式，免得旧框贴到另一张图上
+        self.ring_whole_btn.toggled.connect(lambda _checked: self._exit_region_mode())
         self.ring_whole_btn.hide()
         self.ring_plan_btn = QPushButton(self.tr("Auto arrange"))
         self.ring_plan_btn.setToolTip(self.tr(
@@ -540,6 +546,13 @@ class PackDetail(BaseWidget):
         self.layer_window.delete_requested.connect(self._on_delete_requested)
         self.layer_window.edit_requested.connect(
             lambda key, prompt: self.ring_edit_requested.emit(node_target(key), prompt))
+        self.layer_window.region_edit_requested.connect(
+            lambda key, prompt, bbox: self.ring_region_edit_requested.emit(
+                node_target(key), prompt, bbox))
+        self.ring_strip.region_changed.connect(
+            lambda bbox: self._on_region_changed(self.ring_strip, bbox))
+        self.segment_canvas.region_changed.connect(
+            lambda bbox: self._on_region_changed(self.segment_canvas, bbox))
         self.layer_window.add_requested.connect(self._on_add_slots)
         self.layer_window.remove_requested.connect(self._on_remove_slots)
         self.layer_window.reorder_requested.connect(self._on_reorder_slots)
@@ -628,6 +641,8 @@ class PackDetail(BaseWidget):
             self.ring_strip.set_padding([])
             self.ring_strip.reset_view()
             self.segment_canvas.set_images([])
+            self._exit_region_mode()
+            self.layer_window.set_nodes([])
             self.layer_window.set_nodes([])
             self.seam_panel.hide()
         self.pack, self.template, self._busy = pack, template, busy
@@ -1150,6 +1165,15 @@ class PackDetail(BaseWidget):
             if running == tool:
                 self.layer_window.set_tool_state(tool, True, True)
                 continue
+            if tool == "region":
+                # 框选是本地选择模式，不占模型：运行时也能进，但跑着任务时不让进
+                if self._region_tool:
+                    self.layer_window.set_tool_state(tool, True, True)
+                else:
+                    self.layer_window.set_tool_state(
+                        tool, False, idle and has_ring,
+                        self.tr("Select a region on the canvas; only it will be edited"))
+                continue
             enabled, tip = idle and has_ring, ""
             if tool == "extend" and self._segments:
                 enabled, tip = False, self.tr("Extending is only possible before segmenting")
@@ -1191,6 +1215,41 @@ class PackDetail(BaseWidget):
             self.ring_cuts_auto_requested.emit()
         elif tool == "layer":
             self.ring_layers_requested.emit(self._selected_segments())
+        elif tool == "region":
+            self._toggle_region_tool()
+
+    def _visible_canvas(self):
+        """当前显示的画布：框选只在这一块上生效。"""
+        return self.canvas_stack.currentWidget()
+
+    def _toggle_region_tool(self):
+        if self._region_tool:
+            self._exit_region_mode()
+            return
+        canvas = self._visible_canvas()
+        if canvas not in (self.ring_strip, self.segment_canvas):
+            return
+        self._region_tool = True
+        canvas.set_region_mode(True)
+        self._update_tools()
+
+    def _exit_region_mode(self):
+        """退出框选模式并清框：换包、开跑、切视图时调用；没开时直接返回。"""
+        if not self._region_tool and self._region_bbox is None:
+            return
+        self._region_tool = False
+        self._region_bbox = None
+        self.ring_strip.set_region_mode(False)
+        self.segment_canvas.set_region_mode(False)
+        self.layer_window.set_region_bbox(None)
+        self._update_tools()
+
+    def _on_region_changed(self, canvas, bbox: list | None):
+        # 只收当前显示画布的框：切视图时旧画布的清空信号不该覆盖新框
+        if canvas is not self._visible_canvas():
+            return
+        self._region_bbox = list(bbox) if bbox else None
+        self.layer_window.set_region_bbox(self._region_bbox)
 
     def _request_extend(self):
         """外扩会改屏的图：已有的接缝候选和分层都对不上了，先让用户确认。"""
@@ -1242,6 +1301,9 @@ class PackDetail(BaseWidget):
             self._node_progress = {}
         self._ring_running = running
         self._ring_action = action if running else None
+        if running:
+            # 开跑了：框选已经随发送带走，画布退回普通模式
+            self._exit_region_mode()
         if running:
             texts = {"layers": self.tr("Layering segments…"),
                      "extend": self.tr("Extending screens…"),

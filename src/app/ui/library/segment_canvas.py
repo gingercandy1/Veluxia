@@ -2,11 +2,12 @@
 
 交互与 RingStrip 一致（中键平移、滚轮以鼠标为中心缩放），但段不是环，所以平移不取模，
 而是限制在内容范围内，免得拖丢。只负责绘制和点击，选中状态由外面通过 set_selected 传入。"""
-from PySide6.QtCore import QRectF, Qt, Signal
+from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QSizePolicy
 
 from src.app.ui.base.widget import BaseWidget
+from src.app.ui.library import region_select
 
 GAP = 12
 CLICK_SLOP = 4
@@ -21,6 +22,7 @@ SELECTED_COLOR = QColor(255, 214, 102)
 
 class SegmentCanvas(BaseWidget):
     segment_clicked = Signal(int, object)      # 段序号, 键盘修饰键
+    region_changed = Signal(object)            # 归一化框选 [x,y,w,h]，清除时为 None
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -37,6 +39,10 @@ class SegmentCanvas(BaseWidget):
         self._click: tuple[float, float] | None = None
         self._cache_key: tuple[int, float] | None = None
         self._rects: list[QRectF] = []     # 上一次布局里各段的位置，供点击命中
+        # 框选局部改图：开/关由右侧工具按钮切；框存归一化坐标，缩放平移后仍贴在原图上
+        self._region_mode = False
+        self._region_norm: tuple[float, float, float, float] | None = None
+        self._region_drag: tuple[str, QRectF, QPointF] | None = None
 
     def set_images(self, images: list[QImage]):
         # 空图也占一个位置：段序号必须和外面的段一一对应，不能因为某张没加载就错位
@@ -49,11 +55,73 @@ class SegmentCanvas(BaseWidget):
         return len(self._images)
 
     def set_selected(self, indices: list[int]):
+        before = self._selected
         self._selected = [i for i in indices if 0 <= i < len(self._images)]
-        self.update()
+        # 换了目标，旧框就对不上了：清掉并告诉外面退回整图改
+        if self._region_norm is not None and self._selected != before:
+            self._clear_region()
+        else:
+            self.update()
 
     def selected(self) -> list[int]:
         return list(self._selected)
+
+    # ---- 框选 ----
+    def set_region_mode(self, on: bool):
+        if self._region_mode == on:
+            return
+        self._region_mode = on
+        self._region_drag = None
+        if not on:
+            self._clear_region()
+        else:
+            self.update()
+
+    def region_mode(self) -> bool:
+        return self._region_mode
+
+    def region_bbox(self) -> list | None:
+        """当前框的归一化坐标；没有目标、没有框、框非法时为 None。"""
+        if self._region_norm is None or self._region_target() is None:
+            return None
+        return list(self._region_norm) if region_select.valid(self._region_norm) else None
+
+    def region_rect(self) -> QRectF | None:
+        """当前框的控件坐标（画框和命中测试用）。"""
+        target = self._region_target()
+        if target is None or self._region_norm is None:
+            return None
+        return region_select.to_widget(self._region_norm, self.segment_rect(target))
+
+    def _region_target(self) -> int | None:
+        """框选作用的段：必须恰好选中一段，且它在画布上有位置。"""
+        if len(self._selected) != 1:
+            return None
+        index = self._selected[0]
+        rect = self.segment_rect(index)
+        return index if not rect.isEmpty() else None
+
+    def _clear_region(self):
+        had = self._region_norm is not None
+        self._region_norm = None
+        self._region_drag = None
+        self.update()
+        if had:
+            self.region_changed.emit(None)
+
+    def _update_region(self, rect: QRectF):
+        """拖拽中的矩形收进目标图：合法就存并外发，太小就只画不存。"""
+        target = self._region_target()
+        if target is None:
+            return
+        bounds = self.segment_rect(target)
+        rect = rect.intersected(bounds)
+        norm = region_select.to_normalized(rect, bounds)
+        if norm is None:
+            return
+        self._region_norm = norm
+        self.update()
+        self.region_changed.emit(list(norm))
 
     def zoom(self) -> float:
         return self._zoom
@@ -125,6 +193,11 @@ class SegmentCanvas(BaseWidget):
             if index in self._selected:
                 painter.setPen(pen)
                 painter.drawRect(rect.adjusted(1.5, 1.5, -1.5, -1.5))
+        if self._region_mode:
+            region = self.region_rect()
+            target = self._region_target()
+            if region is not None and target is not None:
+                region_select.paint(painter, region, self.segment_rect(target))
 
     # ---- 交互 ----
     def set_zoom(self, zoom: float, anchor_x: float | None = None, anchor_y: float | None = None):
@@ -156,12 +229,45 @@ class SegmentCanvas(BaseWidget):
             self._drag_origin = (self._pan[0], self._pan[1])
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
             return
+        if event.button() == Qt.MouseButton.RightButton and self._region_mode:
+            # 右键清框：框没了就退回整图改
+            self._clear_region()
+            return
         if event.button() == Qt.MouseButton.LeftButton:
+            if self._region_mode and self._start_region_drag(position):
+                return
             self._click = (position.x(), position.y())
             return
         super().mousePressEvent(event)
 
+    def _start_region_drag(self, position) -> bool:
+        """框选模式下的左键：手柄上是缩放、框内是平移、目标图内是新建。命中才接管。"""
+        target = self._region_target()
+        if target is None:
+            return False
+        point = QPointF(position.x(), position.y())
+        rect = self.region_rect()
+        if rect is not None:
+            handle = region_select.hit(rect, point)
+            if handle:
+                self._region_drag = (handle, rect, point)
+                return True
+        bounds = self.segment_rect(target)
+        if bounds.contains(point):
+            self._region_drag = ("create", QRectF(), point)
+            return True
+        return False
+
     def mouseMoveEvent(self, event):
+        if self._region_drag is not None:
+            handle, start, origin = self._region_drag
+            current = event.position()
+            delta = current - origin
+            if handle == "create":
+                self._update_region(QRectF(origin, current).normalized())
+            else:
+                self._update_region(region_select.apply_drag(start, handle, delta))
+            return
         if self._pan_start is None:
             return
         position = event.position()
@@ -174,6 +280,15 @@ class SegmentCanvas(BaseWidget):
         if event.button() == Qt.MouseButton.MiddleButton:
             self._pan_start = None
             self.setCursor(Qt.CursorShape.ArrowCursor)
+            return
+        if event.button() == Qt.MouseButton.LeftButton and self._region_drag is not None:
+            handle, _start, origin = self._region_drag
+            self._region_drag = None
+            if handle == "create":
+                current = event.position()
+                # 点一下没有拉开：不算框，免得误触留个小点
+                if (current - origin).manhattanLength() < CLICK_SLOP:
+                    self._clear_region()
             return
         if event.button() != Qt.MouseButton.LeftButton or self._click is None:
             return

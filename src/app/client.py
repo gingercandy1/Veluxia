@@ -491,10 +491,13 @@ class ApiClient:
                                      on_progress=on_progress)
 
     def edit_ring_target(self, pack_id: str, target: str, prompt: str,
+                         bbox: Optional[list] = None,
                          stop_event: Optional[threading.Event] = None,
                          on_progress=None) -> PackResponse:
-        """按文字改一个屏 / 段 / 层，结果作为新版本；target 是目标键。"""
-        request = RingEditRequest(pack_id=pack_id, target=target, prompt=prompt)
+        """按文字改一个屏 / 段 / 层，结果作为新版本；target 是目标键。
+
+        bbox 是归一化框选 [x, y, w, h]：给了就只改框里的画面。"""
+        request = RingEditRequest(pack_id=pack_id, target=target, prompt=prompt, bbox=bbox)
         return self._submit_and_poll("/library/ring/edit", request.model_dump(), PackResponse,
                                      stop_event=stop_event, max_total_wait_seconds=24 * 3600,
                                      on_progress=on_progress)

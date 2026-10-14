@@ -278,6 +278,48 @@ def test_reference_image_conditions_both_encoder_and_denoiser(generator, monkeyp
     assert "encode_prompt" not in vars(generator.pipe)
 
 
+@pytest.mark.parametrize("size", [(1920, 1080), (512, 256), (1200, 640), (640, 1200), (64, 32)])
+@pytest.mark.parametrize("resolution", [512, 768, 1024])
+def test_edit_size_matches_the_diffusers_pipeline(size, resolution):
+    from diffusers.pipelines.qwenimage21.pipeline_qwenimage21 import calculate_dimensions
+    expected = calculate_dimensions(resolution * resolution, size[0] / size[1])[:2]
+    assert qwen_image_21._edit_size(size, resolution) == expected
+
+
+@pytest.mark.parametrize("size", [(1760, 320), (1672, 320), (200, 480), (240, 576), (304, 768),
+                                  (1208, 768), (3600, 768), (64, 32)])
+def test_reference_size_is_a_fixed_point_of_the_pipeline_resize(size):
+    # 管线会把参考图再缩一次：缩两次的结果必须等于缩一次，否则编码器和 latent 的 token 数对不上
+    stable = qwen_image_21._stable_edit_size(size, 768)
+    assert qwen_image_21._edit_size(stable, 768) == stable
+
+
+def test_a_size_the_pipeline_would_change_is_resized_until_it_stops_changing(
+        generator, monkeypatch, tmp_path):
+    _use_fakes(generator, monkeypatch)
+    ref = tmp_path / "ref.png"
+    # 1760x320 缩一次是 1760x320，管线再缩会变成 1792x320（实机上就是这样报的 shape mismatch）
+    Image.new("RGB", (1672, 320)).save(ref)
+    generator.parse_params({"content": "edit", "reference_image": str(ref)})
+    asyncio.run(generator.generate())
+    _, encoded_image = generator.encoder_pipe.calls[0]
+    size = encoded_image[0].size
+    assert qwen_image_21._edit_size(size, 768) == size
+
+
+def test_reference_is_resized_once_so_encoder_and_denoiser_see_the_same_image(
+        generator, monkeypatch, tmp_path):
+    _use_fakes(generator, monkeypatch)
+    # 原图远大于 768²：不缩的话编码器会产出远多于去噪阶段 latent 的图像 token（shape mismatch）
+    ref = tmp_path / "ref.png"
+    Image.new("RGB", (3840, 2160), (10, 20, 30)).save(ref)
+    generator.parse_params({"content": "edit", "reference_image": str(ref)})
+    asyncio.run(generator.generate())
+    _, encoded_image = generator.encoder_pipe.calls[0]
+    assert encoded_image[0].size == qwen_image_21._edit_size((3840, 2160), 768)
+    assert generator.pipe.kwargs["image"][0] is encoded_image[0]
+
+
 def test_cached_embeddings_keep_the_image_pad_mask(generator, monkeypatch, tmp_path):
     _use_fakes(generator, monkeypatch)
     ref = tmp_path / "ref.png"
@@ -348,3 +390,31 @@ def test_cache_is_keyed_by_reference_content(generator, monkeypatch, tmp_path):
         asyncio.run(generator.generate())
     # 同一句提示词，但参考图换了，编码结果不能复用
     assert len(generator.encoder_pipe.calls) == 2
+
+
+def test_cancelled_stage_loads_raise_without_loading(generator):
+    """加载阶段点了停止：权重不读盘，直接抛 GenerationCancelled。"""
+    import threading
+
+    from src.backend.core.exceptions import GenerationCancelled
+    generator.cancel_event = threading.Event()
+    generator.cancel_event.set()
+    with pytest.raises(GenerationCancelled):
+        generator._use_encoder()
+    assert generator.encoder_pipe is None
+    with pytest.raises(GenerationCancelled):
+        generator._use_denoiser()
+    assert generator.pipe is None
+
+
+def test_generate_aborts_before_encoding_when_cancelled(generator, monkeypatch):
+    import threading
+
+    from src.backend.core.exceptions import GenerationCancelled
+    _use_fakes(generator, monkeypatch)
+    generator.cancel_event = threading.Event()
+    generator.cancel_event.set()
+    generator.parse_params({"content": "hello"})
+    with pytest.raises(GenerationCancelled):
+        asyncio.run(generator.generate())
+    assert generator.encoder_pipe.calls == []

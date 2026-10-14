@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 from src.backend.core.collection import library
 from src.backend.core.collection.executor import file_signature
@@ -979,6 +979,54 @@ def _run_model_edit(generator, reference: Image.Image, prompt: str) -> Image.Ima
     return result
 
 
+def _parse_bbox(bbox: list[float] | tuple[float, ...] | None
+                ) -> tuple[float, float, float, float] | None:
+    """归一化框选转浮点四元组：schema 只卡越界，这里再卡个数和最小边。"""
+    if bbox is None:
+        return None
+    values = [float(v) for v in bbox]
+    if len(values) != 4:
+        raise ValueError("框选需要 4 个数 [x, y, w, h]")
+    x, y, w, h = values
+    if not (0.0 <= x <= 1.0 and 0.0 <= y <= 1.0 and 0.0 < w <= 1.0 and 0.0 < h <= 1.0
+            and x + w <= 1.0 + 1e-6 and y + h <= 1.0 + 1e-6):
+        raise ValueError(f"框选越界：{[x, y, w, h]}（取值 0~1）")
+    return x, y, w, h
+
+
+def _run_region_edit(generator, reference: Image.Image, prompt: str,
+                     bbox: tuple[float, float, float, float]) -> Image.Image:
+    """只改框里的画面：框外扩一点做上下文一起给模型，改完只取框内、羽化贴回。
+
+    框外像素是原样拷回的，不经过模型，所以"只动框选"是有保证的；
+    裁出来的一小块走 _run_model_edit，8GB 显存比整图更轻松。返回和 reference 同尺寸。
+    """
+    width, height = reference.size
+    box_x = round(bbox[0] * width)
+    box_y = round(bbox[1] * height)
+    box_w = round(bbox[2] * width)
+    box_h = round(bbox[3] * height)
+    if box_w < 32 or box_h < 32:
+        raise ValueError(f"框选太小（{box_w}x{box_h}）：至少 32 像素，放大一点再试")
+    # 上下文：各边外扩框短边的四分之一，让模型看得见框内是什么、旁边是什么
+    pad = max(8, min(box_w, box_h) // 4)
+    crop_x0, crop_y0 = max(0, box_x - pad), max(0, box_y - pad)
+    crop_x1, crop_y1 = min(width, box_x + box_w + pad), min(height, box_y + box_h)
+    inner = (box_x - crop_x0, box_y - crop_y0, box_x - crop_x0 + box_w,
+             box_y - crop_y0 + box_h)
+    base = reference.convert("RGB")
+    edited = _run_model_edit(generator, base.crop((crop_x0, crop_y0, crop_x1, crop_y1)),
+                             prompt)
+    fresh = edited.crop(inner)
+    # 羽化边缘再贴：硬边会留一圈痕迹
+    feather = max(2, min(box_w, box_h) // 32)
+    mask = Image.new("L", (box_w, box_h), 255).filter(
+        ImageFilter.GaussianBlur(feather))
+    result = base.copy()
+    result.paste(fresh, (box_x, box_y), mask)
+    return result
+
+
 def _has_alpha(image: Image.Image) -> bool:
     """输出是否真的带透明信息：RGBA 模式但全不透明等于没有（模型常把透明底铺成实色）。"""
     return image.mode == "RGBA" and image.getchannel("A").getextrema()[0] < 255
@@ -1047,14 +1095,17 @@ def extend_screens(pack_id: str, item_ids: list[str] | None = None, pad: int = E
 
 
 def edit_target(pack_id: str, target: str, prompt: str,
+                bbox: list[float] | tuple[float, ...] | None = None,
                 cancel_event: threading.Event | None = None,
                 on_progress: Callable[[str, float], None] | None = None) -> Manifest:
     """按文字描述改一个目标（屏 / 段 / 层）的当前图，结果作为新版本，旧版本保留。
 
+    bbox 是归一化框选 [x, y, w, h]：给了就只改框内，框外原样保留。
     on_progress(目标键, 0~1)。"""
     prompt = prompt.strip()
     if not prompt:
         raise ValueError("请输入修改描述")
+    region = _parse_bbox(bbox)
     directory = library.pack_dir(pack_id)
     cancel_event = cancel_event or threading.Event()
     with library._claim(pack_id):
@@ -1073,7 +1124,10 @@ def edit_target(pack_id: str, target: str, prompt: str,
                         generator.progress_callback = functools.partial(on_progress, target)
                     with Image.open(current) as opened:
                         source = opened.convert("RGBA" if kind == "layer" else "RGB")
-                    result = _run_model_edit(generator, source, prompt)
+                    if region is not None:
+                        result = _run_region_edit(generator, source, prompt, region)
+                    else:
+                        result = _run_model_edit(generator, source, prompt)
                     if kind == "layer":
                         # 层是透明 RGBA。模型输出真带透明就保留；否则沿用原层的 alpha。
                         # 这是权宜做法：模型的 RGB 输出和原 alpha 未必对得上（比如改了形状），

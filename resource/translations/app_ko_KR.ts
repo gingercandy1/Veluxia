@@ -1185,7 +1185,17 @@
         <translation>이 지시로 선택한 항목 편집 (Ctrl+Enter)</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+2"/>
+        <source>Undo</source>
+        <translation>실행 취소</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Undo the last change and go back to the previous version</source>
+        <translation>마지막 변경을 취소하고 이전 버전으로 돌아가기</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Edit with Qwen-Image-2.1</source>
         <translation>Qwen-Image-2.1로 편집</translation>
     </message>
@@ -1542,13 +1552,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+336"/>
+        <location line="+345"/>
         <location line="+774"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-1108"/>
+        <location line="-1117"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>완성된 에셋을 zip으로 저장합니다. 항목마다 폴더 하나이며 초안과 중간 파일은 포함하지 않습니다.</translation>
     </message>
@@ -1598,7 +1608,7 @@
         <translation>이 이음새 다시 만들기</translation>
     </message>
     <message>
-        <location line="+134"/>
+        <location line="+143"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 완료</translation>
     </message>
@@ -1628,12 +1638,12 @@
         <translation>노이즈 제거 중</translation>
     </message>
     <message>
-        <location line="-372"/>
+        <location line="-381"/>
         <source>Click a seam to select it · Ctrl+click selects several</source>
         <translation>이음새를 클릭해 선택 · Ctrl+클릭으로 여러 개 선택</translation>
     </message>
     <message>
-        <location line="+664"/>
+        <location line="+673"/>
         <source>Extending is only possible before segmenting</source>
         <translation>확장은 구간을 나누기 전에만 할 수 있습니다</translation>
     </message>
@@ -1773,7 +1783,7 @@
         <translation>이 항목과 모든 에셋 삭제</translation>
     </message>
     <message>
-        <location line="-1097"/>
+        <location line="-1106"/>
         <source>Resources</source>
         <translation>리소스</translation>
     </message>
@@ -1813,7 +1823,7 @@
         <translation>합성 후</translation>
     </message>
     <message>
-        <location line="+779"/>
+        <location line="+788"/>
         <source>Generating seams…</source>
         <translation>이음새 생성 중…</translation>
     </message>
@@ -2803,7 +2813,7 @@
 <context>
     <name>VersionControl</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="-221"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-226"/>
         <source>Switch between the original and edited versions</source>
         <translation>원본과 편집된 버전 사이 전환</translation>
     </message>

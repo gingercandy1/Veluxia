@@ -1187,7 +1187,17 @@
         <translation>Edit the selected item with this instruction (Ctrl+Enter)</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+2"/>
+        <source>Undo</source>
+        <translation>Undo</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Undo the last change and go back to the previous version</source>
+        <translation>Undo the last change and go back to the previous version</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Edit with Qwen-Image-2.1</source>
         <translation>Edit with Qwen-Image-2.1</translation>
     </message>
@@ -1544,13 +1554,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+336"/>
+        <location line="+345"/>
         <location line="+774"/>
         <source>Export</source>
         <translation>Export</translation>
     </message>
     <message>
-        <location line="-1108"/>
+        <location line="-1117"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</translation>
     </message>
@@ -1600,7 +1610,7 @@
         <translation>Redo this seam</translation>
     </message>
     <message>
-        <location line="+134"/>
+        <location line="+143"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} done</translation>
     </message>
@@ -1630,12 +1640,12 @@
         <translation>denoising</translation>
     </message>
     <message>
-        <location line="-372"/>
+        <location line="-381"/>
         <source>Click a seam to select it · Ctrl+click selects several</source>
         <translation>Click a seam to select it · Ctrl+click selects several</translation>
     </message>
     <message>
-        <location line="+664"/>
+        <location line="+673"/>
         <source>Extending is only possible before segmenting</source>
         <translation>Extending is only possible before segmenting</translation>
     </message>
@@ -1775,7 +1785,7 @@
         <translation>Delete this item and all its assets</translation>
     </message>
     <message>
-        <location line="-1097"/>
+        <location line="-1106"/>
         <source>Resources</source>
         <translation>Resources</translation>
     </message>
@@ -1815,7 +1825,7 @@
         <translation>After</translation>
     </message>
     <message>
-        <location line="+779"/>
+        <location line="+788"/>
         <source>Generating seams…</source>
         <translation>Generating seams…</translation>
     </message>
@@ -2805,7 +2815,7 @@
 <context>
     <name>VersionControl</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="-221"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-226"/>
         <source>Switch between the original and edited versions</source>
         <translation>Switch between the original and edited versions</translation>
     </message>

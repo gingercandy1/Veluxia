@@ -1185,7 +1185,17 @@
         <translation>按这条指令修改选中项（Ctrl+Enter）</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+2"/>
+        <source>Undo</source>
+        <translation>撤销</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Undo the last change and go back to the previous version</source>
+        <translation>撤销上一次改动，回到上一个版本</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Edit with Qwen-Image-2.1</source>
         <translation>用 Qwen-Image-2.1 改图</translation>
     </message>
@@ -1542,13 +1552,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+336"/>
+        <location line="+345"/>
         <location line="+774"/>
         <source>Export</source>
         <translation>导出</translation>
     </message>
     <message>
-        <location line="-1108"/>
+        <location line="-1117"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>将成品保存为 zip，每个条目对应一个文件夹，不含草稿和中间文件。</translation>
     </message>
@@ -1598,7 +1608,7 @@
         <translation>重做接缝</translation>
     </message>
     <message>
-        <location line="+134"/>
+        <location line="+143"/>
         <source>{0}/{1} done</source>
         <translation>已完成 {0}/{1}</translation>
     </message>
@@ -1628,12 +1638,12 @@
         <translation>去噪中</translation>
     </message>
     <message>
-        <location line="-372"/>
+        <location line="-381"/>
         <source>Click a seam to select it · Ctrl+click selects several</source>
         <translation>单击接缝选中 · Ctrl+单击可多选</translation>
     </message>
     <message>
-        <location line="+664"/>
+        <location line="+673"/>
         <source>Extending is only possible before segmenting</source>
         <translation>只能在分段之前外扩</translation>
     </message>
@@ -1773,7 +1783,7 @@
         <translation>删除此条目及其全部素材</translation>
     </message>
     <message>
-        <location line="-1097"/>
+        <location line="-1106"/>
         <source>Resources</source>
         <translation>资源</translation>
     </message>
@@ -1813,7 +1823,7 @@
         <translation>拼接后</translation>
     </message>
     <message>
-        <location line="+779"/>
+        <location line="+788"/>
         <source>Generating seams…</source>
         <translation>正在生成接缝…</translation>
     </message>
@@ -2803,7 +2813,7 @@
 <context>
     <name>VersionControl</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="-221"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-226"/>
         <source>Switch between the original and edited versions</source>
         <translation>在原图和修改后的版本之间切换</translation>
     </message>

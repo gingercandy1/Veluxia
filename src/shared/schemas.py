@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # 公共基类
@@ -362,6 +362,22 @@ class RingEditRequest(BaseModel):
     pack_id: str
     target: str = Field(..., description="目标键：screen:<id> / segment:<k> / layer:<k>:<Lx>")
     prompt: str
+    bbox: Optional[List[float]] = Field(
+        None, description="归一化框选 [x, y, w, h]，0~1；给了就只改框里的画面，框外原样保留")
+
+    @field_validator("bbox")
+    @classmethod
+    def _check_bbox(cls, value: Optional[List[float]]) -> Optional[List[float]]:
+        # 越界直接 422，不会等到加载十几 GB 的模型之后才发现
+        if value is None:
+            return None
+        if len(value) != 4:
+            raise ValueError("框选需要 4 个数 [x, y, w, h]")
+        x, y, w, h = (float(v) for v in value)
+        if not (0.0 <= x <= 1.0 and 0.0 <= y <= 1.0 and 0.0 < w <= 1.0 and 0.0 < h <= 1.0
+                and x + w <= 1.0 + 1e-6 and y + h <= 1.0 + 1e-6):
+            raise ValueError(f"框选越界：{[x, y, w, h]}（取值 0~1）")
+        return [x, y, w, h]
 
 
 class RingVersionRequest(BaseModel):

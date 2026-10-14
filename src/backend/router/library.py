@@ -339,7 +339,7 @@ class LibraryRouter(BaseRouter):
             job.progress = {"key": key, "fraction": fraction}
 
         manifest = await asyncio.to_thread(
-            ring.edit_target, req.pack_id, req.target, req.prompt, job.cancel_event,
+            ring.edit_target, req.pack_id, req.target, req.prompt, req.bbox, job.cancel_event,
             on_progress=report)
         return self._pack_response(manifest)
 

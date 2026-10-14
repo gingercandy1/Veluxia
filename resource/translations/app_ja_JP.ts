@@ -1185,7 +1185,17 @@
         <translation>この指示で選択した項目を編集（Ctrl+Enter）</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+2"/>
+        <source>Undo</source>
+        <translation>元に戻す</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Undo the last change and go back to the previous version</source>
+        <translation>最後の変更を取り消して1つ前のバージョンに戻す</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Edit with Qwen-Image-2.1</source>
         <translation>Qwen-Image-2.1 で編集</translation>
     </message>
@@ -1542,13 +1552,13 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+336"/>
+        <location line="+345"/>
         <location line="+774"/>
         <source>Export</source>
         <translation>書き出し</translation>
     </message>
     <message>
-        <location line="-1108"/>
+        <location line="-1117"/>
         <source>Save the finished assets as a zip, one folder per item, without drafts and intermediate files.</source>
         <translation>完成したアセットを zip で保存します。アイテムごとに 1 フォルダーで、下書きや中間ファイルは含みません。</translation>
     </message>
@@ -1598,7 +1608,7 @@
         <translation>このつなぎ目をやり直す</translation>
     </message>
     <message>
-        <location line="+134"/>
+        <location line="+143"/>
         <source>{0}/{1} done</source>
         <translation>{0}/{1} 完了</translation>
     </message>
@@ -1628,12 +1638,12 @@
         <translation>ノイズ除去中</translation>
     </message>
     <message>
-        <location line="-372"/>
+        <location line="-381"/>
         <source>Click a seam to select it · Ctrl+click selects several</source>
         <translation>つなぎ目をクリックで選択 · Ctrl+クリックで複数選択</translation>
     </message>
     <message>
-        <location line="+664"/>
+        <location line="+673"/>
         <source>Extending is only possible before segmenting</source>
         <translation>拡張は区間分割の前にのみできます</translation>
     </message>
@@ -1773,7 +1783,7 @@
         <translation>このアイテムとすべてのアセットを削除</translation>
     </message>
     <message>
-        <location line="-1097"/>
+        <location line="-1106"/>
         <source>Resources</source>
         <translation>素材</translation>
     </message>
@@ -1813,7 +1823,7 @@
         <translation>合成後</translation>
     </message>
     <message>
-        <location line="+779"/>
+        <location line="+788"/>
         <source>Generating seams…</source>
         <translation>継ぎ目を生成中…</translation>
     </message>
@@ -2803,7 +2813,7 @@
 <context>
     <name>VersionControl</name>
     <message>
-        <location filename="../../src/app/ui/library/layer_window.py" line="-221"/>
+        <location filename="../../src/app/ui/library/layer_window.py" line="-226"/>
         <source>Switch between the original and edited versions</source>
         <translation>元画像と編集後のバージョンを切り替え</translation>
     </message>

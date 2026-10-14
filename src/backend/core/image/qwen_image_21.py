@@ -46,6 +46,30 @@ _DEFAULT_OFFLOAD = {
 }
 
 
+def _edit_size(size: tuple[int, int], output_resolution: int) -> tuple[int, int]:
+    """参考图缩放后的宽高：与 diffusers 管线里的 calculate_dimensions 同一公式
+    （面积 = output_resolution²，保持宽高比，边长取 32 的倍数）。
+    测试会和 diffusers 的实现对一遍，升级后公式变了能发现。"""
+    width, height = size
+    scaled_width = (output_resolution * output_resolution * width / height) ** 0.5
+    return round(scaled_width / 32) * 32, round(scaled_width * height / width / 32) * 32
+
+
+def _stable_edit_size(size: tuple[int, int], output_resolution: int) -> tuple[int, int]:
+    """反复套用 _edit_size 直到尺寸不再变。
+
+    管线 __call__ 会把我们递进去的参考图再缩一次，而 32 的倍数取整不是幂等的：
+    约三分之一的尺寸缩第二次会差一格（如 1760x320 -> 1792x320）。编码器看的是第一次缩的图，
+    latent 却按第二次的尺寸来，两边 token 数就差几十个（shape mismatch）。
+    缩到再缩一次也不变的尺寸，两边才一致。实测 4 万多种尺寸都能收敛，最多 6 步。"""
+    for _ in range(16):
+        stepped = _edit_size(size, output_resolution)
+        if stepped == size:
+            return size
+        size = stepped
+    raise RuntimeError(f"参考图尺寸没有收敛：{size}（output_resolution={output_resolution}）")
+
+
 def _image_key(image: Image.Image | None) -> str:
     """参考图的内容摘要，用来判断编码缓存能不能复用；没有参考图时为空串。"""
     return hashlib.sha1(image.tobytes()).hexdigest() if image is not None else ""
@@ -102,6 +126,9 @@ class QwenImage21Generator(BaseImageGenerator):
         self.torch.cuda.empty_cache()
 
     def _use_encoder(self):
+        # 长加载开始前先看一眼取消：用户在加载阶段点了停止，不用等十几 GB 读完才响应。
+        # 检查放释放另一半之前，免得白白卸载等下还要重载的那一半
+        self.check_cancelled()
         if self.encoder_pipe is not None:
             return
         self._release("pipe")
@@ -119,9 +146,11 @@ class QwenImage21Generator(BaseImageGenerator):
         )
         apply_offload(pipe, "group", self.device)
         self.encoder_pipe = pipe
+        self.check_cancelled()
         self.report_load_stage("ready", 1.0)
 
     def _use_denoiser(self):
+        self.check_cancelled()
         if self.pipe is not None:
             return
         self._release("encoder_pipe")
@@ -149,6 +178,7 @@ class QwenImage21Generator(BaseImageGenerator):
         )
         apply_offload(pipe, "group", self.device, group=self.offload)
         self.pipe = pipe
+        self.check_cancelled()
         self.report_load_stage("ready", 1.0)
 
     def _encode_prompt(self, reference: Image.Image | None):
@@ -167,6 +197,8 @@ class QwenImage21Generator(BaseImageGenerator):
         with self.torch.inference_mode():
             embeds, mask, pad_mask = self.encoder_pipe.encode_prompt(
                 prompt=self.prompt, device=self.torch.device(self.device), **condition)
+        # 编码本身是长计算，中途停不下来；算完先响应取消，免得接着去加载十几 GB 的去噪段
+        self.check_cancelled()
         embeds = embeds.cpu()
         mask = mask.cpu() if mask is not None else None
         pad_mask = pad_mask.cpu() if pad_mask is not None else None
@@ -192,14 +224,19 @@ class QwenImage21Generator(BaseImageGenerator):
             del self.pipe.encode_prompt
 
     def _reference(self) -> Image.Image | None:
-        """参考图统一转成 RGB：透明底直接转会变黑底，先铺到白底上（同 qwen_edit 的做法）。"""
+        """参考图统一转成 RGB：透明底直接转会变黑底，先铺到白底上（同 qwen_edit 的做法）。
+
+        还要缩到管线自己会缩的尺寸：管线 __call__ 把参考图缩到 output_resolution² 的面积后，
+        同一张图既喂 VAE 也喂文本编码器，两边的 token 数才对得上。这里编码器是单独跑的，
+        拿到原尺寸大图就会多出一大批图像 token，去噪时报 shape mismatch。"""
         if not self.ref_image_path:
             return None
         with Image.open(self.ref_image_path) as image:
             rgba = image.convert("RGBA")
         canvas = Image.new("RGBA", rgba.size, "white")
         canvas.alpha_composite(rgba)
-        return canvas.convert("RGB")
+        size = _stable_edit_size(canvas.size, self.output_resolution)
+        return canvas.convert("RGB").resize(size, Image.Resampling.LANCZOS)
 
     def _resolution_kwargs(self, reference: Image.Image | None) -> dict:
         """编辑模式才传 output_resolution。

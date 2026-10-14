@@ -183,6 +183,35 @@ def test_send_enabled_only_with_single_selection_and_idle(qapp):
     assert win.send_btn.isEnabled()
 
 
+def test_undo_requests_the_previous_version(qapp):
+    win = _window(qapp)
+    got = []
+    win.version_requested.connect(lambda key, index: got.append((key, index)))
+    # 原图（current = -1）：没有可撤销的
+    _click(win, SEG0)
+    assert not win.undo_btn.isEnabled()
+    win.undo_btn.click()
+    assert got == []
+
+    nodes = _nodes()
+    nodes[0].current_version = 1
+    win.set_nodes(nodes)
+    assert win.undo_btn.isEnabled()
+    win.undo_btn.click()
+    assert got == [(SEG0, 0)]
+    # 没有版本的节点、多选、长任务运行时都不能撤销
+    _click(win, SEG1)
+    assert not win.undo_btn.isEnabled()
+    _click(win, SEG0)
+    _click(win, SEG1, CTRL)
+    assert not win.undo_btn.isEnabled()
+    _click(win, SEG0)
+    win.set_idle(False)
+    assert not win.undo_btn.isEnabled()
+    win.set_idle(True)
+    assert win.undo_btn.isEnabled()
+
+
 def test_plain_enter_in_prompt_inserts_newline(qapp):
     win = _window(qapp)
     _click(win, SEG0)
@@ -203,9 +232,10 @@ def test_ctrl_a_in_prompt_does_not_select_nodes(qapp):
 
 def test_tool_buttons_text_state_and_signal(qapp):
     win = _window(qapp)
-    names = ["extend", "seams", "segment", "layer"]
+    names = ["extend", "seams", "segment", "layer", "region"]
     assert list(win.tool_buttons) == names
-    assert [win.tool_buttons[n].text() for n in names] == ["Extend", "Seams", "Segment", "Layer"]
+    assert [win.tool_buttons[n].text() for n in names] == [
+        "Extend", "Seams", "Segment", "Layer", "Region"]
     got = []
     win.tool_clicked.connect(got.append)
     for name in names:
@@ -218,14 +248,15 @@ def test_tool_buttons_text_state_and_signal(qapp):
     win.set_tool_state("layer", running=False, enabled=False, tooltip="Select segments first")
     assert not win.tool_buttons["layer"].isEnabled()
     win.tool_buttons["layer"].click()
-    assert got[-1] == "layer"      # 禁用的按钮 click() 不触发
+    assert got[-1] == "region"      # 禁用的按钮 click() 不触发
     win.set_tool_state("segment", running=False, enabled=True)
     assert win.tool_buttons["segment"].text() == "Segment"
     win.set_tool_state("extend", True, True)
     win.set_tool_state("seams", True, True)
     win.set_tool_state("layer", True, True)
-    assert [win.tool_buttons[n].text() for n in ("extend", "seams", "layer")] == [
-        "Stop extend", "Stop seams", "Stop layer"]
+    win.set_tool_state("region", True, True)
+    assert [win.tool_buttons[n].text() for n in ("extend", "seams", "layer", "region")] == [
+        "Stop extend", "Stop seams", "Stop layer", "Stop region"]
 
 
 def test_merge_and_delete_rules(qapp):

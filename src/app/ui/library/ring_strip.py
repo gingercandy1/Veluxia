@@ -3,11 +3,12 @@
 像画布一样用：中键拖动平移（横向首尾相接成环，纵向自由），滚轮以鼠标为中心缩放；
 左键点接缝线选中、拖红色切线调整切点。
 """
-from PySide6.QtCore import QRectF, Qt, Signal
+from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from src.app.ui.base.widget import BaseWidget
+from src.app.ui.library import region_select
 
 SEAM_HIT_RADIUS = 24
 # 浮层离条带右上角的距离
@@ -29,6 +30,7 @@ class RingStrip(BaseWidget):
     seam_selected = Signal(int)
     cuts_edited = Signal(list)       # 拖完切线后的全部切点（原图像素坐标，升序）
     seams_selected = Signal(list)    # 选中接缝集合变化后的全部序号（单击重置为一条，Ctrl+单击加减）
+    region_changed = Signal(object)  # 归一化框选 [x,y,w,h]，清除时为 None
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -63,6 +65,11 @@ class RingStrip(BaseWidget):
         self._cut_hits: list[tuple[int, int]] = []
         self._drag_cut: int | None = None
         self._overlay: QWidget | None = None
+        # 框选局部改图：目标是黄框圈住的那一屏（active_image），框存归一化坐标
+        self._region_mode = False
+        self._region_norm: tuple[float, float, float, float] | None = None
+        self._region_drag: tuple[str, QRectF, QPointF] | None = None
+        self._strip_signature: tuple | None = None
 
     def set_overlay(self, widget: QWidget):
         """挂一个浮在条带右上角的控件（如前/后开关）：它盖在画面上，不占条带的行高。"""
@@ -87,6 +94,13 @@ class RingStrip(BaseWidget):
             self._active_image = -1
         # 视角（偏移、纵向平移）保留：前后切换、轮询刷新都不该把画面拉回起点，换资源包时才 reset_view
         self._cache_key = None
+        # 环的内容变了（换包、屏增删），旧框对不上：清掉；轮询刷新同图时保留
+        signature = (len(self._images),
+                     tuple((image.width(), image.height()) for image in self._images))
+        if signature != self._strip_signature:
+            self._strip_signature = signature
+            if self._region_norm is not None:
+                self._clear_region()
         self.update()
 
     def set_padding(self, padding: list[int]):
@@ -189,6 +203,10 @@ class RingStrip(BaseWidget):
             x += width
             index = (index + 1) % len(self._images)
         self._paint_cuts(painter, offset, top, bottom)
+        if self._region_mode:
+            region, bounds = self.region_rect(), self._region_bounds()
+            if region is not None and bounds is not None:
+                region_select.paint(painter, region, bounds)
 
     def _paint_padding(self, painter: QPainter, index: int, x: float, top: int, width: float):
         """较矮的屏是用边缘行拉伸补齐到统一高度的：上下各一半，盖一层深色标出来。"""
@@ -250,7 +268,11 @@ class RingStrip(BaseWidget):
 
     def set_active_image(self, index: int, focus: bool = True):
         """给第 index 张图加黄框（-1 取消）；focus 时把它平移到控件中央，免得它在可视区外。"""
+        before = self._active_image
         self._active_image = index if 0 <= index < len(self._images) else -1
+        # 换了目标屏，旧框对不上：清掉
+        if self._region_norm is not None and self._active_image != before:
+            self._clear_region()
         if focus and self._active_image >= 0:
             self._ensure_pixmaps()
             if self._total_width:
@@ -261,6 +283,92 @@ class RingStrip(BaseWidget):
 
     def active_image(self) -> int:
         return self._active_image
+
+    # ---- 框选 ----
+    def set_region_mode(self, on: bool):
+        if self._region_mode == on:
+            return
+        self._region_mode = on
+        self._region_drag = None
+        if not on:
+            self._clear_region()
+        else:
+            self.update()
+
+    def region_mode(self) -> bool:
+        return self._region_mode
+
+    def region_bbox(self) -> list | None:
+        """当前框的归一化坐标；没有目标、没有框、框非法时为 None。"""
+        if self._region_norm is None or self._region_bounds() is None:
+            return None
+        return list(self._region_norm) if region_select.valid(self._region_norm) else None
+
+    def region_rect(self) -> QRectF | None:
+        """当前框的控件坐标（画框和命中测试用）。"""
+        bounds = self._region_bounds()
+        if bounds is None or self._region_norm is None:
+            return None
+        return region_select.to_widget(self._region_norm, bounds)
+
+    def _region_bounds(self) -> QRectF | None:
+        """黄框那一屏在控件里的位置：环会重复出现，取和视口重叠最多的那一次。"""
+        index = self._active_image
+        if not 0 <= index < len(self._images):
+            return None
+        self._ensure_pixmaps()
+        if not self._total_width or index >= len(self._widths):
+            return None
+        width, top, height = self._widths[index], round(self._pan_y), self._image_height
+        if width <= 0 or height <= 0:
+            return None
+        start = -self._offset + sum(self._widths[:index])
+        # 视口中心附近的那一次，再向两侧各看一次，取重叠最多的
+        center = self.width() / 2
+        best: QRectF | None = None
+        best_overlap = 0.0
+        attempt = start + round((center - start) / self._total_width) * self._total_width
+        for x in (attempt - self._total_width, attempt, attempt + self._total_width):
+            overlap = min(x + width, self.width()) - max(x, 0)
+            if overlap > best_overlap:
+                best_overlap, best = overlap, QRectF(x, top, width, height)
+        return best
+
+    def _clear_region(self):
+        had = self._region_norm is not None
+        self._region_norm = None
+        self._region_drag = None
+        self.update()
+        if had:
+            self.region_changed.emit(None)
+
+    def _update_region(self, rect: QRectF):
+        bounds = self._region_bounds()
+        if bounds is None:
+            return
+        rect = rect.intersected(bounds)
+        norm = region_select.to_normalized(rect, bounds)
+        if norm is None:
+            return
+        self._region_norm = norm
+        self.update()
+        self.region_changed.emit(list(norm))
+
+    def _start_region_drag(self, point: QPointF) -> bool:
+        """框选模式下的左键：手柄上是缩放、框内是平移、黄框屏内是新建。命中才接管。"""
+        bounds = self._region_bounds()
+        if bounds is None:
+            return False
+        rect = self.region_rect()
+        if rect is not None:
+            handle = region_select.hit(rect, point)
+            if handle:
+                self._region_drag = (handle, rect, point)
+                return True
+        if bounds.contains(point):
+            self._region_drag = ("create", QRectF(), point)
+            return True
+        return False
 
     def _clamp_pan_y(self):
         self._pan_y = min(self.height() - PAN_MARGIN,
@@ -310,8 +418,14 @@ class RingStrip(BaseWidget):
         if shift and event.button() == Qt.MouseButton.RightButton:
             self._remove_cut(x)
             return
+        if event.button() == Qt.MouseButton.RightButton and self._region_mode:
+            # 右键清框：框没了就退回整图改
+            self._clear_region()
+            return
         if event.button() != Qt.MouseButton.LeftButton:
             return super().mousePressEvent(event)
+        if self._region_mode and self._start_region_drag(event.position()):
+            return
         nearest = min(self._cut_hits, key=lambda hit: abs(hit[0] - x), default=None)
         if nearest is not None and abs(nearest[0] - x) <= CUT_HIT_RADIUS:
             self._drag_cut = nearest[1]
@@ -321,6 +435,14 @@ class RingStrip(BaseWidget):
         self._click_pos = x
 
     def mouseMoveEvent(self, event):
+        if self._region_drag is not None:
+            handle, start, origin = self._region_drag
+            current = event.position()
+            if handle == "create":
+                self._update_region(QRectF(origin, current).normalized())
+            else:
+                self._update_region(region_select.apply_drag(start, handle, current - origin))
+            return
         if self._drag_cut is not None:
             self._move_cut(event.position().x())
             return
@@ -386,6 +508,13 @@ class RingStrip(BaseWidget):
         if event.button() == Qt.MouseButton.MiddleButton:
             self._pan_start = None
             self.setCursor(Qt.CursorShape.ArrowCursor)
+            return
+        if event.button() == Qt.MouseButton.LeftButton and self._region_drag is not None:
+            handle, _start, origin = self._region_drag
+            self._region_drag = None
+            # 点一下没有拉开：不算框，免得误触留个小点
+            if handle == "create" and (event.position() - origin).manhattanLength() < CLICK_SLOP:
+                self._clear_region()
             return
         if event.button() != Qt.MouseButton.LeftButton or self._click_pos is None:
             return
